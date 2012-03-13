@@ -1,0 +1,1 @@
+SimpleGraphReader=================Methods -------.. autoclass:: apgl.io.SimpleGraphReader   :members:   :inherited-members:   :undoc-members:
