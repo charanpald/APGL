@@ -6,8 +6,6 @@ Created on 3 Aug 2009
 import unittest
 import numpy 
 from apgl.data.Standardiser import Standardiser
-from apgl.data.ExamplesList import ExamplesList
-
 
 class PreprocessorTest(unittest.TestCase):
     def setUp(self):

@@ -34,11 +34,8 @@ class PathDefaults(object):
         dir = os.path.abspath( __file__ )
         dir, head = os.path.split(dir)
         dir, head = os.path.split(dir)
-        dir, head = os.path.split(dir)
         return dir 
         
-
-
     @staticmethod
     def getDataDir():
         return PathDefaults.getProjectDir() + "data/"
@@ -46,7 +43,6 @@ class PathDefaults(object):
     @staticmethod
     def getTempDir():
         return tempfile.gettempdir() + "/"
-        #return PathDefaults.getProjectDir() + "data/temp/"
 
     @staticmethod
     def getOutputDir():

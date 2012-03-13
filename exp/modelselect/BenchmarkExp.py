@@ -8,7 +8,7 @@ from apgl.util.FileLock import FileLock
 from apgl.util.PathDefaults import PathDefaults
 from apgl.util.Sampling import Sampling
 from apgl.util.Util import Util
-from apgl.modelselect.ModelSelectUtils import ModelSelectUtils
+from exp.modelselect.ModelSelectUtils import ModelSelectUtils
 import logging
 import numpy
 import os
