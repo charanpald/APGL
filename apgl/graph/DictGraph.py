@@ -119,7 +119,8 @@ class DictGraph(AbstractSingleGraph):
 
     def getEdge(self, vertex1, vertex2):
         """
-        Returns the value of the edge between two vertices.
+        Returns the value of the edge between two vertices. If there is no edge 
+        between the vertices None is returned. 
 
         :param vertex1: The name of the first vertex.
 

@@ -77,7 +77,14 @@ class DictTree(DictGraph):
         else:
             raise RuntimeError("Can only set a vertex in an empty tree: " + str(vertexName))
 
-    def removeEdges(self, vertex1, vertex2):
+    def addChild(self, parentId, childId, childVertex=None): 
+        """
+        This is basically a convenience function to allow one to easily add children. 
+        """
+        self.addEdge(parentId, childId)
+        self.setVertex(childId, childVertex)
+
+    def removeEdges(self, vertexId1, vertexId2):
         """
         This method is not currently implemented.
         """

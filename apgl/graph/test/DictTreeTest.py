@@ -125,6 +125,20 @@ class DictGraphTest(unittest.TestCase):
         self.assertTrue(set(dictTree.leaves()) == set([1, 2, "d", "f"]))
 
 
+    def testAddChild(self): 
+        dictTree = DictTree()
+        dictTree.setVertex("a", "foo")
+        dictTree.addChild("a", "c", 2)
+        dictTree.addChild("a", "d", 5)
+
+        self.assertTrue(set(dictTree.leaves()) == set(["c", "d"]))
+        
+        self.assertEquals(dictTree.getVertex("c"), 2)
+        self.assertEquals(dictTree.getVertex("d"), 5)
+        
+        self.assertTrue(dictTree.getEdge("a", "d"), 1.0)
+        self.assertTrue(dictTree.getEdge("a", "c"), 1.0)
+        
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
