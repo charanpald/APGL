@@ -4,15 +4,22 @@ from apgl.graph.DictTree import DictTree
 
 
 class DecisionNode(): 
-    def __init__(self, exampleInds): 
+    def __init__(self, trainInds, value): 
+        #All nodes 
+        self.value = value 
+        self.trainInds = trainInds
+        #Internal nodes 
         self.featureInd = None 
         self.threshold = None 
-        self.value = None 
         self.error = None 
-        self.exampleInds = exampleInds 
+        #Used for sorting predictions 
+        self.testInds = None 
         
-    def getExampleInds(self): 
-        return self.exampleInds
+    def getTrainInds(self): 
+        return self.trainInds
+        
+    def getValue(self): 
+        return self.value 
         
     def setError(self, error): 
         self.error = error 
@@ -20,14 +27,33 @@ class DecisionNode():
     def setFeatureInd(self, featureInd): 
         self.featureInd = featureInd 
         
+    def getFeatureInd(self): 
+        return self.featureInd 
+        
     def setThreshold(self, threshold): 
         self.threshold = threshold 
         
+    def getThreshold(self): 
+        return self.threshold
+        
+    def setValue(self, value): 
+        self.value = value 
+          
+    def setTestInds(self, testInds): 
+        self.testInds = testInds
+        
+    def getTestInds(self): 
+        return self.testInds
+    
+    def isLeaf(self): 
+        return self.error == None
+        
     def __str__(self): 
-        outputStr = "Size: " + str(self.exampleInds.shape[0]) + ", " 
-        outputStr += "Featureind: " + str(self.featureInd) + ", " 
+        outputStr = "Size: " + str(self.trainInds.shape[0]) + ", " 
+        outputStr += "featureInd: " + str(self.featureInd) + ", " 
         outputStr += "threshold: " + str(self.threshold) + ", "
-        outputStr += "error: " + str(self.error) + " "
+        outputStr += "error: " + str(self.error) + ", "
+        outputStr += "value: " + str(self.value) + " "
         return outputStr 
     
 
@@ -78,25 +104,39 @@ class DecisionTreeLearner(AbstractPredictor):
                     bestSplitInds = (inds1, inds2)
                         
         return bestError, bestFeatureInd, bestThreshold, bestSplitInds 
-    
+
     def learnModel(self, X, y):
         #Let's create a tree 
 
         nodeId = (0, )         
         self.tree = DictTree()
-        self.tree.setVertex(nodeId, DecisionNode(numpy.arange(X.shape[0])))
+        rootNode = DecisionNode(numpy.arange(X.shape[0]), y.mean())
+        self.tree.setVertex(nodeId, rootNode)
         self.recursiveSplit(X, y, nodeId)
-        
+     
+    def getLeftChildId(self, nodeId): 
+        leftChildId = list(nodeId)
+        leftChildId.append(0)
+        leftChildId = tuple(leftChildId)
+        return leftChildId
+
+    def getRightChildId(self, nodeId): 
+        rightChildId = list(nodeId)
+        rightChildId.append(1)
+        rightChildId = tuple(rightChildId) 
+        return rightChildId
+   
     def recursiveSplit(self, X, y, nodeId): 
         """
         Give a sample of data and a node index, we find the best split and 
         add children to the tree accordingly. 
         """
+        if len(nodeId)-1 >= self.maxDepth: 
+            return 
+        
         node = self.tree.getVertex(nodeId)
-        tempX = X[node.getExampleInds(), :]
-        tempY = y[node.getExampleInds()]
-
-        print(node.getExampleInds().shape[0])
+        tempX = X[node.getTrainInds(), :]
+        tempY = y[node.getTrainInds()]
 
         bestError, bestFeatureInd, bestThreshold, bestSplitInds = self.findBestSplit(tempX, tempY)
     
@@ -106,29 +146,55 @@ class DecisionTreeLearner(AbstractPredictor):
             node.setFeatureInd(bestFeatureInd)
             node.setThreshold(bestThreshold)
             
-            leftChildId = list(nodeId)
-            leftChildId.append(0)
-            leftChildId = tuple(leftChildId)
-            
-            rightChildId = list(nodeId)
-            rightChildId.append(1)
-            rightChildId = tuple(rightChildId) 
-            
-            leftChild = DecisionNode(node.getExampleInds()[bestSplitInds[0]])
+            leftChildId = self.getLeftChildId(nodeId)
+            rightChildId = self.getRightChildId(nodeId)
+
+            leftChild = DecisionNode(node.getTrainInds()[bestSplitInds[0]], tempY[bestSplitInds[0]].mean())
             self.tree.addChild(nodeId, leftChildId, leftChild)
             
-            rightChild = DecisionNode(node.getExampleInds()[bestSplitInds[1]])
+            rightChild = DecisionNode(node.getTrainInds()[bestSplitInds[1]], tempY[bestSplitInds[1]].mean())
             self.tree.addChild(nodeId, rightChildId, rightChild)
             
-            if leftChild.getExampleInds().shape[0] >= self.minSplit: 
+            if leftChild.getTrainInds().shape[0] >= self.minSplit: 
                 self.recursiveSplit(X, y, leftChildId)
                 
-            if rightChild.getExampleInds().shape[0] >= self.minSplit: 
+            if rightChild.getTrainInds().shape[0] >= self.minSplit: 
                 self.recursiveSplit(X, y, rightChildId)
         
+    def predict(self, X): 
+        """
+        Make a prediction for the set of examples given in the matrix X. 
+        """
+        rootId = (0,)
+        y = numpy.zeros(X.shape[0])
+        self.tree.getVertex(rootId).setTestInds(numpy.arange(X.shape[0]))
+        self.recursivePredict(X, y, rootId)
+        
+        return y 
+        
+        
+        
+    def recursivePredict(self, X, y, nodeId): 
+        node = self.tree.getVertex(nodeId)
+        testInds = node.getTestInds()
+        
+        if node.isLeaf(): 
+            y[testInds] == node.getValue()
+        else: 
+             
+            leftChildId = self.getLeftChildId(nodeId)
+            if self.tree.vertexExists(leftChildId):
+                leftChild = self.tree.getVertex(leftChildId)
+                leftChildInds = X[testInds, node.getFeatureInd()] < node.getThreshold() 
+                leftChild.setTestInds(testInds[leftChildInds])
+                self.recursivePredict(X, y, leftChildId)
                 
-        
-        
+            rightChildId = self.getRightChildId(nodeId)
+            if self.tree.vertexExists(rightChildId): 
+                rightChild = self.tree.getVertex(rightChildId)
+                rightChildInds = X[testInds, node.getFeatureInd()] >= node.getThreshold()
+                rightChild.setTestInds(testInds[rightChildInds])
+                self.recursivePredict(X, y, rightChildId)
         
         
         

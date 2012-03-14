@@ -1,5 +1,6 @@
 import numpy 
 import unittest
+import numpy.testing as nptst
 from exp.sandbox.predictors.DecisionTreeLearner import DecisionTreeLearner
 from apgl.data.ExamplesGenerator import ExamplesGenerator  
 
@@ -68,11 +69,22 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         self.assertTrue((bestSplitInds[1]).all())
         
     def testLearnModel(self): 
-        learner = DecisionTreeLearner(minSplit=1) 
+        learner = DecisionTreeLearner(minSplit=1, maxDepth=1) 
 
         learner.learnModel(self.X, self.y)        
         
-        print(learner.tree)
+        #print(learner.tree)
+        
+    def testPredict(self): 
+        learner = DecisionTreeLearner(minSplit=1, maxDepth=1) 
+        learner.learnModel(self.X, self.y)    
+        
+        predY = learner.predict(self.X)
+        
+        tree = learner.tree 
+        
+        for vertexId in tree.getAllVertexIds(): 
+            nptst.assert_array_equal(tree.getVertex(vertexId).getTrainInds(), tree.getVertex(vertexId).getTestInds())
         
 if __name__ == "__main__":
     unittest.main()
