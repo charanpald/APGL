@@ -74,6 +74,23 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         learner.learnModel(self.X, self.y)        
         
         #print(learner.tree)
+        #Let's check the tree 
+        tree = learner.getTree() 
+        
+        for vertexId in tree.getAllVertexIds(): 
+            vertex = tree.getVertex(vertexId)
+            if vertex.getFeatureInd() != None: 
+                meanValue = self.y[vertex.getTrainInds()].mean()
+                self.assertEquals(meanValue, vertex.getValue())
+                self.assertTrue(0 <= vertex.getFeatureInd() < self.X.shape[1]) 
+                self.assertTrue(self.X[:, vertex.getFeatureInd()].min() <= vertex.getThreshold() < self.X[:, vertex.getFeatureInd()].max())
+                self.assertTrue(vertex.getTrainInds().shape[0] >= 1)
+        
+        
+        self.assertTrue(tree.depth() <= 1)
+        #Check that each split contains indices from parent 
+        #Try depth =0, minsplit = 100 
+        #Compare against sklearn tree                 
         
     def testPredict(self): 
         learner = DecisionTreeLearner(minSplit=1, maxDepth=1) 

@@ -126,6 +126,9 @@ class DecisionTreeLearner(AbstractPredictor):
         rightChildId = tuple(rightChildId) 
         return rightChildId
    
+    def getTree(self): 
+        return self.tree 
+   
     def recursiveSplit(self, X, y, nodeId): 
         """
         Give a sample of data and a node index, we find the best split and 
