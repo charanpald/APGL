@@ -52,7 +52,7 @@ class TreeRankTestCase(unittest.TestCase):
 
         self.assertEquals(tree.getNumVertices(), 3)
         self.assertEquals(tree.getNumEdges(), 2)
-        self.assertEquals(tree.getRoot(), (0,0))
+        self.assertEquals(tree.getRootId(), (0,0))
         self.assertTrue(not tree.getVertex((0, 0)).isLeafNode())
         self.assertTrue(tree.getVertex((1, 0)).isLeafNode())
         self.assertTrue(tree.getVertex((1, 1)).isLeafNode())
@@ -68,7 +68,7 @@ class TreeRankTestCase(unittest.TestCase):
         treeRank.learnModel(self.X, self.y)
 
         tree = treeRank.getTree()
-        root = tree.getVertex(tree.getRoot())
+        root = tree.getVertex(tree.getRootId())
         root.setTestInds(numpy.arange(self.X.shape[0]))
         treeRank.classifyNode(tree, self.X, 0, 0)
 
