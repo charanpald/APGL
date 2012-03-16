@@ -14,6 +14,8 @@ class ExamplesGenerator():
         Generate a certain number of examples with a uniform distribution between 0 and 1. Create
         binary -/+ 1 labels
         """
+        if numExamples == 0 or numFeatures == 0: 
+            raise ValueError("Cannot generate empty dataset")
 
         X = numpy.random.rand(numExamples, numFeatures)
         c = numpy.random.rand(numFeatures)
