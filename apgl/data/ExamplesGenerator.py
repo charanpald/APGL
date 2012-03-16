@@ -12,7 +12,7 @@ class ExamplesGenerator():
     def generateBinaryExamples(self, numExamples=100, numFeatures=10, noise=0.4):
         """
         Generate a certain number of examples with a uniform distribution between 0 and 1. Create
-        binary -/+ 1 labels
+        binary -/+ 1 labels. Must have more than 1 example and feature. 
         """
         if numExamples == 0 or numFeatures == 0: 
             raise ValueError("Cannot generate empty dataset")
