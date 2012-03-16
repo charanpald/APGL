@@ -36,10 +36,10 @@ class DictGraphTest(unittest.TestCase):
         dictTree.addEdge("a", "c")
         dictTree.addEdge("d", "a")
 
-        self.assertEquals(dictTree.getRoot(), "d")
+        self.assertEquals(dictTree.getRootId(), "d")
 
         dictTree.addEdge("e", "d")
-        self.assertEquals(dictTree.getRoot(), "e")
+        self.assertEquals(dictTree.getRootId(), "e")
 
     def testSetVertex(self):
         dictTree = DictTree()

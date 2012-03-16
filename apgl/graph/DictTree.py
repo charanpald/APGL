@@ -43,17 +43,17 @@ class DictTree(DictGraph):
         """
         i = 0
         for edge in edgeList:
-            (vertex1, vertex2) = edge
+            (vertexId1, vertexId2) = edge
             if edgeValues == None:
                 value = 1
             else:
                 value = edgeValues[i]
 
-            self.addEdge(vertex1, vertex2)
+            self.addEdge(vertexId1, vertexId2, value)
 
-    def getRoot(self):
+    def getRootId(self):
         """
-        Find the root vertex. 
+        Find the id of the root vertex. 
         """
         if self.getNumVertices() == 0:
             return None
@@ -61,21 +61,27 @@ class DictTree(DictGraph):
         inDegSeq, vertices = self.inDegreeSequence()
         root = numpy.nonzero(inDegSeq==0)[0][0]
         return vertices[root]
+        
+    def getRoot(self):
+        """
+        Return the value of the root vertex. 
+        """
+        return self.getVertex(self.getRootId())
 
-    def setVertex(self, vertexName, vertex=None):
+    def setVertex(self, vertexId, vertex=None):
         """
         Assign a value to a vertex with given name
 
-        :param vertexName: The name of the vertex.
+        :param vertexId: The id of the vertex.
 
         :param vertex: The value of the vertex.
         """
-        if self.getNumVertices()==0 and not self.vertexExists(vertexName):
-            super(DictTree, self).setVertex(vertexName, vertex)
-        elif self.vertexExists(vertexName):
-            super(DictTree, self).setVertex(vertexName, vertex)
+        if self.getNumVertices()==0 and not self.vertexExists(vertexId):
+            super(DictTree, self).setVertex(vertexId, vertex)
+        elif self.vertexExists(vertexId):
+            super(DictTree, self).setVertex(vertexId, vertex)
         else:
-            raise RuntimeError("Can only set a vertex in an empty tree: " + str(vertexName))
+            raise RuntimeError("Can only set a vertex in an empty tree: " + str(vertexId))
 
     def addChild(self, parentId, childId, childVertex=None): 
         """
@@ -100,7 +106,7 @@ class DictTree(DictGraph):
         if self.getNumVertices()==0:
             return 0 
 
-        root = self.getRoot()
+        root = self.getRootId()
         stack = [(root, 0)]
         maxDepth = 0
 
@@ -127,7 +133,7 @@ class DictTree(DictGraph):
         """
         Parameter.checkInt(d, 0, float("inf"))
 
-        root = self.getRoot()
+        root = self.getRootId()
         newTree = DictTree()
         stack = [(root, 0)]
 
@@ -154,7 +160,7 @@ class DictTree(DictGraph):
 
         :returns: The vertex ids of the leaves. 
         """
-        root = self.getRoot()
+        root = self.getRootId()
         stack = [(root, 0)]
         leafList = [] 
 
@@ -172,7 +178,7 @@ class DictTree(DictGraph):
 
     def __str__(self):
         outputStr = super(DictTree, self).__str__() + "\n"
-        root = self.getRoot()
+        root = self.getRootId()
 
         stack = [(root, 0)]
 
@@ -185,3 +191,9 @@ class DictTree(DictGraph):
                 stack.append((neighbour, depth+1))
 
         return outputStr
+        
+    def children(self, vertexId): 
+        """
+        Returns the children of the current vertex. This is the same as neighbours. 
+        """
+        return self.neighbours(vertexId)
