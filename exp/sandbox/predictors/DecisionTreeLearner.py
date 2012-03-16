@@ -74,6 +74,8 @@ class DecisionTreeLearner(AbstractPredictor):
         compute the impurity using the mean squared error. This is just computed 
         as ||y1 - 1/n1 y1^T 1 1^T||^2 + ||y2 - 1/n2 y2^T 1 1^T||^2. 
         """
+        if y1.shape[0]==0 or y2.shape[0]==0: 
+            raise ValueError("Cannot work with one-sided split")
         error = y1.shape[0]*y1.var() + y2.shape[0]*y2.var()  
         return error 
         
@@ -86,22 +88,28 @@ class DecisionTreeLearner(AbstractPredictor):
             raise ValueError("Cannot split on 0 examples")
         
         bestError = float("inf")   
+        bestFeatureInd = 0 
+        bestThreshold = X[:, bestFeatureInd].min() 
+        bestSplitInds = (numpy.zeros(X.shape[0], numpy.bool), numpy.zeros(X.shape[0], numpy.bool))
+        
         
         for featureInd in range(X.shape[1]): 
             x = X[:, featureInd] 
             vals = numpy.unique(x)
+            vals = (vals[1:]+vals[0:-1])/2.0
 
             for val in vals: 
                 inds1 = x<val
                 inds2 = x>=val
                 
-                error = self.meanSqError(y[inds1], y[inds2])
+                if y[inds1].shape[0]!=0 and y[inds2].shape[0]!=0: 
+                    error = self.meanSqError(y[inds1], y[inds2])
 
-                if error < bestError: 
-                    bestError = error 
-                    bestFeatureInd = featureInd
-                    bestThreshold = val 
-                    bestSplitInds = (inds1, inds2)
+                    if error <= bestError: 
+                        bestError = error 
+                        bestFeatureInd = featureInd
+                        bestThreshold = val 
+                        bestSplitInds = (inds1, inds2)
                         
         return bestError, bestFeatureInd, bestThreshold, bestSplitInds 
 
@@ -169,11 +177,11 @@ class DecisionTreeLearner(AbstractPredictor):
         Make a prediction for the set of examples given in the matrix X. 
         """
         rootId = (0,)
-        y = numpy.zeros(X.shape[0])
+        predY = numpy.zeros(X.shape[0])
         self.tree.getVertex(rootId).setTestInds(numpy.arange(X.shape[0]))
-        self.recursivePredict(X, y, rootId)
+        predY = self.recursivePredict(X, predY, rootId)
         
-        return y 
+        return predY 
         
         
         
@@ -182,7 +190,7 @@ class DecisionTreeLearner(AbstractPredictor):
         testInds = node.getTestInds()
         
         if node.isLeaf(): 
-            y[testInds] == node.getValue()
+            y[testInds] = node.getValue()
         else: 
              
             leftChildId = self.getLeftChildId(nodeId)
@@ -190,14 +198,16 @@ class DecisionTreeLearner(AbstractPredictor):
                 leftChild = self.tree.getVertex(leftChildId)
                 leftChildInds = X[testInds, node.getFeatureInd()] < node.getThreshold() 
                 leftChild.setTestInds(testInds[leftChildInds])
-                self.recursivePredict(X, y, leftChildId)
+                y = self.recursivePredict(X, y, leftChildId)
                 
             rightChildId = self.getRightChildId(nodeId)
             if self.tree.vertexExists(rightChildId): 
                 rightChild = self.tree.getVertex(rightChildId)
                 rightChildInds = X[testInds, node.getFeatureInd()] >= node.getThreshold()
                 rightChild.setTestInds(testInds[rightChildInds])
-                self.recursivePredict(X, y, rightChildId)
+                y = self.recursivePredict(X, y, rightChildId)
+                
+        return y
         
         
         
