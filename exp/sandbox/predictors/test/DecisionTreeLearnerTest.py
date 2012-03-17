@@ -61,14 +61,75 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         self.assertEquals(bestFeatureInd, 2)
         self.assertEquals(bestThreshold, 9.5)
         
-        self.assertTrue((bestSplitInds[0][0:10]).all())
-        self.assertTrue((bestSplitInds[1][10:]).all())
+        self.assertTrue((bestSplitInds[0] == numpy.arange(0, 10)).all())
+        self.assertTrue((bestSplitInds[1] == numpy.arange(10, 20)).all())
         
         #Test case where all values are the same 
         X = numpy.zeros((20, 10))
          
         bestError, bestFeatureInd, bestThreshold, bestSplitInds = learner.findBestSplit(X, y)
         self.assertFalse((bestSplitInds[1]).all())
+        
+        #Another simple example 
+        X = numpy.random.rand(20, 1)
+        y = numpy.random.rand(20)
+
+        inds = [1, 3, 7, 12, 14, 15]
+        X[inds, 0] += 10 
+        y[inds] += 1   
+        
+        bestError, bestFeatureInd, bestThreshold, bestSplitInds = learner.findBestSplit(X, y)
+        
+    def testFindBestSplit2(self): 
+        learner = DecisionTreeLearner(minSplit=1) 
+        
+        X = numpy.zeros((20, 10))
+        y = numpy.ones(20)
+        
+        X[0:10, 2] = numpy.arange(10)
+        X[10:, 2] = numpy.arange(10)+10 
+        y[0:10] = -1 
+        
+        bestError, bestFeatureInd, bestThreshold, bestSplitInds = learner.findBestSplit2(X, y)
+        
+        
+        self.assertEquals(bestError, 0.0)
+        self.assertEquals(bestFeatureInd, 2)
+        self.assertEquals(bestThreshold, 9.5)
+        
+        self.assertTrue((bestSplitInds[0] == numpy.arange(0, 10)).all())
+        self.assertTrue((bestSplitInds[1] == numpy.arange(10, 20)).all())
+        
+        #Test case where all values are the same 
+        X = numpy.zeros((20, 10))
+         
+        bestError, bestFeatureInd, bestThreshold, bestSplitInds = learner.findBestSplit2(X, y)
+        self.assertFalse((bestSplitInds[1]).all())
+        
+        #Another simple example 
+        X = numpy.random.rand(20, 1)
+        y = numpy.random.rand(20)
+
+        inds = [1, 3, 7, 12, 14, 15]
+        X[inds, 0] += 10 
+        y[inds] += 1   
+        
+        bestError, bestFeatureInd, bestThreshold, bestSplitInds = learner.findBestSplit2(X, y)
+        
+        for i in range(10): 
+            numExamples = numpy.random.randint(1, 200)
+            numFeatures = numpy.random.randint(1, 10)
+            
+            X = numpy.random.rand(numExamples, numFeatures)
+            y = numpy.random.rand(numExamples)
+            
+            bestError, bestFeatureInd, bestThreshold, bestSplitInds = learner.findBestSplit(X, y)
+            bestError2, bestFeatureInd2, bestThreshold2, bestSplitInds2 = learner.findBestSplit2(X, y)
+            
+            self.assertEquals(bestFeatureInd, bestFeatureInd2)
+            self.assertAlmostEquals(bestThreshold, bestThreshold2)
+            nptst.assert_array_equal(bestSplitInds[0], bestSplitInds2[0])
+            nptst.assert_array_equal(bestSplitInds[1], bestSplitInds2[1])
         
     def testLearnModel(self): 
         #First check the integrety of the trees 
@@ -198,7 +259,7 @@ class DecisionTreeLearnerTest(unittest.TestCase):
             
             #Note that this is not always precise because if two thresholds give the same error we choose the largest 
             #and not sure how it is chosen in sklearn (or if the code is correct)
-            self.assertTrue(abs(numpy.linalg.norm(predY-y)- numpy.linalg.norm(predY2-y))/numExamples < 0.01)  
+            self.assertTrue(abs(numpy.linalg.norm(predY-y)- numpy.linalg.norm(predY2-y))/numExamples < 0.05)  
 
         
 if __name__ == "__main__":
