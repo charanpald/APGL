@@ -136,17 +136,17 @@ class DictGraph(AbstractSingleGraph):
         else:
             return self.adjacencies[vertex1][vertex2]
 
-    def neighbours(self, vertex):
+    def neighbours(self, vertexId):
         """
         Find a list of neighbours of the current vertex. In a directed graph, it
         is the list of all vertices with an edge from the current vertex. 
 
-        :param vertex: The name of the first vertex.
+        :param vertexId: The id of the vertex.
         """
-        if vertex not in self.adjacencies:
-            raise ValueError("Vertex is not present in graph: " + str(vertex))
+        if vertexId not in self.adjacencies:
+            raise ValueError("Vertex is not present in graph: " + str(vertexId))
 
-        return list(self.adjacencies[vertex].keys())
+        return list(self.adjacencies[vertexId].keys())
 
     def getVertex(self, vertexName):
         """
