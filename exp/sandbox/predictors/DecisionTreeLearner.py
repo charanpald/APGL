@@ -1,7 +1,7 @@
 import numpy 
 from apgl.predictors.AbstractPredictor import AbstractPredictor
 from apgl.graph.DictTree import DictTree
-
+from exp.sandbox.predictors.TreeCriterion import findBestSplit
 
 class DecisionNode(): 
     def __init__(self, trainInds, value): 
@@ -58,6 +58,9 @@ class DecisionNode():
     
 class DecisionTreeLearner(AbstractPredictor): 
     def __init__(self, criterion="mse", maxDepth=10, minSplit=30, type="class"):
+        """
+        Need a minSplit for the internal nodes and one for leaves. 
+        """
         super(DecisionTreeLearner, self).__init__()
         self.maxDepth = maxDepth
         self.minSplit = minSplit
@@ -77,100 +80,7 @@ class DecisionTreeLearner(AbstractPredictor):
             raise ValueError("Cannot work with one-sided split")
         error = y1.shape[0]*y1.var() + y2.shape[0]*y2.var()  
         return error 
-        
-    def findBestSplit2(self, X, y): 
-        """
-        Give a set of examples and a particular feature, find the best split 
-        of the data. 
-        """
-        if X.shape[0] == 0: 
-            raise ValueError("Cannot split on 0 examples")
-        
-        bestError = float("inf")   
-        bestFeatureInd = 0 
-        bestThreshold = X[:, bestFeatureInd].min() 
-        bestSplitInds = (numpy.zeros(X.shape[0], numpy.bool), numpy.zeros(X.shape[0], numpy.bool))
-        
-        
-        for featureInd in range(X.shape[1]): 
-            x = X[:, featureInd] 
-            vals = numpy.unique(x)
-            vals = (vals[1:]+vals[0:-1])/2.0
-
-            for val in vals: 
-                inds1 = x<val
-                inds2 = x>=val
-                
-                #Only check splits > minSplit 
-                if y[inds1].shape[0]!=0 and y[inds2].shape[0]!=0: 
-                    error = self.meanSqError(y[inds1], y[inds2])
-
-                    if error <= bestError: 
-                        bestError = error 
-                        bestFeatureInd = featureInd
-                        bestThreshold = val 
-                        bestSplitInds = (numpy.arange(x.shape[0])[inds1], numpy.arange(x.shape[0])[inds2])
-                        
-        return bestError, bestFeatureInd, bestThreshold, bestSplitInds 
-    
-    #@profile
-    def findBestSplit(self, X, y): 
-        """
-        Give a set of examples and a particular feature, find the best split 
-        of the data. 
-        """
-        if X.shape[0] == 0: 
-            raise ValueError("Cannot split on 0 examples")
-        
-        bestError = float("inf")   
-        bestFeatureInd = 0 
-        bestThreshold = X[:, bestFeatureInd].min() 
-        bestSplitInds = (numpy.zeros(X.shape[0], numpy.bool), numpy.zeros(X.shape[0], numpy.bool))
-        
-        for featureInd in range(X.shape[1]): 
-            x = X[:, featureInd] 
-            vals = numpy.unique(x)
-            vals = (vals[1:]+vals[0:-1])/2.0
-            
-            inds = numpy.argsort(x)
-            tempX = x[inds]
-            tempY = y[inds]
-            cumY = numpy.cumsum(tempY)
-            cumY2 = numpy.cumsum(tempY**2)
-            
-            insertInds = numpy.searchsorted(tempX, vals)
-            
-            
-            for i in range(vals.shape[0]): 
-                val = vals[i]
-                #Find index where val will be inserted before to preserve order 
-                insertInd = insertInds[i]
-                
-                rightSize = (tempX.shape[0] - insertInd)
-                if insertInd < self.minSplit or rightSize < self.minSplit: 
-                    continue 
-
-                if insertInd!=1 and insertInd!=x.shape[0]: 
-                    cumYVal = cumY[insertInd-1]
-                    cumY2Val = cumY2[insertInd-1]
-                    var1 = cumY2Val - (cumYVal**2)/float(insertInd)
-                    var2 = (cumY2[-1]-cumY2Val) - (cumY[-1]-cumYVal)**2/float(tempX.shape[0] - insertInd)
-       
-                    tol = 0.01
-                    assert abs(var1 - y[x<val].var()*y[x<val].shape[0]) < tol  
-                    assert abs(var2 - y[x>=val].var()*y[x>=val].shape[0]) < tol 
-                    
-                    error = var1 + var2 
-                    
-                    if error <= bestError: 
-                        bestError = error 
-                        bestFeatureInd = featureInd
-                        bestThreshold = val 
-                        bestSplitInds = (inds[0:insertInd], inds[insertInd:])
-                        
-        bestSplitInds = (numpy.sort(bestSplitInds[0]), numpy.sort(bestSplitInds[1]))
-        return bestError, bestFeatureInd, bestThreshold, bestSplitInds 
-        
+           
     def learnModel(self, X, y):
         nodeId = (0, )         
         self.tree = DictTree()
@@ -205,10 +115,10 @@ class DecisionTreeLearner(AbstractPredictor):
         tempX = X[node.getTrainInds(), :]
         tempY = y[node.getTrainInds()]
 
-        bestError, bestFeatureInd, bestThreshold, bestSplitInds = self.findBestSplit(tempX, tempY)
+        bestError, bestFeatureInd, bestThreshold, bestLeftInds, bestRightInds = findBestSplit(self.minSplit, tempX, tempY)
     
         #The split may have 0 items in one set, so don't split 
-        if bestSplitInds[0].sum() != 0 and bestSplitInds[1].sum() != 0: 
+        if bestLeftInds.sum() != 0 and bestRightInds.sum() != 0: 
             node.setError(bestError)
             node.setFeatureInd(bestFeatureInd)
             node.setThreshold(bestThreshold)
@@ -216,10 +126,10 @@ class DecisionTreeLearner(AbstractPredictor):
             leftChildId = self.getLeftChildId(nodeId)
             rightChildId = self.getRightChildId(nodeId)
 
-            leftChild = DecisionNode(node.getTrainInds()[bestSplitInds[0]], tempY[bestSplitInds[0]].mean())
+            leftChild = DecisionNode(node.getTrainInds()[bestLeftInds], tempY[bestLeftInds].mean())
             self.tree.addChild(nodeId, leftChildId, leftChild)
             
-            rightChild = DecisionNode(node.getTrainInds()[bestSplitInds[1]], tempY[bestSplitInds[1]].mean())
+            rightChild = DecisionNode(node.getTrainInds()[bestRightInds], tempY[bestRightInds].mean())
             self.tree.addChild(nodeId, rightChildId, rightChild)
             
             if leftChild.getTrainInds().shape[0] >= self.minSplit: 

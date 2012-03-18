@@ -12,7 +12,7 @@ numpy.random.seed(22)
 
 class DecisionTreeLearnerProfile(object):
     def profileLearnModel(self):
-        numExamples = 200
+        numExamples = 1000
         numFeatures = 20
         minSplit = 10
         maxDepth = 20
@@ -26,7 +26,7 @@ class DecisionTreeLearnerProfile(object):
         ProfileUtils.profile('learner.learnModel(X, y) ', globals(), locals())
 
     def profileDecisionTreeRegressor(self): 
-        numExamples = 200
+        numExamples = 1000
         numFeatures = 20
         minSplit = 10
         maxDepth = 20
