@@ -2,4 +2,7 @@
 *.pyo
 *.so
 *.o
+*.prof
+*.lprof
 apgl.egg-info/
+build/
