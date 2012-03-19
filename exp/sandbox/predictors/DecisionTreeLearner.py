@@ -2,6 +2,8 @@ import numpy
 from apgl.predictors.AbstractPredictor import AbstractPredictor
 from apgl.graph.DictTree import DictTree
 from exp.sandbox.predictors.TreeCriterion import findBestSplit
+from exp.sandbox.predictors.TreeCriterionPy import findBestSplit2
+
 
 class DecisionNode(): 
     def __init__(self, trainInds, value): 
@@ -80,13 +82,21 @@ class DecisionTreeLearner(AbstractPredictor):
             raise ValueError("Cannot work with one-sided split")
         error = y1.shape[0]*y1.var() + y2.shape[0]*y2.var()  
         return error 
-           
+         
+    #@profile 
     def learnModel(self, X, y):
         nodeId = (0, )         
         self.tree = DictTree()
         rootNode = DecisionNode(numpy.arange(X.shape[0]), y.mean())
         self.tree.setVertex(nodeId, rootNode)
-        self.recursiveSplit(X, y, nodeId)
+
+        #We computer a sorted version of X 
+        argsortX = numpy.zeros(X.shape, numpy.int)
+        for i in range(X.shape[1]): 
+            argsortX[:, i] = numpy.argsort(X[:, i])
+            argsortX[:, i] = numpy.argsort(argsortX[:, i])
+        
+        self.recursiveSplit(X, y, argsortX, nodeId)
      
     def getLeftChildId(self, nodeId): 
         leftChildId = list(nodeId)
@@ -103,7 +113,8 @@ class DecisionTreeLearner(AbstractPredictor):
     def getTree(self): 
         return self.tree 
    
-    def recursiveSplit(self, X, y, nodeId): 
+    #@profile 
+    def recursiveSplit(self, X, y, argsortX, nodeId): 
         """
         Give a sample of data and a node index, we find the best split and 
         add children to the tree accordingly. 
@@ -112,10 +123,7 @@ class DecisionTreeLearner(AbstractPredictor):
             return 
         
         node = self.tree.getVertex(nodeId)
-        tempX = X[node.getTrainInds(), :]
-        tempY = y[node.getTrainInds()]
-
-        bestError, bestFeatureInd, bestThreshold, bestLeftInds, bestRightInds = findBestSplit(self.minSplit, tempX, tempY)
+        bestError, bestFeatureInd, bestThreshold, bestLeftInds, bestRightInds = findBestSplit(self.minSplit, X, y, node.getTrainInds(), argsortX)
     
         #The split may have 0 items in one set, so don't split 
         if bestLeftInds.sum() != 0 and bestRightInds.sum() != 0: 
@@ -126,17 +134,17 @@ class DecisionTreeLearner(AbstractPredictor):
             leftChildId = self.getLeftChildId(nodeId)
             rightChildId = self.getRightChildId(nodeId)
 
-            leftChild = DecisionNode(node.getTrainInds()[bestLeftInds], tempY[bestLeftInds].mean())
+            leftChild = DecisionNode(bestLeftInds, y[bestLeftInds].mean())
             self.tree.addChild(nodeId, leftChildId, leftChild)
             
-            rightChild = DecisionNode(node.getTrainInds()[bestRightInds], tempY[bestRightInds].mean())
+            rightChild = DecisionNode(bestRightInds, y[bestRightInds].mean())
             self.tree.addChild(nodeId, rightChildId, rightChild)
             
             if leftChild.getTrainInds().shape[0] >= self.minSplit: 
-                self.recursiveSplit(X, y, leftChildId)
+                self.recursiveSplit(X, y, argsortX, leftChildId)
                 
             if rightChild.getTrainInds().shape[0] >= self.minSplit: 
-                self.recursiveSplit(X, y, rightChildId)
+                self.recursiveSplit(X, y, argsortX, rightChildId)
         
     def predict(self, X): 
         """

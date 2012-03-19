@@ -24,6 +24,8 @@ class DecisionTreeLearnerProfile(object):
         #learner.learnModel(X, y)
         #print("Done")
         ProfileUtils.profile('learner.learnModel(X, y) ', globals(), locals())
+        
+        print(learner.getTree().getNumVertices())
 
     def profileDecisionTreeRegressor(self): 
         numExamples = 1000
@@ -39,7 +41,5 @@ class DecisionTreeLearnerProfile(object):
         ProfileUtils.profile('regressor.fit(X, y)', globals(), locals())
 
 profiler = DecisionTreeLearnerProfile()
-profiler.profileLearnModel()
-#profiler.profileDecisionTreeRegressor()
-
-#Takes 0.925 s
+#profiler.profileLearnModel() #0.418
+profiler.profileDecisionTreeRegressor() #0.020

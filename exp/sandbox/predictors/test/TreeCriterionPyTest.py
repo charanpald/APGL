@@ -1,10 +1,10 @@
 import numpy 
 import unittest
 import numpy.testing as nptst
-from exp.sandbox.predictors.TreeCriterion import findBestSplit
+from exp.sandbox.predictors.TreeCriterionPy import findBestSplit2
 from apgl.data.ExamplesGenerator import ExamplesGenerator  
 
-class TreeCriterionTest(unittest.TestCase):
+class TreeCriterionPyTest(unittest.TestCase):
     def setUp(self):
         numpy.random.seed(21)
         numpy.seterr("raise")
@@ -26,7 +26,7 @@ class TreeCriterionTest(unittest.TestCase):
             argsortX[:, i] = numpy.argsort(X[:, i])
             argsortX[:, i] = numpy.argsort(argsortX[:, i])
         
-        bestError, bestFeatureInd, bestThreshold, bestLeftInds, bestRightInds = findBestSplit(minSplit, X, y, nodeInds, argsortX)
+        bestError, bestFeatureInd, bestThreshold, bestLeftInds, bestRightInds = findBestSplit2(minSplit, X, y, nodeInds, argsortX)
         
         
         self.assertEquals(bestError, 0.0)
@@ -45,7 +45,7 @@ class TreeCriterionTest(unittest.TestCase):
             argsortX[:, i] = numpy.argsort(X[:, i])
             argsortX[:, i] = numpy.argsort(argsortX[:, i])
          
-        bestError, bestFeatureInd, bestThreshold, bestLeftInds, bestRightInds = findBestSplit(minSplit, X, y, nodeInds, argsortX)
+        bestError, bestFeatureInd, bestThreshold, bestLeftInds, bestRightInds = findBestSplit2(minSplit, X, y, nodeInds, argsortX)
         self.assertTrue(bestLeftInds.shape[0]==0)
         self.assertTrue(bestRightInds.shape[0]==X.shape[0])
         
@@ -63,12 +63,12 @@ class TreeCriterionTest(unittest.TestCase):
             argsortX[:, i] = numpy.argsort(X[:, i])
             argsortX[:, i] = numpy.argsort(argsortX[:, i])
         
-        bestError, bestFeatureInd, bestThreshold, bestLeftInds, bestRightInds = findBestSplit(minSplit, X, y, nodeInds, argsortX)
+        bestError, bestFeatureInd, bestThreshold, bestLeftInds, bestRightInds = findBestSplit2(minSplit, X, y, nodeInds, argsortX)
         nptst.assert_array_equal(bestRightInds, numpy.array(inds))
         
         #Test minSplit 
         minSplit = 10
-        bestError, bestFeatureInd, bestThreshold, bestLeftInds, bestRightInds = findBestSplit(minSplit, X, y, nodeInds, argsortX)
+        bestError, bestFeatureInd, bestThreshold, bestLeftInds, bestRightInds = findBestSplit2(minSplit, X, y, nodeInds, argsortX)
         self.assertTrue(bestLeftInds.shape[0] >= minSplit)
         self.assertTrue(bestRightInds.shape[0] >= minSplit)
         
@@ -76,16 +76,16 @@ class TreeCriterionTest(unittest.TestCase):
         minSplit = 1 
         nodeInds = numpy.arange(16)
         
-        bestError, bestFeatureInd, bestThreshold, bestLeftInds, bestRightInds = findBestSplit(minSplit, X, y, nodeInds, argsortX)
+        bestError, bestFeatureInd, bestThreshold, bestLeftInds, bestRightInds = findBestSplit2(minSplit, X, y, nodeInds, argsortX)
         nptst.assert_array_equal(bestRightInds, numpy.array(inds))
         nptst.assert_array_equal(bestLeftInds, numpy.setdiff1d(nodeInds, numpy.array(inds))) 
         
         nodeInds = numpy.arange(10)
         
-        bestError, bestFeatureInd, bestThreshold, bestLeftInds, bestRightInds = findBestSplit(minSplit, X, y, nodeInds, argsortX)
+        bestError, bestFeatureInd, bestThreshold, bestLeftInds, bestRightInds = findBestSplit2(minSplit, X, y, nodeInds, argsortX)
         nptst.assert_array_equal(bestRightInds, numpy.array([1,3,7]))
         nptst.assert_array_equal(bestLeftInds, numpy.setdiff1d(nodeInds, numpy.array([1,3,7]))) 
-      
+    
     @unittest.skip("")
     def testFindBestSplit2(self): 
         minSplit = 1 
