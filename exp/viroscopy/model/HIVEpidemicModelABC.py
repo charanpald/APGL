@@ -3,10 +3,10 @@ A script to estimate the HIV epidemic model parameters using ABC.
 """
 from apgl.graph import *
 from apgl.util import *
-from apgl.viroscopy.model.HIVGraph import HIVGraph
-from apgl.viroscopy.model.HIVABCParameters import HIVABCParameters
-from apgl.viroscopy.model.HIVEpidemicModel import HIVEpidemicModel
-from apgl.viroscopy.model.HIVRates import HIVRates
+from exp.viroscopy.model.HIVGraph import HIVGraph
+from exp.viroscopy.model.HIVABCParameters import HIVABCParameters
+from exp.viroscopy.model.HIVEpidemicModel import HIVEpidemicModel
+from exp.viroscopy.model.HIVRates import HIVRates
 from apgl.predictors.ABCSMC import ABCSMC
 
 import logging
@@ -23,7 +23,6 @@ numpy.seterr(invalid='raise')
 #We will load up the statistics from the real graph
 resultsDir = PathDefaults.getOutputDir() + "viroscopy/"
 resultsFileName = resultsDir + "ContactGrowthScalarStats.pkl"
-#resultsFileName = resultsDir + "SimContactGrowthScalarStats.pkl"
 statsArray = Util.loadPickle(resultsFileName)
 
 resultsFileName = resultsDir + "ContactGrowthVertexStats.pkl"

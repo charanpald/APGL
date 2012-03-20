@@ -7,7 +7,7 @@ import scipy.stats as stats
 from apgl.util.Parameter import Parameter
 from apgl.util.PathDefaults import PathDefaults
 from apgl.util.Util import Util
-from apgl.viroscopy.model.HIVVertices import HIVVertices
+from exp.viroscopy.model.HIVVertices import HIVVertices
 
 class HIVABCParameters(object):
     def __init__(self, graph, rates, meanTheta):

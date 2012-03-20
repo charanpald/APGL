@@ -5,9 +5,9 @@ import scipy.stats
 
 from apgl.graph import *
 from apgl.util import *
-from apgl.viroscopy.model.HIVEpidemicModel import HIVEpidemicModel
-from apgl.viroscopy.model.HIVGraph import HIVGraph
-from apgl.viroscopy.model.HIVRates import HIVRates
+from exp.viroscopy.model.HIVEpidemicModel import HIVEpidemicModel
+from exp.viroscopy.model.HIVGraph import HIVGraph
+from exp.viroscopy.model.HIVRates import HIVRates
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 numpy.random.seed(24)

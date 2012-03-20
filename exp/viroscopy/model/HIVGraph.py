@@ -4,7 +4,7 @@ import zipfile
 import pickle
 import logging
 from apgl.graph.PySparseGraph import PySparseGraph
-from apgl.viroscopy.model.HIVVertices import HIVVertices
+from exp.viroscopy.model.HIVVertices import HIVVertices
 from apgl.util.Parameter import Parameter
 from apgl.util.Util import Util 
 

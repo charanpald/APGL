@@ -2,8 +2,8 @@ import logging
 import numpy
 from apgl.graph import *
 from apgl.util import *
-from apgl.viroscopy.model.HIVGraph import HIVGraph
-from apgl.viroscopy.model.HIVVertices import HIVVertices
+from exp.viroscopy.model.HIVGraph import HIVGraph
+from exp.viroscopy.model.HIVVertices import HIVVertices
 
 """
 This class models an epidemic occuring via sexual contact. 

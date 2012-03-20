@@ -1,6 +1,6 @@
 import numpy
 from pysparse import spmatrix
-from apgl.viroscopy.model.HIVVertices import HIVVertices
+from exp.viroscopy.model.HIVVertices import HIVVertices
 from apgl.util.Util import *
 
 """
