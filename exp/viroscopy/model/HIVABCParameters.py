@@ -10,10 +10,11 @@ from apgl.util.Util import Util
 from exp.viroscopy.model.HIVVertices import HIVVertices
 
 class HIVABCParameters(object):
-    def __init__(self, graph, rates, meanTheta):
+    def __init__(self, meanTheta):
         """
-        Initialised this object with HIVGraph and HIVRates object. 
+        Initialised this object with a mean value of theta 
         """
+
         self.paramFuncs = []
         self.priorDists = []
         self.priorDensities = []
@@ -31,70 +32,70 @@ class HIVABCParameters(object):
         priorDensity = lambda x: stats.randint.pmf(x, min, max)
         purtubationKernel = lambda x: stats.randint.rvs(x-int(min*purtScale), x+int(min*purtScale))
         purtubationKernelDensity = lambda old, new: stats.randint.pmf(new, old-int(min*purtScale), old+int(max*purtScale))
-        self.__addParameter(graph.setRandomInfected, priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
+        self.__addParameter(("graph", "setRandomInfected"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
 
         ind += 1
         mu = meanTheta[ind]
         sigma = mu*sigmaScale
         priorDist, priorDensity = self.createGammaParam(sigma, mu)
         purtubationKernel, purtubationKernelDensity = self.__createNormalPurt(sigma, purtScale)
-        self.__addParameter(rates.setAlpha, priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
+        self.__addParameter(("rates", "setAlpha"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
 
         ind += 1
         mu = meanTheta[ind]
         sigma = mu*sigmaScale
         priorDist, priorDensity = self.createGammaParam(sigma, mu)
         purtubationKernel, purtubationKernelDensity = self.__createNormalPurt(sigma, purtScale)
-        self.__addParameter(rates.setNewContactChance, priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
+        self.__addParameter(("rates", "setNewContactChance"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
 
         ind += 1
         mu = meanTheta[ind]
         sigma = mu*sigmaScale
         priorDist, priorDensity = self.createGammaParam(sigma, mu)
         purtubationKernel, purtubationKernelDensity = self.__createNormalPurt(sigma, purtScale)
-        self.__addParameter(rates.setRandDetectRate, priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
+        self.__addParameter(("rates", "setRandDetectRate"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
 
         ind += 1
         mu = meanTheta[ind]
         sigma = mu*sigmaScale
         priorDist, priorDensity = self.createGammaParam(sigma, mu)
         purtubationKernel, purtubationKernelDensity = self.__createNormalPurt(sigma, purtScale)
-        self.__addParameter(rates.setCtRatePerPerson, priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
+        self.__addParameter(("rates", "setCtRatePerPerson"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
 
         ind += 1
         mu = meanTheta[ind]
         sigma = mu*sigmaScale
         priorDist, priorDensity = self.createGammaParam(sigma, mu)
         purtubationKernel, purtubationKernelDensity = self.__createNormalPurt(sigma, purtScale)
-        self.__addParameter(rates.setHeteroContactRate, priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
+        self.__addParameter(("rates", "setHeteroContactRate"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
 
         ind += 1
         mu = meanTheta[ind]
         sigma = mu*sigmaScale
         priorDist, priorDensity = self.createGammaParam(sigma, mu)
         purtubationKernel, purtubationKernelDensity = self.__createNormalPurt(sigma, purtScale)
-        self.__addParameter(rates.setBiContactRate, priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
+        self.__addParameter(("rates", "setBiContactRate"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
 
         ind += 1
         mu = meanTheta[ind]
         sigma = mu*sigmaScale
         priorDist, priorDensity = self.createTruncNormParam(sigma, mu)
         purtubationKernel, purtubationKernelDensity = self.__createNormalPurt(sigma, purtScale)
-        self.__addParameter(rates.setWomanManInfectProb, priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
+        self.__addParameter(("rates", "setWomanManInfectProb"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
 
         ind += 1
         mu = meanTheta[ind]
         sigma = mu*sigmaScale
         priorDist, priorDensity = self.createTruncNormParam(sigma, mu)
         purtubationKernel, purtubationKernelDensity = self.__createNormalPurt(sigma, purtScale)
-        self.__addParameter(rates.setManWomanInfectProb, priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
+        self.__addParameter(("rates", "setManWomanInfectProb"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
 
         ind += 1
         mu = meanTheta[ind]
         sigma = mu*sigmaScale
         priorDist, priorDensity = self.createTruncNormParam(sigma, mu)
         purtubationKernel, purtubationKernelDensity = self.__createNormalPurt(sigma, purtScale)
-        self.__addParameter(rates.setManBiInfectProb, priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
+        self.__addParameter(("rates", "setManBiInfectProb"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
 
     def createTruncNormParam(self, sigma, mode):
         """
@@ -147,8 +148,8 @@ class HIVABCParameters(object):
 
         for priorDist in self.priorDists:
             theta.append(priorDist())
-
-        logging.info("theta=" + str(numpy.array(theta)))
+            
+        theta = numpy.array(theta)
         return theta
 
     def priorDensity(self, theta):
@@ -165,7 +166,8 @@ class HIVABCParameters(object):
 
         for i in range(len(self.purtubationKernels)):
             newTheta.append(self.purtubationKernels[i](theta[i]))
-
+        
+        newTheta = numpy.array(newTheta)
         return newTheta
 
     def purtubationKernelDensity(self, oldTheta, theta):
@@ -177,60 +179,3 @@ class HIVABCParameters(object):
 
         return density
 
-    @staticmethod
-    def summary(D):
-        """
-        We return the number of detected individuals, the number of edges
-        between them, the number of components, the max component size and the
-        number of MSM detections. 
-        """
-        times, infectedIndices, removedIndices, graph = D
-        numMeasures = 5
-        S = numpy.zeros((len(times), numMeasures))
-        S[:, 0] = numpy.array([len(x) for x in removedIndices])
-
-        #Work out other statistics 
-        for i in range(len(removedIndices)):
-            subgraph = graph.subgraph(removedIndices[i])
-            V = subgraph.getVertexList().getVertices()
-            subComponents = subgraph.findConnectedComponents()
-            S[i, 1] = subgraph.getNumEdges()
-            S[i, 2] = len(subComponents)
-            if len(subComponents) != 0 :
-                S[i, 3] = len(subComponents[0])
-            S[i, 4] = numpy.sum(V[:, HIVVertices.orientationIndex]==HIVVertices.bi)
-
-        return S
-
-    @staticmethod
-    def distance(U, Uprime):
-        """
-        A distance between two sets of curves based on the discrete derivative. Each
-        input matrix is compared columnwise (each columns corresponds to a feature). 
-        The U matrix can be shorter than Uprime. 
-        If u is smaller than uPrime then we truncate uPrime to be the same length as u.
-        """
-        if U.shape[0] < Uprime.shape[0]:
-            Uprime = Uprime[0:U.shape[0]]
-        elif U.shape[0] > Uprime.shape[0]:
-            logging.debug("U= " + str(U) + " Uprime= " + str(Uprime))
-            raise ValueError("Uprime has fewer values than U")
-
-        U = numpy.diff(U, axis=0)
-        Uprime = numpy.diff(Uprime, axis=0)
-
-        return numpy.linalg.norm(U - Uprime)
-
-    @staticmethod
-    def getBreakFunc(realValues, epsilon):
-        def breakFunc(times, infectedIndices, removedIndices, graph):
-            u = HIVABCParameters.summary((times, infectedIndices, removedIndices, graph))
-
-            #logging.info("Time in breakFunc = " + str(times))
-            if HIVABCParameters.distance(u, realValues) > epsilon:
-                logging.info("Distance is " + str(HIVABCParameters.distance(u, realValues)) +  " and epsilon is " + str(epsilon))
-                return True
-            else:
-                return False
-
-        return breakFunc 

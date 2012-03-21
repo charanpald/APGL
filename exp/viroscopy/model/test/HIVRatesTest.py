@@ -3,12 +3,10 @@ import numpy
 import unittest
 import scipy.stats 
 import logging
-try:
-    from apgl.viroscopy.model.HIVRates import HIVRates
-    from apgl.viroscopy.model.HIVGraph import HIVGraph
-except ImportError:
-    pass
-from apgl.viroscopy.model.HIVVertices import HIVVertices
+
+from exp.viroscopy.model.HIVRates import HIVRates
+from exp.viroscopy.model.HIVGraph import HIVGraph
+from exp.viroscopy.model.HIVVertices import HIVVertices
 
 @apgl.skipIf(not apgl.checkImport('pysparse'), 'No module pysparse')
 class  HIVRateFuncsTestCase(unittest.TestCase):

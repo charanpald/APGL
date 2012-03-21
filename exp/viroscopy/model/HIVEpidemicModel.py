@@ -5,22 +5,24 @@ from apgl.util import *
 from exp.viroscopy.model.HIVGraph import HIVGraph
 from exp.viroscopy.model.HIVVertices import HIVVertices
 
-"""
-This class models an epidemic occuring via sexual contact. 
-"""
-
 class HIVEpidemicModel():
-    def __init__(self, graph, rates):
+    def __init__(self, graph, rates, T=100.0):
         """
-        Initialise with a graph of HIVIndividuals.
+        This class models an epidemic occuring via sexual contact. We create an 
+        epidemic model with a HIVGraph and a class which models the rate of 
+        certain events in the model. 
+        
+        :param graph: Initial HIVGraph to use for modelling 
+        
+        :param rates: A class modelling the event rates in the model 
         """
         Parameter.checkClass(graph, HIVGraph)
 
         self.graph = graph
         self.rates = rates
-        self.T = 100
-        self.recordStep = 10
-        self.printStep = 1
+        self.setT(T)
+        self.setRecordStep(10)
+        self.setPrintStep(10000)
         self.breakFunc = None
         self.standardiseResults = True
 
@@ -32,18 +34,51 @@ class HIVEpidemicModel():
         self.breakFunc = breakFunc
 
     def setT(self, T):
+        """
+        Set the maximum time of the simulation. 
+        """
         Parameter.checkFloat(T, 0.0, float('inf'))
         self.T = T
 
     def setRecordStep(self, recordStep):
+        """
+        Set thetime interval in order to record statistics over the model. 
+        """
         Parameter.checkInt(recordStep, 0, float('inf'))
         self.recordStep = recordStep 
 
     def setPrintStep(self, printStep):
+        """
+        Set the time interval to print the progress of the model. 
+        """
         Parameter.checkInt(printStep, 0, float('inf'))
         self.printStep = printStep
+        
+        
+    def setParams(self, theta): 
+        """
+        This is used to set the parameters of the intial state of this model 
+        in conjunction with ABC model selection. 
+        
+        :param theta: An array containing parameter values 
+        :type theta: `numpy.ndarray`
+        """
+        if theta.shape[0] != 10: 
+            raise ValueError("Theta should be of length 10")
+        
+        self.graph.setRandomInfected(int(theta[0]))
+        self.rates.setAlpha(theta[1])
+        self.rates.setNewContactChance(theta[2])
+        self.rates.setRandDetectRate(theta[3])
+        self.rates.setCtRatePerPerson(theta[4])
+        self.rates.setHeteroContactRate(theta[5])
+        self.rates.setBiContactRate(theta[6])
+        self.rates.setWomanManInfectProb(theta[7])
+        self.rates.setManWomanInfectProb(theta[8])
+        self.rates.setManBiInfectProb(theta[9])
+        
 
-    def simulate(self):
+    def simulate(self, verboseOut=False):
         """
         Simulate epidemic propogation until there are no more infectives or
         time T is reached. 
@@ -173,13 +208,17 @@ class HIVEpidemicModel():
 
         if self.standardiseResults:
             times, infectedIndices, removedIndices = self.findStandardResults(times, infectedIndices, removedIndices)
-            logging.debug("times=" + str(times))
-
-        return times, infectedIndices, removedIndices, self.graph
-
+            #logging.debug("times=" + str(times))
+            
+        if verboseOut: 
+            return times, infectedIndices, removedIndices, self.graph
+        else: 
+            return self.graph
 
     def findStandardResults(self, times, infectedIndices, removedIndices):
-        #Make sure that the results for the simulations are recorded for all times
+        """
+        Make sure that the results for the simulations are recorded for all times
+        """
         idealTimes = list(range(0, int(self.T), self.recordStep))
 
         newInfectedIndices = []

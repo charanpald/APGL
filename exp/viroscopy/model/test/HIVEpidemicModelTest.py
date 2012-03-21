@@ -5,13 +5,11 @@ import logging
 import sys
 import numpy
 import scipy.stats 
-try:
-    from apgl.viroscopy.model.HIVEpidemicModel import HIVEpidemicModel
-    from apgl.viroscopy.model.HIVRates import HIVRates
-    from apgl.viroscopy.model.HIVGraph import HIVGraph
-except ImportError:
-    pass
-from apgl.viroscopy.model.HIVVertices import HIVVertices
+
+from exp.viroscopy.model.HIVEpidemicModel import HIVEpidemicModel
+from exp.viroscopy.model.HIVRates import HIVRates
+from exp.viroscopy.model.HIVGraph import HIVGraph
+from exp.viroscopy.model.HIVVertices import HIVVertices
 from apgl.graph import * 
 
 @apgl.skipIf(not apgl.checkImport('pysparse'), 'No module pysparse')
