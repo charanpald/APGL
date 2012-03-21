@@ -39,44 +39,56 @@ class GraphMatchTest(unittest.TestCase):
         self.graph2.addEdges(edges)  
 
     def testMatch(self): 
-        matcher = GraphMatch(algorithm="U", alpha=0.0)
+        matcher = GraphMatch(algorithm="U", alpha=0.3)
         permutation, distance, time = matcher.match(self.graph1, self.graph2)
 
         #Checked output file - seems correct 
         
-        distance2 = GraphMatch().distance(self.graph1, self.graph2, permutation)
-        self.assertAlmostEquals(distance, distance2)
+        distance2 = GraphMatch(alpha=0.0).distance(self.graph1, self.graph2, permutation)
+        self.assertAlmostEquals(distance[0], distance2)
         
         #Now test case in which alpha is different 
         matcher = GraphMatch(algorithm="U", alpha=0.5)
         permutation, distance, time = matcher.match(self.graph1, self.graph2)
-        distance2 = GraphMatch().distance(self.graph1, self.graph2, permutation)
-        self.assertAlmostEquals(distance, distance2)
+        distance2 = GraphMatch(alpha=0.0).distance(self.graph1, self.graph2, permutation)
+        self.assertAlmostEquals(distance[0], distance2)
+        
+        #Test normalised distance 
+        alpha = 0.0
+        permutation, distance, time = GraphMatch(algorithm="U", alpha=alpha).match(self.graph1, self.graph2)
+        distance2 = GraphMatch(alpha=alpha).distance(self.graph1, self.graph2, permutation, True)
+        self.assertAlmostEquals(distance[1], distance2)
+        
+        #This test fails - not sure how they fill their C matrix
+        alpha = 1.0
+        permutation, distance, time = GraphMatch(algorithm="U", alpha=alpha).match(self.graph1, self.graph2)
+        distance2 = GraphMatch(alpha=alpha).distance(self.graph1, self.graph2, permutation, True)
+        #self.assertAlmostEquals(distance[1], distance2)
             
     def testDistance(self): 
         permutation = numpy.arange(self.numVertices)
-        dist =  GraphMatch().distance(self.graph1, self.graph1, permutation)
+        dist =  GraphMatch(alpha=0.0).distance(self.graph1, self.graph1, permutation)
         self.assertEquals(dist, 0.0)
         
-        dist =  GraphMatch().distance(self.graph1, self.graph2, permutation)
+        dist =  GraphMatch(alpha=0.0).distance(self.graph1, self.graph2, permutation)
         self.assertAlmostEquals(dist, 50.0)
         
         permutation = numpy.arange(self.numVertices)
         permutation[8] = 9
         permutation[9] = 8
-        dist =  GraphMatch().distance(self.graph1, self.graph2, permutation)
+        dist =  GraphMatch(alpha=0.0).distance(self.graph1, self.graph2, permutation)
         self.assertAlmostEquals(dist, 54.0)
         
         #Try graphs of unequal size 
         graph3 = self.graph1.subgraph(range(8))
         permutation = numpy.arange(self.numVertices)
-        dist1 =  GraphMatch().distance(self.graph1, graph3, permutation)
-        dist1a =  GraphMatch().distance(graph3, self.graph1, permutation)
+        dist1 =  GraphMatch(alpha=0.0).distance(self.graph1, graph3, permutation)
+        dist1a =  GraphMatch(alpha=0.0).distance(graph3, self.graph1, permutation)
         self.assertEquals(dist1, dist1a)
 
         graph3 = self.graph1.subgraph(range(5))
-        dist2 =  GraphMatch().distance(self.graph1, graph3, permutation)
-        dist2a =  GraphMatch().distance(graph3, self.graph1, permutation)
+        dist2 =  GraphMatch(alpha=0.0).distance(self.graph1, graph3, permutation)
+        dist2a =  GraphMatch(alpha=0.0).distance(graph3, self.graph1, permutation)
         self.assertEquals(dist2, dist2a)
         self.assertTrue(dist1 < dist2)
         

@@ -7,20 +7,26 @@ import os
 import sys 
 import tempfile
 from apgl.util.PathDefaults import PathDefaults
+from apgl.util.Parameter import Parameter
 from apgl.data.Standardiser import Standardiser 
 from apgl.kernel.LinearKernel import LinearKernel
 
 class GraphMatch(object): 
     def __init__(self, algorithm="PATH", alpha=0.5):
+        Parameter.checkFloat(alpha, 0.0, 1.0)
+        Parameter.checkClass(algorithm, str)
+        
         self.algorithm = algorithm 
         self.alpha = alpha 
-        
         self.maxInt = 10**9 
         
     def match(self, graph1, graph2): 
         """
         Take two graphs are match them. The two graphs must be AbstractMatrixGraphs 
         with VertexLists representing the vertices.  
+        
+        :return permutation: A vector of indices representing the matching of elements of graph1 to graph2 
+        :return distance: The graph distance 
         """
         numTempFiles = 5
         tempFileNameList = []         
@@ -62,10 +68,10 @@ class GraphMatch(object):
         configStr +="algo_fw_feps=0.01 d\n"
         configStr +="dummy_nodes=0 i\n"
         configStr +="dummy_nodes_fill=0 d\n"
-        configStr +="dummy_nodes_c_coef=0.01 d\n"
+        configStr +="dummy_nodes_c_coef=0 d\n"
         configStr +="qcvqcc_lambda_M=10 d\n"
         configStr +="qcvqcc_lambda_min=1e-5 d\n"
-        configStr +="blast_match=1 i\n"
+        configStr +="blast_match=0 i\n"
         configStr +="blast_match_proj=0 i\n"
         configStr +="exp_out_file=" + outputFileName + " s\n"
         configStr +="exp_out_format=Compact Permutation s\n"
@@ -91,9 +97,9 @@ class GraphMatch(object):
         line = outputFile.readline() 
         line = outputFile.readline() 
         
-        distance = float(outputFile.readline().split()[2]) 
-        line = outputFile.readline() 
-        line = outputFile.readline() 
+        graphDistance = float(outputFile.readline().split()[2]) 
+        fDistance = float(outputFile.readline().split()[2])
+        fDistanceExact = float(outputFile.readline().split()[2])
         time = float(outputFile.readline().split()[1]) 
         
         line = outputFile.readline() 
@@ -112,8 +118,10 @@ class GraphMatch(object):
         os.remove(similaritiesFileName)
         os.remove(configFileName)
         os.remove(outputFileName)
+
+        distanceVector = [graphDistance, fDistance, fDistanceExact]         
          
-        return permutation, distance, time 
+        return permutation, distanceVector, time 
         
     def vertexSimilarities(self, graph1, graph2): 
         V1 = graph1.getVertexList().getVertices()
@@ -126,7 +134,7 @@ class GraphMatch(object):
         
         return C 
         
-    def distance(self, graph1, graph2, permutation): 
+    def distance(self, graph1, graph2, permutation, normalised=False): 
         W1 = graph1.getWeightMatrix()
         W2 = graph2.getWeightMatrix()
         
@@ -141,9 +149,8 @@ class GraphMatch(object):
         
         n = W1.shape[0]
         P = numpy.zeros((n, n)) 
-        #P[(permutation, numpy.arange(n))] = 1
         P[(numpy.arange(n), permutation)] = 1
-        dist = numpy.linalg.norm(W1 - P.dot(W2).dot(P.T))**2
+        dist1 = numpy.linalg.norm(W1 - P.dot(W2).dot(P.T))**2
         
         #Now compute the vertex similarities trace         
         C = self.vertexSimilarities(graph1, graph2)
@@ -155,6 +162,13 @@ class GraphMatch(object):
             C = tempC 
         
         dist2 = numpy.trace(C.T.dot(P))
+        
+        if normalised: 
+            dist1 = dist1/((W1**2).sum() + (W2**2).sum())
+            dist2 = dist2/((C**2).sum())
+        
+        dist = (1-self.alpha)*dist1 - self.alpha*dist2
+        
         
         return dist 
         
