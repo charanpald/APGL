@@ -10,8 +10,7 @@ from apgl.predictors.ABCSMC import ABCSMC
 class ABCSMCTest(unittest.TestCase):
     def setUp(self):
         FORMAT = "%(levelname)s:root:%(process)d:%(message)s"
-        logging.basicConfig(stream=sys.stdout, level=logging.INFO, format=FORMAT)
-
+        logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format=FORMAT)
 
     def testEstimate(self):
         #Lets set up a simple model based on normal dist
@@ -27,13 +26,24 @@ class ABCSMCTest(unittest.TestCase):
                 self.sigma = sigma
 
             def simulate(self):
-                #logging.debug("mu="+str(self.mu) + " sigma="+str(self.sigma))
                 return numpy.random.randn(1)*self.sigma + self.mu
+                
+            def setParams(self, paramsArray): 
+                self.mu = paramsArray[0]
+                self.sigma = paramsArray[1]
+
+
+        class ABCMetrics(object): 
+            def distance(self, x, y):
+                return numpy.abs(x-y)
+
+            def summary(self, D):
+                return D
 
 
         class ABCParameters(object):
-            def __init__(self, model):
-                self.model = model
+            def __init__(self):
+                pass 
 
             def priorDensity(self, params):
                 """
@@ -51,11 +61,6 @@ class ABCSMCTest(unittest.TestCase):
                 params = [mu, sigma]
                 return params
 
-            def distance(self, x, y):
-                return numpy.abs(x-y)
-
-            def summary(self, D):
-                return D
 
             def purtubationKernel(self, theta):
                 """
@@ -73,20 +78,19 @@ class ABCSMCTest(unittest.TestCase):
                 p *= scipy.stats.norm.pdf(newTheta[1], loc=theta[1], scale=variance)
                 return p
 
-            def getParamFuncs(self):
-                return [self.model.setMu, self.model.setSigma]
 
         def createNormalModel(t):
             model = NormalModel()
-            abcParams = ABCParameters(model)
-            return model, abcParams
-
+            
+            return model
+        
+        abcParams = ABCParameters()
         createModelFunc = createNormalModel
         epsilonArray = numpy.array([0.2, 0.1, 0.05])
         posteriorSampleSize = 20
 
         #Lets get an empirical estimate of Sprime
-        theta = [0.5, 0.5]
+        theta = [0.7, 0.5]
         model = NormalModel()
         model.setMu(theta[0])
         model.setSigma(theta[1])
@@ -107,9 +111,11 @@ class ABCSMCTest(unittest.TestCase):
 
         numProcesses = 2
         abcList = []
+        
+        abcMetrics = ABCMetrics()
 
         for i in range(numProcesses):
-            abcList.append(ABCSMC(args, epsilonArray, Sprime, createModelFunc))
+            abcList.append(ABCSMC(args, epsilonArray, Sprime, createModelFunc, abcParams, abcMetrics))
             abcList[i].setPosteriorSampleSize(posteriorSampleSize)
             abcList[i].start()
 
