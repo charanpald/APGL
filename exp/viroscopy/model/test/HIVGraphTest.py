@@ -2,11 +2,10 @@
 import apgl
 import numpy 
 import unittest
-try:
-    from apgl.viroscopy.model.HIVGraph import HIVGraph
-except ImportError:
-    pass
-from apgl.viroscopy.model.HIVVertices import HIVVertices
+import numpy.testing as nptst 
+
+from exp.viroscopy.model.HIVGraph import HIVGraph
+from exp.viroscopy.model.HIVVertices import HIVVertices
 
 @apgl.skipIf(not apgl.checkImport('pysparse'), 'No module pysparse')
 class  HIVGraphTest(unittest.TestCase):
@@ -86,6 +85,25 @@ class  HIVGraphTest(unittest.TestCase):
         graph.getVertexList().setInfected(3, 0.0)
         graph.getVertexList().setDetected(3, 0.0, HIVVertices.randomDetect)
         self.assertTrue((graph.detectedNeighbours(0) == numpy.array([1, 2, 3])).all())
+        
+    def testInfectedIndsAt(self): 
+        numVertices = 10
+        graph = HIVGraph(numVertices)
+
+        self.assertTrue(graph.getRemovedSet() == set([]))
+
+        graph.getVertexList().setInfected(1, 0.0)
+        graph.getVertexList().setInfected(2, 2.0)
+        graph.getVertexList().setInfected(7, 3.0)
+        
+        
+        inds = graph.infectedIndsAt(10)
+        nptst.assert_array_equal(inds, numpy.array([1, 2, 7]))
+        
+        graph.getVertexList().setInfected(5, 12.0)
+        nptst.assert_array_equal(inds, numpy.array([1, 2, 7]))
+                
+        
 if __name__ == '__main__':
     unittest.main()
 

@@ -1,7 +1,8 @@
 """
 A script to estimate the HIV epidemic model parameters using ABC.
 """
-from apgl.graph import *
+from apgl.graph.SparseGraph import SparseGraph
+from apgl.graph.GraphStatistics import GraphStatistics
 from apgl.util import *
 from exp.viroscopy.model.HIVGraph import HIVGraph
 from exp.viroscopy.model.HIVABCParameters import HIVABCParameters
@@ -20,55 +21,32 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format=FORMAT)
 numpy.set_printoptions(suppress=True, precision=4, linewidth=100)
 numpy.seterr(invalid='raise')
 
-#We will load up the statistics from the real graph
+#First try the experiment on some toy data 
+dataDir = PathDefaults.getOutputDir() + "viroscopy/toy" 
 resultsDir = PathDefaults.getOutputDir() + "viroscopy/"
 resultsFileName = resultsDir + "ContactGrowthScalarStats.pkl"
-statsArray = Util.loadPickle(resultsFileName)
 
-resultsFileName = resultsDir + "ContactGrowthVertexStats.pkl"
-vertexStatsArray = Util.loadPickle(resultsFileName)
+#We load a toy graph 
+dataFile = dataDir + "ToyEpidemicGraph0.zip"
 
-recordStep = 90
-timesFileName = resultsDir + "epidemicTimes.pkl"
-dayList = Util.loadPickle(timesFileName)
-numTimes = len(dayList)
-T = float(dayList[-1]+1)
 
-graphStats = GraphStatistics()
-numMeasures = 5
-realValues = numpy.zeros((numTimes, numMeasures))
-realValues[:, 0] = statsArray[list(range(len(dayList))), graphStats.numVerticesIndex]
-realValues[:, 1] = statsArray[list(range(len(dayList))), graphStats.numEdgesIndex]
-realValues[:, 2] = statsArray[list(range(len(dayList))), graphStats.numComponentsIndex]
-realValues[:, 3] = statsArray[list(range(len(dayList))), graphStats.maxComponentSizeIndex]
-realValues[:, 4] = vertexStatsArray[range(len(dayList)), 0]
-
-logging.info("dayList=" + str(dayList))
-logging.info("realValues=" + str(realValues))
-diffValues = numpy.diff(realValues, axis=0)
-logging.info("diffValues=" + str(diffValues))
-maxDist = numpy.linalg.norm(diffValues)
-logging.info("norm(diffValues)=" + str(maxDist))
-epsilonArray = numpy.linspace(maxDist*0.8, maxDist*0.3, 3)
-logging.info("epsilonArray=" + str(epsilonArray))
-
+#Change code so that we pass into ABC a function to create a new model and 
+#one to generate the parameters. 
 def createModel(t):
     """
     The parameter t is the particle index. 
     """
-    M = 1000
-    printStep = 50
     undirected = True
-
+    T, recordStep, printStep, M = HIVModelUtils.defaultSimulationParams()
     graph = HIVGraph(M, undirected)
-    logging.info("Created graph: " + str(graph))
+    logging.debug("Created graph: " + str(graph))
     
     alpha = 2
     zeroVal = 0.9
     p = Util.powerLawProbs(alpha, zeroVal)
     hiddenDegSeq = Util.randomChoice(p, graph.getNumVertices())
 
-    meanTheta = numpy.array([69, 0.5672, 2.724, 0.0029, 0.05, 0.0105, 0.1428, 0.079, 0.0784, 0.165])
+    meanTheta = HIVModelUtils.defaultTheta()
     rates = HIVRates(graph, hiddenDegSeq)
     abcParams = HIVABCParameters(graph, rates, meanTheta)
     
@@ -91,10 +69,6 @@ distQueue = multiprocessing.Queue()
 summaryQueue = multiprocessing.Queue()
 args = (thetaQueue, distQueue, summaryQueue)
 abcList = []
-
-#thetaFileName = resultsDir + "thetaReal.pkl"
-#theta = Util.loadPickle(thetaFileName)
-#logging.info("Real theta values: " + str(theta))
 
 for i in range(numProcesses):
     abcList.append(ABCSMC(args, epsilonArray, realValues, createModel))
@@ -120,6 +94,3 @@ logging.info("stdTheta=" + str(stdTheta))
 
 thetaFileName =  resultsDir + "thetaDistSimulated.pkl"
 Util.savePickle(thetasArray, thetaFileName)
-
-    
-#TODO: Check the new contacts being made is realisitic range

@@ -103,3 +103,18 @@ class HIVGraph(PySparseGraph):
 
         logging.debug("Loaded graph from file " + filename)
         return graph
+
+    def infectedIndsAt(self, t): 
+        """
+        Compute the indices of this graph consisting only of all vertices 
+        infected before time t
+        
+        :param t: The time point to consider. 
+        :type t: `float`
+        """
+        
+        vertexArray = self.getVertexList().getVertices()
+        inds = numpy.arange(self.getNumVertices())[numpy.logical_and(vertexArray[:, HIVVertices.infectionTimeIndex] <= t, vertexArray[:, HIVVertices.infectionTimeIndex] >= 0)]
+        
+        return inds
+        
