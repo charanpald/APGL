@@ -43,13 +43,7 @@ class GraphMatch(object):
         numpy.savetxt(graph2FileName, W2, fmt='%.5f')
         
         #Compute matrix similarities 
-        V1 = graph1.getVertexList().getVertices()
-        V2 = graph2.getVertexList().getVertices()
-        
-        V1 = Standardiser().normaliseArray(V1.T).T
-        V2 = Standardiser().normaliseArray(V2.T).T
-        
-        C = LinearKernel().evaluate(V1, V2)
+        C = self.vertexSimilarities(graph1, graph2)
         numpy.savetxt(similaritiesFileName, C, fmt='%.5f')
         
         #Write config file 
@@ -80,10 +74,14 @@ class GraphMatch(object):
         
         configFile.write(configStr)
         configFile.close()
-    
-        argList = ["/home/charanpal/local/bin/graphm", configFileName] 
-        #argList = ["/home/dhanjalc/local/bin/graphm", configFileName] 
-        subprocess.call(argList)    
+        
+        #This is a bit hacky 
+        try: 
+            argList = ["/home/charanpal/local/bin/graphm", configFileName] 
+            subprocess.call(argList)    
+        except OSError: 
+            argList = ["/home/dhanjalc/local/bin/graphm", configFileName] 
+            subprocess.call(argList)  
         
         #Next: parse input files 
         outputFile = open(outputFileName, 'r')
@@ -117,16 +115,47 @@ class GraphMatch(object):
          
         return permutation, distance, time 
         
-    @staticmethod 
-    def distance(graph1, graph2, permutation): 
+    def vertexSimilarities(self, graph1, graph2): 
+        V1 = graph1.getVertexList().getVertices()
+        V2 = graph2.getVertexList().getVertices()
+        
+        V1 = Standardiser().normaliseArray(V1.T).T
+        V2 = Standardiser().normaliseArray(V2.T).T
+        
+        C = LinearKernel().evaluate(V1, V2)
+        
+        return C 
+        
+    def distance(self, graph1, graph2, permutation): 
         W1 = graph1.getWeightMatrix()
         W2 = graph2.getWeightMatrix()
+        
+        if W1.shape[0] < W2.shape[0]: 
+            tempW1 = numpy.zeros(W2.shape)
+            tempW1[0:W1.shape[0], 0:W1.shape[0]] = W1
+            W1 = tempW1 
+        elif W2.shape[0] < W1.shape[0]:
+            tempW2 = numpy.zeros(W1.shape)
+            tempW2[0:W2.shape[0], 0:W2.shape[0]] = W2
+            W2 = tempW2 
         
         n = W1.shape[0]
         P = numpy.zeros((n, n)) 
         #P[(permutation, numpy.arange(n))] = 1
         P[(numpy.arange(n), permutation)] = 1
         dist = numpy.linalg.norm(W1 - P.dot(W2).dot(P.T))**2
+        
+        #Now compute the vertex similarities trace         
+        C = self.vertexSimilarities(graph1, graph2)
+        
+        if C.shape[0] != C.shape[1]: 
+            n = max(C.shape[0], C.shape[1])
+            tempC = numpy.ones((n, n))*C.min()
+            tempC[0:C.shape[0], 0:C.shape[1]] = C
+            C = tempC 
+        
+        dist2 = numpy.trace(C.T.dot(P))
+        
         return dist 
         
         
