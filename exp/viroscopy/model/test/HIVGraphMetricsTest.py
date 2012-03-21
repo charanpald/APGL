@@ -32,7 +32,9 @@ class  HIVGraphMetricsTest(unittest.TestCase):
         summary1 = numpy.array([[1,0], [1,0], [3, 0], [3,0]])
         summary2 = numpy.array([[1,0], [1,0], [3, 0], [4,0]])
         
-        self.assertEquals(HIVGraphMetrics.distance(summary1, summary2), numpy.linalg.norm(summary1 - summary2)) 
+        times = numpy.array([0, 1.0, 3.0, 4.0])        
+        
+        self.assertEquals(HIVGraphMetrics(times).distance(summary1, summary2), numpy.linalg.norm(summary1 - summary2)) 
         
 
 if __name__ == '__main__':

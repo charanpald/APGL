@@ -109,8 +109,9 @@ class HIVGraphMetrics2(object):
         totalDist = 0 
         
         for i in range(self.times.shape[0]): 
+            print((summary1[i].getNumVertices(), summary2[i].getNumVertices()))
             permutation, distance, time = self.matcher.match(summary1[i], summary2[i])
-            totalDist += GraphMatch.distance(summary1[i], summary2[i], permutation)
+            totalDist += self.matcher.distance(summary1[i], summary2[i], permutation)
         
         logging.debug("Distance between graphs " + str(totalDist))
         
