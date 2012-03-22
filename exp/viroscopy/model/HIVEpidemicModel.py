@@ -196,7 +196,7 @@ class HIVEpidemicModel():
                 times.append(t)
                 nextStep += self.recordStep
 
-                if self.breakFunc!=None and self.breakFunc(times, infectedIndices, removedIndices, self.graph):
+                if self.breakFunc!=None and self.breakFunc(self.graph, t):
                     logging.debug("Breaking as distance has become too large")
                     break 
 
