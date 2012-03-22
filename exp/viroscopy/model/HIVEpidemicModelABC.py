@@ -9,7 +9,7 @@ from exp.viroscopy.model.HIVABCParameters import HIVABCParameters
 from exp.viroscopy.model.HIVEpidemicModel import HIVEpidemicModel
 from exp.viroscopy.model.HIVRates import HIVRates
 from exp.viroscopy.model.HIVModelUtils import HIVModelUtils
-from exp.viroscopy.model.HIVGraphMetrics import HIVGraphMetrics, HIVGraphMetrics2
+from exp.viroscopy.model.HIVGraphMetrics import HIVGraphMetrics2
 from apgl.predictors.ABCSMC import ABCSMC
 
 import logging
@@ -25,6 +25,19 @@ numpy.seterr(invalid='raise')
 
 #First try the experiment on some toy data 
 resultsDir = PathDefaults.getOutputDir() + "viroscopy/toy/" 
+graphFile = resultsDir + "ToyEpidemicGraph0"
+targetGraph = HIVGraph.load(graphFile)
+
+numTimeSteps = 10 
+T, recordStep, printStep, M = HIVModelUtils.defaultSimulationParams()
+times = numpy.linspace(0, T, numTimeSteps)
+abcMetrics = HIVGraphMetrics2(times)
+
+realSummary = abcMetrics.summary(targetGraph)
+epsilonArray = numpy.array([0.5, 0.2])*numTimeSteps
+
+def breakFunc(graph, currentTime): 
+    return abcMetrics.shouldBreak(realSummary, graph, epsilonArray[0], currentTime)
 
 def createModel(t):
     """
@@ -43,7 +56,7 @@ def createModel(t):
     model = HIVEpidemicModel(graph, rates, T)
     model.setRecordStep(recordStep)
     model.setPrintStep(printStep)
-    model.setBreakFunction(None)
+    model.setBreakFunction(breakFunc) 
 
     return model
 
@@ -62,19 +75,8 @@ summaryQueue = multiprocessing.Queue()
 args = (thetaQueue, distQueue, summaryQueue)
 abcList = []
 
-#We load a toy graph 
-T, recordStep, printStep, M = HIVModelUtils.defaultSimulationParams()
-graphFile = resultsDir + "ToyEpidemicGraph0"
-targetGraph = HIVGraph.load(graphFile)
-
-times = numpy.linspace(0, T, 10)
-abcMetrics = HIVGraphMetrics2(times)
-summaryStat = abcMetrics.summary(targetGraph)
-
-epsilonArray = numpy.array([150, 100])
-
 for i in range(numProcesses):
-    abcList.append(ABCSMC(args, epsilonArray, summaryStat, createModel, abcParams, abcMetrics))
+    abcList.append(ABCSMC(args, epsilonArray, realSummary, createModel, abcParams, abcMetrics))
     abcList[i].setPosteriorSampleSize(posteriorSampleSize)
     abcList[i].start()
 
