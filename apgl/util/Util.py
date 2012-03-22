@@ -600,4 +600,13 @@ class Util(object):
             lmbdaN = (lmbda**n)*numpy.array(numpy.abs(lmbda) > tol, numpy.int)
             return V.dot(numpy.diag(lmbdaN)).dot(numpy.linalg.inv(V))
 
+    @staticmethod 
+    def extendArray(A, newShape): 
+        """
+        Take a 2D matrix A and extend the shape to newShape adding zeros to the 
+        right and bottom of it. 
+        """
         
+        tempA = numpy.zeros(newShape)
+        tempA[0:A.shape[0], 0:A.shape[1]] = A 
+        return tempA 

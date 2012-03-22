@@ -8,6 +8,7 @@ import sys
 import tempfile
 from apgl.util.PathDefaults import PathDefaults
 from apgl.util.Parameter import Parameter
+from apgl.util.Util import Util
 from apgl.data.Standardiser import Standardiser 
 from apgl.kernel.LinearKernel import LinearKernel
 
@@ -24,6 +25,10 @@ class GraphMatch(object):
         """
         Take two graphs are match them. The two graphs must be AbstractMatrixGraphs 
         with VertexLists representing the vertices.  
+        
+        :param graph1: A graph object 
+        
+        :param graph2: The second graph object to match 
         
         :return permutation: A vector of indices representing the matching of elements of graph1 to graph2 
         :return distance: The graph distance 
@@ -127,25 +132,40 @@ class GraphMatch(object):
         V1 = graph1.getVertexList().getVertices()
         V2 = graph2.getVertexList().getVertices()
         
-        V1 = Standardiser().normaliseArray(V1.T).T
-        V2 = Standardiser().normaliseArray(V2.T).T
+        #V1 = Standardiser().normaliseArray(V1.T).T
+        #V2 = Standardiser().normaliseArray(V2.T).T
         
         C = LinearKernel().evaluate(V1, V2)
         
-        return C 
+        return C
         
-    def distance(self, graph1, graph2, permutation, normalised=False): 
+    def distance(self, graph1, graph2, permutation, normalised=False):
+        """
+        Compute the graph distance metric between two graphs give a permutation 
+        vector. This is given by F(P) = (1-alpha)/(||W1||^2_F + ||W2||^2_F)(||W1 - P W2 P.T||^2_F)
+        - alpha 1/||C||_F tr C.T P in the normalised case. If we want an unnormalised 
+        solution it is computed as (1-alpha)/(||W1 - P W2 P.T||^2_F) - alpha tr C.T P 
+        and finally there is a standardised case in which the distance is between 
+        0 and 1, where ||C||_1 is used to normalise the vertex similarities and 
+        we assume 0 <= C_ij <= 1. 
+        
+        :param graph1: A graph object 
+        
+        :param graph2: The second graph object to match 
+        
+        :param permutation: An array of permutation indices matching the first to second graph 
+        :type permutation: `numpy.ndarray`
+        
+        :param normalised: Specify whether to normalise the objective function 
+        :type normalised: `bool`
+        """
         W1 = graph1.getWeightMatrix()
         W2 = graph2.getWeightMatrix()
         
         if W1.shape[0] < W2.shape[0]: 
-            tempW1 = numpy.zeros(W2.shape)
-            tempW1[0:W1.shape[0], 0:W1.shape[0]] = W1
-            W1 = tempW1 
+            W1 = Util.extendArray(W1, W2.shape)
         elif W2.shape[0] < W1.shape[0]:
-            tempW2 = numpy.zeros(W1.shape)
-            tempW2[0:W2.shape[0], 0:W2.shape[0]] = W2
-            W2 = tempW2 
+            W2 = Util.extendArray(W2, W1.shape)
         
         n = W1.shape[0]
         P = numpy.zeros((n, n)) 
@@ -157,20 +177,70 @@ class GraphMatch(object):
         
         if C.shape[0] != C.shape[1]: 
             n = max(C.shape[0], C.shape[1])
-            tempC = numpy.ones((n, n))*C.min()
-            tempC[0:C.shape[0], 0:C.shape[1]] = C
-            C = tempC 
+            C = Util.extendArray(C, (n,n))
         
         dist2 = numpy.trace(C.T.dot(P))
         
         if normalised: 
-            dist1 = dist1/((W1**2).sum() + (W2**2).sum())
-            dist2 = dist2/((C**2).sum())
+            norm1 = ((W1**2).sum() + (W2**2).sum())
+            norm2 = numpy.sqrt(((C**2).sum()))
+            if norm1!= 0: 
+                dist1 = dist1/norm1
+            if norm2!= 0:
+                dist2 = dist2/norm2 
         
         dist = (1-self.alpha)*dist1 - self.alpha*dist2
         
-        
         return dist 
         
+    def distance2(self, graph1, graph2, permutation):
+        """
+        Compute a graph distance metric between two graphs give a permutation 
+        vector. This is given by F(P) = (1-alpha)/(||W1||^2_F + ||W2||^2_F)
+        (||W1 - P W2 P.T||^2_F) - alpha 1/(||V1||_F + ||V2||_F^2) ||V1 - P.T V2||^2_F 
+        and is bounded between 0 and 1. 
         
+        :param graph1: A graph object 
+        
+        :param graph2: The second graph object to match 
+        
+        :param permutation: An array of permutation indices matching the first to second graph 
+        :type permutation: `numpy.ndarray`
+        
+        """
+        W1 = graph1.getWeightMatrix()
+        W2 = graph2.getWeightMatrix()
+        
+        if W1.shape[0] < W2.shape[0]: 
+            W1 = Util.extendArray(W1, W2.shape)
+        elif W2.shape[0] < W1.shape[0]:
+            W2 = Util.extendArray(W2, W1.shape)
+        
+        n = W1.shape[0]
+        P = numpy.zeros((n, n)) 
+        P[(numpy.arange(n), permutation)] = 1
+        dist1 = numpy.linalg.norm(W1 - P.dot(W2).dot(P.T))**2
+        
+        #Now compute the vertex similarities distance         
+        V1 = graph1.getVertexList().getVertices()
+        V2 = graph2.getVertexList().getVertices()
+        
+        if V1.shape[0] < V2.shape[0]: 
+            V1 = Util.extendArray(V1, V2.shape)
+        elif V2.shape[0] < V1.shape[0]: 
+            V2 = Util.extendArray(V2, V1.shape)
+        
+        dist2 = numpy.sum((V1 - P.T.dot(V2))**2)
+
+        norm1 = ((W1**2).sum() + (W2**2).sum())
+        norm2 = ((V1**2).sum() + (V2**2).sum())
+        
+        if norm1!= 0: 
+            dist1 = dist1/norm1
+        if norm2!= 0:
+            dist2 = dist2/norm2         
+        
+        dist = (1-self.alpha)*dist1 + self.alpha*dist2
+        
+        return dist 
         
