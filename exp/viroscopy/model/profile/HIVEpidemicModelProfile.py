@@ -45,6 +45,5 @@ class HIVEpidemicModelProfile():
 profiler = HIVEpidemicModelProfile()
 profiler.profileSimulate()
 
-#97.8
-#81.3
-#48.45
+#29.628
+#17.284

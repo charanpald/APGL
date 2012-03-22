@@ -172,6 +172,7 @@ class HIVRates():
 
         return numpy.sum(detectionRates)
 
+    #@profile 
     def contactRates(self, infectedList, contactList, t):
         """
         Work out contact rates between all infected and all other individuals. The
@@ -252,8 +253,10 @@ class HIVRates():
         contactRates.put(0, range(len(infectedList)), infectedList)
 
         #Check there is at most 1 element per row
-        for i in range(contactRates.shape[0]):
-            assert contactRates[i, :].nnz <= 1
+        #for i in range(contactRates.shape[0]):
+        #    assert contactRates[i, :].nnz <= 1
+        
+        #contactRates.T.to_csr()
 
         return contactRates[:, contactList]
 
