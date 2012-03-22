@@ -10,8 +10,8 @@ from exp.viroscopy.model.HIVGraphMetrics import HIVGraphMetrics, HIVGraphMetrics
 from exp.sandbox.GraphMatch import GraphMatch
 
 class  HIVGraphMetricsTest(unittest.TestCase):
-    def setup(self):
-        pass
+    def setUp(self):
+        numpy.random.seed(21)
 
     def testSummary(self): 
         numVertices = 10
@@ -91,6 +91,40 @@ class  HIVGraphMetricsTest(unittest.TestCase):
         summary1 = metrics.summary(graph)
     
         self.assertEquals(HIVGraphMetrics2(times, GraphMatch(alpha=0.0)).distance(summary1, summary1), 0) 
+
+    def testShouldBreak2(self): 
+        numVertices = 10
+        graph1 = HIVGraph(numVertices)
+        graph1.getVertexList().setInfected(1, 0.0)
+        graph1.getVertexList().setInfected(2, 2.0)
+        graph1.getVertexList().setInfected(7, 3.0)   
+        
+        graph2 = HIVGraph(numVertices)
+        graph2.getVertexList().setInfected(2, 0.0)
+        graph2.getVertexList().setInfected(3, 2.0)
+        graph2.getVertexList().setInfected(8, 3.0)    
+        
+        times = numpy.array([0, 1.0, 3.0, 4.0])
+        metrics = HIVGraphMetrics2(times, GraphMatch(alpha=0.7))
+        summary1 = metrics.summary(graph1)
+        summary2 = metrics.summary(graph2)
+        
+        metrics.distance(summary1, summary2)
+ 
+        times = numpy.array([0, 1.0, 3.0, 4.0])      
+        epsilon = 0.05
+        
+        currentTime = 1
+        self.assertFalse(metrics.shouldBreak(summary2, graph1, epsilon, currentTime))
+
+        currentTime = 2        
+        self.assertFalse(metrics.shouldBreak(summary2, graph1, epsilon, currentTime))
+        
+        currentTime = 3        
+        self.assertFalse(metrics.shouldBreak(summary2, graph1, epsilon, currentTime))
+        
+        currentTime = 4        
+        self.assertTrue(metrics.shouldBreak(summary2, graph1, epsilon, currentTime))
 
 if __name__ == '__main__':
     unittest.main()
