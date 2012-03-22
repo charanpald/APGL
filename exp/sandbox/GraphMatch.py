@@ -86,13 +86,15 @@ class GraphMatch(object):
         configFile.write(configStr)
         configFile.close()
         
+        fnull = open(os.devnull, 'w')
         #This is a bit hacky 
         try: 
             argList = ["/home/charanpal/local/bin/graphm", configFileName] 
-            subprocess.call(argList)    
+            subprocess.call(argList, stdout = fnull, stderr = fnull)    
         except OSError: 
             argList = ["/home/dhanjalc/local/bin/graphm", configFileName] 
-            subprocess.call(argList)  
+            subprocess.call(argList, stdout = fnull, stderr = fnull)
+        fnull.close()
         
         #Next: parse input files 
         outputFile = open(outputFileName, 'r')
