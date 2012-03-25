@@ -34,7 +34,7 @@ times = numpy.linspace(0, T, numTimeSteps)
 abcMetrics = HIVGraphMetrics2(times)
 
 realSummary = abcMetrics.summary(targetGraph)
-epsilonArray = numpy.array([0.5, 0.2])*numTimeSteps
+epsilonArray = numpy.array([0.5, 0.2, 0.1])*numTimeSteps
 
 def breakFunc(graph, currentTime): 
     return abcMetrics.shouldBreak(realSummary, graph, epsilonArray[0], currentTime)
@@ -60,10 +60,15 @@ def createModel(t):
 
     return model
 
-numProcesses = multiprocessing.cpu_count()
-#numProcesses = 1
-posteriorSampleSize = 10
+if len(sys.argv) > 1:
+    numProcesses = int(sys.argv[1])
+else: 
+    numProcesses = multiprocessing.cpu_count()
+
+posteriorSampleSize = 100
 thetaLen = 10
+
+logging.debug("Posterior sample size " + str(posteriorSampleSize))
 
 meanTheta = HIVModelUtils.defaultTheta()
 abcParams = HIVABCParameters(meanTheta)
@@ -93,9 +98,9 @@ for i in range(thetaQueue.qsize()):
 
 meanTheta = numpy.mean(thetasArray, 0)
 stdTheta = numpy.std(thetasArray, 0)
-logging.info(thetasArray)
-logging.info("meanTheta=" + str(meanTheta))
-logging.info("stdTheta=" + str(stdTheta))
+logging.debug(thetasArray)
+logging.debug("meanTheta=" + str(meanTheta))
+logging.debug("stdTheta=" + str(stdTheta))
 logging.debug("realTheta=" + str(HIVModelUtils.defaultTheta()))
 
 thetaFileName =  resultsDir + "ThetaDistSimulated.pkl"
