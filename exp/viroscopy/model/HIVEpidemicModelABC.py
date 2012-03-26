@@ -65,7 +65,7 @@ if len(sys.argv) > 1:
 else: 
     numProcesses = multiprocessing.cpu_count()
 
-posteriorSampleSize = 100
+posteriorSampleSize = 10
 thetaLen = 10
 
 logging.debug("Posterior sample size " + str(posteriorSampleSize))
