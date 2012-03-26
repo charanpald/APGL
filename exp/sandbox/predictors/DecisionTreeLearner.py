@@ -3,60 +3,9 @@ from apgl.predictors.AbstractPredictor import AbstractPredictor
 from apgl.graph.DictTree import DictTree
 from exp.sandbox.predictors.TreeCriterion import findBestSplit
 from exp.sandbox.predictors.TreeCriterionPy import findBestSplit2
+from exp.sandbox.predictors.DecisionNode import DecisionNode
 
 
-class DecisionNode(): 
-    def __init__(self, trainInds, value): 
-        #All nodes 
-        self.value = value 
-        self.trainInds = trainInds
-        #Internal nodes 
-        self.featureInd = None 
-        self.threshold = None 
-        self.error = None 
-        #Used for sorting predictions 
-        self.testInds = None 
-        
-    def getTrainInds(self): 
-        return self.trainInds
-        
-    def getValue(self): 
-        return self.value 
-        
-    def setError(self, error): 
-        self.error = error 
-        
-    def setFeatureInd(self, featureInd): 
-        self.featureInd = featureInd 
-        
-    def getFeatureInd(self): 
-        return self.featureInd 
-        
-    def setThreshold(self, threshold): 
-        self.threshold = threshold 
-        
-    def getThreshold(self): 
-        return self.threshold
-        
-    def setValue(self, value): 
-        self.value = value 
-          
-    def setTestInds(self, testInds): 
-        self.testInds = testInds
-        
-    def getTestInds(self): 
-        return self.testInds
-    
-    def isLeaf(self): 
-        return self.error == None
-        
-    def __str__(self): 
-        outputStr = "Size: " + str(self.trainInds.shape[0]) + ", " 
-        outputStr += "featureInd: " + str(self.featureInd) + ", " 
-        outputStr += "threshold: " + str(self.threshold) + ", "
-        outputStr += "error: " + str(self.error) + ", "
-        outputStr += "value: " + str(self.value) + " "
-        return outputStr 
     
 class DecisionTreeLearner(AbstractPredictor): 
     def __init__(self, criterion="mse", maxDepth=10, minSplit=30, type="class"):
@@ -71,17 +20,6 @@ class DecisionTreeLearner(AbstractPredictor):
         
         self.maxDepths = numpy.arange(1, 10)
         self.minSplits = numpy.arange(10, 51, 10)
-        
-    def meanSqError(self, y1, y2): 
-        """
-        Given a split that results in the labels y1 \in \mathbb^n1, y2 \in \mathbb{R}^n2, 
-        compute the impurity using the mean squared error. This is just computed 
-        as ||y1 - 1/n1 y1^T 1 1^T||^2 + ||y2 - 1/n2 y2^T 1 1^T||^2. 
-        """
-        if y1.shape[0]==0 or y2.shape[0]==0: 
-            raise ValueError("Cannot work with one-sided split")
-        error = y1.shape[0]*y1.var() + y2.shape[0]*y2.var()  
-        return error 
          
     #@profile 
     def learnModel(self, X, y):
@@ -169,18 +107,36 @@ class DecisionTreeLearner(AbstractPredictor):
             if self.tree.vertexExists(leftChildId):
                 leftChild = self.tree.getVertex(leftChildId)
                 leftChildInds = X[testInds, node.getFeatureInd()] < node.getThreshold() 
-                leftChild.setTestInds(testInds[leftChildInds])
+                tempInds = testInds[leftChildInds]
+                leftChild.setTestInds(tempInds)
+                leftChild.setTestError(numpy.sum((y[tempInds] - leftChild.getValue())**2))
                 y = self.recursivePredict(X, y, leftChildId)
                 
             rightChildId = self.getRightChildId(nodeId)
             if self.tree.vertexExists(rightChildId): 
                 rightChild = self.tree.getVertex(rightChildId)
                 rightChildInds = X[testInds, node.getFeatureInd()] >= node.getThreshold()
-                rightChild.setTestInds(testInds[rightChildInds])
+                tempInds = testInds[rightChildInds]
+                rightChild.setTestInds(tempInds)
+                rightChild.setTestError(numpy.sum((y[tempInds] - rightChild.getValue())**2))
                 y = self.recursivePredict(X, y, rightChildId)
                 
         return y
         
+    def prune(self, validX): 
+        """
+        Prune the decision tree using reduced error pruning. 
+        """
+        self.predict(validX)
+        
+        #For each subtree,  lets compute alpha which is improvement in test 
+        #error upon pruning. 
+        nonLeaves = self.tree.nonLeaves()
+        
+        for nonLeaf in nonLeaves: 
+            #Compute test error of subtree 
+            subtreeLeaves = tree.leaves(nonLeaf)
+            #Sum errors of leaves 
         
         
         

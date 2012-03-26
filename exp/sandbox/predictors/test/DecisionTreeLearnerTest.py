@@ -18,30 +18,6 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         
     def testInit(self): 
         learner = DecisionTreeLearner() 
-        
-    def testMeanSqError(self): 
-        inds1 = numpy.arange(self.numFeatures/2)
-        inds2 = numpy.arange(self.numFeatures/2,self.numFeatures)
-        
-        y1 = self.y[inds1]
-        y2 = self.y[inds2]
-        
-        learner = DecisionTreeLearner() 
-        error = learner.meanSqError(y1, y2)
-        
-        leftError = y1.var()
-        rightError = y2.var() 
-        
-        error2 = y1.shape[0]*leftError + y2.shape[0]*rightError
-        
-        self.assertEquals(error, error2)
-        
-        #MSE should be zero with no variation 
-        y1.fill(1)
-        y2.fill(2)
-        
-        error = learner.meanSqError(y1, y2)
-        self.assertEquals(error, 0.0)
          
     def testLearnModel(self): 
         #First check the integrety of the trees 
@@ -102,6 +78,8 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         tree = learner.getTree()
         
         self.assertEquals(tree.getNumVertices(), 1)
+        
+        
     
     @staticmethod
     def printTree(tree):
@@ -132,7 +110,6 @@ class DecisionTreeLearnerTest(unittest.TestCase):
                 leftChildId = children[vertexId, 0]
                 nodeIdStack.append((leftChildId, depth+1))
         
-    
     def testPredict(self): 
         
         generator = ExamplesGenerator()         
@@ -173,6 +150,6 @@ class DecisionTreeLearnerTest(unittest.TestCase):
             #and not sure how it is chosen in sklearn (or if the code is correct)
             self.assertTrue(abs(numpy.linalg.norm(predY-y)- numpy.linalg.norm(predY2-y))/numExamples < 0.05)  
 
-        
+     
 if __name__ == "__main__":
     unittest.main()
