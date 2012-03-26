@@ -154,14 +154,42 @@ class DictTree(DictGraph):
 
         return newTree
 
-    def leaves(self):
+    def nonLeaves(self):
         """
-        Return a list of the vertex ids of all the leaves of this tree.
+        Return a list of the vertex ids of all the non-leaves of this tree.
 
-        :returns: The vertex ids of the leaves. 
+        :returns: The vertex ids of the non-leaves. 
         """
         root = self.getRootId()
         stack = [(root, 0)]
+        leafList = [] 
+
+        while(len(stack) != 0):
+            (vertexId, depth) = stack.pop()
+            neighbours = self.neighbours(vertexId)
+
+            if len(neighbours) != 0:
+                leafList.append(vertexId)
+
+            for neighbour in neighbours:
+                stack.append((neighbour, depth+1))
+                
+        return leafList 
+
+    def leaves(self, startVertexId=None):
+        """
+        Return a list of the vertex ids of all the leaves of this tree. One can 
+        specify a starting vertex id (if None, assume the root) and in this case, 
+        we return the leaves of the corresponding subtree. 
+
+        :param startVertexId: The vertex id of the subtree to find leaves of. 
+
+        :returns: The vertex ids of the leaves. 
+        """
+        if startVertexId == None: 
+            stack = [(self.getRootId(), 0)]
+        else:
+            stack = [(startVertexId, 0)]
         leafList = [] 
 
         while(len(stack) != 0):

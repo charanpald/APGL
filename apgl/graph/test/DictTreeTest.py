@@ -123,6 +123,10 @@ class DictGraphTest(unittest.TestCase):
         dictTree.addEdge("b", 1)
         dictTree.addEdge("b", 2)
         self.assertTrue(set(dictTree.leaves()) == set([1, 2, "d", "f"]))
+        
+        #Test subtree leaves 
+        self.assertTrue(set(dictTree.leaves("c")) == set(["d", "f"]))
+        self.assertTrue(set(dictTree.leaves("b")) == set([1, 2]))
 
 
     def testAddChild(self): 
