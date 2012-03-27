@@ -4,6 +4,7 @@ import numpy.testing as nptst
 from exp.sandbox.predictors.DecisionTreeLearner import DecisionTreeLearner
 from apgl.data.ExamplesGenerator import ExamplesGenerator  
 from sklearn.tree import DecisionTreeRegressor 
+import sklearn.datasets as data 
 
 class DecisionTreeLearnerTest(unittest.TestCase):
     def setUp(self):
@@ -149,6 +150,28 @@ class DecisionTreeLearnerTest(unittest.TestCase):
             #Note that this is not always precise because if two thresholds give the same error we choose the largest 
             #and not sure how it is chosen in sklearn (or if the code is correct)
             self.assertTrue(abs(numpy.linalg.norm(predY-y)- numpy.linalg.norm(predY2-y))/numExamples < 0.05)  
+
+    def testPrune(self):
+        numExamples = 1000
+        X, y = data.make_regression(numExamples)  
+        
+        numTrain = numpy.round(numExamples * 0.66)     
+        
+        trainX = X[0:numTrain, :]
+        trainY = y[0:numTrain]
+        testX = X[numTrain:, :]
+        testY = y[numTrain:]
+        
+        learner = DecisionTreeLearner()
+        learner.learnModel(trainX, trainY)
+        
+        #print(learner.getTree())        
+        
+        learner.prune(trainX, trainY)
+        
+        
+        print(learner.getTree())
+        
 
      
 if __name__ == "__main__":

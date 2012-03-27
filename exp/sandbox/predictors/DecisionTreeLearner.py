@@ -109,7 +109,7 @@ class DecisionTreeLearner(AbstractPredictor):
                 leftChildInds = X[testInds, node.getFeatureInd()] < node.getThreshold() 
                 tempInds = testInds[leftChildInds]
                 leftChild.setTestInds(tempInds)
-                leftChild.setTestError(numpy.sum((y[tempInds] - leftChild.getValue())**2))
+                
                 y = self.recursivePredict(X, y, leftChildId)
                 
             rightChildId = self.getRightChildId(nodeId)
@@ -118,25 +118,73 @@ class DecisionTreeLearner(AbstractPredictor):
                 rightChildInds = X[testInds, node.getFeatureInd()] >= node.getThreshold()
                 tempInds = testInds[rightChildInds]
                 rightChild.setTestInds(tempInds)
-                rightChild.setTestError(numpy.sum((y[tempInds] - rightChild.getValue())**2))
                 y = self.recursivePredict(X, y, rightChildId)
                 
         return y
         
-    def prune(self, validX): 
+    def prune(self, validX, validY, alphaThreshold=0): 
         """
         Prune the decision tree using reduced error pruning. 
         """
-        self.predict(validX)
+        rootId = (0,)
+        self.tree.getVertex(rootId).setTestInds(numpy.arange(validX.shape[0]))
+        self.recursiveSetPrune(validX, validY, rootId)        
         
-        #For each subtree,  lets compute alpha which is improvement in test 
-        #error upon pruning. 
-        nonLeaves = self.tree.nonLeaves()
+        for vertexId in self.tree.getAllVertexIds(): 
+            currentNode = self.tree.getVertex(vertexId)            
+            subtreeLeaves = self.tree.leaves(vertexId)
+
+            testErrorSum = 0 
+            for leaf in subtreeLeaves: 
+                testErrorSum += self.tree.getVertex(leaf).getTestError()
+                
+            currentNode.alpha = testErrorSum - currentNode.getTestError()
+                  
+        #self.recursivePrune(rootId, alphaThreshold)
         
-        for nonLeaf in nonLeaves: 
-            #Compute test error of subtree 
-            subtreeLeaves = tree.leaves(nonLeaf)
-            #Sum errors of leaves 
+    def recursiveSetPrune(self, X, y, nodeId):
+        """
+        This computes test errors on nodes by passing in the test X and y. 
+        """
+        node = self.tree.getVertex(nodeId)
+        testInds = node.getTestInds()
+        node.setTestError(numpy.sum((y[testInds] - node.getValue())**2))
+    
+        leftChildId = self.getLeftChildId(nodeId)
+        if self.tree.vertexExists(leftChildId):
+            leftChild = self.tree.getVertex(leftChildId)
+            leftChildInds = X[testInds, node.getFeatureInd()] < node.getThreshold() 
+            tempInds = testInds[leftChildInds]
+            leftChild.setTestInds(testInds)
+            self.recursiveSetPrune(X, y, leftChildId)
+            
+        rightChildId = self.getRightChildId(nodeId)
+        if self.tree.vertexExists(rightChildId): 
+            rightChild = self.tree.getVertex(rightChildId)
+            rightChildInds = X[testInds, node.getFeatureInd()] >= node.getThreshold()
+            tempInds = testInds[rightChildInds]
+            rightChild.setTestInds(tempInds)
+            self.recursiveSetPrune(X, y, rightChildId)
+        
+    def recursivePrune(self, nodeId, alphaThresh): 
+        """
+        We compute alpha values and prune as early as possible.   
+        """
+        node = self.tree.getVertex(nodeId)
+
+        if node.alpha > alphaThresh: 
+            #Prune node 
+            self.tree.pruneVertex(nodeId)
+        else: 
+            leftChildId = self.getLeftChildId(nodeId)
+            if self.tree.vertexExists(leftChildId):
+                self.recursivePrune(leftChildId, alphaThresh)
+                
+            rightChildId = self.getRightChildId(nodeId)
+            if self.tree.vertexExists(rightChildId): 
+                self.recursivePrune(rightChildId, alphaThresh)
+    
+        
         
         
         
