@@ -143,6 +143,28 @@ class DictGraphTest(unittest.TestCase):
         self.assertTrue(dictTree.getEdge("a", "d"), 1.0)
         self.assertTrue(dictTree.getEdge("a", "c"), 1.0)
         
+    def testPruneVertex(self): 
+        dictTree = DictTree()
+        dictTree.setVertex("a", "foo")
+        
+        dictTree.addEdge("a", "b")
+        dictTree.addEdge("a", "c")
+        dictTree.addEdge("b", "d")
+        dictTree.addEdge("b", "e")
+        dictTree.addEdge("e", "f")
+    
+        dictTree.pruneVertex("b")
+        self.assertFalse(dictTree.edgeExists("b", "e"))
+        self.assertFalse(dictTree.edgeExists("b", "d"))
+        self.assertFalse(dictTree.edgeExists("e", "f"))
+        self.assertTrue(dictTree.vertexExists("b"))
+        self.assertFalse(dictTree.vertexExists("d"))
+        self.assertFalse(dictTree.vertexExists("e"))
+        self.assertFalse(dictTree.vertexExists("f"))
+
+        dictTree.pruneVertex("a")
+        self.assertEquals(dictTree.getNumVertices(), 1)
+        
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

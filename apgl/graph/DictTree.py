@@ -154,25 +154,24 @@ class DictTree(DictGraph):
 
         return newTree
 
-    def nonLeaves(self):
+    def nonLeaves(self, startVertexId=None):
         """
         Return a list of the vertex ids of all the non-leaves of this tree.
 
         :returns: The vertex ids of the non-leaves. 
         """
-        root = self.getRootId()
-        stack = [(root, 0)]
+        if startVertexId == None: 
+            subtreeIds = self.subtreeIds(self.getRootId())
+        else:
+            subtreeIds = self.subtreeIds(startVertexId)
+        
         leafList = [] 
 
-        while(len(stack) != 0):
-            (vertexId, depth) = stack.pop()
+        for vertexId in subtreeIds: 
             neighbours = self.neighbours(vertexId)
 
             if len(neighbours) != 0:
                 leafList.append(vertexId)
-
-            for neighbour in neighbours:
-                stack.append((neighbour, depth+1))
                 
         return leafList 
 
@@ -186,21 +185,20 @@ class DictTree(DictGraph):
 
         :returns: The vertex ids of the leaves. 
         """
+                
+        
         if startVertexId == None: 
-            stack = [(self.getRootId(), 0)]
+            subtreeIds = self.subtreeIds(self.getRootId())
         else:
-            stack = [(startVertexId, 0)]
+            subtreeIds = self.subtreeIds(startVertexId)
+        
         leafList = [] 
 
-        while(len(stack) != 0):
-            (vertexId, depth) = stack.pop()
+        for vertexId in subtreeIds: 
             neighbours = self.neighbours(vertexId)
 
             if len(neighbours) == 0:
                 leafList.append(vertexId)
-
-            for neighbour in neighbours:
-                stack.append((neighbour, depth+1))
                 
         return leafList 
 
@@ -223,5 +221,42 @@ class DictTree(DictGraph):
     def children(self, vertexId): 
         """
         Returns the children of the current vertex. This is the same as neighbours. 
+        
+        :param startVertexId: The vertex id of the parent node.  
         """
         return self.neighbours(vertexId)
+
+    
+    def subtreeIds(self, vertexId): 
+        """
+        Return a list of all vertex ids that are descendants of this one, and include 
+        this one. 
+        
+        :param vertexId: A vertex id 
+        """
+        stack = [(vertexId, 0)]
+        subtreeList = [] 
+
+        while(len(stack) != 0):
+            (vertexId, depth) = stack.pop()
+            neighbours = self.neighbours(vertexId)
+            
+            subtreeList.append(vertexId)
+
+            for neighbour in neighbours:
+                stack.append((neighbour, depth+1))
+                
+        return subtreeList 
+        
+    def pruneVertex(self, vertexId): 
+        """
+        Remove all the descendants of the current vertex. 
+        
+        :param startVertexId: The vertex id of the parent node. 
+        """
+        subtreeIds = self.subtreeIds(vertexId) 
+        
+        for vertexId2 in subtreeIds:
+            if vertexId != vertexId2: 
+                self.removeVertex(vertexId2)
+        
