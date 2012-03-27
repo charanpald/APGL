@@ -34,7 +34,7 @@ times = numpy.linspace(0, T, numTimeSteps)
 abcMetrics = HIVGraphMetrics2(times)
 
 realSummary = abcMetrics.summary(targetGraph)
-epsilonArray = numpy.array([0.5, 0.2, 0.1])*numTimeSteps
+epsilonArray = numpy.array([0.8, 0.5, 0.3])*numTimeSteps
 
 def breakFunc(graph, currentTime): 
     return abcMetrics.shouldBreak(realSummary, graph, epsilonArray[0], currentTime)
