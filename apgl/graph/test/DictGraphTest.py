@@ -548,6 +548,56 @@ class DictGraphTest(unittest.TestCase):
         self.assertTrue(graph.vertexExists(3))
         self.assertFalse(graph.vertexExists(4))
 
+    def testRemoveVertex(self):
+        graph = DictGraph()
+        graph.addEdge(0, 1)
+        graph.addEdge(0, 2)
+        graph.addEdge(0, 3)
+        graph.addEdge(1, 2)
+        graph.addEdge(2, 3)
+        graph.addEdge(3, 4)
+
+        graph.removeVertex(4)
+        self.assertFalse(graph.vertexExists(4))
+        self.assertFalse(graph.edgeExists(3, 4))
+        
+        graph.removeVertex(3)
+        self.assertFalse(graph.vertexExists(3))
+        self.assertFalse(graph.edgeExists(2, 3))
+        self.assertFalse(graph.edgeExists(0, 3))
+            
+        graph.removeVertex(2)
+        self.assertFalse(graph.vertexExists(2))
+        self.assertFalse(graph.edgeExists(1, 2))
+        self.assertFalse(graph.edgeExists(0, 2))
+        
+        self.assertTrue(graph.getAllVertexIds() == [0, 1])
+        self.assertTrue(graph.getAllEdges() == [(0, 1)])
+        
+        #Try directed graph 
+        graph = DictGraph(False)
+        graph.addEdge(0, 1)
+        graph.addEdge(1, 0)
+        graph.addEdge(0, 3)
+        graph.addEdge(1, 2)
+        graph.addEdge(2, 3)
+        graph.addEdge(3, 4)
+        
+        graph.removeVertex(0)
+
+        self.assertFalse(graph.vertexExists(0))
+        self.assertFalse(graph.edgeExists(0, 1))
+        self.assertFalse(graph.edgeExists(0, 3))
+        self.assertFalse(graph.edgeExists(1, 0))
+        
+        graph.removeVertex(2)
+        self.assertFalse(graph.vertexExists(2))
+        self.assertFalse(graph.edgeExists(1, 2))
+        self.assertFalse(graph.edgeExists(2, 3))
+
+        self.assertTrue(graph.getAllVertexIds() == [1, 3, 4])
+        self.assertTrue(graph.getAllEdges() == [(3, 4)])
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

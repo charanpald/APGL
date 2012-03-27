@@ -9,6 +9,13 @@ class DictGraph(AbstractSingleGraph):
     dict of dicts. Edges and vertices can be labeled with anything.
     """
     def __init__(self, undirected=True):
+        """
+        Create a new DictGraph. 
+
+        :param undirected: Specify whether the graph has directed or undirected edges 
+        :type undirected: `bool`        
+        
+        """
         self.undirected = undirected
         self.adjacencies = {}
         self.vertices = {}
@@ -40,6 +47,8 @@ class DictGraph(AbstractSingleGraph):
         it is set to the corresponding entry of edgeValues.
 
         :param edgeList: A list of pairs of verted ids
+        
+        :param edgeValues: A corresponding list of vertex values. 
         """
         i = 0
         for edge in edgeList:
@@ -57,15 +66,15 @@ class DictGraph(AbstractSingleGraph):
                 self.adjacencies[vertex2][vertex1] = value
             i += 1 
 
-    def __touchVertex(self, vertexName):
+    def __touchVertex(self, vertexId):
         """
         If the vertex exists, do nothing. Otherwise add it to vertices and
         adjacencies. 
         """
-        if vertexName not in self.vertices:
-            self.vertices[vertexName] = None
-        if vertexName not in self.adjacencies:
-            self.adjacencies[vertexName] = {}
+        if vertexId not in self.vertices:
+            self.vertices[vertexId] = None
+        if vertexId not in self.adjacencies:
+            self.adjacencies[vertexId] = {}
 
     def removeEdge(self, vertex1, vertex2):
         """
@@ -148,22 +157,22 @@ class DictGraph(AbstractSingleGraph):
 
         return list(self.adjacencies[vertexId].keys())
 
-    def getVertex(self, vertexName):
+    def getVertex(self, vertexId):
         """
         Returns the label of the given vertex, or None if no label.
 
         :param vertex: The name of the first vertex.
         """
-        if vertexName not in self.vertices:
-            raise ValueError("Vertex is not present in graph: " + str(vertexName))
-        return self.vertices[vertexName]
+        if vertexId not in self.vertices:
+            raise ValueError("Vertex is not present in graph: " + str(vertexId))
+        return self.vertices[vertexId]
 
-    def setVertex(self, vertexName, vertex):
+    def setVertex(self, vertexId, vertex):
         """
-        Sets the vertexName with the value. Overwrites value if already present. 
+        Sets the vertexId with the value. Overwrites value if already present. 
         """
-        self.__touchVertex(vertexName)
-        self.vertices[vertexName] = vertex
+        self.__touchVertex(vertexId)
+        self.vertices[vertexId] = vertex
 
     def getAllVertexIds(self):
         """
@@ -332,12 +341,38 @@ class DictGraph(AbstractSingleGraph):
 
         return degSeq, vertexList
 
-    def vertexExists(self, vertex):
+    def vertexExists(self, vertexId):
         """
         Returns true if the vertex with the given name exists, otherwise false. 
         """
-        return vertex in self.vertices
+        return vertexId in self.vertices
+        
+    def edgeExists(self, vertexId1, vertexId2): 
+        """
+        Return true if the edge exists between two vertices
+        """
+        if not self.vertexExists(vertexId1): 
+            return False 
+        
+        return vertexId2 in self.adjacencies[vertexId1]
 
+    def removeVertex(self, vertexId): 
+        """
+        Remove a vertex and all its edges. 
+        
+        :param vertexId: The id of the vertex to remove. 
+        """
+        neighbours = self.neighbours(vertexId)
+        del self.adjacencies[vertexId]
+        del self.vertices[vertexId]
+
+        if self.undirected:
+            for vertexId2 in neighbours: 
+                del self.adjacencies[vertexId2][vertexId]
+        else: 
+            for vertexId2 in self.getAllVertexIds(): 
+                if vertexId in self.adjacencies[vertexId2]: 
+                    del self.adjacencies[vertexId2][vertexId]
 
     vertices = None 
     adjacencies = None 
