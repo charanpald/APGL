@@ -5,7 +5,15 @@ import numpy
 
 class DictGraphTest(unittest.TestCase):
     def setUp(self):
-        pass
+        self.dictTree = DictTree()
+        self.dictTree.setVertex("a", "foo")
+        
+        self.dictTree.addEdge("a", "b")
+        self.dictTree.addEdge("a", "c")
+        self.dictTree.addEdge("b", "d")
+        self.dictTree.addEdge("b", "e")
+        self.dictTree.addEdge("e", "f")
+    
 
     def testInit(self):
         dictTree = DictTree()
@@ -164,6 +172,22 @@ class DictGraphTest(unittest.TestCase):
 
         dictTree.pruneVertex("a")
         self.assertEquals(dictTree.getNumVertices(), 1)
+        
+    def testIsLeaf(self):         
+        self.assertTrue(self.dictTree.isLeaf("c"))
+        self.assertTrue(self.dictTree.isLeaf("d"))
+        self.assertTrue(self.dictTree.isLeaf("f"))
+        self.assertFalse(self.dictTree.isLeaf("a"))
+        self.assertFalse(self.dictTree.isLeaf("b"))
+        self.assertFalse(self.dictTree.isLeaf("e"))
+        
+    def testIsNonLeaf(self):         
+        self.assertFalse(self.dictTree.isNonLeaf("c"))
+        self.assertFalse(self.dictTree.isNonLeaf("d"))
+        self.assertFalse(self.dictTree.isNonLeaf("f"))
+        self.assertTrue(self.dictTree.isNonLeaf("a"))
+        self.assertTrue(self.dictTree.isNonLeaf("b"))
+        self.assertTrue(self.dictTree.isNonLeaf("e"))
         
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
