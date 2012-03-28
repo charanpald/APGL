@@ -109,15 +109,13 @@ for vertexId in learner.tree.getAllVertexIds():
     if alpha > maxAlpha: 
         maxAlpha = alpha 
         
-numAlphas = 30
+numAlphas = 100
 alphas = numpy.linspace(maxAlpha+0.1, minAlpha, numAlphas)
 errors = numpy.zeros(numAlphas)
 
 for i in range(alphas.shape[0]): 
-    print(i)
     learner.prune(validX, validY, alphas[i])
     predY = learner.predict(testX)
-    
     errors[i] = Evaluator.rootMeanSqError(predY, testY)
     
 plt.figure(3)
