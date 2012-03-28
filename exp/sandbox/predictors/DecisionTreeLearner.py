@@ -140,7 +140,7 @@ class DecisionTreeLearner(AbstractPredictor):
                 
             currentNode.alpha = testErrorSum - currentNode.getTestError()
                   
-        #self.recursivePrune(rootId, alphaThreshold)
+        self.recursivePrune(rootId, alphaThreshold)
         
     def recursiveSetPrune(self, X, y, nodeId):
         """
@@ -154,16 +154,14 @@ class DecisionTreeLearner(AbstractPredictor):
         if self.tree.vertexExists(leftChildId):
             leftChild = self.tree.getVertex(leftChildId)
             leftChildInds = X[testInds, node.getFeatureInd()] < node.getThreshold() 
-            tempInds = testInds[leftChildInds]
-            leftChild.setTestInds(testInds)
+            leftChild.setTestInds(testInds[leftChildInds])
             self.recursiveSetPrune(X, y, leftChildId)
             
         rightChildId = self.getRightChildId(nodeId)
         if self.tree.vertexExists(rightChildId): 
             rightChild = self.tree.getVertex(rightChildId)
             rightChildInds = X[testInds, node.getFeatureInd()] >= node.getThreshold()
-            tempInds = testInds[rightChildInds]
-            rightChild.setTestInds(tempInds)
+            rightChild.setTestInds(testInds[rightChildInds])
             self.recursiveSetPrune(X, y, rightChildId)
         
     def recursivePrune(self, nodeId, alphaThresh): 
@@ -173,7 +171,6 @@ class DecisionTreeLearner(AbstractPredictor):
         node = self.tree.getVertex(nodeId)
 
         if node.alpha > alphaThresh: 
-            #Prune node 
             self.tree.pruneVertex(nodeId)
         else: 
             leftChildId = self.getLeftChildId(nodeId)
