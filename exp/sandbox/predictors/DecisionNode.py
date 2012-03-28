@@ -54,14 +54,11 @@ class DecisionNode(object):
         
     def getTestError(self): 
         return self.testError 
-    
-    def isLeaf(self): 
-        return self.error == None
-        
+            
     def __str__(self): 
         outputStr = "Size: " + str(self.trainInds.shape[0]) + ", " 
         outputStr += "featureInd: " + str(self.featureInd) + ", " 
         outputStr += "threshold: " + str(self.threshold) + ", "
         outputStr += "err: " + str(self.error) + ", "
-        outputStr += "val: " + str(self.val) + " "
+        outputStr += "val: " + str(self.value) + " "
         return outputStr 
