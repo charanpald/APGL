@@ -252,7 +252,7 @@ class DictTree(DictGraph):
         """
         Remove all the descendants of the current vertex. 
         
-        :param startVertexId: The vertex id of the parent node. 
+        :param vertexId: The vertex id of the parent node. 
         """
         subtreeIds = self.subtreeIds(vertexId) 
         
@@ -260,3 +260,11 @@ class DictTree(DictGraph):
             if vertexId != vertexId2: 
                 self.removeVertex(vertexId2)
         
+    def isLeaf(self, vertexId): 
+        """
+        Returns true if the input vertex id is a leaf otherwise false. 
+        
+        :param vertexId: The vertex id to test 
+        """
+        
+        return vertexId in self.leaves()
