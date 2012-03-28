@@ -39,7 +39,26 @@ class DecisionTreeLearnerProfile(object):
         regressor = DecisionTreeRegressor(min_split=minSplit, max_depth=maxDepth, min_density=0.0)
         
         ProfileUtils.profile('regressor.fit(X, y)', globals(), locals())
+        
+    def profilePredict(self): 
+        #Make the prdiction function faster 
+        numExamples = 1000
+        numFeatures = 20
+        minSplit = 1
+        maxDepth = 20
+        
+        generator = ExamplesGenerator()
+        X, y = generator.generateBinaryExamples(numExamples, numFeatures)   
+            
+        learner = DecisionTreeLearner(minSplit=minSplit, maxDepth=maxDepth) 
+        learner.learnModel(X, y)
+        
+        print(learner.getTree().getNumVertices())
+        ProfileUtils.profile('learner.predict(X)', globals(), locals())
+        
+        print(learner.getTree().getNumVertices())
 
 profiler = DecisionTreeLearnerProfile()
 #profiler.profileLearnModel() #0.418
-profiler.profileDecisionTreeRegressor() #0.020
+#profiler.profileDecisionTreeRegressor() #0.020
+profiler.profilePredict() #0.024
