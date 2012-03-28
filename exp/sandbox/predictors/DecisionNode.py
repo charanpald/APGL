@@ -20,7 +20,13 @@ class DecisionNode(object):
         return self.value 
         
     def setError(self, error): 
+        """
+        The training error for internal nodes. 
+        """
         self.error = error 
+    
+    def getError(self): 
+        return self.error 
         
     def setFeatureInd(self, featureInd): 
         self.featureInd = featureInd 
@@ -56,6 +62,6 @@ class DecisionNode(object):
         outputStr = "Size: " + str(self.trainInds.shape[0]) + ", " 
         outputStr += "featureInd: " + str(self.featureInd) + ", " 
         outputStr += "threshold: " + str(self.threshold) + ", "
-        outputStr += "error: " + str(self.error) + ", "
-        outputStr += "value: " + str(self.value) + " "
+        outputStr += "err: " + str(self.error) + ", "
+        outputStr += "val: " + str(self.val) + " "
         return outputStr 
