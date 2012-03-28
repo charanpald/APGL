@@ -99,7 +99,7 @@ class DecisionTreeLearner(AbstractPredictor):
         node = self.tree.getVertex(nodeId)
         testInds = node.getTestInds()
         
-        if node.isLeaf(): 
+        if self.tree.isLeaf(nodeId): 
             y[testInds] = node.getValue()
         else: 
              
@@ -137,8 +137,9 @@ class DecisionTreeLearner(AbstractPredictor):
             testErrorSum = 0 
             for leaf in subtreeLeaves: 
                 testErrorSum += self.tree.getVertex(leaf).getTestError()
-                
-            currentNode.alpha = testErrorSum - currentNode.getTestError()
+            
+            #Alpha is normalised difference in error 
+            currentNode.alpha = (testErrorSum - currentNode.getTestError())/float(currentNode.getTestInds().shape[0])
                   
         self.recursivePrune(rootId, alphaThreshold)
         
