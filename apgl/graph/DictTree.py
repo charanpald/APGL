@@ -266,5 +266,12 @@ class DictTree(DictGraph):
         
         :param vertexId: The vertex id to test 
         """
+        return len(self.neighbours(vertexId)) == 0
         
-        return vertexId in self.leaves()
+    def isNonLeaf(self, vertexId): 
+        """
+        Returns true if the input vertex id is not a leaf otherwise false. 
+        
+        :param vertexId: The vertex id to test 
+        """
+        return len(self.neighbours(vertexId)) != 0
