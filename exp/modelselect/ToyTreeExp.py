@@ -10,7 +10,7 @@ import numpy
 from exp.sandbox.predictors.DecisionTreeLearner import DecisionTreeLearner
 from apgl.util.Evaluator import Evaluator 
 
-numExamples = 3000 
+numExamples = 5000 
 numFeatures = 2 
 
 X = numpy.random.rand(numExamples, numFeatures)
@@ -47,14 +47,12 @@ testY = y[numTrainExamples+numValidExamples:]
 learner = DecisionTreeLearner(minSplit=1, maxDepth=50)
 learner.learnModel(trainX, trainY)
 
-print(learner.tree)
 
 #Seem to be optimal 
 alphaThreshold = 100
 learner.prune(validX, validY, alphaThreshold)
 #learner.tree = learner.tree.cut(3)
 
-print(learner.tree)
 predY = learner.predict(testX)
 
 plt.figure(0)
