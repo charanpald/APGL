@@ -31,13 +31,13 @@ targetGraph = HIVGraph.load(graphFile)
 numTimeSteps = 10 
 T, recordStep, printStep, M = HIVModelUtils.defaultSimulationParams()
 times = numpy.linspace(0, T, numTimeSteps)
-abcMetrics = HIVGraphMetrics2(times)
+graphMetrics = HIVGraphMetrics2(times)
 
-realSummary = abcMetrics.summary(targetGraph)
-epsilonArray = numpy.array([0.8, 0.5, 0.3])*numTimeSteps
+realSummary = graphMetrics.summary(targetGraph)
+epsilonArray = numpy.array([0.8, 0.6, 0.5])*numTimeSteps
 
 def breakFunc(graph, currentTime): 
-    return abcMetrics.shouldBreak(realSummary, graph, epsilonArray[0], currentTime)
+    return graphMetrics.shouldBreak(realSummary, graph, epsilonArray[0], currentTime)
 
 def createModel(t):
     """
@@ -65,13 +65,13 @@ if len(sys.argv) > 1:
 else: 
     numProcesses = multiprocessing.cpu_count()
 
-posteriorSampleSize = 10
+posteriorSampleSize = 2
 thetaLen = 10
 
 logging.debug("Posterior sample size " + str(posteriorSampleSize))
 
 meanTheta = HIVModelUtils.defaultTheta()
-abcParams = HIVABCParameters(meanTheta)
+abcParams = HIVABCParameters(meanTheta, 0.1, 0.1)
 
 #Create shared variables 
 thetaQueue = multiprocessing.Queue()
@@ -81,7 +81,7 @@ args = (thetaQueue, distQueue, summaryQueue)
 abcList = []
 
 for i in range(numProcesses):
-    abcList.append(ABCSMC(args, epsilonArray, realSummary, createModel, abcParams, abcMetrics))
+    abcList.append(ABCSMC(args, epsilonArray, realSummary, createModel, abcParams, graphMetrics))
     abcList[i].setPosteriorSampleSize(posteriorSampleSize)
     abcList[i].start()
 
