@@ -70,7 +70,7 @@ class ABCSMC(multiprocessing.Process):
         """
         self.args[0].put(theta)
         self.args[1].put(dist)
-        self.args[2].put(summary)
+        #self.args[2].put(summary)
 
     def run(self):
         """

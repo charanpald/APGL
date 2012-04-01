@@ -10,28 +10,22 @@ from apgl.util.Util import Util
 from exp.viroscopy.model.HIVVertices import HIVVertices
 
 class HIVABCParameters(object):
-    def __init__(self, meanTheta):
+    def __init__(self, meanTheta, sigmaScale=0.5, purtScale=0.2):
         """
         Initialised this object with a mean value of theta 
         """
-
         self.paramFuncs = []
         self.priorDists = []
         self.priorDensities = []
         self.purtubationKernels = []
         self.purtubationKernelDensities = []
 
-        purtScale = 0.2
-        sigmaScale = 0.5
-
         #Now set up all the parameters
         ind = 0 
-        min = meanTheta[ind]-15
-        max = meanTheta[ind]+15
-        priorDist = lambda: stats.randint.rvs(min, max)
-        priorDensity = lambda x: stats.randint.pmf(x, min, max)
-        purtubationKernel = lambda x: stats.randint.rvs(x-int(min*purtScale), x+int(min*purtScale))
-        purtubationKernelDensity = lambda old, new: stats.randint.pmf(new, old-int(min*purtScale), old+int(max*purtScale))
+        mu = meanTheta[ind]
+        sigma = mu*sigmaScale
+        priorDist, priorDensity = self.createDiscNormParam(sigma, mu)
+        purtubationKernel, purtubationKernelDensity = self.__createNormalDiscPurt(sigma, purtScale)
         self.__addParameter(("graph", "setRandomInfected"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
 
         ind += 1
@@ -96,6 +90,14 @@ class HIVABCParameters(object):
         priorDist, priorDensity = self.createTruncNormParam(sigma, mu)
         purtubationKernel, purtubationKernelDensity = self.__createNormalPurt(sigma, purtScale)
         self.__addParameter(("rates", "setManBiInfectProb"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
+     
+    def createDiscNormParam(self, sigma, mu): 
+        """
+        Truncated normal discrete random variable
+        """
+        priorDist = lambda: round(stats.norm.rvs(mu, sigma))
+        priorDensity = lambda x: stats.norm.pdf(x, mu, sigma)
+        return priorDist, priorDensity  
 
     def createTruncNormParam(self, sigma, mode):
         """
@@ -133,6 +135,13 @@ class HIVABCParameters(object):
         purtubationKernelDensity = lambda old, new: stats.norm.pdf(new, old, sigma*purtScale)
         return purtubationKernel, purtubationKernelDensity
 
+    def __createNormalDiscPurt(self, sigma, purtScale):
+        Parameter.checkFloat(sigma, 0.0, float('inf'))
+        Parameter.checkFloat(purtScale, 0.0, float('inf'))
+        purtubationKernel = lambda x: numpy.round(stats.norm.rvs(x, sigma*purtScale))
+        purtubationKernelDensity = lambda old, new: stats.norm.pdf(new, old, sigma*purtScale)
+        return purtubationKernel, purtubationKernelDensity
+
     def __addParameter(self, paramFunc, priorDist, priorDensity, purtubationKernel, purtubationKernelDensity):
         self.paramFuncs.append(paramFunc)
         self.priorDists.append(priorDist)
@@ -152,16 +161,29 @@ class HIVABCParameters(object):
         theta = numpy.array(theta)
         return theta
 
-    def priorDensity(self, theta):
-        density = 1
+    def priorDensity(self, theta, full=False):
+        """
+        Return an array of prior densities for the given theta. If full==False 
+        then return an overall density. 
+        """
+        density = []
 
-        for i in range(len(self.priorDensities)):
-            priorDensityFunc = self.priorDensities[i]
-            density *= priorDensityFunc(theta[i])
-
-        return density
+        for i in range(len(self.priorDensities)): 
+            density.append(self.priorDensities[i](theta[i])) 
+        
+        density = numpy.array(density)        
+        
+        if full: 
+            return density
+        else: 
+            return density.prod()
+ 
 
     def purtubationKernel(self, theta):
+        """
+        Find a purtubation of theta based on the same random distributions used 
+        to generate theta. The std is given by self.meanTheta*sigmaScale*purtScale. 
+        """
         newTheta = []
 
         for i in range(len(self.purtubationKernels)):
@@ -170,12 +192,16 @@ class HIVABCParameters(object):
         newTheta = numpy.array(newTheta)
         return newTheta
 
-    def purtubationKernelDensity(self, oldTheta, theta):
-        density = 1
+    def purtubationKernelDensity(self, oldTheta, theta, full=False):
+        density = []
 
         for i in range(len(self.purtubationKernelDensities)):
-            purtubationKernelDensity = self.purtubationKernelDensities[i]
-            density *= purtubationKernelDensity(oldTheta[i], theta[i])
+            density.append(self.purtubationKernelDensities[i](oldTheta[i], theta[i]))
 
-        return density
+        density = numpy.array(density) 
+        
+        if full: 
+            return density
+        else: 
+            return density.prod()
 
