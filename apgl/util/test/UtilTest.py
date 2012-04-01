@@ -9,6 +9,7 @@ import numpy
 import scipy.linalg
 import logging
 import sys
+import numpy.testing as nptst 
  
 from apgl.util.Util import Util
 from apgl.util.Parameter import Parameter
@@ -51,64 +52,6 @@ class UtilTest(unittest.TestCase):
 
         x = numpy.array([0])
         self.assertEquals(Util.mode(x), 0)
-
-    def testMdot(self):
-        A = numpy.random.rand(7, 2)
-        B = numpy.random.rand(2, 3)
-        C = numpy.random.rand(3, 8)
-
-        tol = 0.01
-
-        X = Util.mdot(A, B)
-        X2 = numpy.dot(A, B)
-        self.assertTrue((X == X2).all())
-
-        logging.debug("=============")
-        X = Util.mdot(A, B, C)
-        X2 = numpy.dot(A, numpy.dot(B, C))
-        self.assertTrue(numpy.linalg.norm(X - X2) < tol)
-
-        A = numpy.random.rand(7, 2)
-        B = numpy.random.rand(2, 10)
-        C = numpy.random.rand(10, 8)
-
-        logging.debug("=============")
-        X = Util.mdot(A, B, C)
-        X2 = numpy.dot(A, numpy.dot(B, C))
-        self.assertTrue(numpy.linalg.norm(X - X2) < tol)
-
-        A = numpy.random.rand(7, 2)
-        B = numpy.random.rand(2, 10)
-        C = numpy.random.rand(10, 8)
-        D = numpy.random.rand(8, 1)
-
-        logging.debug("=============")
-        X = Util.mdot(A, B, C, D)
-        X2 = numpy.dot(numpy.dot(A, numpy.dot(B, C)), D)
-        self.assertTrue(numpy.linalg.norm(X - X2) < tol)
-
-        #Test with vectors
-        a = numpy.random.rand(10)
-        B = numpy.random.rand(10, 5)
-        c = numpy.random.rand(5)
-
-        logging.debug("=============")
-        X = Util.mdot(a.T, B, c)
-        X2 = numpy.dot(a.T, numpy.dot(B, c))
-        self.assertTrue(numpy.linalg.norm(X - X2) < tol)
-
-        #Test outer products
-        logging.debug("==============")
-        X = Util.mdot(a.T, a, c.T, c)
-        X2 = numpy.dot(a, numpy.dot(a.T, numpy.dot(c.T, c)))
-        self.assertTrue(numpy.linalg.norm(X - X2) < tol)
-
-        A = numpy.random.rand(10, 10)
-
-        logging.debug("==============")
-        X = Util.mdot(a.T, A, a)
-        X2 = numpy.dot(a, numpy.dot(A.T, a))
-        self.assertTrue(numpy.linalg.norm(X - X2) < tol)
 
     def testRank(self):
         X = numpy.random.rand(10, 1)
@@ -297,11 +240,11 @@ class UtilTest(unittest.TestCase):
         R = Util.incompleteCholesky2(B, k)
         R2 = numpy.linalg.cholesky(B)
 
-        logging.debug(R)
-        logging.debug(R2)
+        #logging.debug(R)
+        #logging.debug(R2)
 
-        logging.debug(B)
-        logging.debug(R.T.dot(R))
+        #logging.debug(B)
+        #logging.debug(R.T.dot(R))
 
     def testSvd(self):
         tol = 10**-6 
@@ -357,6 +300,23 @@ class UtilTest(unittest.TestCase):
         self.assertTrue(numpy.linalg.norm(A - Util.matrixPower(A, 1)) < tol)
         self.assertTrue(numpy.linalg.norm(A2 - Util.matrixPower(A, 2)) < tol)
         
-
+    def testDistanceMatrix(self): 
+        numExamples1 = 10 
+        numExamples2 = 15 
+        numFeatures = 2 
+        
+        U = numpy.random.randn(numExamples1, numFeatures)
+        V = numpy.random.randn(numExamples2, numFeatures)
+        
+        D = Util.distanceMatrix(U, V)
+        
+        D2 = numpy.zeros((numExamples1, numExamples2))
+        
+        for i in range(numExamples1): 
+            for j in range(numExamples2): 
+                D2[i, j] = numpy.sqrt(numpy.sum((U[i, :] - V[j, :])**2))
+                
+        nptst.assert_almost_equal(D, D2)
+        
 if __name__ == "__main__":
     unittest.main()

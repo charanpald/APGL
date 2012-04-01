@@ -131,37 +131,6 @@ class Util(object):
         caller = inspect.getouterframes(inspect.currentframe())[1][3]
         raise NotImplementedError("Method " + caller + ' must be implemented in subclass')
 
-
-    @staticmethod
-    def mdot(*args):
-        """
-        The optimisation method to find the quickest way of evaluating the matrix
-        product is simple: we look for the pair which results in the smallest
-        resulting matrix first.
-        NOTE: When doing a multiplications as follows aa'X where a is a vector and
-        X is a matrix, be careful to ensure a is 2D otherwise a'aX may result!!!! 
-        """        
-        if len(args) == 1:
-            return args[0]
-        elif len(args) == 2:
-            for i in range(len(args)):
-                logging.debug("Argument " + str(i) + " : " + str(args[i].shape))
-            return numpy.dot(args[0], args[1])
-        else:
-            resultSizes = numpy.zeros(len(args)-1)
-
-            for i in range(len(args)-1):
-                if args[i].ndim == 2 and args[i+1].ndim == 2:
-                    resultSizes[i] = args[i].shape[0]*args[i+1].shape[1]
-                elif args[i].ndim > 2 or args[i+1].ndim > 2:
-                    raise ValueError("mdot input arrays must be of dimension 2 or less")
-                else:
-                    resultSizes[i] = args[i].size * args[i+1].size
-
-            j = numpy.argmin(resultSizes)
-            newArgs = args[0:j] + (Util.mdot(args[j], args[j+1]), ) + args[j+2:]
-            return Util.mdot(*newArgs)
-
     @staticmethod
     def rank(A, tol=1e-8):
         """
@@ -610,3 +579,20 @@ class Util(object):
         tempA = numpy.zeros(newShape)
         tempA[0:A.shape[0], 0:A.shape[1]] = A 
         return tempA 
+        
+    @staticmethod 
+    def distanceMatrix(U, V): 
+        """
+        Compute a distance matrix between n x d matrix U and m x d matrix V, such 
+        that D_ij = ||u_i - v_i||. 
+        """
+        if U.shape[1] != V.shape[1]: 
+            raise ValueError("Arrays must have the same number of columns")
+        
+        normU = numpy.sum(U**2, 1)
+        normV = numpy.sum(V**2, 1)
+                
+        D = numpy.outer(normU, numpy.ones(V.shape[0])) - 2*U.dot(V.T) + numpy.outer(numpy.ones(U.shape[0]), normV) 
+        D **= 0.5         
+        
+        return D 
