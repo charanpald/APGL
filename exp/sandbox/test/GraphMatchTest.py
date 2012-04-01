@@ -4,6 +4,7 @@ import unittest
 import numpy
 import logging
 import sys 
+import numpy.testing as nptst 
 
 from apgl.graph.SparseGraph import SparseGraph 
 from apgl.graph.VertexList import VertexList 
@@ -95,9 +96,17 @@ class GraphMatchTest(unittest.TestCase):
         alpha = 1.0
         permutation = numpy.arange(self.numVertices)
         distance = GraphMatch(alpha=alpha).distance(self.graph1, self.graph2, permutation, False)
-        C = self.graph1.getVertexList().getVertices().dot(self.graph2.getVertexList().getVertices().T)
+        C = GraphMatch(alpha=alpha).vertexSimilarities(self.graph1, self.graph2)
         distance2 = -numpy.trace(C)
         self.assertEquals(distance, distance2)
+        
+        #Check case where we want non negativve distance even when alpha!=0 
+        distance = GraphMatch(alpha=alpha).distance(self.graph1, self.graph2, permutation, True, True)
+        self.assertTrue(distance >= 0)
+        
+        permutation = numpy.arange(self.numVertices)
+        distance = GraphMatch(alpha=alpha).distance(self.graph1, self.graph1, permutation, True, True)
+        self.assertEquals(distance, 0)
         
     def testDistance2(self): 
         permutation = numpy.arange(self.numVertices)
@@ -141,7 +150,18 @@ class GraphMatchTest(unittest.TestCase):
             
             distance = GraphMatch(alpha=alpha).distance2(self.graph1, self.graph1, permutation)
             self.assertTrue(0<=distance<=1)
+    
+    def testVertexSimilarities(self): 
+        matcher = GraphMatch(alpha=0.0)
+        C = matcher.vertexSimilarities(self.graph1, self.graph1) 
         
+        C = matcher.vertexSimilarities(self.graph2, self.graph2) 
+        
+        Cdiag = numpy.diag(C)
+        nptst.assert_array_almost_equal(Cdiag, 2*numpy.ones(Cdiag.shape[0]))
+        
+        #Now compute trace(C)/||C||
+        #print(numpy.trace(C)/numpy.linalg.norm(C))
         
 if __name__ == '__main__':
     unittest.main()

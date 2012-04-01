@@ -11,6 +11,7 @@ from apgl.util.Parameter import Parameter
 from apgl.util.Util import Util
 from apgl.data.Standardiser import Standardiser 
 from apgl.kernel.LinearKernel import LinearKernel
+from apgl.kernel.KernelUtils import KernelUtils
 
 class GraphMatch(object): 
     def __init__(self, algorithm="PATH", alpha=0.5):
@@ -31,7 +32,7 @@ class GraphMatch(object):
         :param graph2: The second graph object to match 
         
         :return permutation: A vector of indices representing the matching of elements of graph1 to graph2 
-        :return distance: The graph distance 
+        :return distance: The graph distance list [graphDistance, fDistance, fDistanceExact] 
         """
         numTempFiles = 5
         tempFileNameList = []         
@@ -134,14 +135,15 @@ class GraphMatch(object):
         V1 = graph1.getVertexList().getVertices()
         V2 = graph2.getVertexList().getVertices()
         
-        #V1 = Standardiser().normaliseArray(V1.T).T
-        #V2 = Standardiser().normaliseArray(V2.T).T
-        
-        C = LinearKernel().evaluate(V1, V2)
-        
+        V1 = Standardiser().normaliseArray(V1.T).T
+        V2 = Standardiser().normaliseArray(V2.T).T
+          
+        #Let's compute C as the distance between vertices 
+        #Distance is bounded by 2 
+        C = 2 - Util.distanceMatrix(V1, V2)
         return C
         
-    def distance(self, graph1, graph2, permutation, normalised=False):
+    def distance(self, graph1, graph2, permutation, normalised=False, nonNeg=False):
         """
         Compute the graph distance metric between two graphs give a permutation 
         vector. This is given by F(P) = (1-alpha)/(||W1||^2_F + ||W2||^2_F)(||W1 - P W2 P.T||^2_F)
@@ -193,7 +195,12 @@ class GraphMatch(object):
         
         dist = (1-self.alpha)*dist1 - self.alpha*dist2
         
-        return dist 
+        #If nonNeg = True then we add a term to the distance to ensure it is 
+        #always positive. The numerator is an upper bound on tr(C.T P)
+        if nonNeg and normalised:
+            return dist + self.alpha*2*n/numpy.linalg.norm(C)  
+        else: 
+            return dist 
         
     def distance2(self, graph1, graph2, permutation):
         """
