@@ -105,7 +105,8 @@ class HIVGraphMetrics2(object):
         """
         Take as input two summary statistics computed at various time points on 
         HIV graphs, and output a distance metric which uses the matching algorithm 
-        passed into the contructor 
+        passed into the contructor. Note that the distance between two identical 
+        graphs is not zero. 
         
         :param summary1: A desired list of HIVGraphs. 
         
@@ -115,7 +116,7 @@ class HIVGraphMetrics2(object):
         
         for i in range(self.times.shape[0]): 
             permutation, distance, time = self.matcher.match(summary1[i], summary2[i])
-            totalDist += self.matcher.distance2(summary1[i], summary2[i], permutation)
+            totalDist += self.matcher.distance(summary1[i], summary2[i], permutation, True, True) 
         
         return totalDist 
         
