@@ -4,7 +4,7 @@ from apgl.graph.DictTree import DictTree
 from exp.sandbox.predictors.TreeCriterion import findBestSplit
 from exp.sandbox.predictors.TreeCriterionPy import findBestSplit2
 from exp.sandbox.predictors.DecisionNode import DecisionNode
-
+from apgl.util.Sampling import Sampling
 
     
 class DecisionTreeLearner(AbstractPredictor): 
@@ -182,9 +182,72 @@ class DecisionTreeLearner(AbstractPredictor):
             if self.tree.vertexExists(rightChildId): 
                 self.recursivePrune(rightChildId, alphaThresh)
     
+    
+    def cvPrune(self, validX, validY, numFolds=5, alphaThreshold=0): 
+        """
+        We do something like reduced error pruning but we use cross validation 
+        to decide which nodes to prune. 
+        """
         
+        #First set the value of the vertices using the training set. 
+        #Reset all alphas to zero 
+        inds = Sampling.crossValidation(numFolds, validX.shape[0])
         
+        for i in self.tree.getAllVertexIds(): 
+            self.tree.getVertex(i).setAlpha(0.0)
+            self.tree.getVertex(i).setTestError(0.0)
         
+        print(self.tree)             
         
+        for trainInds, testInds in inds: 
+            self.predict(validX[trainInds, :])
+            
+            rootId = (0,)
+            root = self.tree.getVertex(rootId)
+            root.setTrainInds(trainInds)
+            root.setTestInds(testInds)
+            root.setValue(numpy.mean(validY[trainInds]))
+            
+            nodeStack = [(rootId, root.getValue())]
+            
+            while len(nodeStack) != 0: 
+                (nodeId, value) = nodeStack.pop()
+                node = self.tree.getVertex(nodeId)
+                tempInds = node.getTestInds()
+                node.setTestError(numpy.sum((validY[tempInds] - node.getValue())**2) + node.getTestError())
+                childIds = [self.getLeftChildId(nodeId), self.getRightChildId(nodeId)]
+                
+                for childId in childIds:                 
+                    if self.tree.vertexExists(childId): 
+                        child = self.tree.getVertex(childId)
+                        
+                        #Split training set  
+                        childInds = validX[trainInds, node.getFeatureInd()] < node.getThreshold() 
+                        
+                        if childInds.sum() !=0:   
+                            value = numpy.mean(validY[trainInds[childInds]])
+                            
+                        child.setValue(value) 
+                        nodeStack.append((childId, value))
+                        
+                        #Split test set 
+                        childInds = validX[testInds, node.getFeatureInd()] < node.getThreshold() 
+                        child.setTestInds(testInds[childInds])
+
         
+        #Now compute alphas 
+        for vertexId in self.tree.getAllVertexIds(): 
+            currentNode = self.tree.getVertex(vertexId)            
+            subtreeLeaves = self.tree.leaves(vertexId)
+    
+            testErrorSum = 0 
+            for leaf in subtreeLeaves: 
+                testErrorSum += self.tree.getVertex(leaf).getTestError()
         
+            #Alpha is normalised difference in error 
+            currentNode.alpha = (testErrorSum - currentNode.getTestError())/float(validX.shape[0])
+        
+        print(self.tree)          
+        self.recursivePrune(rootId, alphaThreshold)
+        
+        #Now set values on training set 

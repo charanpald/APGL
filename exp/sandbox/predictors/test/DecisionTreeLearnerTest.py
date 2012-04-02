@@ -258,7 +258,28 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         learner.prune(testX, testY, -100.0)
         self.assertEquals(learner.tree.getNumVertices(), 1)
         
+    def testCvPrune(self): 
+        numExamples = 500
+        X, y = data.make_regression(numExamples)  
         
+        y = Standardiser().standardiseArray(y)
+        
+        numTrain = numpy.round(numExamples * 0.66)     
+        
+        trainX = X[0:numTrain, :]
+        trainY = y[0:numTrain]
+        testX = X[numTrain:, :]
+        testY = y[numTrain:]
+        
+        learner = DecisionTreeLearner()
+        learner.learnModel(trainX, trainY)
+        
+        #print(learner.getTree())
+        vertexIds = learner.tree.getAllVertexIds()  
+        
+        learner.cvPrune(trainX, trainY, 5, 0.0)
+        
+        print(learner.tree)
 
      
 if __name__ == "__main__":
