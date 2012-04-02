@@ -29,8 +29,8 @@ class Sampling(object):
         indexList = []
 
         for i in range(0, folds):
-            testIndices = range(int(foldSize*i), int(foldSize*(i+1)))
-            trainIndices = numpy.setdiff1d(numpy.arange(0, numExamples), numpy.array(testIndices)).tolist()
+            testIndices = numpy.arange(int(foldSize*i), int(foldSize*(i+1)))
+            trainIndices = numpy.setdiff1d(numpy.arange(0, numExamples), numpy.array(testIndices))
             indexList.append((trainIndices, testIndices))
 
         return indexList 
