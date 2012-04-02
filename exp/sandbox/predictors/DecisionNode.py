@@ -11,7 +11,12 @@ class DecisionNode(object):
         self.error = None 
         #Used for making predictions 
         self.testInds = None 
-        self.testError = None 
+        self.testError = None
+        #Used for pruning 
+        self.alpha = 0 
+
+    def setTrainInds(self, trainInds): 
+        self.trainInds = trainInds        
         
     def getTrainInds(self): 
         return self.trainInds
@@ -54,11 +59,17 @@ class DecisionNode(object):
         
     def getTestError(self): 
         return self.testError 
+        
+    def setAlpha(self, alpha): 
+        self.alpha = alpha 
             
     def __str__(self): 
         outputStr = "Size: " + str(self.trainInds.shape[0]) + ", " 
         outputStr += "featureInd: " + str(self.featureInd) + ", " 
-        outputStr += "threshold: " + str(self.threshold) + ", "
-        outputStr += "err: " + str(self.error) + ", "
-        outputStr += "val: " + str(self.value) + " "
+        if self.threshold != None: 
+            outputStr += "threshold: %.3f" % self.threshold + ", "
+        if self.error != None: 
+            outputStr += "err: %.3f" % self.error + ", "
+        outputStr += "val: %.3f" % self.value + " "
+        outputStr += "alpha: %05f" % self.alpha + " "
         return outputStr 
