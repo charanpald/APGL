@@ -71,7 +71,7 @@ thetaLen = 10
 logging.debug("Posterior sample size " + str(posteriorSampleSize))
 
 meanTheta = HIVModelUtils.defaultTheta()
-abcParams = HIVABCParameters(meanTheta, 0.1, 0.1)
+abcParams = HIVABCParameters(meanTheta, 0.5, 0.2)
 
 #Create shared variables 
 thetaQueue = multiprocessing.Queue()
