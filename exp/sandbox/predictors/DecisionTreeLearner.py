@@ -197,11 +197,7 @@ class DecisionTreeLearner(AbstractPredictor):
             self.tree.getVertex(i).setAlpha(0.0)
             self.tree.getVertex(i).setTestError(0.0)
         
-        print(self.tree)             
-        
-        for trainInds, testInds in inds: 
-            self.predict(validX[trainInds, :])
-            
+        for trainInds, testInds in inds:             
             rootId = (0,)
             root = self.tree.getVertex(rootId)
             root.setTrainInds(trainInds)
@@ -221,8 +217,10 @@ class DecisionTreeLearner(AbstractPredictor):
                     if self.tree.vertexExists(childId): 
                         child = self.tree.getVertex(childId)
                         
-                        #Split training set  
-                        childInds = validX[trainInds, node.getFeatureInd()] < node.getThreshold() 
+                        if nodeId[-1] == 0: 
+                            childInds = validX[trainInds, node.getFeatureInd()] < node.getThreshold()
+                        else: 
+                            childInds = validX[trainInds, node.getFeatureInd()] >= node.getThreshold()
                         
                         if childInds.sum() !=0:   
                             value = numpy.mean(validY[trainInds[childInds]])
@@ -230,8 +228,11 @@ class DecisionTreeLearner(AbstractPredictor):
                         child.setValue(value) 
                         nodeStack.append((childId, value))
                         
-                        #Split test set 
-                        childInds = validX[testInds, node.getFeatureInd()] < node.getThreshold() 
+                        if nodeId[-1] == 0: 
+                            childInds = validX[testInds, node.getFeatureInd()] < node.getThreshold() 
+                        else: 
+                            childInds = validX[testInds, node.getFeatureInd()] >= node.getThreshold()  
+                            
                         child.setTestInds(testInds[childInds])
 
         

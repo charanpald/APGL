@@ -277,7 +277,7 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         #print(learner.getTree())
         vertexIds = learner.tree.getAllVertexIds()  
         
-        learner.cvPrune(trainX, trainY, 5, 0.0)
+        learner.cvPrune(testX, testY, 5, 0.0)
         
         print(learner.tree)
 

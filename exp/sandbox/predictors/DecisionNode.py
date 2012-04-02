@@ -70,6 +70,8 @@ class DecisionNode(object):
             outputStr += "threshold: %.3f" % self.threshold + ", "
         if self.error != None: 
             outputStr += "err: %.3f" % self.error + ", "
+        if self.testError != None: 
+            outputStr += "testErr: %.3f" % self.testError + ", "
         outputStr += "val: %.3f" % self.value + " "
         outputStr += "alpha: %05f" % self.alpha + " "
         return outputStr 
