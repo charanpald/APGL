@@ -6,6 +6,7 @@ from apgl.data.ExamplesGenerator import ExamplesGenerator
 from apgl.data.Standardiser import Standardiser    
 from sklearn.tree import DecisionTreeRegressor 
 import sklearn.datasets as data 
+from apgl.util.Evaluator import Evaluator
 
 class DecisionTreeLearnerTest(unittest.TestCase):
     def setUp(self):
@@ -257,7 +258,15 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         #Now try max pruning 
         learner.prune(testX, testY, -100.0)
         self.assertEquals(learner.tree.getNumVertices(), 1)
+    
+    def testRecursivePrune(self): 
+        learner = DecisionTreeLearner(minSplit=5)
+        learner.learnModel(self.X, self.y)
         
+        print(learner.tree)
+        
+        
+    
     def testCvPrune(self): 
         numExamples = 500
         X, y = data.make_regression(numExamples)  
@@ -265,21 +274,39 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         y = Standardiser().standardiseArray(y)
         
         numTrain = numpy.round(numExamples * 0.66)     
+        numValid = numpy.round(numExamples * 0.1) 
         
         trainX = X[0:numTrain, :]
         trainY = y[0:numTrain]
-        testX = X[numTrain:, :]
-        testY = y[numTrain:]
+        validX = X[numTrain:numTrain+numValid, :]
+        validY = y[numTrain:numTrain+numValid]
+        testX = X[numTrain+numValid:, :]
+        testY = y[numTrain+numValid:]
         
         learner = DecisionTreeLearner()
         learner.learnModel(trainX, trainY)
+        error1 = Evaluator.rootMeanSqError(learner.predict(testX), testY)
         
         #print(learner.getTree())
-        vertexIds = learner.tree.getAllVertexIds()  
+        unprunedTree = learner.tree.copy() 
+        learner.cvPrune(trainX, trainY, 100.0, 5)
         
-        learner.cvPrune(testX, testY, 5, 0.0)
+        self.assertEquals(unprunedTree.getNumVertices(), learner.tree.getNumVertices())
+        learner.cvPrune(trainX, trainY, 0.0, 5)
         
+        #Test if pruned tree is subtree of current: 
+        for vertexId in learner.tree.getAllVertexIds(): 
+            self.assertTrue(vertexId in unprunedTree.getAllVertexIds())
+            
+        #The error should be better after pruning 
         print(learner.tree)
+        learner.cvPrune(validX, validY, 0.0, 5)
+        print(learner.tree)        
+        error2 = Evaluator.rootMeanSqError(learner.predict(testX), testY)
+        print(error1, error2)
+        
+
+        
 
      
 if __name__ == "__main__":

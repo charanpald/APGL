@@ -73,5 +73,7 @@ class DecisionNode(object):
         if self.testError != None: 
             outputStr += "testErr: %.3f" % self.testError + ", "
         outputStr += "val: %.3f" % self.value + " "
-        outputStr += "alpha: %05f" % self.alpha + " "
+        outputStr += "alpha: %05f" % self.alpha + ", "
+        if self.testInds != None: 
+            outputStr += "TestSize: " + str(self.testInds.shape[0]) 
         return outputStr 

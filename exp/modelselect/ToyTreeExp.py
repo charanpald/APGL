@@ -112,6 +112,7 @@ alphas = numpy.linspace(maxAlpha+0.1, minAlpha, numAlphas)
 errors = numpy.zeros(numAlphas)
 
 for i in range(alphas.shape[0]): 
+    #learner.learnModel(trainX, trainY)
     learner.prune(validX, validY, alphas[i])
     predY = learner.predict(testX)
     errors[i] = Evaluator.rootMeanSqError(predY, testY)
