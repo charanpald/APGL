@@ -189,6 +189,18 @@ class DictGraphTest(unittest.TestCase):
         self.assertTrue(self.dictTree.isNonLeaf("b"))
         self.assertTrue(self.dictTree.isNonLeaf("e"))
         
+    def testCopy(self): 
+        newTree = self.dictTree.copy()
+        
+        newTree.addEdge("f", "x")
+        newTree.addEdge("f", "y")
+        
+        self.assertEquals(newTree.getNumVertices(), self.dictTree.getNumVertices()+2)
+        self.assertTrue(newTree.vertexExists("x"))
+        self.assertTrue(newTree.vertexExists("y"))
+        self.assertTrue(not self.dictTree.vertexExists("x"))
+        self.assertTrue(not self.dictTree.vertexExists("x"))
+        
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

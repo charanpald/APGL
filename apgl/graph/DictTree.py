@@ -275,3 +275,18 @@ class DictTree(DictGraph):
         :param vertexId: The vertex id to test 
         """
         return len(self.neighbours(vertexId)) != 0
+        
+    def copy(self): 
+        """
+        Return a copied version of this tree. This is a shallow copy in 
+        that vertex values are not copied. 
+        """
+        newTree = DictTree()    
+        newTree.adjacencies = {} 
+        
+        for key in self.adjacencies.keys():         
+            newTree.adjacencies[key] = self.adjacencies[key].copy() 
+            
+        newTree.vertices = self.vertices.copy()
+        
+        return newTree
