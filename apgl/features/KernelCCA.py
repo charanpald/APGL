@@ -80,9 +80,9 @@ class KernelCCA(object):
         self.beta = W[numExamples:numExamples*2, :]
         self.lmbdas = D[D>0]
 
-        alphaDiag = Util.mdot(self.alpha.T, Kxx, self.alpha)
+        alphaDiag = self.alpha.T.dot(Kxx).dot(self.alpha)
         alphaDiag = alphaDiag + numpy.array(alphaDiag < 0, numpy.int)
-        betaDiag = Util.mdot(self.beta.T, Kyy, self.beta)
+        betaDiag = self.beta.T.dot(Kyy).dot(self.beta)
         betaDiag = betaDiag + numpy.array(betaDiag < 0, numpy.int)
         self.alpha = numpy.dot(self.alpha, numpy.diag(1/numpy.sqrt(numpy.diag(alphaDiag))))
         self.beta = numpy.dot(self.beta, numpy.diag(1/numpy.sqrt(numpy.diag(betaDiag))))

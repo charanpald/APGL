@@ -3,9 +3,9 @@ import numpy
 import logging
 from apgl.graph.DictGraph import DictGraph
 from apgl.io.CsvVertexWriter import CsvVertexWriter
+from apgl.util.PathDefaults import PathDefaults
 
-
-class  CsvVertexWriterTest(unittest.TestCase):
+class CsvVertexWriterTest(unittest.TestCase):
     def setUp(self):
         pass
 
@@ -20,7 +20,7 @@ class  CsvVertexWriterTest(unittest.TestCase):
         for i in range(0, numVertices):
             graph.setVertex(i, V[i, :])
 
-        fileName = "output\\test\\vertices"
+        fileName = PathDefaults.getOutputDir() + "test/vertices"
         verterWriter = CsvVertexWriter()
         verterWriter.writeToFile(fileName, graph)
 

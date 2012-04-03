@@ -77,6 +77,5 @@ class CsvGraphReaderTest(unittest.TestCase):
         self.assertTrue(graph.isUndirected())
         self.assertEquals(graph.getVertexList().getNumFeatures(), 0)
 
-if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
+if __name__ == '__main__':
     unittest.main()

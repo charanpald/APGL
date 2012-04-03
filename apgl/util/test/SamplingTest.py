@@ -11,28 +11,28 @@ class  SamplingTest(unittest.TestCase):
 
         indices = Sampling.crossValidation(folds, numExamples)
 
-        self.assertEquals(indices[0], ([5, 6, 7, 8, 9], [0, 1, 2, 3, 4]))
-        self.assertEquals(indices[1], ([0, 1, 2, 3, 4], [5, 6, 7, 8, 9]))
+        self.assertEquals((list(indices[0][0]), list(indices[0][1])), ([5, 6, 7, 8, 9], [0, 1, 2, 3, 4]))
+        self.assertEquals((list(indices[1][0]), list(indices[1][1])), ([0, 1, 2, 3, 4], [5, 6, 7, 8, 9]))
 
         indices = Sampling.crossValidation(3, numExamples)
 
-        self.assertEquals(indices[0], ([3, 4, 5, 6, 7, 8, 9], [0, 1, 2]))
-        self.assertEquals(indices[1], ([0, 1, 2, 6, 7, 8, 9], [3, 4, 5]))
-        self.assertEquals(indices[2], ([0, 1, 2, 3, 4, 5], [6, 7, 8, 9]))
+        self.assertEquals((list(indices[0][0]), list(indices[0][1])), ([3, 4, 5, 6, 7, 8, 9], [0, 1, 2]))
+        self.assertEquals((list(indices[1][0]), list(indices[1][1])), ([0, 1, 2, 6, 7, 8, 9], [3, 4, 5]))
+        self.assertEquals((list(indices[2][0]), list(indices[2][1])), ([0, 1, 2, 3, 4, 5], [6, 7, 8, 9]))
 
         indices = Sampling.crossValidation(4, numExamples)
 
-        self.assertEquals(indices[0], ([2, 3, 4, 5, 6, 7, 8, 9], [0, 1]))
-        self.assertEquals(indices[1], ([0, 1, 5, 6, 7, 8, 9], [2, 3, 4]))
-        self.assertEquals(indices[2], ([0, 1, 2, 3, 4, 7, 8, 9], [5, 6]))
-        self.assertEquals(indices[3], ([0, 1, 2, 3, 4, 5, 6], [7, 8, 9]))
+        self.assertEquals((list(indices[0][0]), list(indices[0][1])), ([2, 3, 4, 5, 6, 7, 8, 9], [0, 1]))
+        self.assertEquals((list(indices[1][0]), list(indices[1][1])), ([0, 1, 5, 6, 7, 8, 9], [2, 3, 4]))
+        self.assertEquals((list(indices[2][0]), list(indices[2][1])), ([0, 1, 2, 3, 4, 7, 8, 9], [5, 6]))
+        self.assertEquals((list(indices[3][0]), list(indices[3][1])), ([0, 1, 2, 3, 4, 5, 6], [7, 8, 9]))
 
         indices = Sampling.crossValidation(numExamples, numExamples)
-        self.assertEquals(indices[0], ([1, 2, 3, 4, 5, 6, 7, 8, 9], [0]))
-        self.assertEquals(indices[1], ([0, 2, 3, 4, 5, 6, 7, 8, 9], [1]))
-        self.assertEquals(indices[2], ([0, 1, 3, 4, 5, 6, 7, 8, 9], [2]))
-        self.assertEquals(indices[3], ([0, 1, 2, 4, 5, 6, 7, 8, 9], [3]))
-        self.assertEquals(indices[4], ([0, 1, 2, 3, 5, 6, 7, 8, 9], [4]))
+        self.assertEquals((list(indices[0][0]), list(indices[0][1])), ([1, 2, 3, 4, 5, 6, 7, 8, 9], [0]))
+        self.assertEquals((list(indices[1][0]), list(indices[1][1])), ([0, 2, 3, 4, 5, 6, 7, 8, 9], [1]))
+        self.assertEquals((list(indices[2][0]), list(indices[2][1])), ([0, 1, 3, 4, 5, 6, 7, 8, 9], [2]))
+        self.assertEquals((list(indices[3][0]), list(indices[3][1])), ([0, 1, 2, 4, 5, 6, 7, 8, 9], [3]))
+        self.assertEquals((list(indices[4][0]), list(indices[4][1])), ([0, 1, 2, 3, 5, 6, 7, 8, 9], [4]))
 
         self.assertRaises(ValueError, Sampling.crossValidation, numExamples+1, numExamples)
         self.assertRaises(ValueError, Sampling.crossValidation, 0, numExamples)

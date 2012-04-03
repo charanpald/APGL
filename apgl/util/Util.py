@@ -3,6 +3,8 @@ Created on 31 Jul 2009
 
 @author: charanpal
 '''
+from __future__ import print_function
+
 import sys 
 import os
 import numpy
@@ -13,6 +15,7 @@ import scipy.sparse as sparse
 import scipy.special
 import pickle 
 from apgl.util.Parameter import Parameter
+
 
 class Util(object):
     '''
@@ -115,7 +118,7 @@ class Util(object):
         if i==0:
             print(Util.iterationStr(i, step, maxIter, preStr)),
         elif i!=maxIter-1:
-            print Util.iterationStr(i, step, maxIter, " "), 
+            print(Util.iterationStr(i, step, maxIter, " "), end="")
         else:
             print(Util.iterationStr(i, step, maxIter, " "))
 
@@ -447,11 +450,11 @@ class Util(object):
                 logging.warn(" SVD obtained from EVD is too poor")
             Parameter.checkArray(P, softCheck=True, arrayInfo="P in svd_from_eigh()")
             if not Parameter.checkOrthogonal(P, tol=tol, softCheck=True, arrayInfo="P in svd_from_eigh()", investigate=True):
-                print "corresponding sigma: ", sigma
+                print("corresponding sigma: ", sigma)
             Parameter.checkArray(sigma, softCheck=True, arrayInfo="sigma in svd_from_eigh()")
             Parameter.checkArray(Qh, softCheck=True, arrayInfo="Qh in svd_from_eigh()")
             if not Parameter.checkOrthogonal(Qh.conj().T, tol=tol, softCheck=True, arrayInfo="Qh.H in svd_from_eigh()"):
-                print "corresponding sigma: ", sigma
+                print("corresponding sigma: ", sigma)
 
 
         return P, sigma, Qh

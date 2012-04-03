@@ -27,8 +27,6 @@ setup (
   # PyPI
   author = 'Charanpal Dhanjal',
   author_email = 'charanpal@gmail.com',
-
-  summary = 'A fast python graph library based on numpy, scipy and pysparse.',
   url = 'http://packages.python.org/apgl/',
   license = 'GNU Library or Lesser General Public License (LGPL)',
   long_description= 'More details are given on the homepage of this project http://packages.python.org/apgl/ .',

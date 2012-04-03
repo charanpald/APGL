@@ -105,7 +105,7 @@ class  PrimalCCATest(unittest.TestCase):
         cca = PrimalCCA(tau)
         U, V, lmbdas = cca.learnModel(X, Y)
 
-        Yhat = Util.mdot(X, U, V.T, numpy.linalg.inv(numpy.dot(V, V.T)))
+        Yhat = X.dot(U).dot(V.T).dot(numpy.linalg.inv(numpy.dot(V, V.T)))
         logging.debug((numpy.abs(Yhat- Y)))
 
 

@@ -52,8 +52,8 @@ class PrimalCCA(object):
         self.V = W[numFeatures:numFeatures*2, :]
         self.lmbdas = D[D>0]
 
-        self.U = numpy.dot(self.U, numpy.diag(1/numpy.sqrt(numpy.diag(Util.mdot(self.U.T, Cxx, self.U)))))
-        self.V = numpy.dot(self.V, numpy.diag(1/numpy.sqrt(numpy.diag(Util.mdot(self.V.T, Cyy, self.V)))))
+        self.U = numpy.dot(self.U, numpy.diag(1/numpy.sqrt(numpy.diag(self.U.T.dot(Cxx).dot(self.U)))))
+        self.V = numpy.dot(self.V, numpy.diag(1/numpy.sqrt(numpy.diag(self.V.T.dot(Cyy).dot(self.V)))))
 
         return self.U, self.V, self.lmbdas
 

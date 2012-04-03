@@ -36,7 +36,7 @@ class  KernelRidgeRegressionTest(unittest.TestCase):
 
         K = numpy.dot(X, X.T)
         alpha2 = numpy.dot(numpy.linalg.inv(K+lmbda*numpy.eye(numExamples)), y)
-        predY2 = Util.mdot(X, numpy.linalg.inv(numpy.dot(X.T, X) + lmbda*numpy.eye(numFeatures)), X.T, y)
+        predY2 = X.dot(numpy.linalg.inv(numpy.dot(X.T, X) + lmbda*numpy.eye(numFeatures))).dot(X.T).dot(y)
 
 
 
@@ -53,7 +53,7 @@ class  KernelRidgeRegressionTest(unittest.TestCase):
 
         K = numpy.dot(X, X.T)
         alpha2 = numpy.dot(numpy.linalg.inv(K+lmbda*numpy.eye(numExamples)), y)
-        predY2 = Util.mdot(X, numpy.linalg.inv(numpy.dot(X.T, X) + lmbda*numpy.eye(numFeatures)), X.T, y)
+        predY2 = X.dot(numpy.linalg.inv(numpy.dot(X.T, X) + lmbda*numpy.eye(numFeatures))).dot(X.T).dot(y)
 
         self.assertTrue(numpy.linalg.norm(alpha - alpha2) < tol)
         self.assertTrue(numpy.linalg.norm(predY - predY2) < tol)
@@ -68,7 +68,7 @@ class  KernelRidgeRegressionTest(unittest.TestCase):
 
         K = numpy.dot(X, X.T)
         alpha2 = numpy.dot(numpy.linalg.inv(K+lmbda*numpy.eye(numExamples)), y)
-        predY2 = Util.mdot(testX, numpy.linalg.inv(numpy.dot(X.T, X) + lmbda*numpy.eye(numFeatures)), X.T, y)
+        predY2 = testX.dot(numpy.linalg.inv(numpy.dot(X.T, X) + lmbda*numpy.eye(numFeatures))).dot(X.T).dot(y)
 
         self.assertTrue(numpy.linalg.norm(alpha - alpha2) < tol)
         self.assertTrue(numpy.linalg.norm(predY - predY2) < tol)

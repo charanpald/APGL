@@ -203,8 +203,8 @@ class Parameter(object):
             finally : # s.t. when raising an error, the investigation appears after
                 if investigate:
                     Diff = A.conj().T.dot(A) - numpy.eye(A.shape[1])
-                    print "indexes:\n", (abs(Diff)>tol).nonzero()
-                    print "values\n", Diff[abs(Diff)>tol]
+                    print("indexes:\n", (abs(Diff)>tol).nonzero())
+                    print("values\n", Diff[abs(Diff)>tol])
         return True
         
     @staticmethod
