@@ -4,5 +4,6 @@
 *.o
 *.prof
 *.lprof
+.spyderproject
 apgl.egg-info/
 build/
