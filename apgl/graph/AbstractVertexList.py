@@ -1,5 +1,5 @@
 
-from apgl.util import * 
+from apgl.util.Util import Util 
 
 class AbstractVertexList(object):
     """

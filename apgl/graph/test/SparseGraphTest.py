@@ -3,7 +3,7 @@ from apgl.graph.SparseGraph import SparseGraph
 from apgl.graph.GeneralVertexList import GeneralVertexList
 from apgl.graph.VertexList import VertexList
 from apgl.graph.test.MatrixGraphTest import MatrixGraphTest
-from apgl.util import * 
+from apgl.util.Util import Util
 import unittest
 import numpy
 import scipy

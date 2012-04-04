@@ -1,7 +1,7 @@
 from apgl.graph.VertexList import VertexList
 from apgl.graph.GeneralVertexList import GeneralVertexList
 from apgl.generator.BarabasiAlbertGenerator import BarabasiAlbertGenerator
-from apgl.util import *
+from apgl.util.PathDefaults import PathDefaults
 import numpy
 import os
 import logging
