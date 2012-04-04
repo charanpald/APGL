@@ -132,7 +132,7 @@ class DictGraphTest(unittest.TestCase):
         dictTree.addEdge("b", 2)
         self.assertTrue(set(dictTree.leaves()) == set([1, 2, "d", "f"]))
         
-        #Test subtree leaves 
+        #Test isSubtree leaves 
         self.assertTrue(set(dictTree.leaves("c")) == set(["d", "f"]))
         self.assertTrue(set(dictTree.leaves("b")) == set([1, 2]))
 
@@ -200,6 +200,46 @@ class DictGraphTest(unittest.TestCase):
         self.assertTrue(newTree.vertexExists("y"))
         self.assertTrue(not self.dictTree.vertexExists("x"))
         self.assertTrue(not self.dictTree.vertexExists("x"))
+        
+    def testisSubtree(self): 
+        newTree = DictTree()
+        newTree.addEdge("a", "b")
+        newTree.addEdge("a", "c")
+
+        self.assertTrue(newTree.isSubtree(self.dictTree))
+        
+        newTree.addEdge("b", "d")
+        self.assertTrue(newTree.isSubtree(self.dictTree))
+        
+        newTree.addEdge("b", "e")        
+        self.assertTrue(newTree.isSubtree(self.dictTree))
+        
+        newTree.addEdge("e", "f")
+        self.assertTrue(newTree.isSubtree(self.dictTree))
+        
+        newTree.addEdge("a", "g")
+        self.assertFalse(newTree.isSubtree(self.dictTree))
+        
+        newTree = DictTree()
+        newTree.addEdge("b", "d")
+        self.assertTrue(newTree.isSubtree(self.dictTree))
+        
+        newTree.addEdge("b", "e")        
+        self.assertTrue(newTree.isSubtree(self.dictTree))
+        
+        newTree.addEdge("e", "f")
+        self.assertTrue(newTree.isSubtree(self.dictTree))
+        
+        newTree.addEdge("f", "g")
+        self.assertFalse(newTree.isSubtree(self.dictTree))
+        
+        newTree = DictTree()
+        newTree.setVertex("b")
+        self.assertTrue(newTree.isSubtree(self.dictTree))
+        
+        self.assertFalse(self.dictTree.isSubtree(newTree))
+        
+        self.assertTrue(self.dictTree.isSubtree(self.dictTree))
         
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

@@ -290,3 +290,31 @@ class DictTree(DictGraph):
         newTree.vertices = self.vertices.copy()
         
         return newTree
+        
+    def isSubtree(self, supertree): 
+        """
+        Test if this tree is a subtree of the input tree supertree. This is based 
+        on the vertexIds and structure alone. 
+        
+        :param supertree: A DictTree object to compare against
+        :type supertree: `apgl.graph.DictTree`
+        """
+        
+        rootId = self.getRootId()
+        vertexStack = [rootId]
+        
+        while len(vertexStack) != 0: 
+            vertexId = vertexStack.pop()
+            
+            if not supertree.vertexExists(vertexId): 
+                return False 
+                
+            children = self.neighbours(vertexId)
+            for childId in children:
+                if not self.edgeExists(vertexId, childId): 
+                    return False 
+                    
+            vertexStack.extend(children)
+        
+        return True 
+            
