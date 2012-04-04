@@ -49,8 +49,9 @@ learner.learnModel(trainX, trainY)
 
 
 #Seem to be optimal 
-alphaThreshold = 100
-learner.prune(validX, validY, alphaThreshold)
+alphaThreshold = 100.0
+learner.setAlphaThreshold(alphaThreshold)
+learner.repPrune(validX, validY)
 #learner.tree = learner.tree.cut(3)
 
 predY = learner.predict(testX)
@@ -113,7 +114,10 @@ errors = numpy.zeros(numAlphas)
 
 for i in range(alphas.shape[0]): 
     #learner.learnModel(trainX, trainY)
-    learner.prune(validX, validY, alphas[i])
+    learner.setAlphaThreshold(alphas[i])
+    learner.cvPrune(trainX, trainY)
+    #learner.cvPrune(validX, validY, alphas[numpy.argmin(errors)])
+    #learner.prune(validX, validY, alphas[i])
     predY = learner.predict(testX)
     errors[i] = Evaluator.rootMeanSqError(predY, testY)
     
@@ -123,7 +127,9 @@ plt.scatter(alphas, errors)
 #Now plot best tree 
 plt.figure(4)
 learner.learnModel(trainX, trainY)
-learner.prune(validX, validY, alphas[numpy.argmin(errors)])
+#learner.cvPrune(validX, validY, alphas[numpy.argmin(errors)])
+learner.setAlphaThreshold(alphas[numpy.argmin(errors)])
+learner.cvPrune(trainX, trainY)
 rootId = learner.tree.getRootId()
 displayTree(learner, rootId, 0, 1, 0, 1, colormap)
 

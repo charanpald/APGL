@@ -9,6 +9,7 @@ from apgl.util.PathDefaults import PathDefaults
 from apgl.util.Sampling import Sampling
 from apgl.util.Util import Util
 from exp.modelselect.ModelSelectUtils import ModelSelectUtils
+from exp.sandbox.predictors.DecisionTreeLearner import DecisionTreeLearner
 import logging
 import numpy
 import os
@@ -68,6 +69,14 @@ def getSetup(learnerName, dataDir, outputDir, numProcesses):
         paramDict = {} 
         paramDict["setNumTrees"] = 2**numpy.arange(3, 9, 2, dtype=numpy.int) 
         paramDict["setMinSplit"] = 2**numpy.arange(2, 6, dtype=numpy.int) 
+    elif learnerName=="DTRP": 
+        learner = DecisionTreeLearner(criterion="mse", maxDepth=30, minSplit=5, pruneType="REP-CV")
+        loadMethod = ModelSelectUtils.loadRegressDataset
+        dataDir += "regression/"
+        outputDir += "regression/" + learnerName + "/"
+
+        paramDict = {} 
+        paramDict["setAlphaThreshold"] = 2**numpy.arange(-0.1, 0.1, 0.01) 
     else: 
         raise ValueError("Unknown learnerName: " + learnerName)
                 
@@ -279,8 +288,14 @@ logging.debug("Process id: " + str(os.getpid()))
 #findErrorGrid(regressiondatasetNames, numProcesses, "GridResults200", learnerName="DTR", sampleSize=200)
 #runBenchmarkExp(regressiondatasetNames, extSampleSizes, extFoldsSet, cvScalings, sampleMethods, numProcesses, extFileNameSuffix, "DTR")
 
-runBenchmarkExp(regressiondatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, numProcesses, fileNameSuffix, "RFR")
-findErrorGrid(regressiondatasetNames, numProcesses, "GridResults50", learnerName="RFR", sampleSize=50)
-findErrorGrid(regressiondatasetNames, numProcesses, "GridResults100", learnerName="RFR", sampleSize=100)
-findErrorGrid(regressiondatasetNames, numProcesses, "GridResults200", learnerName="RFR", sampleSize=200)
-runBenchmarkExp(regressiondatasetNames, extSampleSizes, extFoldsSet, cvScalings, sampleMethods, numProcesses, extFileNameSuffix, "RFR")
+#runBenchmarkExp(regressiondatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, numProcesses, fileNameSuffix, "RFR")
+#findErrorGrid(regressiondatasetNames, numProcesses, "GridResults50", learnerName="RFR", sampleSize=50)
+#findErrorGrid(regressiondatasetNames, numProcesses, "GridResults100", learnerName="RFR", sampleSize=100)
+#findErrorGrid(regressiondatasetNames, numProcesses, "GridResults200", learnerName="RFR", sampleSize=200)
+#runBenchmarkExp(regressiondatasetNames, extSampleSizes, extFoldsSet, cvScalings, sampleMethods, numProcesses, extFileNameSuffix, "RFR")
+#
+runBenchmarkExp(regressiondatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, numProcesses, fileNameSuffix, "DTRP")
+findErrorGrid(regressiondatasetNames, numProcesses, "GridResults50", learnerName="DTRP", sampleSize=50)
+findErrorGrid(regressiondatasetNames, numProcesses, "GridResults100", learnerName="DTRP", sampleSize=100)
+findErrorGrid(regressiondatasetNames, numProcesses, "GridResults200", learnerName="DTRP", sampleSize=200)
+runBenchmarkExp(regressiondatasetNames, extSampleSizes, extFoldsSet, cvScalings, sampleMethods, numProcesses, extFileNameSuffix, "DTRP")

@@ -112,6 +112,17 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         self.assertAlmostEquals(bestError, learner.tree.getRoot().getError(), 5)
         self.assertEquals(bestFeature, learner.tree.getRoot().getFeatureInd())
         
+        #Now we will test pruning works 
+        learner = DecisionTreeLearner(minSplit=1, maxDepth=10) 
+        learner.learnModel(X, y)
+        numVertices1 = learner.getTree().getNumVertices()       
+        
+        learner = DecisionTreeLearner(minSplit=1, maxDepth=10, pruneType="REP-CV") 
+        learner.learnModel(X, y) 
+        numVertices2 = learner.getTree().getNumVertices()   
+        
+        self.assertTrue(numVertices1 >= numVertices2)
+        
     @staticmethod
     def printTree(tree):
         """
@@ -236,7 +247,7 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         #print(learner.getTree())
         vertexIds = learner.tree.getAllVertexIds()         
         
-        learner.prune(trainX, trainY, 0.0)
+        learner.repPrune(trainX, trainY)
         
         vertexIds2 = learner.tree.getAllVertexIds() 
         
@@ -244,27 +255,41 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         self.assertEquals(vertexIds, vertexIds2)
         
         #Now prune using test set 
-        learner.prune(testX, testY, 100.0)
+        learner.setAlphaThreshold(100.0)
+        learner.repPrune(testX, testY)
         toPrune = []
         
         for  vertexId in learner.tree.getAllVertexIds(): 
             if learner.tree.getVertex(vertexId).alpha > 0: 
                 toPrune.append(vertexId)       
         
-        learner.prune(testX, testY, 0.0)
+        learner.setAlphaThreshold(0.0)
+        learner.repPrune(testX, testY)
         
         self.assertTrue((0, 0, 1, 0) not in learner.tree.getAllVertexIds())
         
         #Now try max pruning 
-        learner.prune(testX, testY, -100.0)
+        learner.setAlphaThreshold(-100.0)
+        learner.repPrune(testX, testY)
         self.assertEquals(learner.tree.getNumVertices(), 1)
     
     def testRecursivePrune(self): 
         learner = DecisionTreeLearner(minSplit=5)
         learner.learnModel(self.X, self.y)
         
-        print(learner.tree)
+        unprunedTree = learner.getTree().copy()
+             
+        #Now randomly assign alpha values 
+        for vertexId in learner.tree.getAllVertexIds(): 
+            learner.tree.getVertex(vertexId).alpha = numpy.random.randn()
         
+        learner.recursivePrune((0,))
+        
+        for vertexId in learner.tree.getAllVertexIds(): 
+            if learner.tree.getVertex(vertexId).alpha > 0: 
+                self.assertTrue(learner.tree.isLeaf(vertexId))
+                
+        self.assertTrue(learner.tree.isSubtree(unprunedTree))
         
     
     def testCvPrune(self): 
@@ -273,8 +298,8 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         
         y = Standardiser().standardiseArray(y)
         
-        numTrain = numpy.round(numExamples * 0.66)     
-        numValid = numpy.round(numExamples * 0.1) 
+        numTrain = numpy.round(numExamples * 0.33)     
+        numValid = numpy.round(numExamples * 0.33) 
         
         trainX = X[0:numTrain, :]
         trainY = y[0:numTrain]
@@ -289,21 +314,27 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         
         #print(learner.getTree())
         unprunedTree = learner.tree.copy() 
-        learner.cvPrune(trainX, trainY, 100.0, 5)
+        learner.setAlphaThreshold(100.0)
+        learner.cvPrune(trainX, trainY)
         
         self.assertEquals(unprunedTree.getNumVertices(), learner.tree.getNumVertices())
-        learner.cvPrune(trainX, trainY, 0.0, 5)
+        learner.setAlphaThreshold(0.0)
+        learner.cvPrune(trainX, trainY)
         
         #Test if pruned tree is subtree of current: 
         for vertexId in learner.tree.getAllVertexIds(): 
             self.assertTrue(vertexId in unprunedTree.getAllVertexIds())
             
         #The error should be better after pruning 
-        print(learner.tree)
-        learner.cvPrune(validX, validY, 0.0, 5)
-        print(learner.tree)        
+        learner.learnModel(trainX, trainY)
+        #learner.cvPrune(validX, validY, 0.0, 5)
+        learner.repPrune(validX, validY)
+      
         error2 = Evaluator.rootMeanSqError(learner.predict(testX), testY)
-        print(error1, error2)
+        
+        print(error1)
+        print(error2)
+
         
 
         

@@ -5,10 +5,11 @@ from exp.sandbox.predictors.TreeCriterion import findBestSplit
 from exp.sandbox.predictors.TreeCriterionPy import findBestSplit2
 from exp.sandbox.predictors.DecisionNode import DecisionNode
 from apgl.util.Sampling import Sampling
-
+from apgl.util.Parameter import Parameter
+from apgl.util.Evaluator import Evaluator
     
 class DecisionTreeLearner(AbstractPredictor): 
-    def __init__(self, criterion="mse", maxDepth=10, minSplit=30, type="class"):
+    def __init__(self, criterion="mse", maxDepth=10, minSplit=30, type="reg", pruneType="none", alphaThreshold=0.0, folds=5):
         """
         Need a minSplit for the internal nodes and one for leaves. 
         """
@@ -17,11 +18,17 @@ class DecisionTreeLearner(AbstractPredictor):
         self.minSplit = minSplit
         self.criterion = criterion
         self.type = type
-        
-        self.maxDepths = numpy.arange(1, 10)
-        self.minSplits = numpy.arange(10, 51, 10)
-         
-    #@profile 
+        self.pruneType = pruneType 
+        self.alphaThreshold = alphaThreshold
+        self.folds = 5
+    
+    def getAlphaThreshold(self): 
+        return self.alphaThreshold
+    
+    def setAlphaThreshold(self, alphaThreshold): 
+        Parameter.checkFloat(alphaThreshold, -float("inf"), float("inf"))
+        self.alphaThreshold = alphaThreshold
+    
     def learnModel(self, X, y):
         nodeId = (0, )         
         self.tree = DictTree()
@@ -35,6 +42,15 @@ class DecisionTreeLearner(AbstractPredictor):
             argsortX[:, i] = numpy.argsort(argsortX[:, i])
         
         self.recursiveSplit(X, y, argsortX, nodeId)
+        
+        if self.pruneType == "REP": 
+            self.repPrune(X, y)
+        elif self.pruneType == "REP-CV":
+            self.cvPrune(X, y)
+        elif self.pruneType == "none": 
+            pass
+        else:
+            raise ValueError("Unknown pruning type " + self.pruneType)
      
     def getLeftChildId(self, nodeId): 
         leftChildId = list(nodeId)
@@ -130,7 +146,7 @@ class DecisionTreeLearner(AbstractPredictor):
             #Alpha is normalised difference in error 
             currentNode.alpha = (testErrorSum - currentNode.getTestError())/float(currentNode.getTestInds().shape[0])        
         
-    def prune(self, validX, validY, alphaThreshold=0): 
+    def repPrune(self, validX, validY): 
         """
         Prune the decision tree using reduced error pruning. 
         """
@@ -138,7 +154,7 @@ class DecisionTreeLearner(AbstractPredictor):
         self.tree.getVertex(rootId).setTestInds(numpy.arange(validX.shape[0]))
         self.recursiveSetPrune(validX, validY, rootId)        
         self.computeAlphas()        
-        self.recursivePrune(rootId, alphaThreshold)
+        self.recursivePrune(rootId)
         
     def recursiveSetPrune(self, X, y, nodeId):
         """
@@ -159,20 +175,20 @@ class DecisionTreeLearner(AbstractPredictor):
                 child.setTestInds(testInds[childInds])
                 self.recursiveSetPrune(X, y, childId)
                     
-    def recursivePrune(self, nodeId, alphaThresh): 
+    def recursivePrune(self, nodeId): 
         """
         We compute alpha values and prune as early as possible.   
         """
         node = self.tree.getVertex(nodeId)
 
-        if node.alpha > alphaThresh: 
+        if node.alpha > self.alphaThreshold: 
             self.tree.pruneVertex(nodeId)
         else: 
             for childId in [self.getLeftChildId(nodeId), self.getRightChildId(nodeId)]: 
                 if self.tree.vertexExists(childId):
-                    self.recursivePrune(childId, alphaThresh)
+                    self.recursivePrune(childId)
                 
-    def cvPrune(self, validX, validY, alphaThreshold=0, numFolds=5): 
+    def cvPrune(self, validX, validY): 
         """
         We do something like reduced error pruning but we use cross validation 
         to decide which nodes to prune. 
@@ -180,7 +196,7 @@ class DecisionTreeLearner(AbstractPredictor):
         
         #First set the value of the vertices using the training set. 
         #Reset all alphas to zero 
-        inds = Sampling.crossValidation(numFolds, validX.shape[0])
+        inds = Sampling.crossValidation(self.folds, validX.shape[0])
         
         for i in self.tree.getAllVertexIds(): 
             self.tree.getVertex(i).setAlpha(0.0)
@@ -227,6 +243,17 @@ class DecisionTreeLearner(AbstractPredictor):
                         child.setTestInds(tempTestInds[childInds])
         
         self.computeAlphas()
-        self.recursivePrune(rootId, alphaThreshold)
+        self.recursivePrune(rootId)
         
-                    
+    def copy(self): 
+        """
+        Copies parameter values only 
+        """
+        newLearner = DecisionTreeLearner(self.criterion, self.maxDepth, self.minSplit, self.type, self.pruneType, self.alphaThreshold, self.folds)
+        return newLearner 
+        
+    def getMetricMethod(self): 
+        if self.type == "reg": 
+            return Evaluator.rootMeanSqError
+        else:
+            return Evaluator.binaryError                 

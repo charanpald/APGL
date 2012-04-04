@@ -20,7 +20,7 @@ class DecisionTreeLearnerProfile(object):
         generator = ExamplesGenerator()
         X, y = generator.generateBinaryExamples(numExamples, numFeatures)   
             
-        learner = DecisionTreeLearner(minSplit=minSplit, maxDepth=maxDepth) 
+        learner = DecisionTreeLearner(minSplit=minSplit, maxDepth=maxDepth, pruneType="REP-CV") 
         #learner.learnModel(X, y)
         #print("Done")
         ProfileUtils.profile('learner.learnModel(X, y) ', globals(), locals())
@@ -59,6 +59,6 @@ class DecisionTreeLearnerProfile(object):
         print(learner.getTree().getNumVertices())
 
 profiler = DecisionTreeLearnerProfile()
-#profiler.profileLearnModel() #0.418
+profiler.profileLearnModel() #0.418
 #profiler.profileDecisionTreeRegressor() #0.020
-profiler.profilePredict() #0.024
+#profiler.profilePredict() #0.024
