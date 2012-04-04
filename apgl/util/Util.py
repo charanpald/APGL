@@ -116,7 +116,7 @@ class Util(object):
     @staticmethod 
     def printConciseIteration(i, step, maxIter, preStr="Iteration: "):
         if i==0:
-            print(Util.iterationStr(i, step, maxIter, preStr)),
+            print(Util.iterationStr(i, step, maxIter, preStr), end=""),
         elif i!=maxIter-1:
             print(Util.iterationStr(i, step, maxIter, " "), end="")
         else:
