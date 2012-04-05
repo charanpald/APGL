@@ -380,8 +380,8 @@ class SparseGraph(AbstractMatrixGraph):
 
         numVertices = self.getNumVertices() + graph.getNumVertices()
         vList = GeneralVertexList(numVertices)
-        vList.setVertices(self.getVertexList().getVertices(), range(self.getNumVertices()))
-        vList.setVertices(graph.getVertexList().getVertices(), range(self.getNumVertices(), numVertices))
+        vList.setVertices(self.getVertexList().getVertices(), list(range(self.getNumVertices())))
+        vList.setVertices(graph.getVertexList().getVertices(), list(range(self.getNumVertices(), numVertices)))
         newGraph = SparseGraph(vList)
         
         W = scipy.sparse.bmat([[self.W, None], [None, graph.W]], format="csr")
