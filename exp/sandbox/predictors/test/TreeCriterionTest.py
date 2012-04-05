@@ -1,13 +1,14 @@
 import numpy 
 import unittest
 import numpy.testing as nptst
-from exp.sandbox.predictors.TreeCriterion import findBestSplit
+from exp.sandbox.predictors.TreeCriterion import findBestSplit, findBestSplit3
 from apgl.data.ExamplesGenerator import ExamplesGenerator  
 
 class TreeCriterionTest(unittest.TestCase):
     def setUp(self):
         numpy.random.seed(21)
         numpy.seterr("raise")
+        numpy.set_printoptions(linewidth=150)
 
     def testFindBestSplit(self): 
         minSplit = 1 
@@ -136,6 +137,43 @@ class TreeCriterionTest(unittest.TestCase):
             self.assertAlmostEquals(bestThreshold, bestThreshold2)
             nptst.assert_array_equal(bestLeftInds, bestLeftInds2)
             nptst.assert_array_equal(bestRightInds, bestRightInds2)      
-            
+
+    def testFindBestSplit3(self): 
+        minSplit = 1 
+        numExamples = 20
+        X = numpy.zeros((numExamples, 2), order="F")
+        y = numpy.ones(numExamples)
+        
+        X[0:10, 0] = numpy.random.permutation(10)
+        X[10:, 0] = numpy.random.permutation(10)+10 
+        y[0:10] = -1 
+        
+        argsortX = numpy.zeros(X.shape, numpy.int, order="F")      
+        
+        for i in range(X.shape[1]): 
+            argsortX[:, i] = numpy.argsort(X[:, i])
+            argsortX[:, i] = numpy.argsort(argsortX[:, i])
+        
+        inds = numpy.arange(numExamples-2, dtype=numpy.int)        
+        
+        print(X)
+        print(y) 
+        print(inds)
+        print(X[inds, :], y[inds])
+        
+        tempX = X[inds, :]
+        tempY = y[inds]
+        
+        print(tempY[tempX[:, 0]<9.5])
+        print(tempY[tempX[:, 0]>9.5])
+        
+        print("Calling function")
+        bestError, bestFeatureInd, bestThreshold, bestLeftInds, bestRightInds = findBestSplit3(minSplit, X, y, inds, argsortX)
+        
+        print(bestError, bestFeatureInd, bestThreshold)
+        
+        bestError, bestFeatureInd, bestThreshold, bestLeftInds, bestRightInds = findBestSplit(minSplit, X, y, inds, argsortX)
+        print(bestError, bestFeatureInd, bestThreshold)
+
 if __name__ == "__main__":
     unittest.main()

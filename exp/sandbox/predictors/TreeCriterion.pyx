@@ -1,4 +1,3 @@
-# encoding: utf-8
 # cython: profile=False
 # cython: boundscheck=False
 # cython: wraparound=False
@@ -109,3 +108,107 @@ def findBestSplit(int minSplit, numpy.ndarray[numpy.float_t, ndim=2] X, numpy.nd
     
     return bestError, bestFeatureInd, bestThreshold, bestLeftInds, bestRightInds
     
+    
+def findBestSplit3(int minSplit, numpy.ndarray[numpy.float_t, ndim=2, mode="fortran"] X, numpy.ndarray[numpy.float_t, ndim=1, mode="c"] y,  numpy.ndarray[numpy.int_t, ndim=1, mode="c"] nodeInds,  numpy.ndarray[numpy.int_t, ndim=2, mode="fortran"] argsortX): 
+    #print 1st col
+    
+    cdef numpy.float_t *x = NULL 
+    cdef numpy.int_t *argsort_x = NULL 
+    cdef int X_elem_stride = X.strides[0]
+    cdef int X_col_stride = X.strides[1]
+    cdef int X_stride = X_col_stride / X_elem_stride
+    cdef int X_argsorted_elem_stride = argsortX.strides[0]
+    cdef int X_argsorted_col_stride = argsortX.strides[1]
+    cdef int X_argsorted_stride = X_argsorted_col_stride / X_argsorted_elem_stride
+        
+    #Loop 
+    cdef float error, var1, var2, val, currentValue, cumYFinal, cumY2Final, tempYVal, tempY2Val     
+    cdef numpy.ndarray[numpy.float_t, ndim=1] tempX = numpy.zeros(X.shape[0]), tempY = numpy.zeros(X.shape[0])
+    cdef numpy.ndarray[numpy.float_t, ndim=1] tempX2 = numpy.zeros(nodeInds.shape[0]), tempY2 = numpy.zeros(nodeInds.shape[0])
+    cdef numpy.ndarray[numpy.float_t, ndim=1] cumY = numpy.zeros(nodeInds.shape[0]), cumY2 = numpy.zeros(nodeInds.shape[0])
+    cdef numpy.ndarray[numpy.int8_t, ndim=1] boolInds = numpy.zeros(X.shape[0], dtype=numpy.int8)
+    cdef unsigned int rightSize, insertInd, featureInd, i, j, finalInd, variables, insertIndp1
+    #Store unique values 
+    cdef numpy.ndarray[numpy.int_t, ndim=1] sortedNodeInds = numpy.zeros(nodeInds.shape[0], dtype=int)
+    cdef numpy.ndarray[numpy.float_t, ndim=1] uniqueVals = numpy.zeros(X.shape[0])
+    #cdef int lastUniqueVal = 0
+    cdef float tol = 10**-3   
+    cdef unsigned int numInds = nodeInds.shape[0]
+    
+    #Best values 
+    cdef float bestError = float("inf")   
+    cdef unsigned int bestFeatureInd = 0 
+    cdef float bestThreshold = X[:, bestFeatureInd].min() 
+    cdef numpy.ndarray[numpy.int_t, ndim=1] bestLeftInds = numpy.array([0]), bestRightInds  = numpy.array([0])
+    
+    for featureInd in range(X.shape[1]): 
+        #x = X[:, featureInd] 
+        x = (<numpy.float_t *>X.data) + X_stride * featureInd
+        argsort_x = (<numpy.int_t *>argsortX.data) + X_argsorted_stride * featureInd
+
+        tempX.fill(0) 
+        tempY.fill(0)
+        boolInds.fill(0)
+                
+        j = 0 
+        #Sort by values of x 
+        for i in nodeInds:        
+            tempX[argsort_x[i]] = x[i]
+            tempY[argsort_x[i]] = y[i]
+            sortedNodeInds[j] = argsort_x[i]  
+            j += 1
+        
+     
+        
+        for i in range(j): 
+            boolInds[sortedNodeInds[i]] = 1
+        
+        k = 0 
+        sumY = 0 
+        sumY2 = 0
+        for i in range(X.shape[0]):
+            if boolInds[i] == 1: 
+                tempYVal = tempY[i]
+                tempY2Val = tempY[i]**2
+                tempX2[k] = tempX[i]
+                tempY2[k] = tempY[i]
+                cumY[k] = sumY + tempYVal
+                cumY2[k] = sumY2 + tempY2Val
+                
+                k += 1
+                sumY += tempYVal
+                sumY2 += tempY2Val
+                        
+        #assert (numpy.linalg.norm(cumY - tempY2.cumsum()) <= tol), "%f" % numpy.linalg.norm(cumY - tempY2.cumsum())           
+        #assert (numpy.linalg.norm(cumY2 - (tempY2**2).cumsum()) <= tol), "%f" % numpy.linalg.norm(cumY2 - (tempY2**2).cumsum())  
+        
+        currentValue = tempX2[0]
+        finalInd = cumY2.shape[0]-1
+        cumYFinal = cumY[finalInd]
+        cumY2Final = cumY2[finalInd]
+        
+        for insertInd in range(numInds-1): 
+            if insertInd < minSplit or insertInd < minSplit: 
+                continue 
+            
+            val = tempX2[insertInd]
+            insertIndp1 = insertInd+1
+            rightSize = (numInds - insertIndp1)
+            
+            if insertInd!=1 and insertInd!=numInds: 
+                cumYVal = cumY[insertInd]
+                cumY2Val = cumY2[insertInd]
+                var1 = cumY2Val - (cumYVal**2)/float(insertIndp1)
+                var2 = (cumY2Final-cumY2Val) - (cumYFinal-cumYVal)**2/float(rightSize)
+                
+                error = var1 + var2 
+                
+                if error <= bestError: 
+                    bestError = error 
+                    bestFeatureInd = featureInd
+                    bestThreshold = (val + tempX2[insertIndp1])/2
+                    
+    bestLeftInds = numpy.sort(nodeInds[numpy.arange(nodeInds.shape[0])[X[:, bestFeatureInd][nodeInds]<bestThreshold]]) 
+    bestRightInds = numpy.sort(nodeInds[numpy.arange(nodeInds.shape[0])[X[:, bestFeatureInd][nodeInds]>=bestThreshold]])
+    
+    return bestError, bestFeatureInd, bestThreshold, bestLeftInds, bestRightInds
