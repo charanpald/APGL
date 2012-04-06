@@ -1,4 +1,4 @@
-# cython: profile=False
+# cython: profile=True
 # cython: boundscheck=False
 # cython: wraparound=False
 # filename: TreeCriterion.pyx
@@ -109,6 +109,31 @@ def findBestSplit(int minSplit, numpy.ndarray[numpy.float_t, ndim=2] X, numpy.nd
     return bestError, bestFeatureInd, bestThreshold, bestLeftInds, bestRightInds
     
     
+cdef sortExamples(numpy.float_t *x, numpy.ndarray[numpy.float_t, ndim=1, mode="c"] y, numpy.int_t *argsort_x, numpy.ndarray[numpy.int_t, ndim=1, mode="c"] nodeInds, numExamples): 
+    cdef numpy.ndarray[numpy.float_t, ndim=1] tempX = numpy.zeros(numExamples)
+    cdef numpy.ndarray[numpy.float_t, ndim=1] tempY = numpy.zeros(numExamples)
+    cdef numpy.ndarray[numpy.int_t, ndim=1] sortedNodeInds = numpy.zeros(nodeInds.shape[0], dtype=int)
+    cdef numpy.ndarray[numpy.int8_t, ndim=1] boolInds = numpy.zeros(numExamples, dtype=numpy.int8)
+    
+    cdef numpy.float_t *yPtr = (<numpy.float_t *>y.data)
+    cdef numpy.float_t *tempXPtr = (<numpy.float_t *>tempX.data)
+    cdef numpy.float_t *tempYPtr = (<numpy.float_t *>tempY.data)
+    cdef numpy.int_t *sortedNodeIndsPtr = (<numpy.int_t *>sortedNodeInds.data)
+    cdef numpy.int8_t *boolIndsPtr = (<numpy.int8_t *>boolInds.data)
+    cdef unsigned int i, j = 0 
+    
+    #Sort by values of x 
+    for i in nodeInds:        
+        tempXPtr[argsort_x[i]] = x[i]
+        tempYPtr[argsort_x[i]] = yPtr[i]
+        sortedNodeIndsPtr[j] = argsort_x[i]  
+        j += 1
+        
+    for i in range(j): 
+        boolIndsPtr[sortedNodeIndsPtr[i]] = 1
+    
+    return tempX, tempY, sortedNodeInds, boolInds  
+    
 def findBestSplit3(int minSplit, numpy.ndarray[numpy.float_t, ndim=2, mode="fortran"] X, numpy.ndarray[numpy.float_t, ndim=1, mode="c"] y,  numpy.ndarray[numpy.int_t, ndim=1, mode="c"] nodeInds,  numpy.ndarray[numpy.int_t, ndim=2, mode="fortran"] argsortX): 
     #print 1st col
     
@@ -120,60 +145,62 @@ def findBestSplit3(int minSplit, numpy.ndarray[numpy.float_t, ndim=2, mode="fort
     cdef int X_argsorted_elem_stride = argsortX.strides[0]
     cdef int X_argsorted_col_stride = argsortX.strides[1]
     cdef int X_argsorted_stride = X_argsorted_col_stride / X_argsorted_elem_stride
-        
-    #Loop 
-    cdef float error, var1, var2, val, currentValue, cumYFinal, cumY2Final, tempYVal, tempY2Val     
-    cdef numpy.ndarray[numpy.float_t, ndim=1] tempX = numpy.zeros(X.shape[0]), tempY = numpy.zeros(X.shape[0])
-    cdef numpy.ndarray[numpy.float_t, ndim=1] tempX2 = numpy.zeros(nodeInds.shape[0]), tempY2 = numpy.zeros(nodeInds.shape[0])
-    cdef numpy.ndarray[numpy.float_t, ndim=1] cumY = numpy.zeros(nodeInds.shape[0]), cumY2 = numpy.zeros(nodeInds.shape[0])
-    cdef numpy.ndarray[numpy.int8_t, ndim=1] boolInds = numpy.zeros(X.shape[0], dtype=numpy.int8)
-    cdef unsigned int rightSize, insertInd, featureInd, i, j, finalInd, variables, insertIndp1
-    #Store unique values 
+    cdef unsigned int numExamples = X.shape[0]
+    
+     #Loop 
+    cdef float error, var1, var2, val, currentValue, cumYFinal, cumY2Final, tempYVal, tempY2Val, sumY, sumY2 
+    cdef numpy.ndarray[numpy.float_t, ndim=1] tempX = numpy.zeros(X.shape[0])
+    cdef numpy.ndarray[numpy.float_t, ndim=1] tempY = numpy.zeros(X.shape[0])
     cdef numpy.ndarray[numpy.int_t, ndim=1] sortedNodeInds = numpy.zeros(nodeInds.shape[0], dtype=int)
-    cdef numpy.ndarray[numpy.float_t, ndim=1] uniqueVals = numpy.zeros(X.shape[0])
-    #cdef int lastUniqueVal = 0
+    cdef numpy.ndarray[numpy.int8_t, ndim=1] boolInds = numpy.zeros(X.shape[0], dtype=numpy.int8)
+    cdef numpy.ndarray[numpy.float_t, ndim=1] tempX2 = numpy.zeros(nodeInds.shape[0]) 
+    cdef numpy.ndarray[numpy.float_t, ndim=1] tempY2 = numpy.zeros(nodeInds.shape[0])
+    cdef numpy.ndarray[numpy.float_t, ndim=1] cumY = numpy.zeros(nodeInds.shape[0])
+    cdef numpy.ndarray[numpy.float_t, ndim=1] cumY2 = numpy.zeros(nodeInds.shape[0])
+    
+    cdef numpy.float_t *tempXPtr = NULL
+    cdef numpy.float_t *tempYPtr = NULL
+    cdef numpy.float_t *tempX2Ptr = NULL
+    cdef numpy.float_t *tempY2Ptr = NULL
+    cdef numpy.float_t *cumYPtr = NULL
+    cdef numpy.float_t *cumY2Ptr = NULL
+    
+    cdef unsigned int rightSize, insertInd, featureInd, i, j, k, finalInd, variables, insertIndp1
+    #Store unique values 
+    
     cdef float tol = 10**-3   
     cdef unsigned int numInds = nodeInds.shape[0]
     
-    #Best values 
+    #Output values 
     cdef float bestError = float("inf")   
     cdef unsigned int bestFeatureInd = 0 
     cdef float bestThreshold = X[:, bestFeatureInd].min() 
     cdef numpy.ndarray[numpy.int_t, ndim=1] bestLeftInds = numpy.array([0]), bestRightInds  = numpy.array([0])
     
     for featureInd in range(X.shape[1]): 
-        #x = X[:, featureInd] 
         x = (<numpy.float_t *>X.data) + X_stride * featureInd
         argsort_x = (<numpy.int_t *>argsortX.data) + X_argsorted_stride * featureInd
-
-        tempX.fill(0) 
-        tempY.fill(0)
-        boolInds.fill(0)
-                
-        j = 0 
-        #Sort by values of x 
-        for i in nodeInds:        
-            tempX[argsort_x[i]] = x[i]
-            tempY[argsort_x[i]] = y[i]
-            sortedNodeInds[j] = argsort_x[i]  
-            j += 1
-        
-     
-        
-        for i in range(j): 
-            boolInds[sortedNodeInds[i]] = 1
-        
+        tempX, tempY, sortedNodeInds, boolInds = sortExamples(x, y, argsort_x, nodeInds, X.shape[0])
+    
         k = 0 
         sumY = 0 
         sumY2 = 0
-        for i in range(X.shape[0]):
+
+        tempXPtr = (<numpy.float_t *>tempX.data)
+        tempYPtr = (<numpy.float_t *>tempY.data)
+        tempX2Ptr = (<numpy.float_t *>tempX2.data)
+        tempY2Ptr = (<numpy.float_t *>tempY2.data)
+        cumYPtr = (<numpy.float_t *>cumY.data)
+        cumY2Ptr = (<numpy.float_t *>cumY2.data)
+
+        for i in range(numExamples):
             if boolInds[i] == 1: 
-                tempYVal = tempY[i]
-                tempY2Val = tempY[i]**2
-                tempX2[k] = tempX[i]
-                tempY2[k] = tempY[i]
-                cumY[k] = sumY + tempYVal
-                cumY2[k] = sumY2 + tempY2Val
+                tempYVal = tempYPtr[i]
+                tempY2Val = tempYVal**2
+                tempX2Ptr[k] = tempXPtr[i]
+                tempY2Ptr[k] = tempYVal
+                cumYPtr[k] = sumY + tempYVal
+                cumY2Ptr[k] = sumY2 + tempY2Val
                 
                 k += 1
                 sumY += tempYVal
