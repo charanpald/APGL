@@ -159,6 +159,7 @@ def findBestSplit3(int minSplit, numpy.ndarray[numpy.float_t, ndim=2, mode="fort
     cdef numpy.ndarray[numpy.float_t, ndim=1] cumY2 = numpy.zeros(nodeInds.shape[0])
     
     cdef numpy.float_t *tempXPtr = NULL
+    cdef numpy.int8_t *boolIndsPtr = NULL
     cdef numpy.float_t *tempYPtr = NULL
     cdef numpy.float_t *tempX2Ptr = NULL
     cdef numpy.float_t *tempY2Ptr = NULL
@@ -185,7 +186,8 @@ def findBestSplit3(int minSplit, numpy.ndarray[numpy.float_t, ndim=2, mode="fort
         k = 0 
         sumY = 0 
         sumY2 = 0
-
+        
+        boolIndsPtr = (<numpy.int8_t *>boolInds.data)
         tempXPtr = (<numpy.float_t *>tempX.data)
         tempYPtr = (<numpy.float_t *>tempY.data)
         tempX2Ptr = (<numpy.float_t *>tempX2.data)
@@ -194,7 +196,7 @@ def findBestSplit3(int minSplit, numpy.ndarray[numpy.float_t, ndim=2, mode="fort
         cumY2Ptr = (<numpy.float_t *>cumY2.data)
 
         for i in range(numExamples):
-            if boolInds[i] == 1: 
+            if boolIndsPtr[i] == 1: 
                 tempYVal = tempYPtr[i]
                 tempY2Val = tempYVal**2
                 tempX2Ptr[k] = tempXPtr[i]
@@ -214,17 +216,18 @@ def findBestSplit3(int minSplit, numpy.ndarray[numpy.float_t, ndim=2, mode="fort
         cumYFinal = cumY[finalInd]
         cumY2Final = cumY2[finalInd]
         
+        
         for insertInd in range(numInds-1): 
             if insertInd < minSplit or insertInd < minSplit: 
                 continue 
             
-            val = tempX2[insertInd]
+            val = tempX2Ptr[insertInd]
             insertIndp1 = insertInd+1
             rightSize = (numInds - insertIndp1)
             
             if insertInd!=1 and insertInd!=numInds: 
-                cumYVal = cumY[insertInd]
-                cumY2Val = cumY2[insertInd]
+                cumYVal = cumYPtr[insertInd]
+                cumY2Val = cumY2Ptr[insertInd]
                 var1 = cumY2Val - (cumYVal**2)/float(insertIndp1)
                 var2 = (cumY2Final-cumY2Val) - (cumYFinal-cumYVal)**2/float(rightSize)
                 
@@ -233,7 +236,8 @@ def findBestSplit3(int minSplit, numpy.ndarray[numpy.float_t, ndim=2, mode="fort
                 if error <= bestError: 
                     bestError = error 
                     bestFeatureInd = featureInd
-                    bestThreshold = (val + tempX2[insertIndp1])/2
+                    bestThreshold = (val + tempX2Ptr[insertIndp1])/2
+        
                     
     bestLeftInds = numpy.sort(nodeInds[numpy.arange(nodeInds.shape[0])[X[:, bestFeatureInd][nodeInds]<bestThreshold]]) 
     bestRightInds = numpy.sort(nodeInds[numpy.arange(nodeInds.shape[0])[X[:, bestFeatureInd][nodeInds]>=bestThreshold]])
