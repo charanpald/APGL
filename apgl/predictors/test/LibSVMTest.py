@@ -10,7 +10,7 @@ import numpy
 import apgl
 import sys 
 from apgl.predictors.LibSVM import LibSVM, computeTestError, computePenalisedError, computePenalty, computeIdealPenalty, computeBootstrapError
-from apgl.data import * 
+from apgl.data.ExamplesGenerator import ExamplesGenerator 
 from apgl.util.Evaluator import Evaluator
 from apgl.util.Sampling import Sampling
 from apgl.data.Standardiser import Standardiser
@@ -733,7 +733,7 @@ class LibSVMTest(unittest.TestCase):
         paramDict["setGamma"] = svm.getGammas()  
         paramDict["setEpsilon"] = svm.getEpsilons()
         
-        print(paramDict.keys())
+        #print(paramDict.keys())
 
         idealPenalties = svm.parallelPenaltyGrid(trainX, trainY, self.X, self.y, paramDict)
         idealPenalties2 = numpy.zeros((svm.gammas.shape[0], svm.epsilons.shape[0], svm.Cs.shape[0]))

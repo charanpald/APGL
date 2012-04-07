@@ -1,7 +1,7 @@
 from apgl.graph.VertexList import VertexList
 from apgl.graph.DenseGraph import DenseGraph
 from apgl.graph.SparseGraph import SparseGraph
-from apgl.kernel import * 
+from apgl.kernel.RandWalkGraphKernel import RandWalkGraphKernel 
 
 import unittest
 import numpy

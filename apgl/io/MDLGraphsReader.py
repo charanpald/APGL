@@ -3,7 +3,6 @@ A class to read a set of graphs in MDL format, the vertex is labelled according
 to the atom type.
 """
 
-#import io
 import numpy 
 from apgl.graph.VertexList import VertexList
 from apgl.graph.SparseGraph import SparseGraph

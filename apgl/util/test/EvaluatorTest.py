@@ -4,7 +4,7 @@
 import numpy 
 import unittest
 import apgl
-from apgl.util import * 
+from apgl.util.Evaluator import Evaluator 
 
 
 class  EvaluatorTestCase(unittest.TestCase):

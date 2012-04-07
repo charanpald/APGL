@@ -1,4 +1,5 @@
-from apgl.graph import *
+from apgl.graph.SparseGraph import SparseGraph
+from apgl.graph.VertexList import VertexList
 from apgl.generator.SmallWorldGenerator import SmallWorldGenerator
 from apgl.io.PajekWriter import PajekWriter
 import unittest

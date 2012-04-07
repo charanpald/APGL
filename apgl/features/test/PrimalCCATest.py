@@ -5,8 +5,8 @@ import numpy
 import scipy.linalg
 from apgl.features.PrimalCCA import PrimalCCA
 from apgl.features.KernelCCA import KernelCCA
-from apgl.kernel import *
-from apgl.util import * 
+from apgl.kernel.LinearKernel import LinearKernel
+
 import logging
 
 

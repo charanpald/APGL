@@ -1,4 +1,4 @@
-from apgl.util import *
+from apgl.util.Util import Util
 from apgl.predictors.AbstractPredictor import AbstractPredictor
 
 class AbstractKernelPredictor(AbstractPredictor):

@@ -1,7 +1,7 @@
 
 import unittest
 import numpy 
-from apgl.util import * 
+from apgl.util.Sampling import Sampling 
 
 
 class  SamplingTest(unittest.TestCase):
@@ -61,7 +61,6 @@ class  SamplingTest(unittest.TestCase):
             self.assertTrue(indices[i][1].shape[0] < numExamples)
             self.assertTrue((numpy.union1d(indices[0][0], indices[0][1]) == numpy.arange(numExamples)).all())
 
-        print(indices)
 
     def testShuffleSplit(self):
         numExamples = 10

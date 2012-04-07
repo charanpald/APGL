@@ -3,7 +3,7 @@
 import unittest
 import logging
 from apgl.io.SimpleGraphReader import SimpleGraphReader
-from apgl.util import * 
+from apgl.util.PathDefaults import PathDefaults 
 
 
 class  SimpleGraphReaderTest(unittest.TestCase):

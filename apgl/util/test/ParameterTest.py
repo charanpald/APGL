@@ -4,7 +4,6 @@ import unittest
 import numpy
 import logging
 from apgl.util.Parameter import Parameter
-from apgl.graph import *
 import scipy.sparse 
 
 

@@ -4,7 +4,6 @@ import numpy
 import scipy.linalg
 from apgl.util.Parameter import Parameter
 from apgl.util.Util import Util 
-from apgl.kernel import *
 
 """
 An implementation of the primal Canonincal Correlation Analysis (CCA) algorithm.

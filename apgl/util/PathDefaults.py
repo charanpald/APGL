@@ -1,4 +1,3 @@
-import apgl
 import os
 import tempfile
 
@@ -12,6 +11,7 @@ class PathDefaults(object):
 
     @staticmethod
     def getProjectDir():
+        import apgl
         dir =  apgl.__path__[0].split("/")
 
         try:

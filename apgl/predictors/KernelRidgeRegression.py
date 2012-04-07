@@ -1,8 +1,8 @@
 
-from apgl.graph import *
-from apgl.util import *
-from apgl.kernel import * 
+
+from apgl.kernel.AbstractKernel import AbstractKernel 
 from apgl.predictors.AbstractKernelPredictor import AbstractKernelPredictor
+from apgl.util.Parameter import Parameter
 import numpy
 
 class KernelRidgeRegression(AbstractKernelPredictor):

@@ -1,7 +1,7 @@
 import unittest
 import numpy
 import logging
-from apgl.util import *
+from apgl.util.Latex import Latex
 
 class  LatexTest(unittest.TestCase):
     def testArray1DToLatex(self):

@@ -4,7 +4,7 @@ import numpy
 import scipy.linalg
 from apgl.util.Parameter import Parameter
 from apgl.kernel.AbstractKernel import AbstractKernel
-from apgl.util import * 
+
 
 """
 An implementation of the Kernel Canonincal Correlation Analysis (KCCA) algorithm. 
