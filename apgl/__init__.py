@@ -43,25 +43,30 @@ def test():
         import traceback
         import sys
         import os
-        import unittest
+        
         import logging
         from apgl.util.PathDefaults import PathDefaults
 
         logging.disable(logging.WARNING)
-        dir = PathDefaults.getSourceDir()
-        print("Running tests from " + dir)
+        sourceDir = PathDefaults.getSourceDir() 
+        print("Running tests from " + sourceDir)
         version = getPythonVersion()
 
         if version >= 2.7:
-            testModules = unittest.defaultTestLoader.discover(dir, pattern='*Test.py')
+            import unittest
         else:
-            import unittest2
-            testModules = unittest2.defaultTestLoader.discover(dir, pattern='*Test.py')
-            
-        overallTestSuite = unittest.TestSuite()
+            import unittest2 as unittest
 
-        for testSuite in testModules:
-            overallTestSuite.addTests(testSuite)
+        
+        overallTestSuite = unittest.TestSuite()
+        overallTestSuite.addTest(unittest.defaultTestLoader.discover(sourceDir + "/clustering", pattern='*Test.py', top_level_dir=sourceDir))
+        overallTestSuite.addTest(unittest.defaultTestLoader.discover(sourceDir + "/data", pattern='*Test.py', top_level_dir=sourceDir))
+        overallTestSuite.addTest(unittest.defaultTestLoader.discover(sourceDir + "/features", pattern='*Test.py', top_level_dir=sourceDir))
+        overallTestSuite.addTest(unittest.defaultTestLoader.discover(sourceDir + "/generator", pattern='*Test.py', top_level_dir=sourceDir))
+        overallTestSuite.addTest(unittest.defaultTestLoader.discover(sourceDir + "/graph", pattern='*Test.py', top_level_dir=sourceDir))
+        overallTestSuite.addTest(unittest.defaultTestLoader.discover(sourceDir + "/kernel", pattern='*Test.py', top_level_dir=sourceDir))
+        overallTestSuite.addTest(unittest.defaultTestLoader.discover(sourceDir + "/predictors", pattern='*Test.py', top_level_dir=sourceDir))
+        overallTestSuite.addTest(unittest.defaultTestLoader.discover(sourceDir + "/util", pattern='*Test.py', top_level_dir=sourceDir))
 
         unittest.TextTestRunner(verbosity=1).run(overallTestSuite)
 
