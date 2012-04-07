@@ -287,11 +287,16 @@ class DictGraph(AbstractSingleGraph):
                 subgraph.__touchVertex(vertexId)
                 subgraph.adjacencies[vertexId] = self.adjacencies[vertexId].copy()
 
+        deleteIdList = []
+
         #Now remove the elements in the adjacencies:
         for vertex1 in subgraph.adjacencies.keys():
             for vertex2 in subgraph.adjacencies[vertex1].keys():
                 if vertex2 not in vertexIds:
-                    del subgraph.adjacencies[vertex1][vertex2]
+                    deleteIdList.append((vertex1, vertex2))
+
+        for vertex1, vertex2 in deleteIdList:         
+            del subgraph.adjacencies[vertex1][vertex2]
            
         return subgraph 
 
