@@ -38,7 +38,7 @@ class PathDefaults(object):
         
     @staticmethod
     def getDataDir():
-        return PathDefaults.getProjectDir() + "data/"
+        return os.path.join(PathDefaults.getProjectDir(), "data") + os.sep
 
     @staticmethod
     def getTempDir():
@@ -46,4 +46,4 @@ class PathDefaults(object):
 
     @staticmethod
     def getOutputDir():
-        return PathDefaults.getProjectDir() + "output/"
+        return os.path.join(PathDefaults.getProjectDir(), "output") + os.sep
