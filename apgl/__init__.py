@@ -21,6 +21,19 @@ def getPythonVersion():
     version = version[0] + version[1]/10.0 + version[2]/100.0
     return version
 
+
+def skip(reason):
+    """
+    A docorator for test skipping.
+    """
+    version = getPythonVersion()
+    if version >= 2.7:
+        import unittest
+        return unittest.skip(reason)
+    else:
+        import unittest2
+        return unittest2.skip(reason)
+
 def skipIf(condition, reason):
     """
     A docorator for test skipping.

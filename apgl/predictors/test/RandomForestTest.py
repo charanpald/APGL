@@ -66,7 +66,7 @@ class  RandomForestTest(unittest.TestCase):
         self.assertEquals(learner.getMaxDepth(), 5)
         self.assertEquals(learner.getMinSplit(), 50)
 
-    @unittest.skip("")
+    @apgl.skip("")
     def testSetWeight(self):
         #Try weight = 0 and weight = 1
         randomForest = RandomForest()

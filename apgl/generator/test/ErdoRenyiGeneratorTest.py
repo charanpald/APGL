@@ -10,6 +10,7 @@ from apgl.graph.GeneralVertexList import GeneralVertexList
 from apgl.generator.ErdosRenyiGenerator import ErdosRenyiGenerator
 import unittest
 import logging
+import apgl
 
 class ErdoRenyiGeneratorTest(unittest.TestCase):
     def setUp(self):    
@@ -92,7 +93,7 @@ class ErdoRenyiGeneratorTest(unittest.TestCase):
         self.assertTrue(graph.getNumEdges() > numEdges)
 
 
-    @unittest.skip("")
+    @apgl.skip("")
     def testGraphDisplay(self):
         try:
             import networkx

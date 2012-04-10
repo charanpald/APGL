@@ -129,7 +129,7 @@ class LibSVMTest(unittest.TestCase):
         self.assertTrue((vars <= 1).all())
         self.assertTrue((vars>= 0).all())
 
-    @unittest.skip("")
+    @apgl.skip("")
     def testGetModel(self):
         try:
             import sklearn
