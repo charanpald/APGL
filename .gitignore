@@ -7,3 +7,6 @@
 .spyderproject
 apgl.egg-info/
 build/
+dist/
+docs/_build/
+/MANIFEST
