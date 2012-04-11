@@ -17,8 +17,6 @@ Another Python Graph Library is a simple, fast and easy to use graph library. Th
 * Machine learning features - data preprocessing, kernels, PCA, KCCA, ABC, TreeRank.
 * Unit tested using the Python unittest framework
 
-Note: This documentation is highly incomplete, and will grow and improve with time, hopefully. 
-
 Downloading
 -----------
 Download for Windows, Linux or Mac OS using: 
@@ -26,7 +24,9 @@ Download for Windows, Linux or Mac OS using:
 - Sourceforge `here <http://sourceforge.net/projects/apythongraphlib/>`_ 
 - The Python Package Index (PyPI) `here <http://pypi.python.org/pypi/apgl/>`_ 
 
-The changelog is on the Sourceforge site. To use this library, you must have `Python <http://www.python.org/>`_, `NumPy <http://numpy.scipy.org/>`_ and `SciPy <http://www.scipy.org/>`_. The code has been verified on Python 2.7.2, Numpy 1.5.1 and Scipy 0.9.0, but should work with other versions. The automatic testing routine requires Python 2.7 or later, or the `unittest2 <http://pypi.python.org/pypi/unittest2/>`_ testing framework for Python 2.3-2.6 .
+To use this library, you must have `Python <http://www.python.org/>`_, `NumPy <http://numpy.scipy.org/>`_ and `SciPy <http://www.scipy.org/>`_. The code has been verified on Python 2.7.2, Numpy 1.5.1 and Scipy 0.9.0, but should work with other versions. The automatic testing routine requires Python 2.7 or later, or the `unittest2 <http://pypi.python.org/pypi/unittest2/>`_ testing framework for Python 2.3-2.6 .
+
+The source code repository is available `here <https://github.com/charanpald/APGL>`_ for those that want the bleeding edge, or are interested in development.  
 
 Installation 
 -------------

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #The first line is needed for egg files and the second for tars etc.
-#from setuptools import setup
-from distutils.core import setup
+from setuptools import setup
+#from distutils.core import setup
 
 #Support for python 3
 def execfile3(file, globals=globals(), locals=locals()):

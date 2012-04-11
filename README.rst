@@ -5,6 +5,14 @@ This project develops a simple, fast and easy to use Python graph library using 
 
 Changelog 
 ---------
+Changes in version 0.7: 
+
+* Python 3 support 
+* Windows installer 
+* DictTree - getRootId, children, leaves, nonLeaf, copy, pruning and subtree methods 
+* Sampling returns tuple of ndarrays 
+* Other minor changes and documentation improvements 
+
 Changes in version 0.6.10: 
 
 * Bootstrap and shuffle split sampling in Sampling class 
