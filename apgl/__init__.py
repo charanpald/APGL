@@ -61,6 +61,7 @@ def test():
         from apgl.util.PathDefaults import PathDefaults
 
         logging.disable(logging.WARNING)
+        #logging.disable(logging.INFO)
         sourceDir = PathDefaults.getSourceDir() 
         print("Running tests from " + sourceDir)
         version = getPythonVersion()
@@ -82,7 +83,7 @@ def test():
 
         unittest.TextTestRunner(verbosity=1).run(overallTestSuite)
 
-        logging.disable(logging.INFO)
+        
     except ImportError as error:
         traceback.print_exc(file=sys.stdout)
 
