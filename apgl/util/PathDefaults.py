@@ -42,7 +42,7 @@ class PathDefaults(object):
 
     @staticmethod
     def getTempDir():
-        return tempfile.gettempdir() + "/"
+        return tempfile.gettempdir() + os.sep
 
     @staticmethod
     def getOutputDir():
