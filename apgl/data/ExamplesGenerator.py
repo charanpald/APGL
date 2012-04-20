@@ -20,6 +20,7 @@ class ExamplesGenerator():
         X = numpy.random.rand(numExamples, numFeatures)
         c = numpy.random.rand(numFeatures)
         y = numpy.sign((X.dot(c)) - numpy.mean(X.dot(c)) + numpy.random.randn(numExamples)*noise)
+        y = numpy.array(y, numpy.int)
 
         return X, y
 
