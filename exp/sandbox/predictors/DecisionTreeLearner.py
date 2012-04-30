@@ -22,20 +22,13 @@ class DecisionTreeLearner(AbstractPredictor):
         self.alphaThreshold = alphaThreshold
         self.folds = 5
     
-    def getAlphaThreshold(self): 
-        return self.alphaThreshold
-    
-    def setAlphaThreshold(self, alphaThreshold): 
-        Parameter.checkFloat(alphaThreshold, -float("inf"), float("inf"))
-        self.alphaThreshold = alphaThreshold
-    
     def learnModel(self, X, y):
         nodeId = (0, )         
         self.tree = DictTree()
         rootNode = DecisionNode(numpy.arange(X.shape[0]), y.mean())
         self.tree.setVertex(nodeId, rootNode)
 
-        #We computer a sorted version of X 
+        #We compute a sorted version of X 
         argsortX = numpy.zeros(X.shape, numpy.int)
         for i in range(X.shape[1]): 
             argsortX[:, i] = numpy.argsort(X[:, i])
@@ -52,21 +45,6 @@ class DecisionTreeLearner(AbstractPredictor):
         else:
             raise ValueError("Unknown pruning type " + self.pruneType)
      
-    def getLeftChildId(self, nodeId): 
-        leftChildId = list(nodeId)
-        leftChildId.append(0)
-        leftChildId = tuple(leftChildId)
-        return leftChildId
-
-    def getRightChildId(self, nodeId): 
-        rightChildId = list(nodeId)
-        rightChildId.append(1)
-        rightChildId = tuple(rightChildId) 
-        return rightChildId
-   
-    def getTree(self): 
-        return self.tree 
-   
     #@profile 
     def recursiveSplit(self, X, y, argsortX, nodeId): 
         """
@@ -111,6 +89,9 @@ class DecisionTreeLearner(AbstractPredictor):
         return predY 
         
     def recursivePredict(self, X, y, nodeId): 
+        """
+        Recurse through the tree and assign examples to the correct vertex. 
+        """        
         node = self.tree.getVertex(nodeId)
         testInds = node.getTestInds()
         
@@ -118,43 +99,19 @@ class DecisionTreeLearner(AbstractPredictor):
             y[testInds] = node.getValue()
         else: 
              
-            leftChildId = self.getLeftChildId(nodeId)
-            if self.tree.vertexExists(leftChildId):
-                leftChild = self.tree.getVertex(leftChildId)
-                leftChildInds = X[testInds, node.getFeatureInd()] < node.getThreshold() 
-                leftChild.setTestInds(testInds[leftChildInds])   
-                y = self.recursivePredict(X, y, leftChildId)
-                
-            rightChildId = self.getRightChildId(nodeId)
-            if self.tree.vertexExists(rightChildId): 
-                rightChild = self.tree.getVertex(rightChildId)
-                rightChildInds = X[testInds, node.getFeatureInd()] >= node.getThreshold()
-                rightChild.setTestInds(testInds[rightChildInds])
-                y = self.recursivePredict(X, y, rightChildId)
+            for childId in [self.getLeftChildId(nodeId), self.getRightChildId(nodeId)]:
+                if self.tree.vertexExists(childId):
+                    child = self.tree.getVertex(childId)
+    
+                    if childId[-1] == 0: 
+                        childInds = X[testInds, node.getFeatureInd()] < node.getThreshold() 
+                    else:
+                        childInds = X[testInds, node.getFeatureInd()] >= node.getThreshold()
+                    
+                    child.setTestInds(testInds[childInds])   
+                    y = self.recursivePredict(X, y, childId)
                 
         return y
-        
-    def computeAlphas(self): 
-        for vertexId in self.tree.getAllVertexIds(): 
-            currentNode = self.tree.getVertex(vertexId)            
-            subtreeLeaves = self.tree.leaves(vertexId)
-
-            testErrorSum = 0 
-            for leaf in subtreeLeaves: 
-                testErrorSum += self.tree.getVertex(leaf).getTestError()
-            
-            #Alpha is normalised difference in error 
-            currentNode.alpha = (testErrorSum - currentNode.getTestError())/float(currentNode.getTestInds().shape[0])        
-        
-    def repPrune(self, validX, validY): 
-        """
-        Prune the decision tree using reduced error pruning. 
-        """
-        rootId = (0,)
-        self.tree.getVertex(rootId).setTestInds(numpy.arange(validX.shape[0]))
-        self.recursiveSetPrune(validX, validY, rootId)        
-        self.computeAlphas()        
-        self.recursivePrune(rootId)
         
     def recursiveSetPrune(self, X, y, nodeId):
         """
@@ -162,7 +119,7 @@ class DecisionTreeLearner(AbstractPredictor):
         """
         node = self.tree.getVertex(nodeId)
         testInds = node.getTestInds()
-        node.setTestError(numpy.sum((y[testInds] - node.getValue())**2))
+        node.setTestError(self.vertexTestError(y[testInds], node.getValue()))
     
         for childId in [self.getLeftChildId(nodeId), self.getRightChildId(nodeId)]:
             if self.tree.vertexExists(childId):
@@ -174,10 +131,39 @@ class DecisionTreeLearner(AbstractPredictor):
                     childInds = X[testInds, node.getFeatureInd()] >= node.getThreshold()
                 child.setTestInds(testInds[childInds])
                 self.recursiveSetPrune(X, y, childId)
-                    
+    
+    def vertexTestError(self, trueY, predY):
+        """
+        This is the error used for pruning. We compute it at each node. 
+        """
+        return numpy.sum((trueY - predY)**2)
+    
+    def computeAlphas(self): 
+        for vertexId in self.tree.getAllVertexIds(): 
+            currentNode = self.tree.getVertex(vertexId)
+            subtreeLeaves = self.tree.leaves(vertexId)
+
+            testErrorSum = 0 
+            for leaf in subtreeLeaves: 
+                testErrorSum += self.tree.getVertex(leaf).getTestError()
+            
+            #Alpha is normalised difference in error 
+            if currentNode.getTestInds().shape[0] != 0: 
+                currentNode.alpha = (testErrorSum - currentNode.getTestError())/float(currentNode.getTestInds().shape[0])        
+        
+    def repPrune(self, validX, validY): 
+        """
+        Prune the decision tree using reduced error pruning. 
+        """
+        rootId = (0,)
+        self.tree.getVertex(rootId).setTestInds(numpy.arange(validX.shape[0]))
+        self.recursiveSetPrune(validX, validY, rootId)        
+        self.computeAlphas()        
+        self.recursivePrune(rootId)
+                            
     def recursivePrune(self, nodeId): 
         """
-        We compute alpha values and prune as early as possible.   
+        We prune as early as possible.   
         """
         node = self.tree.getVertex(nodeId)
 
@@ -256,4 +242,26 @@ class DecisionTreeLearner(AbstractPredictor):
         if self.type == "reg": 
             return Evaluator.rootMeanSqError
         else:
-            return Evaluator.binaryError                 
+            return Evaluator.binaryError      
+            
+    def getAlphaThreshold(self): 
+        return self.alphaThreshold
+    
+    def setAlphaThreshold(self, alphaThreshold): 
+        Parameter.checkFloat(alphaThreshold, -float("inf"), float("inf"))
+        self.alphaThreshold = alphaThreshold
+        
+    def getLeftChildId(self, nodeId): 
+        leftChildId = list(nodeId)
+        leftChildId.append(0)
+        leftChildId = tuple(leftChildId)
+        return leftChildId
+
+    def getRightChildId(self, nodeId): 
+        rightChildId = list(nodeId)
+        rightChildId.append(1)
+        rightChildId = tuple(rightChildId) 
+        return rightChildId
+   
+    def getTree(self): 
+        return self.tree 
