@@ -17,6 +17,7 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         
         generator = ExamplesGenerator() 
         self.X, self.y = generator.generateBinaryExamples(self.numExamples, self.numFeatures)
+        self.y = numpy.array(self.y, numpy.float)
         
         
     def testInit(self): 
@@ -33,6 +34,7 @@ class DecisionTreeLearnerTest(unittest.TestCase):
             maxDepth = numpy.random.randint(0, 10)
             
             X, y = generator.generateBinaryExamples(numExamples, numFeatures)
+            y = numpy.array(y, numpy.float)
         
             learner = DecisionTreeLearner(minSplit=minSplit, maxDepth=maxDepth) 
             learner.learnModel(X, y)        
@@ -163,6 +165,7 @@ class DecisionTreeLearnerTest(unittest.TestCase):
             maxDepth = numpy.random.randint(0, 10)
             
             X, y = generator.generateBinaryExamples(numExamples, numFeatures)   
+            y = numpy.array(y, numpy.float)
                 
             learner = DecisionTreeLearner(minSplit=minSplit, maxDepth=maxDepth) 
             learner.learnModel(X, y)    
