@@ -2,12 +2,13 @@ import numpy
 
 from apgl.graph.DictTree import DictTree 
 from apgl.util.Util import Util 
+from apgl.util.Parameter import Parameter 
 from exp.sandbox.predictors.DecisionTreeLearner import DecisionTreeLearner
 from exp.sandbox.predictors.DecisionNode import DecisionNode
 from exp.sandbox.predictors.TreeCriterionPy import findBestSplit2, findBestSplitRand
 
 class PenaltyDecisionTree(DecisionTreeLearner): 
-    def __init__(self, criterion="mse", maxDepth=10, minSplit=30, type="reg", pruning=True, gamma=0.1, sampleSize=10):
+    def __init__(self, criterion="mse", maxDepth=10, minSplit=30, type="reg", pruning=True, gamma=0.01, sampleSize=10):
         """
         Need a minSplit for the internal nodes and one for leaves. A PenaltyDecisionTree
         is one created such that the penalty on the empirical risk is proportional 
@@ -27,6 +28,8 @@ class PenaltyDecisionTree(DecisionTreeLearner):
     def learnModel(self, X, y):
         if numpy.unique(y).shape[0] != 2: 
             raise ValueError("Must provide binary labels")
+        if y.dtype != numpy.int: 
+            raise ValueError("Labels must be integers")
         
         self.shapeX = X.shape
         rootId = (0, )         
@@ -51,6 +54,10 @@ class PenaltyDecisionTree(DecisionTreeLearner):
                 bestTree = self.tree.copy()
         
         self.tree = bestTree 
+        
+    def setGamma(self, gamma): 
+        Parameter.checkFloat(gamma, 0.0, 1.0)
+        self.gamma = gamma         
         
     def treeObjective(self, X, y): 
         """
@@ -96,7 +103,7 @@ class PenaltyDecisionTree(DecisionTreeLearner):
         
             T = self.tree.getNumVertices()
             T2 = T - len(self.tree.subtreeIds(vertexId)) + 1 
-            currentNode.alpha = (subtreeError - currentNode.getTestError())
+            currentNode.alpha = (1-self.gamma)*(subtreeError - currentNode.getTestError())
             currentNode.alpha += self.gamma * numpy.sqrt(32*n*(T*d*numpy.log(n) + T*numpy.log(2) + 2*numpy.log(T)))
             currentNode.alpha -= self.gamma * numpy.sqrt(32*n*(T2*d*numpy.log(n) + T2*numpy.log(2) + 2*numpy.log(T2)))
             currentNode.alpha /= n

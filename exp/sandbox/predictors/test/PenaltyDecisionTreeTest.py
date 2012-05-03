@@ -83,7 +83,7 @@ class PenaltyDecisionTreeLearnerTest(unittest.TestCase):
             
             subtreeError = 0 
             for subtreeLeaf in subtreeLeaves: 
-                subtreeError += tree.getVertex(subtreeLeaf).getTestError()
+                subtreeError += (1-gamma)*tree.getVertex(subtreeLeaf).getTestError()
             
             n = float(X.shape[0])
             d = X.shape[1]
@@ -91,7 +91,7 @@ class PenaltyDecisionTreeLearnerTest(unittest.TestCase):
             subtreeError += gamma * numpy.sqrt(32*n*(T*d*numpy.log(n) + T*numpy.log(2) + 2*numpy.log(T)))
             
             T2 = T - len(tree.subtreeIds(vertexId)) + 1 
-            vertexError = tree.getVertex(vertexId).getTestError()
+            vertexError = (1-gamma)*tree.getVertex(vertexId).getTestError()
             vertexError +=  gamma * numpy.sqrt(32*n*(T2*d*numpy.log(n) + T2*numpy.log(2) + 2*numpy.log(T2)))
             
             self.assertAlmostEquals((subtreeError - vertexError)/n, tree.getVertex(vertexId).alpha)
@@ -105,12 +105,12 @@ class PenaltyDecisionTreeLearnerTest(unittest.TestCase):
         T = 1 
         (n, d) = X.shape
         n = float(n)
-        vertexError = numpy.sum(y != Util.mode(y))/n
+        vertexError = (1-gamma)*numpy.sum(y != Util.mode(y))/n
         pen = gamma*numpy.sqrt((32/n)*(d*numpy.log(n) + numpy.log(2) + 2*numpy.log(T)))
         vertexError += pen 
         
         T = tree.getNumVertices() 
-        treeError = numpy.sum(y != learner.predict(X))/n         
+        treeError = (1-gamma)*numpy.sum(y != learner.predict(X))/n         
         pen = gamma*numpy.sqrt((32/n)*(d*T*numpy.log(n) + T*numpy.log(2) + 2*numpy.log(T)))
         treeError += pen 
         
@@ -121,7 +121,7 @@ class PenaltyDecisionTreeLearnerTest(unittest.TestCase):
     def testRecursivePrune(self): 
         minSplit = 20
         maxDepth = 3
-        gamma = 0.02
+        gamma = 0.04
             
         X, y = self.X, self.y
                 
@@ -138,11 +138,12 @@ class PenaltyDecisionTreeLearnerTest(unittest.TestCase):
         learner.tree.getVertex(rootId).setTestInds(numpy.arange(X.shape[0]))
         learner.recursiveSetPrune(X, y, rootId)  
         learner.computeAlphas()
-        print(tree)
-        
+
         learner.prune(X, y)
-        print(learner.alphaThreshold)        
-        print(tree)
+        
+        #Check there are no nodes with alpha>alphaThreshold 
+        for vertexId in tree.getAllVertexIds(): 
+            self.assertTrue(tree.getVertex(vertexId).alpha >= learner.alphaThreshold)
         
         
         
