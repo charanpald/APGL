@@ -7,7 +7,7 @@ from exp.sandbox.predictors.DecisionNode import DecisionNode
 from exp.sandbox.predictors.TreeCriterionPy import findBestSplit2, findBestSplitRand
 
 class PenaltyDecisionTree(DecisionTreeLearner): 
-    def __init__(self, criterion="mse", maxDepth=10, minSplit=30, type="reg", gamma=0.1):
+    def __init__(self, criterion="mse", maxDepth=10, minSplit=30, type="reg", pruning=True, gamma=0.1, sampleSize=10):
         """
         Need a minSplit for the internal nodes and one for leaves. A PenaltyDecisionTree
         is one created such that the penalty on the empirical risk is proportional 
@@ -21,16 +21,15 @@ class PenaltyDecisionTree(DecisionTreeLearner):
         self.criterion = criterion
         self.type = type
         self.gamma = gamma 
-        self.sampleSize = 100 
+        self.sampleSize = sampleSize 
+        self.pruning = pruning 
                 
     def learnModel(self, X, y):
         if numpy.unique(y).shape[0] != 2: 
             raise ValueError("Must provide binary labels")
         
         self.shapeX = X.shape
-        (n, d) = X.shape
         rootId = (0, )         
-        
         argsortX = numpy.zeros(X.shape, numpy.int)
         for i in range(X.shape[1]): 
             argsortX[:, i] = numpy.argsort(X[:, i])
@@ -40,22 +39,28 @@ class PenaltyDecisionTree(DecisionTreeLearner):
         
         for i in range(self.sampleSize): 
             self.tree = DictTree()
-            rootNode = DecisionNode(numpy.arange(X.shape[0]), y.mean())
+            rootNode = DecisionNode(numpy.arange(X.shape[0]), Util.mode(y))
             self.tree.setVertex(rootId, rootNode)
             self.recursiveSplit(X, y, argsortX, rootId)
-            
-            #self.prune(X, y)
-            T = self.tree.getNumVertices()
-            #print(X.shape)
-            predY = self.predict(X)
-            error = numpy.sum(predY!=y)/float(X.shape[0]) + self.gamma*numpy.sqrt(32*(T*d*numpy.log(n) + T*numpy.log(2) + 2*numpy.log(T))/n)
+            if self.pruning: 
+                self.prune(X, y)
+            error = self.treeObjective(X, y)
             
             if error < bestError: 
-                print(error)
                 bestError = error
                 bestTree = self.tree.copy()
         
         self.tree = bestTree 
+        
+    def treeObjective(self, X, y): 
+        """
+        Return the empirical risk plus penalty for the tree. 
+        """
+        predY = self.predict(X)
+        T = self.tree.getNumVertices()
+        (n, d) = X.shape
+        error = numpy.sum(predY!=y)/float(X.shape[0]) + self.gamma*numpy.sqrt(32*(T*d*numpy.log(n) + T*numpy.log(2) + 2*numpy.log(T))/n)
+        return error 
 
     def prune(self, X, y): 
         """
@@ -74,6 +79,10 @@ class PenaltyDecisionTree(DecisionTreeLearner):
         return numpy.sum(trueY != predY)
         
     def computeAlphas(self): 
+        """
+        The alpha value at each vertex is the improvement in the objective by 
+        pruning at that vertex.  
+        """
         n = self.shapeX[0]
         d = self.shapeX[1]        
         
@@ -81,13 +90,13 @@ class PenaltyDecisionTree(DecisionTreeLearner):
             currentNode = self.tree.getVertex(vertexId)            
             subtreeLeaves = self.tree.leaves(vertexId)
     
-            testErrorSum = 0 
+            subtreeError = 0 
             for leaf in subtreeLeaves: 
-                testErrorSum += self.tree.getVertex(leaf).getTestError()
+                subtreeError += self.tree.getVertex(leaf).getTestError()
         
             T = self.tree.getNumVertices()
             T2 = T - len(self.tree.subtreeIds(vertexId)) + 1 
-            currentNode.alpha = (testErrorSum - currentNode.getTestError())
+            currentNode.alpha = (subtreeError - currentNode.getTestError())
             currentNode.alpha += self.gamma * numpy.sqrt(32*n*(T*d*numpy.log(n) + T*numpy.log(2) + 2*numpy.log(T)))
             currentNode.alpha -= self.gamma * numpy.sqrt(32*n*(T2*d*numpy.log(n) + T2*numpy.log(2) + 2*numpy.log(T2)))
             currentNode.alpha /= n
