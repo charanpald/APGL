@@ -11,9 +11,9 @@ from apgl.util.PathDefaults import PathDefaults
 from apgl.util.Util import Util
 from apgl.graph import *
 from apgl.generator import *
-from apgl.sandbox.IterativeSpectralClustering import IterativeSpectralClustering
-from apgl.sandbox.GraphIterators import IncreasingSubgraphListIterator, toDenseGraphListIterator
-from apgl.sandbox.NingSpectralClustering import NingSpectralClustering
+from exp.sandbox.IterativeSpectralClustering import IterativeSpectralClustering
+from exp.sandbox.GraphIterators import IncreasingSubgraphListIterator, toDenseGraphListIterator
+from exp.sandbox.NingSpectralClustering import NingSpectralClustering
 
 numpy.random.seed(21)
 numpy.set_printoptions(suppress=True, precision=3, linewidth=200, threshold=40000)
@@ -203,5 +203,5 @@ plt.savefig(resultsDir + "ThreeClustErrors.eps")
 #	plt.show()
 
 # to run
-# python -c "execfile('apgl/clusterexp/SyntheticExample.py')"
+# python -c "execfile('exp/clusterexp/SyntheticExample.py')"
 

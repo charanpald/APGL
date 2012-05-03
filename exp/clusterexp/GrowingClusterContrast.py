@@ -11,9 +11,9 @@ from apgl.util.PathDefaults import PathDefaults
 from apgl.util.Util import Util
 from apgl.graph import *
 from apgl.generator import *
-from apgl.sandbox.IterativeSpectralClustering import IterativeSpectralClustering
-from apgl.sandbox.GraphIterators import IncreasingSubgraphListIterator, toDenseGraphListIterator
-from apgl.sandbox.NingSpectralClustering import NingSpectralClustering
+from exp.sandbox.IterativeSpectralClustering import IterativeSpectralClustering
+from exp.sandbox.GraphIterators import IncreasingSubgraphListIterator, toDenseGraphListIterator
+from exp.sandbox.NingSpectralClustering import NingSpectralClustering
 
 numpy.seterr(all="raise", under="ignore")
 numpy.random.seed(21)
@@ -251,5 +251,5 @@ for lvl in range(_numLevel):
 #	plt.show()
 
 # to run
-# python -c "execfile('apgl/clusterexp/GrowingClusterContrast.py')"
+# python -c "execfile('exp/clusterexp/GrowingClusterContrast.py')"
 

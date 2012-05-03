@@ -6,7 +6,7 @@ import math
 import sys 
 import logging 
 import os.path
-from apgl.sandbox.NingSpectralClustering import NingSpectralClustering
+from exp.sandbox.NingSpectralClustering import NingSpectralClustering
 from apgl.graph import *
 from apgl.generator import *
 from apgl.util.Util import Util 

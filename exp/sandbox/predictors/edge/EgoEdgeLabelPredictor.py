@@ -4,7 +4,7 @@ import logging
 import gc 
 
 from apgl.predictors.AbstractPredictor import AbstractPredictor
-from apgl.sandbox.predictors.edge.AbstractEdgeLabelPredictor import AbstractEdgeLabelPredictor
+from exp.sandbox.predictors.edge.AbstractEdgeLabelPredictor import AbstractEdgeLabelPredictor
 from apgl.util.Util import Util
 from apgl.util.Parameter import Parameter
 from apgl.data import * 

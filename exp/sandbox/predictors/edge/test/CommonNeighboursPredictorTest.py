@@ -1,7 +1,7 @@
 
 import unittest
 import numpy
-from apgl.sandbox.predictors.edge.CommonNeighboursPredictor import CommonNeighboursPredictor
+from exp.sandbox.predictors.edge.CommonNeighboursPredictor import CommonNeighboursPredictor
 from apgl.graph import *
 
 

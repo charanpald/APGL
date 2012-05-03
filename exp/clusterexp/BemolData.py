@@ -20,9 +20,9 @@ import re
 import getopt
 from apgl.graph import *
 from apgl.generator import *
-from apgl.sandbox.IterativeSpectralClustering import IterativeSpectralClustering
-from apgl.sandbox.GraphIterators import DatedPurchasesGraphListIterator
-from apgl.sandbox.GraphIterators import MyDictionary
+from exp.sandbox.IterativeSpectralClustering import IterativeSpectralClustering
+from exp.sandbox.GraphIterators import DatedPurchasesGraphListIterator
+from exp.sandbox.GraphIterators import MyDictionary
 from apgl.util.PathDefaults import PathDefaults
 
 numpy.random.seed(21)
@@ -241,6 +241,6 @@ if __name__ == "__main__":
     sys.exit(BemolData.main())
 
 # to run
-# python -c "execfile('apgl/clusterexp/BemolData.py')" --help
-# python2.7 -c "execfile('apgl/clusterexp/BemolData.py')" --help
+# python -c "execfile('exp/clusterexp/BemolData.py')" --help
+# python2.7 -c "execfile('exp/clusterexp/BemolData.py')" --help
 

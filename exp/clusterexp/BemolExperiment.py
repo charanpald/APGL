@@ -7,8 +7,8 @@ import logging
 import numpy
 from apgl.graph import *
 from apgl.util.PathDefaults import PathDefaults
-from apgl.clusterexp.ClusterExpHelper import ClusterExpHelper
-from apgl.clusterexp.BemolData import BemolData
+from exp.clusterexp.ClusterExpHelper import ClusterExpHelper
+from exp.clusterexp.BemolData import BemolData
 from apgl.util.Parameter import Parameter
 
 numpy.random.seed(21)
@@ -42,18 +42,17 @@ for W in getIterator():
 datasetName = "Bemol"
 
 clusterExpHelper = ClusterExpHelper(getIterator, datasetName, numGraphs)
-clusterExpHelper.runIASC = False
-clusterExpHelper.runExact = False
-clusterExpHelper.runModularity = False
+clusterExpHelper.runIASC = True
+clusterExpHelper.runExact = True
+clusterExpHelper.runModularity = True
 clusterExpHelper.runNystrom = True
-clusterExpHelper.runNing = False
+clusterExpHelper.runNing = True
 clusterExpHelper.k1 = 25
 clusterExpHelper.k2 = 8*clusterExpHelper.k1
-clusterExpHelper.k1 = 100
 clusterExpHelper.runExperiment()
 
 # to run
-# python -c "execfile('apgl/clusterexp/BemolExperiment.py')"
-# python2.7 -c "execfile('apgl/clusterexp/BemolExperiment.py')"
-
+# python -c "execfile('exp/clusterexp/BemolExperiment.py')"
+# python2.7 -c "execfile('exp/clusterexp/BemolExperiment.py')"
+# python3 -c "exec(open('exp/clusterexp/BemolExperiment.py').read())"
 

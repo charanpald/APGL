@@ -4,8 +4,8 @@ import sys
 from apgl.graph import *
 from apgl.generator import *
 from apgl.util.ProfileUtils import ProfileUtils
-from apgl.sandbox.IterativeSpectralClustering import * 
-from apgl.sandbox.NingSpectralClustering import *
+from exp.sandbox.IterativeSpectralClustering import * 
+from exp.sandbox.NingSpectralClustering import *
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 

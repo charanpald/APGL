@@ -10,8 +10,8 @@ import scipy.sparse.linalg
 import numpy
 import scipy.cluster.vq as vq
 
-from apgl.sandbox.EigenUpdater import EigenUpdater
-from apgl.sandbox.Nystrom import Nystrom
+from exp.sandbox.EigenUpdater import EigenUpdater
+from exp.sandbox.Nystrom import Nystrom
 from apgl.data.Standardiser import Standardiser
 from apgl.graph.GraphUtils import GraphUtils
 from apgl.util.Parameter import Parameter

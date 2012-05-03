@@ -5,10 +5,10 @@ import logging
 import numpy
 from apgl.graph.GraphUtils import GraphUtils 
 from apgl.util.PathDefaults import PathDefaults
-from apgl.sandbox.IterativeSpectralClustering import IterativeSpectralClustering
-from apgl.sandbox.NingSpectralClustering import NingSpectralClustering
-from apgl.sandbox.IterativeModularityClustering import IterativeModularityClustering
-from apgl.sandbox.GraphIterators import toDenseGraphListIterator
+from exp.sandbox.IterativeSpectralClustering import IterativeSpectralClustering
+from exp.sandbox.NingSpectralClustering import NingSpectralClustering
+from exp.sandbox.IterativeModularityClustering import IterativeModularityClustering
+from exp.sandbox.GraphIterators import toDenseGraphListIterator
 
 
 class ClusterExpHelper(object):

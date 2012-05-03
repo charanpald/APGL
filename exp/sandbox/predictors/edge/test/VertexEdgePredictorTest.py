@@ -3,7 +3,7 @@ import unittest
 import numpy
 import logging
 import sys 
-from apgl.sandbox.predictors.edge.VertexEdgePredictor import VertexEdgePredictor
+from exp.sandbox.predictors.edge.VertexEdgePredictor import VertexEdgePredictor
 from apgl.predictors.KernelRidgeRegression import KernelRidgeRegression
 from apgl.kernel.LinearKernel import LinearKernel 
 from apgl.graph import *

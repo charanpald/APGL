@@ -7,8 +7,8 @@ import numpy
 import sys 
 import logging
 import itertools
-from apgl.clusterexp.CitationIterGenerator import CitationIterGenerator 
-from apgl.clusterexp.ClusterExpHelper import ClusterExpHelper
+from exp.clusterexp.CitationIterGenerator import CitationIterGenerator 
+from exp.clusterexp.ClusterExpHelper import ClusterExpHelper
 
 numpy.random.seed(21)
 #numpy.seterr("raise")

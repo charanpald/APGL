@@ -1,7 +1,7 @@
 import unittest
 import numpy
 import logging
-from apgl.sandbox.TemporalKMeans import TemporalKMeans
+from exp.sandbox.TemporalKMeans import TemporalKMeans
 from apgl.graph import *
 
 

@@ -1,6 +1,6 @@
 from apgl.graph import *
 from apgl.util import *
-from apgl.sandbox.predictors.edge.AbstractEdgePredictor import AbstractEdgePredictor
+from exp.sandbox.predictors.edge.AbstractEdgePredictor import AbstractEdgePredictor
 import numpy
 import logging
 

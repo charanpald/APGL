@@ -3,7 +3,7 @@
 import unittest
 import numpy
 import scipy.linalg
-from apgl.sandbox.PrimalDualCCA import PrimalDualCCA
+from exp.sandbox.PrimalDualCCA import PrimalDualCCA
 from apgl.features.KernelCCA import KernelCCA
 from apgl.kernel import *
 from apgl.util.Util import Util

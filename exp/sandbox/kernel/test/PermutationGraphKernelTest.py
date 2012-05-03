@@ -3,7 +3,7 @@
 
 import unittest
 import numpy 
-from apgl.sandbox.kernel.PermutationGraphKernel import PermutationGraphKernel
+from exp.sandbox.kernel.PermutationGraphKernel import PermutationGraphKernel
 from apgl.kernel.LinearKernel import LinearKernel
 from apgl.graph.SparseGraph import SparseGraph
 from apgl.graph.VertexList import VertexList

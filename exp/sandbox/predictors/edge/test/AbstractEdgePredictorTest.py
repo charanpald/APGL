@@ -1,8 +1,8 @@
 
 import unittest
 import numpy 
-from apgl.sandbox.predictors.edge.RandomEdgePredictor import RandomEdgePredictor
-from apgl.sandbox.predictors.edge.AbstractEdgePredictor import AbstractEdgePredictor
+from exp.sandbox.predictors.edge.RandomEdgePredictor import RandomEdgePredictor
+from exp.sandbox.predictors.edge.AbstractEdgePredictor import AbstractEdgePredictor
 from apgl.graph.VertexList import VertexList
 from apgl.graph.SparseGraph import SparseGraph
 

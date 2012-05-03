@@ -162,5 +162,5 @@ if 'resultsFileName5' in locals():
 plt.show()
 
 # to run
-# python -c "execfile('apgl/clusterexp/ProcessClusterResults.py')"
+# python -c "execfile('exp/clusterexp/ProcessClusterResults.py')"
 
