@@ -3,7 +3,7 @@
 import unittest
 import numpy
 import scipy.sparse 
-from apgl.sandbox.Nystrom import Nystrom
+from exp.sandbox.Nystrom import Nystrom
 from apgl.util.SparseUtils import SparseUtils
 
 
@@ -54,7 +54,7 @@ class  NystromTestCase(unittest.TestCase):
 
     def testEigpsd2(self):
         #These tests are on sparse matrices 
-        tol = 10**-3
+        tol = 10**-5
 
         A = numpy.random.rand(10, 10)
         A = A.dot(A.T)
@@ -75,8 +75,39 @@ class  NystromTestCase(unittest.TestCase):
             self.assertTrue(numpy.linalg.norm(A - AHat) < numpy.linalg.norm(A))
             self.assertAlmostEquals(numpy.linalg.norm(A - AHat), numpy.linalg.norm(A - AHat2))
 
+    def testEigpsd3(self):
+        # These tests are on big matrices
+        tol = 10**-5
+        n = 1000        # size of the matrices
+        m = 100          # rank of the matrices
+        max_k = int(m*1.1)     # maximum rank of the approximation
+
+        # relevant matrix 
+        Arel = numpy.random.rand(m, m)
+        Arel = Arel.dot(Arel.T)
+        w, U = numpy.linalg.eig(Arel)
+        Arel = U.dot(numpy.diag(w+1)).dot(U.T)
+        tolArel = tol*numpy.linalg.norm(Arel)
+
+        # big matrix 
+        P = numpy.random.rand(n, n)
+        A = P.dot(scipy.linalg.block_diag(Arel, numpy.identity(n-m)/numpy.sqrt(n-m)*tolArel/10)).dot(P.T)
+        tolA = tol*numpy.linalg.norm(A)
+
+        min_error = float('infinity')
+        for k in map(int,2+numpy.array(range(11))*(max_k-2)/10):
+            inds = numpy.sort(numpy.random.permutation(A.shape[0])[0:k])
+            lmbda, V = Nystrom.eigpsd(A, inds)
+            AHat = V.dot(numpy.diag(lmbda)).dot(V.T)
+            AHat2 = Nystrom.matrixApprox(A, inds)
+            self.assertTrue(numpy.linalg.norm(A - AHat) < numpy.linalg.norm(A))
+            min_error = min(min_error, numpy.linalg.norm(A - AHat))
+            a, b, places = numpy.linalg.norm(A - AHat), numpy.linalg.norm(A - AHat2), -int(numpy.log10(tolA))
+            self.assertAlmostEquals(a, b, places=places, msg= "both approximations differ: " + str(a) + " != " + str(b) + " within " + str(places) + " places (with rank " + str(k) + " approximation)")
+        self.assertLess(min_error, tolA)
+
     def testEig(self):
-        tol = 10**-3
+        tol = 10**-5
 
         #Test with an indeterminate matrix 
         A = numpy.random.rand(10, 10)

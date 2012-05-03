@@ -15,7 +15,7 @@ class Nystrom(object):
     @staticmethod
     def eig(X, n):
         """
-        Find the eigenvalues and eigenvalues of an indefinite symmetric matrix X.
+        Find the eigenvalues and eigenvectors of an indefinite symmetric matrix X.
 
         :param X: The matrix to find the eigenvalues of.
         :type X: :class:`ndarray`
@@ -47,7 +47,7 @@ class Nystrom(object):
     @staticmethod
     def eigpsd(X, n):
         """
-        Find the eigenvectors and eigenvalues of a positive semi-definite symmetric matrix.
+        Find the eigenvalues and eigenvectors of a positive semi-definite symmetric matrix.
         The input matrix X can be a numpy array or a scipy sparse matrix. In the case that
         n==X.shape[0] we convert to an ndarray. 
 
