@@ -97,7 +97,7 @@ class EigenUpdater(object):
 
         if __debug__:
             if not Parameter.checkOrthogonal(Q, tol=EigenUpdater.tol, softCheck=True, investigate=True, arrayInfo="input Q in lazyEigenConcatAsUpdate()"):
-                print "omega:\n", omega
+                print("omega:\n", omega)
 
 
         m = Q.shape[0]
@@ -222,11 +222,11 @@ class EigenUpdater(object):
             Parameter.checkArray(Y1bar, softCheck=True, arrayInfo="Y1bar in eigenAdd2()")
             Parameter.checkArray(P1bar, softCheck=True, arrayInfo="P1bar in eigenAdd2()")
             if not Parameter.checkOrthogonal(P1bar, tol=EigenUpdater.tol, softCheck=True, arrayInfo="P1bar in eigenAdd2()", investigate=True):
-                print "corresponding sigma: ", sigma1Bar
+                print ("corresponding sigma: ", sigma1Bar)
             Parameter.checkArray(sigma1Bar, softCheck=True, arrayInfo="sigma1Bar in eigenAdd2()")
             Parameter.checkArray(Q1bar, softCheck=True, arrayInfo="Q1bar in eigenAdd2()")
             if not Parameter.checkOrthogonal(Q1bar, tol=EigenUpdater.tol, softCheck=True, arrayInfo="Q1bar in eigenAdd2()"):
-                print "corresponding sigma: ", sigma1Bar
+                print ("corresponding sigma: ", sigma1Bar)
 
         del Y1bar
 
@@ -293,9 +293,9 @@ class EigenUpdater(object):
 
         if __debug__:
             if not Parameter.checkOrthogonal(D, tol=EigenUpdater.tol, softCheck=True, investigate=True, arrayInfo="D in eigenAdd2()"):
-                print "pi:\n", pi
+                print("pi:\n", pi)
             if not Parameter.checkOrthogonal(H, tol=EigenUpdater.tol, softCheck=True, investigate=True, arrayInfo="H in eigenAdd2()"):
-                print "pi:\n", pi
+                print("pi:\n", pi)
 
         if ProfileUtils.memory() > 10**9:
             ProfileUtils.memDisplay(locals())

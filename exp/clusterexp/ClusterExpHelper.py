@@ -42,11 +42,11 @@ class ClusterExpHelper(object):
         measures = numpy.zeros((self.numGraphs, numMeasures))
 
         for i in range(self.numGraphs):
-            W = iterator.next()
+            W = next(iterator)
             measures[i, 0] = GraphUtils.modularity(W, clusterList[i])
             measures[i, 1] = GraphUtils.kwayNormalisedCut(W, clusterList[i])
 
-        file = open(fileName, 'w')
+        file = open(fileName, 'wb')
         numpy.savez(file, measures, timeList)
         logging.info("Saved file as " + fileName)
 

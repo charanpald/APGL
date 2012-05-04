@@ -6,7 +6,8 @@ uses Newman's leading eigenvector method for detecting community structure.
 import time 
 import logging
 
-from apgl.graph import *
+from apgl.graph.SparseGraph import SparseGraph
+from apgl.graph.GeneralVertexList import GeneralVertexList
 from apgl.util.Parameter import Parameter
 
 class IterativeModularityClustering(object):

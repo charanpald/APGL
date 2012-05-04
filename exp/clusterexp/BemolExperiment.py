@@ -13,19 +13,20 @@ from apgl.util.Parameter import Parameter
 
 numpy.random.seed(21)
 #logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format='%(levelname)s (%(asctime)s):%(message)s')
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+#logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 numpy.set_printoptions(suppress=True, linewidth=60)
-numpy.seterr("raise")
+numpy.seterr("raise", under="ignore")
 
 resultsDir = PathDefaults.getOutputDir() + "cluster/"
 dataDir = PathDefaults.getDataDir() + "cluster/"
 
-nb_user = 4000
+nb_user = 1000
 nb_purchases_per_it = -1
 nb_purchases_per_it = 100
 
 startingIteration = 0
-endingIteration = 100 # put a big number to have all iterations
+endingIteration = None # set to None to have all iterations
 stepSize = 1
 
 def getIterator():
@@ -42,10 +43,10 @@ for W in getIterator():
 datasetName = "Bemol"
 
 clusterExpHelper = ClusterExpHelper(getIterator, datasetName, numGraphs)
-clusterExpHelper.runIASC = True
-clusterExpHelper.runExact = True
-clusterExpHelper.runModularity = True
-clusterExpHelper.runNystrom = True
+clusterExpHelper.runIASC = False
+clusterExpHelper.runExact = False
+clusterExpHelper.runModularity = False
+clusterExpHelper.runNystrom = False
 clusterExpHelper.runNing = True
 clusterExpHelper.k1 = 25
 clusterExpHelper.k2 = 8*clusterExpHelper.k1

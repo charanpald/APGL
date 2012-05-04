@@ -12,15 +12,13 @@ import logging
 class MyDictionary(object):
     def __init__(self):
         self.d = dict()
-        self.next_i = 0
 
     def is_known(self, key):
         return key in self.d
 
     def index(self, key):
         if not self.is_known(key):
-            self.d[key] = self.next_i
-            self.next_i +=1
+            self.d[key] = len(self.d)
         return self.d.get(key)
 
     def __len__(self):
@@ -28,21 +26,19 @@ class MyDictionary(object):
 
 
 class DatedPurchasesGroupByIterator(object):
-    def __init__(self, purchasesByWeek, nb_purchases_per_it=-1):
+    def __init__(self, purchasesByWeek, nb_purchases_per_it=None):
         """
         Take a list of purchases (sorted by week of purchase) and iterate on it.
         An iteration return a list of purchases done the same week.
         Purchases are given in a list of [user, prod, week, year] with increasing
         date.
         nb_purchases_per_it is the maximum number of purchases to put in each
-        week (if there is more, split the week). -1 corresponds to
+        week (if there is more, split the week). None corresponds to
         no-limit case.
         """
         # args
         self.purchasesByWeek = purchasesByWeek
         self.nb_purchases_per_it = nb_purchases_per_it
-        if self.nb_purchases_per_it == -1:
-            self.nb_purchases_per_it = len(self.purchasesByWeek)
 
         # init variables
         self.i_purchase = 0
@@ -68,7 +64,7 @@ class DatedPurchasesGroupByIterator(object):
 #        random.shuffle(self.current_week_purchases)
         
 
-    def next(self):
+    def __next__(self):
         """
         Take first $self.nb_purchases_per_it$ purchases from
         $self.current_week_purchases$.
@@ -85,7 +81,7 @@ class DatedPurchasesGroupByIterator(object):
 
 
 class DatedPurchasesGraphListIterator(object):
-    def __init__(self, purchasesByWeek, nb_purchases_per_it=-1):
+    def __init__(self, purchasesByWeek, nb_purchases_per_it=None):
         """
         The background graph is a bi-partite graph of purchases. Purchases are
         grouped by date (week by week), and we consider the graph of purchases
@@ -95,7 +91,7 @@ class DatedPurchasesGraphListIterator(object):
         Purchases are given in a list of [user, prod, week, year] with increasing
         date.
         nb_purchases_per_it is the maximum number of purchases to put in each
-        week (if there is more, randomly split the week). -1 correspond to
+        week (if there is more, randomly split the week). None corresponds to
         no-limit case.
         """
         # args
@@ -114,9 +110,9 @@ class DatedPurchasesGraphListIterator(object):
     def __iter__(self):
          return self
 
-    def next(self):
+    def __next__(self):
         # next group of purchases (StopIteration is raised here)
-        purchases_sublist = self.group_by_iterator.next()
+        purchases_sublist = next(self.group_by_iterator)
         logging.debug(" nb purchases: " + str(len(purchases_sublist)))
 
         # to check that the group really induces new edges
@@ -133,7 +129,7 @@ class DatedPurchasesGraphListIterator(object):
                 self.backgroundGraph.addEdge(prod, user)
                 newCommonPurchases = self.backgroundGraph.neighbours(prod)
 #                print prod, newCommonPurchases
-                for neighbour in itertools.ifilter(lambda neighbour: neighbour != user, newCommonPurchases):
+                for neighbour in filter(lambda neighbour: neighbour != user, newCommonPurchases):
                     W_has_changed = True
                     self.W[neighbour, user] += 1
                     self.W[user, neighbour] += 1
@@ -146,7 +142,7 @@ class DatedPurchasesGraphListIterator(object):
         if W_has_changed:
           return self.W.tocsr()[self.usefullEdges,:][:,self.usefullEdges]
         else:
-          return self.next()
+          return next(self)
 
 
 
@@ -168,7 +164,7 @@ class IncreasingSubgraphListIterator(object):
     def __iter__(self):
          return self
 
-    def next(self):
+    def __next__(self):
         if self.i >= len(self.subgraphIndicesList):
             raise StopIteration
         if self.i == 0:
@@ -203,5 +199,5 @@ class toDenseGraphListIterator(object):
     def __iter__(self):
         return self
 
-    def next(self):
-        return numpy.array(self.g.next().todense(), numpy.float)
+    def __next__(self):
+        return numpy.array(next(self.g).todense(), numpy.float)
