@@ -7,12 +7,13 @@ import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy 
-from exp.sandbox.predictors.DecisionTreeLearner import DecisionTreeLearner
 from exp.sandbox.predictors.PenaltyDecisionTree import PenaltyDecisionTree
 from apgl.util.Evaluator import Evaluator 
 
 numExamples = 1000 
 numFeatures = 2 
+
+numpy.random.seed(21)
 
 X = numpy.random.rand(numExamples, numFeatures)
 y = numpy.zeros(numExamples, numpy.int)
@@ -36,21 +37,21 @@ for i in range(numExamples):
 X += numpy.random.randn(numExamples, numFeatures)*noise
 y+= 1 
 
-print(y)
+print(numpy.sum(y==2), numpy.sum(y==0)) 
 
-numTrainExamples = numExamples*0.1 
-numValidExamples = numExamples*0.1
+trainSplit = 0.2
+numTrainExamples = numExamples*trainSplit
 
 trainX = X[0:numTrainExamples, :]
 trainY = y[0:numTrainExamples]
-validX = X[numTrainExamples:numTrainExamples+numValidExamples, :]
-validY = y[numTrainExamples:numTrainExamples+numValidExamples]
-testX = X[numTrainExamples+numValidExamples:, :]
-testY = y[numTrainExamples+numValidExamples:]
+testX = X[numTrainExamples:, :]
+testY = y[numTrainExamples:]
 
-learner = PenaltyDecisionTree(minSplit=1, maxDepth=50)
+learner = PenaltyDecisionTree(minSplit=1, maxDepth=50, pruning=False)
 learner.learnModel(trainX, trainY)
 
+predY = learner.predict(trainX)
+print(Evaluator.binaryError(predY, trainY))
 print(learner.getTree())
 
 
@@ -58,12 +59,16 @@ plt.figure(0)
 plt.scatter(testX[:, 0], testX[:, 1], c=testY, s=50, vmin=0, vmax=2)
 plt.colorbar()
 
+plt.figure(1)
+plt.scatter(trainX[:, 0], trainX[:, 1], c=trainY, s=50, vmin=0, vmax=2)
+plt.colorbar()
+
 colormap  = matplotlib.cm.get_cmap()
 
 def displayTree(learner, vertexId, minX0, maxX0, minX1, maxX1, colormap): 
     vertex = learner.tree.getVertex(vertexId)
     if learner.tree.isLeaf(vertexId):
-        p = mpatches.Rectangle([minX0, minX1], maxX0-minX0, maxX1-minX1, facecolor=colormap(vertex.getValue()), edgecolor="black")
+        p = mpatches.Rectangle([minX0, minX1], maxX0-minX0, maxX1-minX1, facecolor=colormap(vertex.getValue()/2.0), edgecolor="black")
         plt.gca().add_patch(p)            
 
     leftChildId = learner.getLeftChildId(vertexId)
@@ -87,16 +92,17 @@ plt.figure(2)
 rootId = learner.tree.getRootId()
 displayTree(learner, rootId, 0, 1, 0, 1, colormap)
 
-        
-numGammas = 100
-gammas = numpy.linspace(0, 0.5, numGammas)
+numGammas = 20
+gammas = numpy.linspace(0, 0.1, numGammas)
 errors = numpy.zeros(numGammas)
-learner.sampleSize = 50
+
+learner = PenaltyDecisionTree(minSplit=10, maxDepth=5, pruning=True)
+learner.setSampleSize(100)
 
 for i in range(gammas.shape[0]): 
     print(gammas[i])
     learner.setGamma(gammas[i])
-    learner.prune(trainX, trainY)
+    learner.learnModel(trainX, trainY)
     predY = learner.predict(testX)
     errors[i] = Evaluator.binaryError(predY, testY)
     
@@ -109,10 +115,11 @@ learner.setGamma(gammas[numpy.argmin(errors)])
 learner.learnModel(trainX, trainY)
 print(learner.gamma)
 
+print(learner.tree)
+
 
 rootId = learner.tree.getRootId()
 displayTree(learner, rootId, 0, 1, 0, 1, colormap)
 
 plt.show()
-    
     

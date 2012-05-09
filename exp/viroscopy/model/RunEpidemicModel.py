@@ -4,11 +4,11 @@ import sys
 import numpy
 from apgl.graph import *
 from apgl.util import *
-from apgl.viroscopy.model.HIVGraph import HIVGraph
-from apgl.viroscopy.model.HIVEpidemicModel import HIVEpidemicModel
-from apgl.viroscopy.model.HIVRates import HIVRates
-from apgl.viroscopy.model.HIVABCParameters import HIVABCParameters
-from apgl.viroscopy.model.HIVVertices import HIVVertices
+from exp.viroscopy.model.HIVGraph import HIVGraph
+from exp.viroscopy.model.HIVEpidemicModel import HIVEpidemicModel
+from exp.viroscopy.model.HIVRates import HIVRates
+from exp.viroscopy.model.HIVABCParameters import HIVABCParameters
+from exp.viroscopy.model.HIVVertices import HIVVertices
 
 """
 This is the epidemic model for the HIV spread in cuba. We repeat the simulation a number

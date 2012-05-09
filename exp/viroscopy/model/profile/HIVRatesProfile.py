@@ -3,9 +3,9 @@ import sys
 import numpy
 import scipy
 import scipy.stats 
-from apgl.viroscopy.model.HIVGraph import HIVGraph
-from apgl.viroscopy.model.HIVRates import HIVRates
-from apgl.viroscopy.model.HIVVertices import HIVVertices
+from exp.viroscopy.model.HIVGraph import HIVGraph
+from exp.viroscopy.model.HIVRates import HIVRates
+from exp.viroscopy.model.HIVVertices import HIVVertices
 from apgl.graph import *
 from apgl.util import *
 
@@ -15,7 +15,7 @@ numpy.random.seed(21)
 class HIVRatesProfile():
     def __init__(self):
         #Total number of people in population
-        self.M = 5000
+        self.M = 10000
         numInitialInfected = 5
 
         #The graph is one in which edges represent a contact
@@ -112,13 +112,13 @@ class HIVRatesProfile():
 
         t = 200
         def runContactTracingRate():
-            for j in range(500):
+            for j in range(2000):
                 rates.contactTracingRates(list(infectedSet), removedSet, t)
 
         ProfileUtils.profile('runContactTracingRate()', globals(), locals())
 
 profiler = HIVRatesProfile()
 #profiler.profileInfectionProbability()
-profiler.profileContactTracingRate()
-#profiler.profileContactRate()
+#profiler.profileContactTracingRate()
+profiler.profileContactRate()
 

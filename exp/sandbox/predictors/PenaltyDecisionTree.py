@@ -5,10 +5,11 @@ from apgl.util.Util import Util
 from apgl.util.Parameter import Parameter 
 from exp.sandbox.predictors.DecisionTreeLearner import DecisionTreeLearner
 from exp.sandbox.predictors.DecisionNode import DecisionNode
-from exp.sandbox.predictors.TreeCriterionPy import findBestSplit2, findBestSplitRand
+from exp.sandbox.predictors.TreeCriterionPy import findBestSplit2, findBestSplitRisk
+from apgl.predictors.AbstractPredictor import AbstractPredictor
 
-class PenaltyDecisionTree(DecisionTreeLearner): 
-    def __init__(self, criterion="mse", maxDepth=10, minSplit=30, type="reg", pruning=True, gamma=0.01, sampleSize=10):
+class PenaltyDecisionTree(AbstractPredictor): 
+    def __init__(self, criterion="gain", maxDepth=10, minSplit=30, type="reg", pruning=True, gamma=0.01, sampleSize=10):
         """
         Need a minSplit for the internal nodes and one for leaves. A PenaltyDecisionTree
         is one created such that the penalty on the empirical risk is proportional 
@@ -21,9 +22,10 @@ class PenaltyDecisionTree(DecisionTreeLearner):
         self.minSplit = minSplit
         self.criterion = criterion
         self.type = type
-        self.gamma = gamma 
+        self.setGamma(gamma)
         self.sampleSize = sampleSize 
         self.pruning = pruning 
+        self.alphaThreshold = 0.0
                 
     def learnModel(self, X, y):
         if numpy.unique(y).shape[0] != 2: 
@@ -57,8 +59,67 @@ class PenaltyDecisionTree(DecisionTreeLearner):
         
     def setGamma(self, gamma): 
         Parameter.checkFloat(gamma, 0.0, 1.0)
-        self.gamma = gamma         
+        self.gamma = gamma   
         
+    def setSampleSize(self, sampleSize):
+        Parameter.checkInt(sampleSize, 1, float("inf"))
+        self.sampleSize = sampleSize
+
+    def predict(self, X): 
+        """
+        Make a prediction for the set of examples given in the matrix X. 
+        """
+        rootId = (0,)
+        predY = numpy.zeros(X.shape[0])
+        self.tree.getVertex(rootId).setTestInds(numpy.arange(X.shape[0]))
+        predY = self.recursivePredict(X, predY, rootId)
+        
+        return predY 
+        
+    def recursivePredict(self, X, y, nodeId): 
+        """
+        Recurse through the tree and assign examples to the correct vertex. 
+        """        
+        node = self.tree.getVertex(nodeId)
+        testInds = node.getTestInds()
+        
+        if self.tree.isLeaf(nodeId): 
+            y[testInds] = node.getValue()
+        else: 
+             
+            for childId in [self.getLeftChildId(nodeId), self.getRightChildId(nodeId)]:
+                if self.tree.vertexExists(childId):
+                    child = self.tree.getVertex(childId)
+    
+                    if childId[-1] == 0: 
+                        childInds = X[testInds, node.getFeatureInd()] < node.getThreshold() 
+                    else:
+                        childInds = X[testInds, node.getFeatureInd()] >= node.getThreshold()
+                    
+                    child.setTestInds(testInds[childInds])   
+                    y = self.recursivePredict(X, y, childId)
+                
+        return y
+
+    def recursiveSetPrune(self, X, y, nodeId):
+        """
+        This computes test errors on nodes by passing in the test X and y. 
+        """
+        node = self.tree.getVertex(nodeId)
+        testInds = node.getTestInds()
+        node.setTestError(self.vertexTestError(y[testInds], node.getValue()))
+    
+        for childId in [self.getLeftChildId(nodeId), self.getRightChildId(nodeId)]:
+            if self.tree.vertexExists(childId):
+                child = self.tree.getVertex(childId)
+                
+                if childId[-1] == 0: 
+                    childInds = X[testInds, node.getFeatureInd()] < node.getThreshold() 
+                else:
+                    childInds = X[testInds, node.getFeatureInd()] >= node.getThreshold()
+                child.setTestInds(testInds[childInds])
+                self.recursiveSetPrune(X, y, childId)
+ 
     def treeObjective(self, X, y): 
         """
         Return the empirical risk plus penalty for the tree. 
@@ -66,7 +127,7 @@ class PenaltyDecisionTree(DecisionTreeLearner):
         predY = self.predict(X)
         T = self.tree.getNumVertices()
         (n, d) = X.shape
-        error = numpy.sum(predY!=y)/float(X.shape[0]) + self.gamma*numpy.sqrt(32*(T*d*numpy.log(n) + T*numpy.log(2) + 2*numpy.log(T))/n)
+        error = (1-self.gamma)*numpy.sum(predY!=y)/float(n) + self.gamma*numpy.sqrt(32*(T*d*numpy.log(n) + T*numpy.log(2) + 2*numpy.log(T))/n)
         return error 
 
     def prune(self, X, y): 
@@ -122,6 +183,28 @@ class PenaltyDecisionTree(DecisionTreeLearner):
                 if self.tree.vertexExists(childId):
                     self.recursivePrune(childId)
 
+    def getAlphaThreshold(self): 
+        return self.alphaThreshold
+    
+    def setAlphaThreshold(self, alphaThreshold): 
+        Parameter.checkFloat(alphaThreshold, -float("inf"), float("inf"))
+        self.alphaThreshold = alphaThreshold
+        
+    def getLeftChildId(self, nodeId): 
+        leftChildId = list(nodeId)
+        leftChildId.append(0)
+        leftChildId = tuple(leftChildId)
+        return leftChildId
+
+    def getRightChildId(self, nodeId): 
+        rightChildId = list(nodeId)
+        rightChildId.append(1)
+        rightChildId = tuple(rightChildId) 
+        return rightChildId
+   
+    def getTree(self): 
+        return self.tree 
+
     def recursiveSplit(self, X, y, argsortX, nodeId): 
         """
         Give a sample of data and a node index, we find the best split and 
@@ -132,12 +215,12 @@ class PenaltyDecisionTree(DecisionTreeLearner):
             return 
         
         node = self.tree.getVertex(nodeId)
-        gains, thresholds = findBestSplitRand(self.minSplit, X, y, node.getTrainInds(), argsortX)
+        accuracies, thresholds = findBestSplitRisk(self.minSplit, X, y, node.getTrainInds(), argsortX)
         
         #Choose best feature based on gains 
         eps = 10**-4 
-        gains += eps 
-        bestFeatureInd = Util.randomChoice(gains)[0]
+        accuracies += eps 
+        bestFeatureInd = Util.randomChoice(accuracies)[0]
         bestThreshold = thresholds[bestFeatureInd]
     
         nodeInds = node.getTrainInds()    
@@ -146,7 +229,7 @@ class PenaltyDecisionTree(DecisionTreeLearner):
     
         #The split may have 0 items in one set, so don't split 
         if bestLeftInds.sum() != 0 and bestRightInds.sum() != 0: 
-            node.setError(gains[bestFeatureInd])
+            node.setError(1-accuracies[bestFeatureInd])
             node.setFeatureInd(bestFeatureInd)
             node.setThreshold(bestThreshold)
             

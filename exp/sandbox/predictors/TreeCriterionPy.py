@@ -144,7 +144,7 @@ def findBestSplitRand(minSplit, X, y, nodeInds, argsortX):
                 counts = numpy.array(numpy.bincount(tempY[tempX>=val]), numpy.float)
                 counts /= counts.sum()  
                 tempCounts2 = counts + (counts == 0)
-                entropy2 = -(counts * numpy.log2(tempCounts2)).sum()                
+                entropy2 = -(counts * numpy.log2(tempCounts2)).sum()
                 
                 gain = parentEntropy - (tempCounts1.shape[0]*entropy1 + tempCounts2.shape[0]*entropy2)/tempY.shape[0]
                 if gain >= gains[featureInd]: 
@@ -152,3 +152,58 @@ def findBestSplitRand(minSplit, X, y, nodeInds, argsortX):
                     thresholds[featureInd] = val 
     
     return gains, thresholds
+    
+def findBestSplitRisk(minSplit, X, y, nodeInds, argsortX): 
+    """
+    Give a set of examples and a particular feature, find the best split 
+    of the data according to which minimises the risk. This is a pure python version. Note that 
+    nodeInds must be sorted. 
+    """
+    if X.shape[0] == 0: 
+        raise ValueError("Cannot split on 0 examples")
+        
+    #nodeInds = numpy.sort(nodeInds)        
+    accuracies = numpy.zeros(X.shape[1])
+    thresholds = numpy.zeros(X.shape[1])
+    
+    for featureInd in range(X.shape[1]): 
+        accuracies[featureInd] = 0 
+        x = X[:, featureInd] 
+
+        tempX = numpy.zeros(X.shape[0])
+        tempY = numpy.zeros(y.shape[0], y.dtype)
+        
+        tempX[argsortX[:, featureInd][nodeInds]] = x[nodeInds]
+        tempY[argsortX[:, featureInd][nodeInds]] = y[nodeInds]
+        
+        boolInds = numpy.zeros(X.shape[0], numpy.bool)
+        boolInds[argsortX[:, featureInd][nodeInds]] = True
+        
+        tempX = tempX[boolInds]       
+        tempY = tempY[boolInds]   
+                
+        vals = numpy.unique(tempX)
+        vals = (vals[1:]+vals[0:-1])/2.0
+        
+        insertInds = numpy.searchsorted(tempX, vals)
+        parentAccuracy = numpy.max(numpy.bincount(tempY))
+        
+        for i in range(vals.shape[0]): 
+            val = vals[i]
+            #Find index where val will be inserted before to preserve order 
+            insertInd = insertInds[i]
+            
+            rightSize = (tempX.shape[0] - insertInd)
+            if insertInd < minSplit or rightSize < minSplit: 
+                continue 
+
+            if insertInd!=1 and insertInd!=nodeInds.shape[0]: 
+                accuracy1 = numpy.max(numpy.bincount(tempY[tempX<val]))
+                accuracy2 = numpy.max(numpy.bincount(tempY[tempX>=val]))
+                                
+                totalAccuracy = (accuracy1 + accuracy2 - parentAccuracy)/float(tempY.shape[0])
+                if totalAccuracy >= accuracies[featureInd] and totalAccuracy > 0: 
+                    accuracies[featureInd] = totalAccuracy 
+                    thresholds[featureInd] = val 
+    
+    return accuracies, thresholds

@@ -1,7 +1,7 @@
 import numpy 
 import unittest
 import numpy.testing as nptst
-from exp.sandbox.predictors.TreeCriterionPy import findBestSplit2, findBestSplitRand
+from exp.sandbox.predictors.TreeCriterionPy import findBestSplit2, findBestSplitRand, findBestSplitRisk
 from apgl.data.ExamplesGenerator import ExamplesGenerator  
 
 class TreeCriterionPyTest(unittest.TestCase):
@@ -139,8 +139,10 @@ class TreeCriterionPyTest(unittest.TestCase):
             
     def testFindBestSplitRand(self): 
         minSplit = 1 
-        X = numpy.zeros((20, 10))
-        y = numpy.ones(20, numpy.int)
+        numExamples = 20 
+        numFeatures = 10 
+        X = numpy.zeros((numExamples, numFeatures))
+        y = numpy.ones(numExamples, numpy.int)
         
         X[0:10, 2] = numpy.arange(10)
         X[10:, 2] = numpy.arange(10)+10 
@@ -157,7 +159,35 @@ class TreeCriterionPyTest(unittest.TestCase):
         
         errors, thresholds = findBestSplitRand(minSplit, X, y, nodeInds, argsortX) 
         
+        #print(errors, thresholds)
+        
+    def testFindBestSplitRisk(self): 
+        minSplit = 1 
+        numExamples = 20 
+        numFeatures = 10 
+        X = numpy.zeros((numExamples, numFeatures))
+        y = numpy.ones(numExamples, numpy.int)
+        
+        X[0:10, 2] = numpy.arange(10)
+        X[10:, 2] = numpy.arange(10)+10 
+        y[0:10] = -1 
+        
+        y += 1 
+        
+        nodeInds = numpy.arange(X.shape[0])
+        argsortX = numpy.zeros(X.shape, numpy.int)      
+        
+        for i in range(X.shape[1]): 
+            argsortX[:, i] = numpy.argsort(X[:, i])
+            argsortX[:, i] = numpy.argsort(argsortX[:, i])        
+        
+        errors, thresholds = findBestSplitRisk(minSplit, X, y, nodeInds, argsortX) 
         print(errors, thresholds)
-            
+        
+        X = numpy.random.rand(numExamples, numFeatures)
+        errors, thresholds = findBestSplitRisk(minSplit, X, y, nodeInds, argsortX) 
+        print(errors, thresholds)
+        
+        
 if __name__ == "__main__":
     unittest.main()

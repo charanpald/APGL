@@ -3,7 +3,7 @@ import unittest
 import numpy.testing as nptst
 from exp.sandbox.predictors.PenaltyDecisionTree import PenaltyDecisionTree
 from apgl.data.ExamplesGenerator import ExamplesGenerator
-from apgl.data.Standardiser import Standardiser    
+from apgl.util.Evaluator import Evaluator    
 import sklearn.datasets as data 
 from apgl.util.Util import Util
 
@@ -41,7 +41,7 @@ class PenaltyDecisionTreeLearnerTest(unittest.TestCase):
         n = float(X.shape[0])
         d = X.shape[1]
         T = tree.getNumVertices()
-        error = numpy.sum(predY!=y)/n
+        error = (1-gamma)*numpy.sum(predY!=y)/n
         testError = numpy.sum(predTestY!=testY)/float(testY.shape[0])
         error += gamma*numpy.sqrt(32*(T*d*numpy.log(n) + T*numpy.log(2) + 2*numpy.log(T))/n)
         
@@ -144,6 +144,61 @@ class PenaltyDecisionTreeLearnerTest(unittest.TestCase):
         #Check there are no nodes with alpha>alphaThreshold 
         for vertexId in tree.getAllVertexIds(): 
             self.assertTrue(tree.getVertex(vertexId).alpha >= learner.alphaThreshold)
+        
+    def testLearnModel2(self): 
+        #We want to make sure the learnt tree with gamma = 0 maximise the 
+        #empirical risk 
+        minSplit = 20
+        maxDepth = 3
+        gamma = 0.00
+        learner = PenaltyDecisionTree(minSplit=minSplit, maxDepth=maxDepth, gamma=gamma, pruning=False) 
+        
+        #Vary sampleSize
+        numpy.random.seed(21)
+        learner.setSampleSize(5)           
+        learner.learnModel(self.X, self.y)        
+        predY = learner.predict(self.X)
+        error1 = Evaluator.binaryError(self.y, predY)
+
+        numpy.random.seed(21)
+        learner.setSampleSize(10)        
+        learner.learnModel(self.X, self.y)
+        predY = learner.predict(self.X)
+        error2 = Evaluator.binaryError(self.y, predY)
+
+        numpy.random.seed(21)                
+        learner.setSampleSize(30)       
+        learner.learnModel(self.X, self.y)
+        predY = learner.predict(self.X)
+        error3 = Evaluator.binaryError(self.y, predY)
+        
+        self.assertTrue(error1 > error2)
+        self.assertTrue(error2 > error3)
+        
+        #Now vary max depth 
+        numpy.random.seed(21)
+        learner.setSampleSize(10) 
+        learner.minSplit = 1
+        learner.maxDepth = 3 
+        learner.learnModel(self.X, self.y)
+        predY = learner.predict(self.X)
+        error1 = Evaluator.binaryError(self.y, predY)
+        
+        numpy.random.seed(21)
+        learner.maxDepth = 5 
+        learner.learnModel(self.X, self.y)
+        predY = learner.predict(self.X)
+        error2 = Evaluator.binaryError(self.y, predY)
+        
+        numpy.random.seed(21)
+        learner.maxDepth = 10 
+        learner.learnModel(self.X, self.y)
+        predY = learner.predict(self.X)
+        error2 = Evaluator.binaryError(self.y, predY)        
+        
+        self.assertTrue(error1 > error2)
+        print(error1, error2, error3)
+        self.assertTrue(error2 > error3)
         
         
         
