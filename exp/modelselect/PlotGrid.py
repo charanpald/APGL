@@ -7,7 +7,7 @@ import sys
 import matplotlib.pyplot as plt
 from apgl.util.PathDefaults import PathDefaults
 from apgl.predictors.LibSVM import LibSVM
-from apgl.modelselect.ModelSelectUtils import ModelSelectUtils
+from exp.modelselect.ModelSelectUtils import ModelSelectUtils
 from operator import itemgetter
 
 numpy.set_printoptions(linewidth=200)
