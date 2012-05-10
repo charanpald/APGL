@@ -47,7 +47,7 @@ class  HIVABCParametersTest(unittest.TestCase):
         
         #The deviation is half the mean       
         self.assertTrue(numpy.linalg.norm(numpy.mean(thetas, 0) - self.meanTheta) < 2)
-        self.assertTrue(numpy.linalg.norm(numpy.std(thetas, 0) - self.meanTheta/2) < 0.7)
+        self.assertTrue(numpy.linalg.norm(numpy.std(thetas, 0) - self.meanTheta/2) < 2)
 
         self.hivAbcParams = HIVABCParameters(self.meanTheta, 0.1)
 
@@ -121,6 +121,22 @@ class  HIVABCParametersTest(unittest.TestCase):
         hist = numpy.histogram(sampleArray, numpy.array([0.0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1.0]))
 
         #self.assertTrue(numpy.argmax(hist[0]) == 1)
+        
+    def testCreateDiscTruncNormParam(self): 
+        sigma = 5.0
+        mu = 10.0
+        numSamples = 2000
+        sampleArray = numpy.zeros(numSamples)
+        upper = 100 
+
+        for i in range(numSamples):
+            priorDist, priorDensity = self.hivAbcParams.createDiscTruncNormParam(sigma, mu, upper)
+            sampleArray[i] = priorDist()
+            self.assertTrue(sampleArray[i] <= 100 and sampleArray[i] >= 0)
+            
+        self.assertAlmostEquals(numpy.min(sampleArray), 0, 1)
+        self.assertTrue((numpy.mean(sampleArray) - mu)<1)
+        #print(numpy.max(sampleArray))
 
 if __name__ == '__main__':
     unittest.main()

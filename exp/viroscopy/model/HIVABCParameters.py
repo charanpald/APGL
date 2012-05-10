@@ -10,7 +10,7 @@ from apgl.util.Util import Util
 from exp.viroscopy.model.HIVVertices import HIVVertices
 
 class HIVABCParameters(object):
-    def __init__(self, meanTheta, sigmaScale=0.5, purtScale=0.2):
+    def __init__(self, meanTheta, sigmaScale=0.5, purtScale=0.2, upperInfected=200):
         """
         Initialised this object with a mean value of theta 
         """
@@ -24,7 +24,7 @@ class HIVABCParameters(object):
         ind = 0 
         mu = meanTheta[ind]
         sigma = mu*sigmaScale
-        priorDist, priorDensity = self.createDiscNormParam(sigma, mu)
+        priorDist, priorDensity = self.createDiscTruncNormParam(sigma, mu, upperInfected)
         purtubationKernel, purtubationKernelDensity = self.__createNormalDiscPurt(sigma, purtScale)
         self.__addParameter(("graph", "setRandomInfected"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
 
@@ -91,13 +91,18 @@ class HIVABCParameters(object):
         purtubationKernel, purtubationKernelDensity = self.__createNormalPurt(sigma, purtScale)
         self.__addParameter(("rates", "setManBiInfectProb"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
      
-    def createDiscNormParam(self, sigma, mu): 
+
+    def createDiscTruncNormParam(self, sigma, mode, upper):
         """
-        Truncated normal discrete random variable
+        Truncated norm parameter between 0 and 1 
         """
-        priorDist = lambda: round(stats.norm.rvs(mu, sigma))
-        priorDensity = lambda x: stats.norm.pdf(x, mu, sigma)
-        return priorDist, priorDensity  
+        Parameter.checkFloat(sigma, 0.0, float('inf'))
+        Parameter.checkFloat(mode, 0.0, float('inf'))
+        a = -mode/sigma
+        b = (upper-mode)/sigma
+        priorDist = lambda: round(stats.truncnorm.rvs(a, b, loc=mode, scale=sigma))
+        priorDensity = lambda x: stats.truncnorm.pdf(x, a, b, loc=mode, scale=sigma)
+        return priorDist, priorDensity 
 
     def createTruncNormParam(self, sigma, mode):
         """
