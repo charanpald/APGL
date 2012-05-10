@@ -18,11 +18,9 @@ import shutil
 import gzip
 import re
 import getopt
-from apgl.graph import *
-from apgl.generator import *
-from apgl.sandbox.IterativeSpectralClustering import IterativeSpectralClustering
-from apgl.sandbox.GraphIterators import DatedPurchasesGraphListIterator
-from apgl.sandbox.GraphIterators import MyDictionary
+from exp.sandbox.IterativeSpectralClustering import IterativeSpectralClustering
+from exp.sandbox.GraphIterators import DatedPurchasesGraphListIterator
+from exp.sandbox.GraphIterators import MyDictionary
 from apgl.util.PathDefaults import PathDefaults
 
 numpy.random.seed(21)
@@ -55,7 +53,7 @@ def cluster():
     graphIterator = getBemolGraphIterator(dir)
     #===========================================
     # cluster
-    print "compute clusters"
+    print("compute clusters")
     clusterer = IterativeSpectralClustering(k1, k2)
     clustersList = clusterer.clusterFromIterator(graphIterator, True)
 
@@ -88,18 +86,21 @@ class BemolData:
         purchasesList = []
         dict_user = MyDictionary()
         try:
-            f_data = gzip.open(f_data_name, 'rb')
-
-            for line in f_data:
-                m = re.match("(\d+)\s(\d+)\s(\d+)\s(\d+)", line)
-                if dict_user.index(int(m.group(1))) < nb_user:
-                    purchasesList.append([int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4))])
-            logging.info(" file read")
-
-            # graph iterator
-            graphIterator = DatedPurchasesGraphListIterator(purchasesList, nb_purchases_per_it)
-
-            return graphIterator
+            with gzip.open(f_data_name, 'rb') as f_data:
+    
+                for line in f_data:
+#                    m = re.match("(\d+)\s(\d+)\s(\d+)\s(\d+)", line)
+#                    if dict_user.index(int(m.group(1))) < nb_user:
+#                        purchasesList.append([int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4))])
+                    vals = list(map(int, line.split()))
+                    if dict_user.index(vals[0]) < nb_user:
+                        purchasesList.append(vals)
+                logging.info(" file read")
+    
+                # graph iterator
+                graphIterator = DatedPurchasesGraphListIterator(purchasesList, nb_purchases_per_it)
+    
+                return graphIterator
         except IOError as error:
             raise RGIOError(error, RGIOError.indent() + 'consider running BemolData.generate_data_file(...)')
 
@@ -210,7 +211,7 @@ class BemolData:
             # read options
             try:
                 opts, args = getopt.getopt(argv[1:], "hd:n:D", ["help", "dir=", "nb_user=", "debug"])
-            except getopt.error, msg:
+            except getopt.error as msg:
                  raise RGUsage(msg)
             # apply options
             dir = PathDefaults.getDataDir() + "cluster/"
@@ -218,7 +219,7 @@ class BemolData:
             log_level = logging.INFO
             for o, a in opts:
                 if o in ("-h", "--help"):
-                    print __doc__
+                    print(__doc__)
                     return 0
                 elif o in ("-d", "--dir"):
                     dir = a
@@ -229,7 +230,7 @@ class BemolData:
             logging.basicConfig(stream=sys.stdout, level=log_level, format='%(levelname)s (%(asctime)s):%(message)s')
             # process: generate data files
             BemolData.generate_data_file(dir, nb_user)
-        except RGUsage, err:
+        except RGUsage as err:
             logging.error(err.msg)
             logging.error("for help use --help")
             return 2
@@ -241,6 +242,6 @@ if __name__ == "__main__":
     sys.exit(BemolData.main())
 
 # to run
-# python -c "execfile('apgl/clusterexp/BemolData.py')" --help
-# python2.7 -c "execfile('apgl/clusterexp/BemolData.py')" --help
+# python -c "execfile('exp/clusterexp/BemolData.py')" --help
+# python2.7 -c "execfile('exp/clusterexp/BemolData.py')" --help
 

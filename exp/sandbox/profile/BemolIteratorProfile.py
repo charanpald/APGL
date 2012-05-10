@@ -4,10 +4,10 @@ import sys
 from apgl.graph import *
 from apgl.generator import *
 from apgl.util.ProfileUtils import ProfileUtils
-from apgl.sandbox.IterativeSpectralClustering import * 
-from apgl.sandbox.GraphIterators import IncreasingSubgraphListIterator, toDenseGraphListIterator
+from exp.sandbox.IterativeSpectralClustering import * 
+from exp.sandbox.GraphIterators import IncreasingSubgraphListIterator, toDenseGraphListIterator
 from apgl.util.PathDefaults import PathDefaults
-from apgl.clusterexp.BemolData import getBemolGraphIterator
+from exp.clusterexp.BemolData import getBemolGraphIterator
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -32,4 +32,4 @@ profiler = IterativeSpectralClusteringProfile()
 profiler.profileClusterFromIterator() #19.7 
 
 
-# python -c "execfile('apgl/sandbox/profile/BemolIteratorProfile.py')"
+# python -c "execfile('exp/sandbox/profile/BemolIteratorProfile.py')"

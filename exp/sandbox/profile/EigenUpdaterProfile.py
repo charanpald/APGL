@@ -4,7 +4,7 @@ import sys
 from apgl.graph import *
 from apgl.generator import *
 from apgl.util.ProfileUtils import ProfileUtils
-from apgl.sandbox.EigenUpdater import *
+from exp.sandbox.EigenUpdater import *
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 

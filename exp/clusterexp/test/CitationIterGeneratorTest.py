@@ -7,7 +7,7 @@ import sys
 from apgl.graph.DictGraph import DictGraph
 from apgl.util.Util import Util
 from apgl.util.PathDefaults import PathDefaults
-from apgl.clusterexp.CitationIterGenerator import CitationIterGenerator
+from exp.clusterexp.CitationIterGenerator import CitationIterGenerator
 
 class  CitationIterGeneratorTest(unittest.TestCase):
     def setUp(self):

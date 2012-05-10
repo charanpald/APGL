@@ -5,7 +5,7 @@ import unittest
 import logging
 from apgl.graph.VertexList import VertexList
 from apgl.graph.SparseGraph import SparseGraph
-from apgl.sandbox.GeometricRandomGenerator import GeometricRandomGenerator
+from exp.sandbox.GeometricRandomGenerator import GeometricRandomGenerator
 
 class GeometricRandomGeneratorTest(unittest.TestCase):
     def testGenerateGraph(self):

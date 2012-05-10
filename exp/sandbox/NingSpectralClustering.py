@@ -212,8 +212,12 @@ class NingSpectralClustering(object):
                 inds = numpy.argsort(lmbda)[0:self.k]
                 lmbda, Q = Util.indEig(lmbda, Q, inds)
 
-            #Now do actual clustering 
-            V = vq.whiten(Q)
+            # Now do actual clustering 
+            # V = vq.whiten(Q) is wrapped to care about lines with sd==0
+            std_dev = numpy.std(Q, axis=0)
+            std_dev[std_dev==0] = 1.
+            V = Q / std_dev
+
             centroids, distortion = vq.kmeans(V, self.k, iter=self.kmeansIter)
             clusters, distortion = vq.vq(V, centroids)
             clustersList.append(clusters)

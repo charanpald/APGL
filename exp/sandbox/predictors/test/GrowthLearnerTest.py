@@ -1,7 +1,7 @@
 import unittest
 import numpy
 import logging
-from apgl.sandbox.predictors.GrowthLearner import GrowthLearner
+from exp.sandbox.predictors.GrowthLearner import GrowthLearner
 from apgl.graph import *
 from apgl.generator.ErdosRenyiGenerator import ErdosRenyiGenerator
 from apgl.generator.BarabasiAlbertGenerator import BarabasiAlbertGenerator

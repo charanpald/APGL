@@ -1,7 +1,7 @@
 
-from apgl.sandbox.IterativeSpectralClustering import IterativeSpectralClustering
-from apgl.sandbox.GraphIterators import IncreasingSubgraphListIterator
-from apgl.sandbox.GraphIterators import DatedPurchasesGraphListIterator
+from exp.sandbox.IterativeSpectralClustering import IterativeSpectralClustering
+from exp.sandbox.GraphIterators import IncreasingSubgraphListIterator
+from exp.sandbox.GraphIterators import DatedPurchasesGraphListIterator
 from apgl.graph.VertexList import VertexList
 from apgl.graph.SparseGraph import SparseGraph
 from apgl.graph.GeneralVertexList import GeneralVertexList

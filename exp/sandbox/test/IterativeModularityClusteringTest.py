@@ -1,6 +1,6 @@
 
-from apgl.sandbox.IterativeModularityClustering import IterativeModularityClustering
-from apgl.sandbox.GraphIterators import IncreasingSubgraphListIterator
+from exp.sandbox.IterativeModularityClustering import IterativeModularityClustering
+from exp.sandbox.GraphIterators import IncreasingSubgraphListIterator
 from apgl.graph import *
 from apgl.generator import *
 import unittest

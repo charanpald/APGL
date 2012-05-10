@@ -2,7 +2,7 @@
 
 import unittest
 import logging
-from apgl.sandbox.predictors.edge.EgoEdgeLabelPredictor import EgoEdgeLabelPredictor
+from exp.sandbox.predictors.edge.EgoEdgeLabelPredictor import EgoEdgeLabelPredictor
 from apgl.util.PathDefaults import PathDefaults
 from apgl.util.Evaluator import Evaluator
 from apgl.graph.VertexList import VertexList

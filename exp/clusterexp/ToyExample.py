@@ -3,8 +3,8 @@
 This is just a toy example on a made up graph which can be visualised.
 """
 from apgl.graph import * 
-from apgl.sandbox.IterativeSpectralClustering import *
-from apgl.sandbox.GraphIterators import * 
+from exp.sandbox.IterativeSpectralClustering import *
+from exp.sandbox.GraphIterators import * 
 
 numVertices = 14
 numFeatures = 0

@@ -9,8 +9,8 @@ from apgl.graph import *
 from apgl.viroscopy.HIVGraphReader import HIVGraphReader
 from apgl.util.PathDefaults import PathDefaults
 from apgl.util.DateUtils import DateUtils
-from apgl.clusterexp.ClusterExpHelper import ClusterExpHelper
-from apgl.sandbox.GraphIterators import IncreasingSubgraphListIterator, toDenseGraphListIterator
+from exp.clusterexp.ClusterExpHelper import ClusterExpHelper
+from exp.sandbox.GraphIterators import IncreasingSubgraphListIterator, toDenseGraphListIterator
 
 numpy.random.seed(21)
 #numpy.seterr("raise")

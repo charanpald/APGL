@@ -5,10 +5,10 @@ from apgl.graph.SparseGraph import SparseGraph
 from apgl.graph.GeneralVertexList import GeneralVertexList
 from apgl.generator.ErdosRenyiGenerator import ErdosRenyiGenerator
 from apgl.util.ProfileUtils import ProfileUtils
-from apgl.sandbox.IterativeSpectralClustering import IterativeSpectralClustering
-from apgl.sandbox.GraphIterators import IncreasingSubgraphListIterator, toDenseGraphListIterator
+from exp.sandbox.IterativeSpectralClustering import IterativeSpectralClustering
+from exp.sandbox.GraphIterators import IncreasingSubgraphListIterator, toDenseGraphListIterator
 from apgl.util.PathDefaults import PathDefaults
-from apgl.clusterexp.BemolData import BemolData
+from exp.clusterexp.BemolData import BemolData
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -44,4 +44,4 @@ profiler = IterativeSpectralClusteringProfile()
 profiler.profileClusterFromIterator() #19.7 
 
 
-# python -c "execfile('apgl/sandbox/profile/IterativeSpectralClusteringProfile.py')"
+# python -c "execfile('exp/sandbox/profile/IterativeSpectralClusteringProfile.py')"
