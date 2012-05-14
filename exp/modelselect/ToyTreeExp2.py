@@ -39,7 +39,7 @@ y+= 1
 
 print(numpy.sum(y==2), numpy.sum(y==0)) 
 
-trainSplit = 0.2
+trainSplit = 0.3
 numTrainExamples = numExamples*trainSplit
 
 trainX = X[0:numTrainExamples, :]
@@ -57,10 +57,12 @@ print(learner.getTree())
 
 plt.figure(0)
 plt.scatter(testX[:, 0], testX[:, 1], c=testY, s=50, vmin=0, vmax=2)
+plt.title("Test set")
 plt.colorbar()
 
 plt.figure(1)
 plt.scatter(trainX[:, 0], trainX[:, 1], c=trainY, s=50, vmin=0, vmax=2)
+plt.title("Training set")
 plt.colorbar()
 
 colormap  = matplotlib.cm.get_cmap()
@@ -91,6 +93,7 @@ plt.figure(2)
 #p = mpatches.Rectangle([0, 0], 0.5, 0.5, facecolor=(0, 0, 1), edgecolor="red")
 rootId = learner.tree.getRootId()
 displayTree(learner, rootId, 0, 1, 0, 1, colormap)
+plt.title("Tree default gamma")
 
 numGammas = 20
 gammas = numpy.linspace(0, 0.1, numGammas)
@@ -108,6 +111,7 @@ for i in range(gammas.shape[0]):
     
 plt.figure(3)
 plt.scatter(gammas, errors)
+plt.title("Error vs gamma")
 
 #Now plot best tree 
 plt.figure(4)
@@ -120,6 +124,9 @@ print(learner.tree)
 
 rootId = learner.tree.getRootId()
 displayTree(learner, rootId, 0, 1, 0, 1, colormap)
+plt.title("Optimal tree")
 
 plt.show()
+    
+#TODO: Compare with normal tree     
     
