@@ -24,7 +24,7 @@ class HIVABCParameters(object):
         ind = 0 
         mu = meanTheta[ind]
         sigma = mu*sigmaScale
-        priorDist, priorDensity = self.createDiscTruncNormParam(sigma, mu, upperInfected)
+        priorDist, priorDensity = self.createDiscTruncNormParam(float(sigma), float(mu), upperInfected)
         purtubationKernel, purtubationKernelDensity = self.__createNormalDiscPurt(sigma, purtScale)
         self.__addParameter(("graph", "setRandomInfected"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
 
