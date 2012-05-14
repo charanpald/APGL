@@ -3,7 +3,7 @@ import logging
 import numpy
 import sys
 import pywt 
-from apgl.metabolomics.MetabolomicsUtils import MetabolomicsUtils
+from exp.metabolomics.MetabolomicsUtils import MetabolomicsUtils
 from apgl.util.PathDefaults import PathDefaults
 from rpy2.robjects.packages import importr
 from socket import gethostname

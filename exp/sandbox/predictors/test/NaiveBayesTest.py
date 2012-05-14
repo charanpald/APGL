@@ -4,7 +4,7 @@ Created on 22 Jul 2009
 @author: charanpal
 '''
 
-from apgl.predictors.NaiveBayes import NaiveBayes
+from exp.sandbox.predictors.NaiveBayes import NaiveBayes
 from apgl.util.Sampling import Sampling
 from apgl.util.Evaluator import Evaluator
 import unittest

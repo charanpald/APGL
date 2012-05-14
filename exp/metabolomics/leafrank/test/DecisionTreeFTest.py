@@ -3,7 +3,7 @@ import unittest
 import numpy
 import logging
 import sys
-from apgl.metabolomics.leafrank.DecisionTreeF import DecisionTreeF
+from exp.metabolomics.leafrank.DecisionTreeF import DecisionTreeF
 
 class DecisionTreeFTest(unittest.TestCase):
     def setUp(self):

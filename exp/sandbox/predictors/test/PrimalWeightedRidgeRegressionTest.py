@@ -2,7 +2,7 @@
 import unittest
 import numpy
 import logging
-from apgl.predictors.PrimalWeightedRidgeRegression import PrimalWeightedRidgeRegression
+from exp.sandbox.predictors.PrimalWeightedRidgeRegression import PrimalWeightedRidgeRegression
 
 
 class  PrimalWeightedRidgeRegressionTest(unittest.TestCase):

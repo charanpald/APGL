@@ -5,8 +5,8 @@ A Python implementation of ranking forests using TreeRank.
 import numpy
 import logging
 import scikits.learn.cross_val as cross_val
-from apgl.metabolomics.AbstractTreeRank import AbstractTreeRank
-from apgl.metabolomics.TreeRank import TreeRank
+from exp.metabolomics.AbstractTreeRank import AbstractTreeRank
+from exp.metabolomics.TreeRank import TreeRank
 from apgl.util.Parameter import Parameter
 from apgl.util.Util import Util
 from apgl.util.Evaluator import Evaluator

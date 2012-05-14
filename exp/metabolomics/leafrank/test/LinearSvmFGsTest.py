@@ -3,7 +3,7 @@ import unittest
 import numpy
 import logging
 import sys
-from apgl.metabolomics.leafrank.LinearSvmFGs import LinearSvmFGs
+from exp.metabolomics.leafrank.LinearSvmFGs import LinearSvmFGs
 
 class LinearSvmFGsTest(unittest.TestCase):
     def setUp(self):

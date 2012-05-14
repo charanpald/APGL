@@ -1,6 +1,6 @@
 import unittest
 import numpy 
-from apgl.influence.GreedyInfluence import GreedyInfluence
+from exp.influence.GreedyInfluence import GreedyInfluence
 from apgl.graph.VertexList import VertexList
 from apgl.graph.SparseGraph import SparseGraph 
 

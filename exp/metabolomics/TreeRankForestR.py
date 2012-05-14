@@ -4,7 +4,7 @@ import scikits.learn.cross_val as cross_val
 from apgl.util.Util import Util
 from apgl.util.Parameter import Parameter
 from apgl.util.Evaluator import Evaluator
-from apgl.metabolomics.AbstractTreeRankR import AbstractTreeRankR
+from exp.metabolomics.AbstractTreeRankR import AbstractTreeRankR
 
 class TreeRankForestR(AbstractTreeRankR):
     """

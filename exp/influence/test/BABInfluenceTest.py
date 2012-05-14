@@ -3,7 +3,7 @@ import unittest
 import numpy
 import logging
 import sys
-from apgl.influence.BABInfluence import BABInfluence 
+from exp.influence.BABInfluence import BABInfluence 
 
 class  BABInfluenceTestCase(unittest.TestCase):
     def setUp(self):

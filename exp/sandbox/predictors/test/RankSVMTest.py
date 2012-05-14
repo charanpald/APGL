@@ -2,7 +2,7 @@ import numpy
 import sys
 import logging
 import unittest
-from apgl.metabolomics.RankSVM import RankSVM
+from exp.sandbox.predictors.RankSVM import RankSVM
 from apgl.util.Evaluator import Evaluator
 
 class  RankSVMTest(unittest.TestCase):

@@ -6,8 +6,8 @@ A functional version of the SVM leaf rank.
 import numpy
 import logging
 from apgl.util.Evaluator import Evaluator
-from apgl.metabolomics.leafrank.AbstractFunctionalPredictor import AbstractFunctionalPredictor
-from apgl.metabolomics.leafrank.SVC import SVC
+from exp.metabolomics.leafrank.AbstractFunctionalPredictor import AbstractFunctionalPredictor
+from exp.metabolomics.leafrank.SVC import SVC
 from apgl.data.Standardiser import Standardiser
 
 class SvcFGs(AbstractFunctionalPredictor):

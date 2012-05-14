@@ -5,7 +5,7 @@ import unittest
 import logging
 import sys
 import numpy
-from apgl.egograph.EgoNetworkSimulator import EgoNetworkSimulator
+from exp.egograph.EgoNetworkSimulator import EgoNetworkSimulator
 from apgl.util import * 
 from apgl.graph import *
 from apgl.generator import *

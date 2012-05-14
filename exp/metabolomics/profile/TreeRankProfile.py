@@ -4,8 +4,8 @@ import sys
 from apgl.graph import *
 from apgl.generator import *
 from apgl.util.ProfileUtils import ProfileUtils
-from apgl.metabolomics.leafrank.LinearSVM import LinearSVM
-from apgl.metabolomics.TreeRank import TreeRank
+from exp.metabolomics.leafrank.LinearSVM import LinearSVM
+from exp.metabolomics.TreeRank import TreeRank
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 

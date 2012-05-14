@@ -4,7 +4,7 @@ Created on 24 Jul 2009
 @author: charanpal
 '''
 
-from apgl.data.ExamplesList import ExamplesList
+from exp.sandbox.data.ExamplesList import ExamplesList
 from apgl.graph.VertexList import VertexList
 from apgl.graph.SparseGraph import SparseGraph
 import numpy 

@@ -4,7 +4,7 @@ A class to maximise influence in a network using the branch and bound method. s
 import numpy
 import logging
 from apgl.util.Parameter import Parameter
-from apgl.influence.GreedyInfluence import GreedyInfluence
+from exp.influence.GreedyInfluence import GreedyInfluence
 
 class BABInfluence(object):
     def __init__(self):

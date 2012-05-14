@@ -1,5 +1,5 @@
 
-from apgl.data.ExamplesList import ExamplesList
+from exp.sandbox.data.ExamplesList import ExamplesList
 from apgl.graph import * 
 from apgl.util.Parameter import Parameter
 import numpy

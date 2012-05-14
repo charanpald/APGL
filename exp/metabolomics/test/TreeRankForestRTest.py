@@ -6,7 +6,7 @@ import sys
 import rpy2.robjects as robjects
 import scikits.learn as learn
 from rpy2.robjects.packages import importr
-from apgl.metabolomics.TreeRankForestR import TreeRankForestR
+from exp.metabolomics.TreeRankForestR import TreeRankForestR
 from apgl.util.Evaluator import Evaluator
 
 class  TreeRankForestRTest(unittest.TestCase):

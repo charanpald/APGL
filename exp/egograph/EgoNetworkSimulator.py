@@ -1,7 +1,7 @@
 import logging
 
 from apgl.data.Standardiser import Standardiser
-from apgl.egograph import *
+from exp.egograph import *
 from apgl.graph import  *
 from apgl.util import * 
 import numpy

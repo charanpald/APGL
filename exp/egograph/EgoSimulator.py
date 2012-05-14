@@ -3,7 +3,7 @@ Created on 23 Jul 2009
 
 @author: charanpal
 '''
-from apgl.data.ExamplesList import ExamplesList
+from exp.sandbox.data.ExamplesList import ExamplesList
 from apgl.graph.DictGraph import DictGraph
 from apgl.graph.SparseGraph import SparseGraph
 from apgl.util.Parameter import Parameter
