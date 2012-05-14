@@ -1,29 +1,44 @@
 import numpy 
-
 from apgl.graph.DictTree import DictTree 
 from apgl.util.Util import Util 
 from apgl.util.Parameter import Parameter 
-from exp.sandbox.predictors.DecisionTreeLearner import DecisionTreeLearner
 from exp.sandbox.predictors.DecisionNode import DecisionNode
 from exp.sandbox.predictors.TreeCriterionPy import findBestSplit2, findBestSplitRisk
 from apgl.predictors.AbstractPredictor import AbstractPredictor
 
 class PenaltyDecisionTree(AbstractPredictor): 
-    def __init__(self, criterion="gain", maxDepth=10, minSplit=30, type="reg", pruning=True, gamma=0.01, sampleSize=10):
+    def __init__(self, criterion="gain", maxDepth=10, minSplit=30, learnType="reg", pruning=True, gamma=0.01, sampleSize=10):
         """
-        Need a minSplit for the internal nodes and one for leaves. A PenaltyDecisionTree
-        is one created such that the penalty on the empirical risk is proportional 
-        to the root of the size of the tree as in Nobel 2002. 
+        Learn a decision tree with penalty proportional to the root of the size 
+        of the tree as in Nobel 2002. We use a stochastic approach in which we 
+        learn a set of trees randomly and choose the best one. 
+
+        :param criterion: The splitting criterion which is only informaiton gain currently 
+
+        :param maxDepth: The maximum depth of the tree 
+        :type maxDepth: `int`
+
+        :param minSplit: The minimum size of a node for it to be split. 
+        :type minSplit: `int`
         
-        :param gamma: The weight on the penalty factor.  
+        :param type: The type of learning to perform. Currently only regression 
+        
+        :param pruning: Whether to perform pruning or not. 
+        :type pruning: `boolean`
+        
+        :param gamma: The weight on the penalty factor between 0 and 1
+        :type gamma: `float`
+        
+        :param sampleSize: The number of trees to learn in the stochastic search. 
+        :type sampleSize: `int`
         """
         super(PenaltyDecisionTree, self).__init__()
         self.maxDepth = maxDepth
         self.minSplit = minSplit
         self.criterion = criterion
-        self.type = type
+        self.learnType = learnType
         self.setGamma(gamma)
-        self.sampleSize = sampleSize 
+        self.setSampleSize(sampleSize) 
         self.pruning = pruning 
         self.alphaThreshold = 0.0
                 
@@ -56,7 +71,49 @@ class PenaltyDecisionTree(AbstractPredictor):
                 bestTree = self.tree.copy()
         
         self.tree = bestTree 
+
+    def recursiveSplit(self, X, y, argsortX, nodeId): 
+        """
+        Give a sample of data and a node index, we find the best split and 
+        add children to the tree accordingly. We perform a pre-pruning 
+        based on the penalty. 
+        """
+        if len(nodeId)-1 >= self.maxDepth: 
+            return 
         
+        node = self.tree.getVertex(nodeId)
+        accuracies, thresholds = findBestSplitRisk(self.minSplit, X, y, node.getTrainInds(), argsortX)
+        
+        #Choose best feature based on gains 
+        eps = 10**-4 
+        accuracies += eps 
+        bestFeatureInd = Util.randomChoice(accuracies)[0]
+        bestThreshold = thresholds[bestFeatureInd]
+    
+        nodeInds = node.getTrainInds()    
+        bestLeftInds = numpy.sort(nodeInds[numpy.arange(nodeInds.shape[0])[X[:, bestFeatureInd][nodeInds]<bestThreshold]]) 
+        bestRightInds = numpy.sort(nodeInds[numpy.arange(nodeInds.shape[0])[X[:, bestFeatureInd][nodeInds]>=bestThreshold]])
+    
+        #The split may have 0 items in one set, so don't split 
+        if bestLeftInds.sum() != 0 and bestRightInds.sum() != 0: 
+            node.setError(1-accuracies[bestFeatureInd])
+            node.setFeatureInd(bestFeatureInd)
+            node.setThreshold(bestThreshold)
+            
+            leftChildId = self.getLeftChildId(nodeId)
+            leftChild = DecisionNode(bestLeftInds, Util.mode(y[bestLeftInds]))
+            self.tree.addChild(nodeId, leftChildId, leftChild)
+            
+            if leftChild.getTrainInds().shape[0] >= self.minSplit: 
+                self.recursiveSplit(X, y, argsortX, leftChildId)
+            
+            rightChildId = self.getRightChildId(nodeId)
+            rightChild = DecisionNode(bestRightInds, Util.mode(y[bestRightInds]))
+            self.tree.addChild(nodeId, rightChildId, rightChild)
+            
+            if rightChild.getTrainInds().shape[0] >= self.minSplit: 
+                self.recursiveSplit(X, y, argsortX, rightChildId)
+   
     def setGamma(self, gamma): 
         Parameter.checkFloat(gamma, 0.0, 1.0)
         self.gamma = gamma   
@@ -205,44 +262,3 @@ class PenaltyDecisionTree(AbstractPredictor):
     def getTree(self): 
         return self.tree 
 
-    def recursiveSplit(self, X, y, argsortX, nodeId): 
-        """
-        Give a sample of data and a node index, we find the best split and 
-        add children to the tree accordingly. We perform a pre-pruning 
-        based on the penalty. 
-        """
-        if len(nodeId)-1 >= self.maxDepth: 
-            return 
-        
-        node = self.tree.getVertex(nodeId)
-        accuracies, thresholds = findBestSplitRisk(self.minSplit, X, y, node.getTrainInds(), argsortX)
-        
-        #Choose best feature based on gains 
-        eps = 10**-4 
-        accuracies += eps 
-        bestFeatureInd = Util.randomChoice(accuracies)[0]
-        bestThreshold = thresholds[bestFeatureInd]
-    
-        nodeInds = node.getTrainInds()    
-        bestLeftInds = numpy.sort(nodeInds[numpy.arange(nodeInds.shape[0])[X[:, bestFeatureInd][nodeInds]<bestThreshold]]) 
-        bestRightInds = numpy.sort(nodeInds[numpy.arange(nodeInds.shape[0])[X[:, bestFeatureInd][nodeInds]>=bestThreshold]])
-    
-        #The split may have 0 items in one set, so don't split 
-        if bestLeftInds.sum() != 0 and bestRightInds.sum() != 0: 
-            node.setError(1-accuracies[bestFeatureInd])
-            node.setFeatureInd(bestFeatureInd)
-            node.setThreshold(bestThreshold)
-            
-            leftChildId = self.getLeftChildId(nodeId)
-            leftChild = DecisionNode(bestLeftInds, Util.mode(y[bestLeftInds]))
-            self.tree.addChild(nodeId, leftChildId, leftChild)
-            
-            if leftChild.getTrainInds().shape[0] >= self.minSplit: 
-                self.recursiveSplit(X, y, argsortX, leftChildId)
-            
-            rightChildId = self.getRightChildId(nodeId)
-            rightChild = DecisionNode(bestRightInds, Util.mode(y[bestRightInds]))
-            self.tree.addChild(nodeId, rightChildId, rightChild)
-            
-            if rightChild.getTrainInds().shape[0] >= self.minSplit: 
-                self.recursiveSplit(X, y, argsortX, rightChildId)
