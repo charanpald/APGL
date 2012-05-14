@@ -1,5 +1,6 @@
 import numpy
 from pysparse import spmatrix
+from sparray.dyn_array import dyn_array
 from exp.viroscopy.model.HIVVertices import HIVVertices
 from apgl.util.Util import *
 
@@ -183,7 +184,8 @@ class HIVRates():
         if len(infectedList) == 0:
             return numpy.array([])
 
-        contactRates = spmatrix.ll_mat(len(infectedList), self.graph.getNumVertices())
+        #contactRates = spmatrix.ll_mat(len(infectedList), self.graph.getNumVertices())
+        contactRates = dyn_array((len(infectedList), self.graph.getNumVertices()))
 
         infectedV = self.V[infectedList, :]
         maleInfectInds = infectedV[:, HIVVertices.genderIndex]==HIVVertices.male
@@ -250,7 +252,7 @@ class HIVRates():
         contactRates.put(self.biContactRate, bInds, contacts[bInds])
 
         #Make sure people can't have contact with themselves
-        contactRates.put(0, range(len(infectedList)), infectedList)
+        contactRates.put(0, numpy.arange(len(infectedList)), numpy.array(infectedList, numpy.int)) 
 
         #Check there is at most 1 element per row
         #for i in range(contactRates.shape[0]):
@@ -258,7 +260,7 @@ class HIVRates():
         
         #contactRates.T.to_csr()
 
-        return contactRates[:, contactList]
+        return contactRates[:, numpy.array(contactList)]
 
     """
     Compute the infection probability between an infected and susceptible.

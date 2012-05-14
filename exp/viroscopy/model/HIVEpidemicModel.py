@@ -118,7 +118,8 @@ class HIVEpidemicModel():
             assert (contactTracingRates == numpy.abs(contactTracingRates)).all()
             assert (randomDetectRates == numpy.abs(randomDetectRates)).all()
 
-            sigmat = PySparseUtils.sum(contactRates)
+            #sigmat = PySparseUtils.sum(contactRates)
+            sigmat = contactRates.sum()
             muRSt = numpy.sum(randomDetectRates)
             muCTt = numpy.sum(contactTracingRates)
             #rhot = sigmat + muRSt + muCTt
@@ -151,9 +152,11 @@ class HIVEpidemicModel():
             p = numpy.random.rand()
 
             if p < contactProb:
-                (rows, cols) = PySparseUtils.nonzero(contactRates)
-                nzContactRates = numpy.zeros(len(rows))
-                contactRates.take(nzContactRates, rows, cols)
+                #(rows, cols) = PySparseUtils.nonzero(contactRates)
+                #nzContactRates = numpy.zeros(len(rows))
+                #contactRates.take(nzContactRates, rows, cols)
+                (rows, cols) = contactRates.nonzero()
+                nzContactRates = contactRates[rows, cols]
 
                 eventInd = Util.randomChoice(nzContactRates)[0]
                 infectedIndex = infectedList[rows[eventInd]]
