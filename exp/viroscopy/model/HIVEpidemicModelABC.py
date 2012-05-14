@@ -11,6 +11,7 @@ from exp.viroscopy.model.HIVRates import HIVRates
 from exp.viroscopy.model.HIVModelUtils import HIVModelUtils
 from exp.viroscopy.model.HIVGraphMetrics import HIVGraphMetrics2
 from apgl.predictors.ABCSMC import ABCSMC
+from apgl.util.ProfileUtils import ProfileUtils 
 
 import logging
 import sys
@@ -65,7 +66,7 @@ if len(sys.argv) > 1:
 else: 
     numProcesses = multiprocessing.cpu_count()
 
-posteriorSampleSize = 20
+posteriorSampleSize = 2
 thetaLen = 10
 
 logging.debug("Posterior sample size " + str(posteriorSampleSize))
@@ -91,6 +92,8 @@ for i in range(numProcesses):
     abcList[i].join()
 
 logging.debug("Queue size = " + str(thetaQueue.qsize()))
+
+
 thetasArray = numpy.zeros((thetaQueue.qsize(), thetaLen))
 
 for i in range(thetaQueue.qsize()):
