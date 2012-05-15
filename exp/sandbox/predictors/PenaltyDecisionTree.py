@@ -84,39 +84,44 @@ class PenaltyDecisionTree(AbstractPredictor):
             argsortX[:, i] = numpy.argsort(X[:, i])
             argsortX[:, i] = numpy.argsort(argsortX[:, i])
         
-        #First, grow a single tree      
-        self.growTree(X, y, argsortX)
-        if self.pruning: 
-            self.prune(X, y)
             
         rootId = (0,)
-        idStack = [rootId] 
-                
-        #Now improve subtrees of the current tree 
-        oldTree = self.tree.copy()
+        idStack = [rootId]
+        self.tree = DictTree()
+        rootNode = DecisionNode(numpy.arange(X.shape[0]), Util.mode(y))
+        self.tree.setVertex(rootId, rootNode)
+        bestError = float("inf")
+
         while len(idStack) != 0:
             #Prune the current node away and grow from that node 
+            nodeId = idStack.pop()
+            node = self.tree.getVertex(nodeId)
             
+            for i in range(self.sampleSize):             
+                self.tree.pruneVertex(nodeId)
+                self.growTree(X, y, argsortX, nodeId)
+                self.prune(X, y)
             
-                        
+                error = self.treeObjective(X, y)
             
-        if error < bestError: 
-            bestError = error
-            bestTree = self.tree.copy()
+                if error < bestError: 
+                    bestError = error
+                    bestTree = self.tree.copy()
+            
+            self.tree = bestTree
+            children = self.tree.children(nodeId)
+            
+            idStack.extend(children)
         
         self.tree = bestTree 
 
-    def growTree(self, X, y, argsortX, startId = (0, )): 
+    def growTree(self, X, y, argsortX, startId): 
         """
         Grow a tree using a stack. Give a sample of data and a node index, we 
-        find the best split and add children to the tree accordingly. We perform a pre-pruning 
-        based on the penalty. 
+        find the best split and add children to the tree accordingly. We perform 
+        pre-pruning based on the penalty. 
         """
         eps = 10**-4 
-         
-        self.tree = DictTree()
-        rootNode = DecisionNode(numpy.arange(X.shape[0]), Util.mode(y))
-        self.tree.setVertex(startId, rootNode)
         idStack = [startId]
         
         while len(idStack) != 0: 
