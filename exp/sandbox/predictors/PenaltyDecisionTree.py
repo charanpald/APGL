@@ -42,141 +42,152 @@ class PenaltyDecisionTree(AbstractPredictor):
         self.pruning = pruning 
         self.alphaThreshold = 0.0
                 
-    def learnModel(self, X, y):
-        if numpy.unique(y).shape[0] != 2: 
-            raise ValueError("Must provide binary labels")
-        if y.dtype != numpy.int: 
-            raise ValueError("Labels must be integers")
-        
-        self.shapeX = X.shape
-        rootId = (0, )         
-        argsortX = numpy.zeros(X.shape, numpy.int)
-        for i in range(X.shape[1]): 
-            argsortX[:, i] = numpy.argsort(X[:, i])
-            argsortX[:, i] = numpy.argsort(argsortX[:, i])
-        
-        bestError = float("inf")        
-        
-        for i in range(self.sampleSize): 
-            self.tree = DictTree()
-            rootNode = DecisionNode(numpy.arange(X.shape[0]), Util.mode(y))
-            self.tree.setVertex(rootId, rootNode)
-            self.recursiveSplit(X, y, argsortX, rootId)
-            if self.pruning: 
-                self.prune(X, y)
-            error = self.treeObjective(X, y)
-            
-            if error < bestError: 
-                bestError = error
-                bestTree = self.tree.copy()
-        
-        self.tree = bestTree 
-
-    def recursiveSplit(self, X, y, argsortX, nodeId): 
-        """
-        Give a sample of data and a node index, we find the best split and 
-        add children to the tree accordingly. We perform a pre-pruning 
-        based on the penalty. 
-        """
-        if len(nodeId)-1 >= self.maxDepth: 
-            return 
-        
-        node = self.tree.getVertex(nodeId)
-        accuracies, thresholds = findBestSplitRisk(self.minSplit, X, y, node.getTrainInds(), argsortX)
-        
-        #Choose best feature based on gains 
-        eps = 10**-4 
-        accuracies += eps 
-        bestFeatureInd = Util.randomChoice(accuracies)[0]
-        bestThreshold = thresholds[bestFeatureInd]
-    
-        nodeInds = node.getTrainInds()    
-        bestLeftInds = numpy.sort(nodeInds[numpy.arange(nodeInds.shape[0])[X[:, bestFeatureInd][nodeInds]<bestThreshold]]) 
-        bestRightInds = numpy.sort(nodeInds[numpy.arange(nodeInds.shape[0])[X[:, bestFeatureInd][nodeInds]>=bestThreshold]])
-    
-        #The split may have 0 items in one set, so don't split 
-        if bestLeftInds.sum() != 0 and bestRightInds.sum() != 0: 
-            node.setError(1-accuracies[bestFeatureInd])
-            node.setFeatureInd(bestFeatureInd)
-            node.setThreshold(bestThreshold)
-            
-            leftChildId = self.getLeftChildId(nodeId)
-            leftChild = DecisionNode(bestLeftInds, Util.mode(y[bestLeftInds]))
-            self.tree.addChild(nodeId, leftChildId, leftChild)
-            
-            if leftChild.getTrainInds().shape[0] >= self.minSplit: 
-                self.recursiveSplit(X, y, argsortX, leftChildId)
-            
-            rightChildId = self.getRightChildId(nodeId)
-            rightChild = DecisionNode(bestRightInds, Util.mode(y[bestRightInds]))
-            self.tree.addChild(nodeId, rightChildId, rightChild)
-            
-            if rightChild.getTrainInds().shape[0] >= self.minSplit: 
-                self.recursiveSplit(X, y, argsortX, rightChildId)
-   
     def setGamma(self, gamma): 
         Parameter.checkFloat(gamma, 0.0, 1.0)
         self.gamma = gamma   
         
     def setSampleSize(self, sampleSize):
         Parameter.checkInt(sampleSize, 1, float("inf"))
-        self.sampleSize = sampleSize
+        self.sampleSize = sampleSize                
 
-    def predict(self, X): 
+    def setAlphaThreshold(self, alphaThreshold): 
+        Parameter.checkFloat(alphaThreshold, -float("inf"), float("inf"))
+        self.alphaThreshold = alphaThreshold
+   
+    def getAlphaThreshold(self): 
+        return self.alphaThreshold
+    
+    def getLeftChildId(self, nodeId): 
+        leftChildId = list(nodeId)
+        leftChildId.append(0)
+        leftChildId = tuple(leftChildId)
+        return leftChildId
+
+    def getRightChildId(self, nodeId): 
+        rightChildId = list(nodeId)
+        rightChildId.append(1)
+        rightChildId = tuple(rightChildId) 
+        return rightChildId
+        
+    def getTree(self): 
+        return self.tree 
+                
+    def learnModel(self, X, y):
+        if numpy.unique(y).shape[0] != 2: 
+            raise ValueError("Must provide binary labels")
+        if y.dtype != numpy.int: 
+            raise ValueError("Labels must be integers")
+        
+        self.shapeX = X.shape  
+        argsortX = numpy.zeros(X.shape, numpy.int)
+        for i in range(X.shape[1]): 
+            argsortX[:, i] = numpy.argsort(X[:, i])
+            argsortX[:, i] = numpy.argsort(argsortX[:, i])
+        
+        #First, grow a single tree      
+        self.growTree(X, y, argsortX)
+        if self.pruning: 
+            self.prune(X, y)
+            
+        rootId = (0,)
+        idStack = [rootId] 
+                
+        #Now improve subtrees of the current tree 
+        oldTree = self.tree.copy()
+        while len(idStack) != 0:
+            #Prune the current node away and grow from that node 
+            
+            
+                        
+            
+        if error < bestError: 
+            bestError = error
+            bestTree = self.tree.copy()
+        
+        self.tree = bestTree 
+
+    def growTree(self, X, y, argsortX, startId = (0, )): 
         """
-        Make a prediction for the set of examples given in the matrix X. 
+        Grow a tree using a stack. Give a sample of data and a node index, we 
+        find the best split and add children to the tree accordingly. We perform a pre-pruning 
+        based on the penalty. 
         """
+        eps = 10**-4 
+         
+        self.tree = DictTree()
+        rootNode = DecisionNode(numpy.arange(X.shape[0]), Util.mode(y))
+        self.tree.setVertex(startId, rootNode)
+        idStack = [startId]
+        
+        while len(idStack) != 0: 
+            nodeId = idStack.pop()
+            node = self.tree.getVertex(nodeId)
+            accuracies, thresholds = findBestSplitRisk(self.minSplit, X, y, node.getTrainInds(), argsortX)
+        
+            #Choose best feature based on gains 
+            accuracies += eps 
+            bestFeatureInd = Util.randomChoice(accuracies)[0]
+            bestThreshold = thresholds[bestFeatureInd]
+        
+            nodeInds = node.getTrainInds()    
+            bestLeftInds = numpy.sort(nodeInds[numpy.arange(nodeInds.shape[0])[X[:, bestFeatureInd][nodeInds]<bestThreshold]]) 
+            bestRightInds = numpy.sort(nodeInds[numpy.arange(nodeInds.shape[0])[X[:, bestFeatureInd][nodeInds]>=bestThreshold]])
+            
+            #The split may have 0 items in one set, so don't split 
+            if bestLeftInds.sum() != 0 and bestRightInds.sum() != 0: 
+                node.setError(1-accuracies[bestFeatureInd])
+                node.setFeatureInd(bestFeatureInd)
+                node.setThreshold(bestThreshold)            
+                            
+                leftChildId = self.getLeftChildId(nodeId)
+                leftChild = DecisionNode(bestLeftInds, Util.mode(y[bestLeftInds]))
+                self.tree.addChild(nodeId, leftChildId, leftChild)
+                
+                if leftChild.getTrainInds().shape[0] >= self.minSplit: 
+                    idStack.append(leftChildId)
+                
+                rightChildId = self.getRightChildId(nodeId)
+                rightChild = DecisionNode(bestRightInds, Util.mode(y[bestRightInds]))
+                self.tree.addChild(nodeId, rightChildId, rightChild)
+                
+                if rightChild.getTrainInds().shape[0] >= self.minSplit: 
+                    idStack.append(rightChildId)
+        
+    def predict(self, X, y=None): 
+        """
+        Make a prediction for the set of examples given in the matrix X.  If 
+        one passes in a label vector y then we set the errors for each node. 
+        """ 
         rootId = (0,)
         predY = numpy.zeros(X.shape[0])
         self.tree.getVertex(rootId).setTestInds(numpy.arange(X.shape[0]))
-        predY = self.recursivePredict(X, predY, rootId)
-        
-        return predY 
-        
-    def recursivePredict(self, X, y, nodeId): 
-        """
-        Recurse through the tree and assign examples to the correct vertex. 
-        """        
-        node = self.tree.getVertex(nodeId)
-        testInds = node.getTestInds()
-        
-        if self.tree.isLeaf(nodeId): 
-            y[testInds] = node.getValue()
-        else: 
-             
-            for childId in [self.getLeftChildId(nodeId), self.getRightChildId(nodeId)]:
-                if self.tree.vertexExists(childId):
-                    child = self.tree.getVertex(childId)
-    
-                    if childId[-1] == 0: 
-                        childInds = X[testInds, node.getFeatureInd()] < node.getThreshold() 
-                    else:
-                        childInds = X[testInds, node.getFeatureInd()] >= node.getThreshold()
-                    
-                    child.setTestInds(testInds[childInds])   
-                    y = self.recursivePredict(X, y, childId)
-                
-        return y
+        idStack = [rootId]
 
-    def recursiveSetPrune(self, X, y, nodeId):
-        """
-        This computes test errors on nodes by passing in the test X and y. 
-        """
-        node = self.tree.getVertex(nodeId)
-        testInds = node.getTestInds()
-        node.setTestError(self.vertexTestError(y[testInds], node.getValue()))
-    
-        for childId in [self.getLeftChildId(nodeId), self.getRightChildId(nodeId)]:
-            if self.tree.vertexExists(childId):
-                child = self.tree.getVertex(childId)
+        while len(idStack) != 0:
+            nodeId = idStack.pop()
+            node = self.tree.getVertex(nodeId)
+            testInds = node.getTestInds()
+            if y!=None: 
+                node.setTestError(self.vertexTestError(y[testInds], node.getValue()))
+        
+            if self.tree.isLeaf(nodeId): 
+                predY[testInds] = node.getValue()
+            else: 
+                 
+                for childId in [self.getLeftChildId(nodeId), self.getRightChildId(nodeId)]:
+                    if self.tree.vertexExists(childId):
+                        child = self.tree.getVertex(childId)
+        
+                        if childId[-1] == 0: 
+                            childInds = X[testInds, node.getFeatureInd()] < node.getThreshold() 
+                        else:
+                            childInds = X[testInds, node.getFeatureInd()] >= node.getThreshold()
+                        
+                        child.setTestInds(testInds[childInds])   
+                        idStack.append(childId)
                 
-                if childId[-1] == 0: 
-                    childInds = X[testInds, node.getFeatureInd()] < node.getThreshold() 
-                else:
-                    childInds = X[testInds, node.getFeatureInd()] >= node.getThreshold()
-                child.setTestInds(testInds[childInds])
-                self.recursiveSetPrune(X, y, childId)
- 
+        return predY
+
     def treeObjective(self, X, y): 
         """
         Return the empirical risk plus penalty for the tree. 
@@ -191,11 +202,24 @@ class PenaltyDecisionTree(AbstractPredictor):
         """
         Do some post pruning greedily. 
         """
-        rootId = (0,)
-        self.tree.getVertex(rootId).setTestInds(numpy.arange(X.shape[0]))
-        self.recursiveSetPrune(X, y, rootId)  
+        self.predict(X, y)  
         self.computeAlphas()
-        self.recursivePrune(rootId)
+        
+        #Do the pruning, recomputing alpha along the way 
+        rootId = (0,)
+        idStack = [rootId]
+
+        while len(idStack) != 0:        
+            nodeId = idStack.pop()
+            node = self.tree.getVertex(nodeId)
+    
+            if node.alpha > self.alphaThreshold: 
+                self.tree.pruneVertex(nodeId)
+                self.computeAlphas()
+            else: 
+                for childId in [self.getLeftChildId(nodeId), self.getRightChildId(nodeId)]: 
+                    if self.tree.vertexExists(childId):
+                        idStack.append(childId)
         
     def vertexTestError(self, trueY, predY):
         """
@@ -226,39 +250,5 @@ class PenaltyDecisionTree(AbstractPredictor):
             currentNode.alpha -= self.gamma * numpy.sqrt(32*n*(T2*d*numpy.log(n) + T2*numpy.log(2) + 2*numpy.log(T2)))
             currentNode.alpha /= n
 
-    def recursivePrune(self, nodeId): 
-        """
-        We prune as early as possible and recompute the alphas after each pruning.   
-        """
-        node = self.tree.getVertex(nodeId)
 
-        if node.alpha > self.alphaThreshold: 
-            self.tree.pruneVertex(nodeId)
-            self.computeAlphas()
-        else: 
-            for childId in [self.getLeftChildId(nodeId), self.getRightChildId(nodeId)]: 
-                if self.tree.vertexExists(childId):
-                    self.recursivePrune(childId)
-
-    def getAlphaThreshold(self): 
-        return self.alphaThreshold
-    
-    def setAlphaThreshold(self, alphaThreshold): 
-        Parameter.checkFloat(alphaThreshold, -float("inf"), float("inf"))
-        self.alphaThreshold = alphaThreshold
-        
-    def getLeftChildId(self, nodeId): 
-        leftChildId = list(nodeId)
-        leftChildId.append(0)
-        leftChildId = tuple(leftChildId)
-        return leftChildId
-
-    def getRightChildId(self, nodeId): 
-        rightChildId = list(nodeId)
-        rightChildId.append(1)
-        rightChildId = tuple(rightChildId) 
-        return rightChildId
-   
-    def getTree(self): 
-        return self.tree 
 
