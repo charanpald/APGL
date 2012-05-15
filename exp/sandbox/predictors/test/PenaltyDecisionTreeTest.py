@@ -207,7 +207,7 @@ class PenaltyDecisionTreeLearnerTest(unittest.TestCase):
             argsortX[:, i] = numpy.argsort(argsortX[:, i])
         
         numpy.random.seed(21)
-        learner.growTree(self.X, self.y, argsortX)
+        #learner.growTree(self.X, self.y, argsortX)
         #print(learner.getTree())
         
 
