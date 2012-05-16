@@ -95,8 +95,8 @@ rootId = learner.tree.getRootId()
 displayTree(learner, rootId, 0, 1, 0, 1, colormap)
 plt.title("Tree default gamma")
 
-numGammas = 20
-gammas = numpy.linspace(0, 0.1, numGammas)
+numGammas = 10
+gammas = numpy.linspace(0, 0.05, numGammas)
 errors = numpy.zeros(numGammas)
 
 learner = PenaltyDecisionTree(minSplit=10, maxDepth=5, pruning=True)
