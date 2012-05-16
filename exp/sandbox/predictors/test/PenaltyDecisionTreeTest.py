@@ -58,40 +58,38 @@ class PenaltyDecisionTreeLearnerTest(unittest.TestCase):
                 self.assertTrue(0 <= vertex.getFeatureInd() <= X.shape[1])
                 self.assertTrue(0 <= vertex.getError() <= 1)
 
-    @unittest.skip("")    
     def testLearnModel2(self): 
         #We want to make sure the learnt tree with gamma = 0 maximise the 
         #empirical risk 
         minSplit = 20
         maxDepth = 3
-        gamma = 0.00
+        gamma = 0.01
         learner = PenaltyDecisionTree(minSplit=minSplit, maxDepth=maxDepth, gamma=gamma, pruning=False) 
         
         #Vary sampleSize
         numpy.random.seed(21)
-        learner.setSampleSize(5)           
+        learner.setSampleSize(1)           
         learner.learnModel(self.X, self.y)        
-        predY = learner.predict(self.X)
-        error1 = Evaluator.binaryError(self.y, predY)
+        error1 = learner.treeObjective(self.X, self.y)
 
         numpy.random.seed(21)
-        learner.setSampleSize(10)        
+        learner.setSampleSize(5)        
         learner.learnModel(self.X, self.y)
-        predY = learner.predict(self.X)
-        error2 = Evaluator.binaryError(self.y, predY)
+        error2 = learner.treeObjective(self.X, self.y)
 
         numpy.random.seed(21)                
-        learner.setSampleSize(30)       
+        learner.setSampleSize(10)       
         learner.learnModel(self.X, self.y)
-        predY = learner.predict(self.X)
-        error3 = Evaluator.binaryError(self.y, predY)
+        error3 = learner.treeObjective(self.X, self.y)
         
         self.assertTrue(error1 >= error2)
         self.assertTrue(error2 >= error3)
         
         #Now vary max depth 
+        learner.gamma = 0         
+        
         numpy.random.seed(21)
-        learner.setSampleSize(10) 
+        learner.setSampleSize(1) 
         learner.minSplit = 1
         learner.maxDepth = 3 
         learner.learnModel(self.X, self.y)
@@ -108,11 +106,10 @@ class PenaltyDecisionTreeLearnerTest(unittest.TestCase):
         learner.maxDepth = 10 
         learner.learnModel(self.X, self.y)
         predY = learner.predict(self.X)
-        error2 = Evaluator.binaryError(self.y, predY)        
+        error3 = Evaluator.binaryError(self.y, predY)        
         
         self.assertTrue(error1 >= error2)
-        #print(error1, error2, error3)
-        #self.assertTrue(error2 >= error3)
+        self.assertTrue(error2 >= error3)
 
 
     def testComputeAlphas(self): 
@@ -280,7 +277,6 @@ class PenaltyDecisionTreeLearnerTest(unittest.TestCase):
                 bestError = error 
                 bestTree = learner.tree.copy() 
             #print(Evaluator.binaryError(predTestY, testY), learner.tree.getNumVertices())
-        print(bestError1, bestError)
         self.assertTrue(bestError1 >= bestError )
         
 if __name__ == '__main__':

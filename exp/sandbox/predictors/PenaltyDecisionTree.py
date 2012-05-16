@@ -91,26 +91,26 @@ class PenaltyDecisionTree(AbstractPredictor):
         rootNode = DecisionNode(numpy.arange(X.shape[0]), Util.mode(y))
         self.tree.setVertex(rootId, rootNode)
         bestError = float("inf")
+        bestTree = self.tree 
         
         while len(idStack) != 0:
             #Prune the current node away and grow from that node 
             nodeId = idStack.pop()
             node = self.tree.getVertex(nodeId)
             
-            for i in range(self.sampleSize):             
+            for i in range(self.sampleSize):   
+                self.tree = bestTree.deepCopy()
                 self.tree.pruneVertex(nodeId)            
                 self.growTree(X, y, argsortX, nodeId)
                 self.prune(X, y)
-            
                 error = self.treeObjective(X, y)
             
                 if error < bestError: 
                     bestError = error
-                    bestTree = self.tree.copy()
+                    bestTree = self.tree.deepCopy()
             
-            self.tree = bestTree
-            children = self.tree.children(nodeId)
-            
+            error = self.treeObjective(X, y)
+            children = self.tree.children(nodeId)            
             idStack.extend(children)
         
         self.tree = bestTree 
