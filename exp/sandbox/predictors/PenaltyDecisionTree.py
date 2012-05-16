@@ -91,14 +91,14 @@ class PenaltyDecisionTree(AbstractPredictor):
         rootNode = DecisionNode(numpy.arange(X.shape[0]), Util.mode(y))
         self.tree.setVertex(rootId, rootNode)
         bestError = float("inf")
-
+        
         while len(idStack) != 0:
             #Prune the current node away and grow from that node 
             nodeId = idStack.pop()
             node = self.tree.getVertex(nodeId)
             
             for i in range(self.sampleSize):             
-                self.tree.pruneVertex(nodeId)
+                self.tree.pruneVertex(nodeId)            
                 self.growTree(X, y, argsortX, nodeId)
                 self.prune(X, y)
             
@@ -139,7 +139,7 @@ class PenaltyDecisionTree(AbstractPredictor):
             bestRightInds = numpy.sort(nodeInds[numpy.arange(nodeInds.shape[0])[X[:, bestFeatureInd][nodeInds]>=bestThreshold]])
             
             #The split may have 0 items in one set, so don't split 
-            if bestLeftInds.sum() != 0 and bestRightInds.sum() != 0: 
+            if bestLeftInds.sum() != 0 and bestRightInds.sum() != 0 and self.tree.depth() < self.maxDepth: 
                 node.setError(1-accuracies[bestFeatureInd])
                 node.setFeatureInd(bestFeatureInd)
                 node.setThreshold(bestThreshold)            
@@ -161,7 +161,8 @@ class PenaltyDecisionTree(AbstractPredictor):
     def predict(self, X, y=None): 
         """
         Make a prediction for the set of examples given in the matrix X.  If 
-        one passes in a label vector y then we set the errors for each node. 
+        one passes in a label vector y then we set the errors for each node. On 
+        the other hand if y=None, no errors are set. 
         """ 
         rootId = (0,)
         predY = numpy.zeros(X.shape[0])
@@ -198,10 +199,8 @@ class PenaltyDecisionTree(AbstractPredictor):
         Return the empirical risk plus penalty for the tree. 
         """
         predY = self.predict(X)
-        T = self.tree.getNumVertices()
         (n, d) = X.shape
-        error = (1-self.gamma)*numpy.sum(predY!=y)/float(n) + self.gamma*numpy.sqrt(32*(T*d*numpy.log(n) + T*numpy.log(2) + 2*numpy.log(T))/n)
-        return error 
+        return (1-self.gamma)*numpy.sum(predY!=y)/float(n) + self.gamma*numpy.sqrt(self.tree.getNumVertices())
 
     def prune(self, X, y): 
         """
@@ -237,8 +236,7 @@ class PenaltyDecisionTree(AbstractPredictor):
         The alpha value at each vertex is the improvement in the objective by 
         pruning at that vertex.  
         """
-        n = self.shapeX[0]
-        d = self.shapeX[1]        
+        n = self.shapeX[0]    
         
         for vertexId in self.tree.getAllVertexIds(): 
             currentNode = self.tree.getVertex(vertexId)            
@@ -251,9 +249,6 @@ class PenaltyDecisionTree(AbstractPredictor):
             T = self.tree.getNumVertices()
             T2 = T - len(self.tree.subtreeIds(vertexId)) + 1 
             currentNode.alpha = (1-self.gamma)*(subtreeError - currentNode.getTestError())
-            currentNode.alpha += self.gamma * numpy.sqrt(32*n*(T*d*numpy.log(n) + T*numpy.log(2) + 2*numpy.log(T)))
-            currentNode.alpha -= self.gamma * numpy.sqrt(32*n*(T2*d*numpy.log(n) + T2*numpy.log(2) + 2*numpy.log(T2)))
             currentNode.alpha /= n
-
-
-
+            currentNode.alpha += self.gamma * numpy.sqrt(T)
+            currentNode.alpha -= self.gamma * numpy.sqrt(T2)
