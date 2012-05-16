@@ -2,6 +2,7 @@
 from apgl.graph.DictTree import DictTree
 import unittest
 import numpy 
+import numpy.testing as nptst 
 
 class DictGraphTest(unittest.TestCase):
     def setUp(self):
@@ -240,6 +241,38 @@ class DictGraphTest(unittest.TestCase):
         self.assertFalse(self.dictTree.isSubtree(newTree))
         
         self.assertTrue(self.dictTree.isSubtree(self.dictTree))
+
+    def testDeepCopy(self): 
+        class A: 
+            def __init__(self, x, y): 
+                self.x = x      
+                self.y = y
+
+        a = A(1, numpy.array([1, 2]))        
+        self.dictTree.setVertex("a", a)
+        newTree = self.dictTree.deepCopy()  
+        newTree.addEdge("f", "x")
+        newTree.addEdge("f", "y")
+        
+        self.assertEquals(newTree.getNumVertices(), self.dictTree.getNumVertices()+2)
+        self.assertTrue(newTree.vertexExists("x"))
+        self.assertTrue(newTree.vertexExists("y"))
+        self.assertTrue(not self.dictTree.vertexExists("x"))
+        self.assertTrue(not self.dictTree.vertexExists("x"))
+        self.assertEquals(self.dictTree.getVertex("a"), a)
+        
+        self.assertEquals(newTree.getVertex("a").x, 1)
+        self.assertEquals(self.dictTree.getVertex("a").x, 1)
+        a.x = 10
+        self.assertEquals(newTree.getVertex("a").x, 1)
+        self.assertEquals(self.dictTree.getVertex("a").x, 10)
+        
+        nptst.assert_array_equal(newTree.getVertex("a").y, numpy.array([1, 2])) 
+        nptst.assert_array_equal(self.dictTree.getVertex("a").y, numpy.array([1, 2]))
+        a.y = numpy.array([1,2,3])
+        nptst.assert_array_equal(newTree.getVertex("a").y, numpy.array([1, 2])) 
+        nptst.assert_array_equal(self.dictTree.getVertex("a").y, numpy.array([1, 2, 3]))
+        
         
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

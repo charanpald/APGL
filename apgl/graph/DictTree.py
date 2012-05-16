@@ -2,6 +2,7 @@
 A tree structure based on DictGraph
 """
 import numpy 
+import copy 
 from apgl.graph.DictGraph import DictGraph
 from apgl.util.Parameter import Parameter
 
@@ -81,7 +82,7 @@ class DictTree(DictGraph):
         elif self.vertexExists(vertexId):
             super(DictTree, self).setVertex(vertexId, vertex)
         else:
-            raise RuntimeError("Can only set a vertex in an empty tree: " + str(vertexId))
+            raise RuntimeError("Can only set a new vertex in an empty tree: " + str(vertexId))
 
     def addChild(self, parentId, childId, childVertex=None): 
         """
@@ -288,6 +289,23 @@ class DictTree(DictGraph):
             newTree.adjacencies[key] = self.adjacencies[key].copy() 
             
         newTree.vertices = self.vertices.copy()
+        
+        return newTree
+        
+    def deepCopy(self): 
+        """
+        Return a copied version of this tree. This is a deep copy in 
+        that vertex values are copied using the function copy.copy() 
+        """
+        newTree = DictTree()    
+        newTree.adjacencies = {} 
+        
+        for key in self.adjacencies.keys():         
+            newTree.adjacencies[key] = self.adjacencies[key].copy() 
+            
+        for vertexId in self.getAllVertexIds(): 
+            vertex = self.getVertex(vertexId)
+            newTree.vertices[vertexId] = copy.copy(vertex)
         
         return newTree
         
