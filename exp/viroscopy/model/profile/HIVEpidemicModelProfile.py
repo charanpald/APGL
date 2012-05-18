@@ -29,7 +29,7 @@ class HIVEpidemicModelProfile():
 
     def profileSimulate(self):
         #End time
-        T = 300.0
+        T = 500.0
 
         alpha = 2
         zeroVal = 0.9
@@ -44,6 +44,3 @@ class HIVEpidemicModelProfile():
 
 profiler = HIVEpidemicModelProfile()
 profiler.profileSimulate()
-
-#29.628
-#17.284
