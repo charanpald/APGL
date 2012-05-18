@@ -17,7 +17,7 @@ numpy.random.seed(21)
 
 X = numpy.random.rand(numExamples, numFeatures)
 y = numpy.zeros(numExamples, numpy.int)
-noise = 0.05 
+noise = 0.2 
 
 for i in range(numExamples): 
     if X[i, 1] > 0.5: 
@@ -96,11 +96,11 @@ displayTree(learner, rootId, 0, 1, 0, 1, colormap)
 plt.title("Tree default gamma")
 
 numGammas = 10
-gammas = numpy.linspace(0, 0.05, numGammas)
+gammas = numpy.linspace(0.001, 0.01, numGammas)
 errors = numpy.zeros(numGammas)
 
 learner = PenaltyDecisionTree(minSplit=10, maxDepth=5, pruning=True)
-learner.setSampleSize(100)
+learner.setSampleSize(10)
 
 for i in range(gammas.shape[0]): 
     print(gammas[i])
@@ -115,6 +115,7 @@ plt.title("Error vs gamma")
 
 #Now plot best tree 
 plt.figure(4)
+print(gammas[numpy.argmin(errors)])
 learner.setGamma(gammas[numpy.argmin(errors)])
 learner.learnModel(trainX, trainY)
 print(learner.gamma)
