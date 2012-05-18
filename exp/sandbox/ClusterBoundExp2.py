@@ -4,15 +4,14 @@ from sympy import Symbol, simplify, collect, latex, pprint, solve
 
 rho = Symbol("rho")
 s = Symbol("s")
-p = Symbol("p")
 q = Symbol("q")
 r = Symbol("r")
 eps = Symbol("epsilon")
 sigma = Symbol("sigma")
 
 
-print(collect(simplify( ((p - sigma)**2*(sigma**2 * (s+1) - 2*p*sigma)).expand() 
-    + r*sigma**2*s**2 - (2*r*s*sigma*(p-sigma)).expand() - ((p - sigma)**2*eps).expand()), sigma))
+print(collect(simplify( ((q - sigma)**2*(sigma**2 * (s+1) - 2*q*sigma)).expand() 
+    + r*sigma**2*s**2 - (2*r*s*sigma*(q-sigma)).expand() - ((q - sigma)**2*eps).expand()), sigma))
 
 """
 print(solve(collect(simplify((q*(rho**2)*(s+1)*(rho-1)**2).expand() - 
