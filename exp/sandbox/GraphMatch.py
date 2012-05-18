@@ -145,7 +145,7 @@ class GraphMatch(object):
         
     def distance(self, graph1, graph2, permutation, normalised=False, nonNeg=False):
         """
-        Compute the graph distance metric between two graphs give a permutation 
+        Compute the graph distance metric between two graphs given a permutation 
         vector. This is given by F(P) = (1-alpha)/(||W1||^2_F + ||W2||^2_F)(||W1 - P W2 P.T||^2_F)
         - alpha 1/||C||_F tr C.T P in the normalised case. If we want an unnormalised 
         solution it is computed as (1-alpha)/(||W1 - P W2 P.T||^2_F) - alpha tr C.T P 
