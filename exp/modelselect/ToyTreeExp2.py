@@ -96,7 +96,7 @@ displayTree(learner, rootId, 0, 1, 0, 1, colormap)
 plt.title("Tree default gamma")
 
 numGammas = 10
-gammas = numpy.linspace(0.001, 0.01, numGammas)
+gammas = numpy.linspace(0.001, 0.05, numGammas)
 errors = numpy.zeros(numGammas)
 
 learner = PenaltyDecisionTree(minSplit=10, maxDepth=5, pruning=True)
@@ -108,6 +108,8 @@ for i in range(gammas.shape[0]):
     learner.learnModel(trainX, trainY)
     predY = learner.predict(testX)
     errors[i] = Evaluator.binaryError(predY, testY)
+    print(gammas[i], errors[i], learner.tree.getNumVertices())
+    print(learner.tree)
     
 plt.figure(3)
 plt.scatter(gammas, errors)
