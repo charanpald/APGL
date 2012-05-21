@@ -4,7 +4,7 @@ Synthetic Control Chart Time Series data
 """
 
 from apgl.util.PathDefaults import PathDefaults
-from apgl.metabolomics.MetabolomicsUtils import MetabolomicsUtils
+from exp.metabolomics.MetabolomicsUtils import MetabolomicsUtils
 import numpy
 import pywt 
 

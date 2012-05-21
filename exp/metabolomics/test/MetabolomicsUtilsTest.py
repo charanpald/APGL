@@ -2,7 +2,7 @@ import numpy
 import unittest
 import logging
 import pywt
-from apgl.metabolomics.MetabolomicsUtils import MetabolomicsUtils 
+from exp.metabolomics.MetabolomicsUtils import MetabolomicsUtils 
 
 class  MetabolomicsUtilsTestCase(unittest.TestCase):
     def testCreateIndicatorLabels(self):

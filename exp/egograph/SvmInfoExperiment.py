@@ -3,8 +3,8 @@ import logging
 import numpy.random
 import scipy.io
 import time
-from apgl.egograph.SvmEgoSimulator import SvmEgoSimulator
-from apgl.egograph.EgoUtils import EgoUtils
+from exp.egograph.SvmEgoSimulator import SvmEgoSimulator
+from exp.egograph.EgoUtils import EgoUtils
 from apgl.util.PathDefaults import PathDefaults
 
 """

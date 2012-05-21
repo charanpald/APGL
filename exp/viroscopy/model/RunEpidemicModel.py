@@ -56,13 +56,13 @@ for j in range(numRepetitions):
     model.setRecordStep(recordStep)
     model.setPrintStep(printStep)
 
-    params = HIVABCParameters(graph, rates, theta)
+    params = HIVABCParameters(theta)
     paramFuncs = params.getParamFuncs()
 
     for i in range(len(theta)):
         paramFuncs[i](theta[i])
 
-    times, infectedIndices, removedIndices, graph = model.simulate()
+    times, infectedIndices, removedIndices, graph = model.simulate(True)
     graphFileName = outputDir + "epidemicGraph" + str(j)
     graph.save(graphFileName)
 

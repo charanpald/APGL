@@ -1,5 +1,5 @@
 import numpy
-from apgl.metabolomics.MetabolomicsUtils import MetabolomicsUtils
+from exp.metabolomics.MetabolomicsUtils import MetabolomicsUtils
 
 X, X2, df = MetabolomicsUtils.loadData()
 

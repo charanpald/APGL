@@ -1,11 +1,11 @@
 import logging
 
 from apgl.predictors.LibSVM import LibSVM
-from apgl.data.ExamplesList import ExamplesList
+from exp.sandbox.data.ExamplesList import ExamplesList
 from apgl.data.Standardiser import Standardiser
-from apgl.egograph import *
+from exp.egograph import *
 from apgl.graph import * 
-from apgl.io.EgoCsvReader import EgoCsvReader
+from exp.io.EgoCsvReader import EgoCsvReader
 from apgl.util import * 
 import numpy
  

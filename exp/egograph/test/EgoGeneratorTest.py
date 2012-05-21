@@ -5,7 +5,7 @@ Created on 6 Jul 2009
 '''
 import sys
 from apgl.io.EgoCsvReader import EgoCsvReader
-from apgl.egograph.EgoGenerator import EgoGenerator
+from exp.egograph.EgoGenerator import EgoGenerator
 from apgl.util.Util import Util
 import numpy
 import unittest

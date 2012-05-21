@@ -33,7 +33,7 @@ class  HIVEpidemicModelTest(unittest.TestCase):
         self.graph.getVertexList().setInfected(0, 0.0)
         self.model.setT(T)
 
-        times, infectedIndices, removedIndices, graph = self.model.simulate()
+        times, infectedIndices, removedIndices, graph = self.model.simulate(verboseOut=True)
 
         numInfects = 0
         for i in range(graph.getNumVertices()):
@@ -56,7 +56,7 @@ class  HIVEpidemicModelTest(unittest.TestCase):
         model.setRecordStep(10)
         model.setT(T)
 
-        times, infectedIndices, removedIndices, graph = model.simulate()
+        times, infectedIndices, removedIndices, graph = model.simulate(verboseOut=True)
         self.assertTrue((times == numpy.array([0, 10, 20], numpy.int)).all())
         self.assertEquals(len(infectedIndices), 3)
         self.assertEquals(len(removedIndices), 3)

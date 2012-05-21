@@ -2,7 +2,8 @@ import unittest
 import numpy
 import logging
 from exp.sandbox.predictors.GrowthLearner import GrowthLearner
-from apgl.graph import *
+from apgl.graph.VertexList import VertexList
+from apgl.graph.SparseGraph import SparseGraph
 from apgl.generator.ErdosRenyiGenerator import ErdosRenyiGenerator
 from apgl.generator.BarabasiAlbertGenerator import BarabasiAlbertGenerator
  

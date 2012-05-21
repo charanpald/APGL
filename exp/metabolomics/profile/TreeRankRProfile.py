@@ -4,7 +4,7 @@ import sys
 from apgl.graph import *
 from apgl.generator import *
 from apgl.util.ProfileUtils import ProfileUtils
-from apgl.metabolomics.TreeRankR import TreeRankR
+from exp.metabolomics.TreeRankR import TreeRankR
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 

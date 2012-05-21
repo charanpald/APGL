@@ -26,7 +26,7 @@ numpy.set_printoptions(suppress=True, precision=4, linewidth=100)
 
 T, recordStep, printStep, M = HIVModelUtils.defaultSimulationParams()
 
-numRepetitions = 10
+numRepetitions = 2
 undirected = True
 outputDir = PathDefaults.getOutputDir() + "viroscopy/toy/"
 theta = HIVModelUtils.defaultTheta() 
@@ -60,4 +60,4 @@ for j in range(numRepetitions):
     
     graphList.append(graph)
 
-logging.debug("All done. Computing graph distances ... ")
+logging.debug("All done. ")

@@ -82,12 +82,15 @@ class  HIVRateFuncsTestCase(unittest.TestCase):
         rates.contactEvent(0, 3, 0.2)
         rates.contactEvent(0, 9, 0.1)
 
-        contactRates = rates.contactRates(list(range(numVertices)), contactList, t)
+        contactRates = rates.contactRates(range(numVertices), contactList, t)
        
-        inds = list(contactRates.keys())
+        #inds = list(contactRates.keys())
+        inds = contactRates.nonzero()
 
         #Note that in some cases an infected has no contacted as the persons do not match 
-        for ind in inds:
+        for i in range(inds[0].shape[0]):
+            ind = (inds[0][i], inds[1][i])  
+            
             if graph.getVertex(ind[0])[HIVVertices.genderIndex]==graph.getVertex(ind[1])[HIVVertices.genderIndex]:
                 self.assertEquals(contactRates[ind],rates.heteroContactRate)
             elif graph.getVertex(ind[0])[HIVVertices.genderIndex]!=graph.getVertex(ind[1])[HIVVertices.genderIndex] and graph.getVertex(ind[0])[HIVVertices.orientationIndex]==HIVVertices.bi and graph.getVertex(ind[1])[HIVVertices.orientationIndex]==HIVVertices.bi:

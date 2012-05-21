@@ -37,8 +37,8 @@ class PrimalWeightedRidgeRegression(PrimalRidgeRegression):
 
         I = numpy.eye(numFeatures)
         W = self.getWeightMatrix(Y)
-        XWX = Util.mdot(X.T, W, X)
-        XWY = Util.mdot(X.T, W, Y)
+        XWX = X.T.dot(W).dot(X)
+        XWY = X.T.dot(W).dot(Y)
         invXWX = numpy.linalg.inv(XWX + self.lmbda*I)
 
         self.U = numpy.dot(invXWX, XWY)

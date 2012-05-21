@@ -2,7 +2,7 @@
 import numpy 
 from apgl.util import *
 from apgl.graph import * 
-from apgl.egograph.EgoGenerator import EgoGenerator 
+from exp.egograph.EgoGenerator import EgoGenerator 
 from apgl.io import * 
 
 class AbstractDiffusionSimulator():

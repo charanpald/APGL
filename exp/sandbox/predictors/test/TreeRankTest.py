@@ -2,10 +2,10 @@
 import numpy 
 import unittest
 
-from apgl.metabolomics.TreeRank import TreeRank
-from apgl.metabolomics.RankNode import RankNode
-from apgl.metabolomics.leafrank.LinearSVM import LinearSVM
-from apgl.metabolomics.leafrank.DecisionTree import DecisionTree
+from exp.metabolomics.TreeRank import TreeRank
+from exp.metabolomics.RankNode import RankNode
+from exp.metabolomics.leafrank.LinearSVM import LinearSVM
+from exp.metabolomics.leafrank.DecisionTree import DecisionTree
 from apgl.util.PathDefaults import PathDefaults
 from apgl.graph.DictTree import DictTree
 from apgl.util.Evaluator import Evaluator
