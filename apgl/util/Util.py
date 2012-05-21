@@ -573,6 +573,38 @@ class Util(object):
             return V.dot(numpy.diag(lmbdaN)).dot(numpy.linalg.inv(V))
 
     @staticmethod 
+    def matrixPowerh(A, n):
+        """
+        Compute the matrix power of A using the exponent n. The computation simply
+        evaluated the eigendecomposition of A and then powers the eigenvector
+        matrix accordingly.
+        
+        This version guess that A is hermitian.
+        """
+        Parameter.checkClass(A, numpy.ndarray)
+        tol = 10**-10
+
+        lmbda, V = scipy.linalg.eigh(A)
+        lmbdaN = (lmbda**n)*numpy.array(numpy.abs(lmbda) > tol, numpy.int)
+        return (V*lmbdaN).dot(numpy.linalg.inv(V)) # = V.dot(numpy.diag(lmbdaN)).dot(numpy.linalg.inv(V))
+
+    @staticmethod 
+    def matrixPowerpsd(A, n):
+        """
+        Compute the matrix power of A using the exponent n. The computation simply
+        evaluated the eigendecomposition of A and then powers the eigenvector
+        matrix accordingly.
+        
+        This version guess that A is hermitian positive semi-definite.
+        """
+        Parameter.checkClass(A, numpy.ndarray)
+        tol = 10**-10
+
+        lmbda, V = scipy.linalg.eigh(A)
+        lmbdaN = (lmbda**n)*numpy.array(numpy.abs(lmbda) > tol, numpy.int)
+        return (V*lmbdaN).dot(V.T) # = V.dot(numpy.diag(lmbdaN)).dot(V.T)
+
+    @staticmethod 
     def extendArray(A, newShape): 
         """
         Take a 2D matrix A and extend the shape to newShape adding zeros to the 
