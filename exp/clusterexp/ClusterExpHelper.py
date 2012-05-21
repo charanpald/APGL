@@ -9,7 +9,7 @@ from exp.sandbox.IterativeSpectralClustering import IterativeSpectralClustering
 from exp.sandbox.NingSpectralClustering import NingSpectralClustering
 from exp.sandbox.IterativeModularityClustering import IterativeModularityClustering
 from exp.sandbox.GraphIterators import toDenseGraphListIterator
-
+import networkx
 
 class ClusterExpHelper(object):
     def __init__(self, iteratorFunc, datasetName, numGraphs):
@@ -38,16 +38,27 @@ class ClusterExpHelper(object):
         Save results for a particular clustering
         """
         iterator = self.getIterator()
-        numMeasures = 2
+        numMeasures = 3
         measures = numpy.zeros((self.numGraphs, numMeasures))
+        numGraphInfo = 2
+        graphInfo =  numpy.zeros((self.numGraphs, numGraphInfo))
 
         for i in range(self.numGraphs):
             W = next(iterator)
+            G = networkx.Graph(W)
             measures[i, 0] = GraphUtils.modularity(W, clusterList[i])
             measures[i, 1] = GraphUtils.kwayNormalisedCut(W, clusterList[i])
-
+            # nb clust
+            measures[i, 2] = len(numpy.unique(clusterList[i]))
+            # graph size
+            graphInfo[i, 0] = W.shape[0]
+            # nb connected components
+            graphInfo[i, 1] = networkx.number_connected_components(G)
+            
+            
+            
         file = open(fileName, 'wb')
-        numpy.savez(file, measures, timeList)
+        numpy.savez(file, measures, timeList, graphInfo)
         logging.info("Saved file as " + fileName)
 
     def runExperiment(self):
