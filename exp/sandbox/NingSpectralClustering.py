@@ -9,6 +9,7 @@ import logging
 import scipy.linalg
 from apgl.util.Util import Util
 import scipy.cluster.vq as vq 
+from apgl.util.VqUtils import VqUtils
 
 class NingSpectralClustering(object):
     def __init__(self, k):
@@ -213,11 +214,7 @@ class NingSpectralClustering(object):
                 lmbda, Q = Util.indEig(lmbda, Q, inds)
 
             # Now do actual clustering 
-            # V = vq.whiten(Q) is wrapped to care about lines with sd==0
-            std_dev = numpy.std(Q, axis=0)
-            std_dev[std_dev==0] = 1.
-            V = Q / std_dev
-
+            V = VqUtils.whiten(Q)
             centroids, distortion = vq.kmeans(V, self.k, iter=self.kmeansIter)
             clusters, distortion = vq.vq(V, centroids)
             clustersList.append(clusters)
