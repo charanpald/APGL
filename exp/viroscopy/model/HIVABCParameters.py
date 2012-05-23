@@ -94,7 +94,7 @@ class HIVABCParameters(object):
 
     def createDiscTruncNormParam(self, sigma, mode, upper):
         """
-        Truncated norm parameter between 0 and 1 
+        Discrete truncated norm parameter 
         """
         Parameter.checkFloat(sigma, 0.0, float('inf'))
         Parameter.checkFloat(mode, 0.0, float('inf'))
