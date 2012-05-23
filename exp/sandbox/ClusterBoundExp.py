@@ -161,6 +161,41 @@ def computeBound2(U, delta):
         
     return bestObj
 
+def computeKClusterBound(U, delta): 
+    """
+    Find the worse lower bound for a matrix U given a purtubation delta for a 
+    k-cluster problem. 
+    """
+    X, a, Y = numpy.linalg.svd(U)
+    a = numpy.flipud(numpy.sort(a))
+    epsilon = delta - numpy.trace(U.T.dot(U))
+    logging.debug("a=" + str(a))
+    logging.debug("epsilon=" + str(epsilon)) 
+    
+    s = 0    
+    t = 0 
+    bestSigma = numpy.zeros(a.shape[0])
+    bestSigma[-1] = 1
+
+    b = (a[0:k-1-s]**2).sum())
+    c = (a[k+t+1:]**2).sum()
+    q = a[k-s:k+t].sum()
+    
+    b = numpy.zeros(5)
+    b[0] = c*s**2
+    b[1] = -2*c*s**2 + 2*c*s*t + 2*c*s
+    b[2] = -b*s**2 - 4*c*s*t - 4*c*s + c*t**2 + 2*c*t + c - epsilon*s**2 - q**2*s + q**2*t + q**2
+    b[3] = -2*b*s*t - 2*b*s - 2*c*t**2 - 4*c*t - 2*c - 2*epsilon*s*t - 2*epsilon*s - 2*q**2*t - 2*q**2
+    b[4] = -b*t**2 - 2*b*t - b - epsilon*t**2 - 2*epsilon*t - epsilon
+
+    logging.debug("b=" + str(b))
+    ys = numpy.roots(b)
+    ys = rhos[numpy.isreal(ys)]
+    ys = rhos[ys>0]
+    logging.debug("ys=" + str(ys))
+    
+    
+
 numpy.random.seed(21)
 numpy.set_printoptions(suppress=True, precision=3)
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
