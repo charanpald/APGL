@@ -251,3 +251,10 @@ class PenaltyDecisionTree(AbstractPredictor):
             currentNode.alpha /= n
             currentNode.alpha += self.gamma * numpy.sqrt(T)
             currentNode.alpha -= self.gamma * numpy.sqrt(T2)
+
+    def copy(self): 
+        """
+        Create a new tree with the same parameters. 
+        """
+        newLearner = PenaltyDecisionTree(criterion=self.criterion, maxDepth=self.maxDepth, minSplit=self.minSplit, learnType=self.learnType, pruning=self.pruning, gamma=self.gamma, sampleSize=self.sampleSize)
+        return newLearner 
