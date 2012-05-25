@@ -3,6 +3,8 @@ from exp.sandbox.ClusterBound import ClusterBound
 import unittest
 import numpy
 import numpy.testing as nptst 
+import sys 
+import logging
 
 class ClusterBoundTest(unittest.TestCase):
     def setUp(self):
@@ -10,7 +12,6 @@ class ClusterBoundTest(unittest.TestCase):
         numpy.random.seed(21)
         #logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
         
-
     def testComputeKClusterBound(self): 
         numExamples = 100 
         numFeatures = 2
@@ -113,6 +114,22 @@ class ClusterBoundTest(unittest.TestCase):
         self.assertAlmostEquals(obj, sigmak**2)        
         nptst.assert_array_almost_equal(bestSigma, numpy.array([5, sigmak, sigmak]))
             
+    @unittest.skip("")
+    def testComputeKClusterBound2(self): 
+        #Try strange case where bound is less than continuous solution 
+        #ValueError: Bound is smaller than real solution: 127.7443918 29.6138874353
+        
+        U = numpy.load("/home/dhanjalc/Documents/Postdoc/Code/APGL/repo/exp/sandbox/badMatrix.npy")
+        delta = numpy.load("/home/dhanjalc/Documents/Postdoc/Code/APGL/repo/exp/sandbox/badDelta.npy")
+        k = 3
+        
+        obj, bestSigma = ClusterBound.computeKClusterBound(U, delta, k)
+        
+        X, a, Y = numpy.linalg.svd(U)
+        a = numpy.flipud(numpy.sort(a))
+        
+        self.assertTrue(obj > 127.7443918)
+        
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,5 +1,3 @@
-
-#Test some work on the cluster bound 
 import sys 
 import numpy 
 import logging 
@@ -12,54 +10,58 @@ numpy.set_printoptions(suppress=True, precision=3)
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 numExamples = 100 
-numFeatures = 2
-
+numFeatures = 3
 V = numpy.random.rand(numExamples, numFeatures)
-
-V[0:80, :] += 2
-U = V - numpy.mean(V)
+V[0:20 ,:] = numpy.random.randn(20, numFeatures) 
+V[0:20 ,0:3] += numpy.array([1, 0.2, -1]) 
+#V[0:20 ,0:5] += numpy.array([1, 0.2, -1, 0.5, -0.4])
+V[20:70 ,:] = numpy.random.randn(50, numFeatures) 
+V[20:70, 0:3] += numpy.array([1, 1, -1])
+#V[20:70, 0:5] += numpy.array([1, 1, -1, 0.5, -0.4])
+V[70: ,:] = numpy.random.randn(30, numFeatures) 
+V[70:, 0:3] += numpy.array([-0.3, 0.4, -0.1])
+#V[70:, 0:5] += numpy.array([-0.3, 0.4, -0.1, 0.5, 0.2])
+U = V - numpy.mean(V, 0)
 
 UU = U.dot(U.T)
 s, X = numpy.linalg.eig(UU)
 
-
-#Lower and upper bounds on the cluster error 
-print(numpy.trace(UU) - numpy.max(s), numpy.trace(UU))
-print(numpy.linalg.norm(U)**2)
- 
 #Now compute true cluster error 
-kmeans = sklearn.cluster.KMeans(2)
+k = 3
+kmeans = sklearn.cluster.KMeans(k)
 kmeans.fit(U)
 error = 0
 
 for i in range(numExamples): 
-    #print(U[i, :])
-    #print(kmeans.cluster_centers_[kmeans.labels_[i], :])
     error += numpy.linalg.norm(U[i, :] - kmeans.cluster_centers_[kmeans.labels_[i], :])**2
 
 print(error)
+print("norm(U)**2 = " + str(numpy.linalg.norm(U)**2))
 
 
-deltas = numpy.arange(0, 100, 0.1)
-worstLowerBounds = numpy.zeros(deltas.shape[0])
-lowerBounds = numpy.zeros(deltas.shape[0])
+deltas = numpy.arange(0, 800, 5)
+realDeltas = numpy.zeros(deltas.shape[0])
+continuousBounds = numpy.zeros(deltas.shape[0])
+continuous = numpy.zeros(deltas.shape[0])
 upperBounds = numpy.zeros(deltas.shape[0])
 realError = numpy.zeros(deltas.shape[0])
 
 for i in range(deltas.shape[0]): 
-    worstLowerBounds[i], bestSigma = ClusterBound.compute2ClusterBound(U, deltas[i])
-    
+    continuousBounds[i], bestSigma = ClusterBound.computeKClusterBound(U, deltas[i], k)
+        
     #Now add random matrix to U 
     E = numpy.random.randn(numExamples, numFeatures)
     E = E*numpy.sqrt(deltas[i])/numpy.linalg.norm(E)
     U2 = U + E
+    U2 = U2 - numpy.mean(U2, 0)
     
-    #print(numpy.linalg.norm(U2 -U)**2, deltas[i])
+    realDeltas[i] = ((U - U2)**2).sum()    
     
     UU2 = U2.dot(U2.T)
     s, X = numpy.linalg.eig(UU2)
+    s = numpy.flipud(numpy.sort(s))
     
-    lowerBounds[i] = numpy.trace(UU2) - numpy.max(s)
+    continuous[i] = numpy.trace(UU2) - s[0:k-1].sum()
     upperBounds[i] = numpy.trace(UU2)
     
     kmeans = sklearn.cluster.KMeans(2)
@@ -68,14 +70,24 @@ for i in range(deltas.shape[0]):
     for j in range(numExamples): 
         realError[i] += numpy.linalg.norm(U2[j, :] - kmeans.cluster_centers_[kmeans.labels_[j], :])**2
         
-    
-plt.plot(deltas, worstLowerBounds, label="Worst Continuous") 
-#plt.plot(deltas, upperBounds, label="Upper") 
-plt.plot(deltas, lowerBounds, label="Continuous Solution") 
-plt.plot(deltas, realError, label="k-means")
+inds = numpy.argsort(realDeltas)
+realDeltas = realDeltas[inds]        
+continuousBounds = continuousBounds[inds]
+continuous = continuous[inds]
+realError = realError[inds]  
+
+
+print("norm(U)**2 = " + str(numpy.linalg.norm(U)**2))
+
+fig = plt.figure()
+ax = fig.add_subplot(111)    
+ax.plot(realDeltas, continuousBounds, label="Worst continuous") 
+ax.plot(realDeltas, continuous, label="Continuous solution") 
+ax.plot(realDeltas, realError, label="k-means solution")
+#ax.set_ylim(0, numpy.max(continuousBounds)+10)
 plt.xlabel("delta")
 plt.ylabel("J_k")
-plt.legend(loc="upper left") 
+plt.legend(loc="upper left")  
 plt.show()
 
-#print("objective = " + str(computeBound(U, delta)))
+

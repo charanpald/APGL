@@ -86,6 +86,7 @@ class ClusterBound(object):
         k-cluster problem. U is a centered matrix of examples. 
         """
         tol = 10**-6
+        logging.debug("Computing cluster bound")
         X, a, Y = numpy.linalg.svd(U)
         a = numpy.flipud(numpy.sort(a))
         epsilon = delta - numpy.trace(U.T.dot(U))
@@ -108,12 +109,13 @@ class ClusterBound(object):
                 b[1] = -2*c*s**2 + 2*c*s*t + 2*c*s
                 b[2] = -4*c*s*t - 4*c*s + c*t**2 + 2*c*t + c - epsilon*s**2 - q**2*s + q**2*t + q**2 - r*s**2
                 b[3] = -2*c*t**2 - 4*c*t - 2*c - 2*epsilon*s*t - 2*epsilon*s - 2*q**2*t - 2*q**2 - 2*r*s*t - 2*r*s
-                b[4] = c*s**2 - epsilon*t**2 - 2*epsilon*t - epsilon - r*t**2 - 2*r*t - r 
+                b[4] = - epsilon*t**2 - 2*epsilon*t - epsilon - r*t**2 - 2*r*t - r 
             
                 logging.debug("b=" + str(b))
                 ys = numpy.roots(b)
-                ys = ys[numpy.isreal(ys)]
-                ys = ys[ys>0]
+                ys = numpy.real_if_close(ys, 10**10)
+                ys = ys[numpy.isreal(ys)].real
+                #Note that y does not have to be positive - pick the largest abs(y)
                 logging.debug("ys=" + str(ys))
                 
                 #Check solutions are correct 

@@ -1,5 +1,5 @@
 
-from sympy import Symbol, simplify, collect, latex, pprint, solve 
+from sympy import Symbol, simplify, collect, latex, pprint, solve, S 
 
 
 rho = Symbol("rho")
@@ -20,6 +20,15 @@ sigma = Symbol("sigma")
 
 
 #Multi cluster bound 
-
+d = collect(simplify( ((-r - eps)*(1+t+s*y)**2).expand() + (1+s+t)*y**2*q**2 - (2*y*q**2*(1+t+s*y)).expand() + (c*(y**2 - 2*y)*(1+t+s*y)**2).expand()  ), y, evaluate=False)
 print(collect(simplify( ((-r - eps)*(1+t+s*y)**2).expand() + (1+s+t)*y**2*q**2 - (2*y*q**2*(1+t+s*y)).expand() + (c*(y**2 - 2*y)*(1+t+s*y)**2).expand()  ), y))
 
+
+print(d[y**4])
+print(d[y**3])
+print((2*c*s*(t+1-s)).expand())
+print(d[y**2])
+print((c*((t+1)*(t+1-4*s))).expand() - ((eps+r)*s**2).expand()  + (q**2*(1+t-s)).expand())
+print(d[y])
+print((-2*(q**2 + s*(r+eps) + c*(t+ 1))*(t+1)).expand())
+print(d[S.One])
