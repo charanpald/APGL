@@ -80,14 +80,16 @@ class ClusterBound(object):
         return bestObj, bestSigma 
     
     @staticmethod 
-    def computeKClusterBound(U, delta, k): 
+    def computeKClusterBound(U, delta, k, a=None): 
         """
         Find the worse lower bound for a matrix U given a purtubation delta for a 
-        k-cluster problem. U is a centered matrix of examples. 
+        k-cluster problem. U is a centered matrix of examples. If a!=None then 
+        this vector is used as the set of singular values of U. 
         """
         tol = 10**-6
         logging.debug("Computing cluster bound")
-        X, a, Y = numpy.linalg.svd(U)
+        if a==None: 
+            X, a, Y = numpy.linalg.svd(U)
         a = numpy.flipud(numpy.sort(a))
         epsilon = delta - numpy.trace(U.T.dot(U))
         logging.debug("a=" + str(a))
