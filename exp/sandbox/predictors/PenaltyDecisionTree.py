@@ -1,6 +1,7 @@
 import numpy 
 from apgl.graph.DictTree import DictTree 
 from apgl.util.Util import Util 
+from apgl.util.Evaluator import Evaluator 
 from apgl.util.Parameter import Parameter 
 from exp.sandbox.predictors.DecisionNode import DecisionNode
 from exp.sandbox.predictors.TreeCriterionPy import findBestSplit2, findBestSplitRisk
@@ -258,3 +259,9 @@ class PenaltyDecisionTree(AbstractPredictor):
         """
         newLearner = PenaltyDecisionTree(criterion=self.criterion, maxDepth=self.maxDepth, minSplit=self.minSplit, learnType=self.learnType, pruning=self.pruning, gamma=self.gamma, sampleSize=self.sampleSize)
         return newLearner 
+        
+    def getMetricMethod(self):
+        """ 
+        Returns a way to measure the performance of the classifier.
+        """
+        return Evaluator.binaryError
