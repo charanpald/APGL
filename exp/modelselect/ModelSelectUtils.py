@@ -59,6 +59,9 @@ class ModelSelectUtils(object):
         trainY = numpy.loadtxt(trainLabelsName, delimiter=None)
         testX = numpy.loadtxt(testDatasetName, delimiter=None)
         testY = numpy.loadtxt(testLabelsName, delimiter=None)
+        
+        trainY = numpy.array(trainY, numpy.int)
+        testY = numpy.array(testY, numpy.int)
 
         return trainX, trainY, testX, testY 
 
