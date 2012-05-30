@@ -9,6 +9,7 @@ import sys
 from apgl.util.PathDefaults import PathDefaults 
 from exp.modelselect.ModelSelectUtils import ModelSelectUtils 
 from apgl.util.Sampling import Sampling
+from apgl.util.Util import Util
 from exp.sandbox.predictors.PenaltyDecisionTree import PenaltyDecisionTree
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -29,8 +30,10 @@ paramDict = {}
 paramDict["setAlphaThreshold"] = numpy.linspace(0, 0.1, 20)
 
 folds = 5
+numRealisations = 5
 
 for j in range(numRealisations): 
+    Util.printIteration(j, 1, numRealisations, "Realisation: ")
     trainX, trainY, testX, testY = loadMethod(dataDir, datasetName, j)
     
     idx = sampleMethod(folds, trainX.shape[0])
