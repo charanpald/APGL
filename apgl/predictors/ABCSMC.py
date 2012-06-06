@@ -10,16 +10,14 @@ from datetime import datetime
 from apgl.util.Util import Util 
 from apgl.util.Parameter import Parameter 
 
-class ABCSMC(multiprocessing.Process):
-    def __init__(self, args, epsilonArray, Sprime, createModel, paramsObj, metrics):
+class ABCSMC(object):
+    def __init__(self, epsilonArray, Sprime, createModel, paramsObj, metrics):
         """
         Create a multiprocessing SMCABC object with the given arguments. The aim
         is to estimate a posterior pi(theta| x) propto f(x|theta) pi(theta) without
         requiring an explicit form of the likelihood. Here, theta is a set of
         parameters and x is a data observation. The algorithm can be run in a
         multiprocessing system.
-
-        :param args: a tuple containing (theta, distance, summary) queues.
         
         :param epsilonArray: an array of successively smaller minimum distances
         :type epsilonArray: `numpy.ndarray` 
@@ -32,11 +30,8 @@ class ABCSMC(multiprocessing.Process):
         
         :param metrics: An object to compute summary statistics and distances 
         """
-        super(ABCSMC, self).__init__(args=args)
-
         dt = datetime.now()
         numpy.random.seed(dt.microsecond)
-        self.args = args
         self.epsilonArray = epsilonArray
         self.Sprime = Sprime
         self.createModel = createModel
@@ -47,6 +42,7 @@ class ABCSMC(multiprocessing.Process):
         self.T = epsilonArray.shape[0]
         #Size of population
         self.N = 10
+        self.numProcesses = 8 
 
     def setPosteriorSampleSize(self, posteriorSampleSize):
         """
@@ -57,73 +53,73 @@ class ABCSMC(multiprocessing.Process):
         """
         Parameter.checkInt(posteriorSampleSize, 0, numpy.float('inf'))
         self.N = posteriorSampleSize
+        
+    def findTheta(self, lastTheta, lastWeights, t): 
+        """
+        Find a theta to accept. 
+        """
+        minDist = numpy.float("inf")
+                
+        def runModel(theta): 
+            model = self.createModel(t)
+            model.setParams(theta)
+            D = model.simulate()
+            S = self.metrics.summary(D)
+            dist = self.metrics.distance(S, self.Sprime) 
 
-    def getNumAcceptedTheta(self):
-        """
-        Returns the number of theta values accepted so far.
-        """
-        return self.args[0].qsize()
+            return dist                
+                
+        theta = self.abcParams.sampleParams()
+        while self.abcParams.priorDensity(theta) == 0 or minDist > self.epsilonArray[t]:
+            thetaList = []   
+            
+            for i in range(self.numProcesses):             
+                if t == 0:
+                    thetaList.append(self.abcParams.sampleParams())
+                else:
+                    while True: 
+                        tempTheta = lastTheta[Util.randomChoice(lastWeights)]
+                        tempTheta = self.abcParams.purtubationKernel(tempTheta)
+                        if self.abcParams.priorDensity(tempTheta) != 0: 
+                            break 
+                    thetaList.append(tempTheta)
 
-    def appendResults(self, theta, dist, summary):
-        """
-        Add new results in terms of theta, distance and the summary statistics.
-        """
-        self.args[0].put(theta)
-        self.args[1].put(dist)
-        #self.args[2].put(summary)
+
+            pool = multiprocessing.Pool(processes=self.numProcesses)               
+            resultIterator = pool.map(runModel, range(10))     
+    
+            i = 0 
+            for dist in resultIterator: 
+                if dist <= minDist:
+                    logging.debug("Best distance so far: theta=" + str(numpy.array(thetaList[i])) + " dist=" + str(dist))
+                    minDist = dist
+                    bestTheta = thetaList[i]
+                i += 1 
+            
+        return bestTheta, minDist
 
     def run(self):
         """
         Make the estimation for a set of parameters theta close to the summary
         statistics S for a real dataset. 
         """
-        iter = 0
         logging.debug("Parent PID: " + str(os.getppid()) + " Child PID: " + str(os.getpid()))
         currentWeights = numpy.zeros(self.N)
         currentTheta = []
         t = 0
-
-        maxDist = 10**10
-
-        while t < self.T and self.getNumAcceptedTheta() < self.N:
+        
+        while t < self.T and len(currentTheta) < self.N:
             i = 0
             lastTheta = currentTheta
             lastWeights = currentWeights
             currentTheta = []
             currentWeights = numpy.zeros(self.N)
 
-            while i < self.N and self.getNumAcceptedTheta() < self.N:
-                model = self.createModel(t)
-                theta = self.abcParams.sampleParams()
-                dist = self.epsilonArray[t] + 1
-
-                while self.abcParams.priorDensity(theta) == 0 or dist > self.epsilonArray[t]:
-                    if t == 0:
-                        theta = self.abcParams.sampleParams()
-                    else:
-                        theta = lastTheta[Util.randomChoice(lastWeights)]
-                        theta = self.abcParams.purtubationKernel(theta)
-
-                    model = self.createModel(t)
-
-                    #Can't simulate the model with theta if its density is zero
-                    if self.abcParams.priorDensity(theta) != 0:
-                        model.setParams(theta)
-                        D = model.simulate()
-                        S = self.metrics.summary(D)
-                        dist = self.metrics.distance(S, self.Sprime)
-
-                        if dist <= maxDist:
-                            logging.debug("Best distance so far: theta=" + str(numpy.array(theta)) + " dist=" + str(dist))
-                            maxDist = dist 
-                    iter += 1
-
-                logging.debug("Accepting particle " + str(i) + " at population " + str(t) + " " + "theta=" + str(numpy.array(theta))  + " dist=" + str(dist))
+            while i < self.N and len(currentTheta) < self.N:
+                theta, minDist = self.findTheta(lastTheta, lastWeights, t)
+                logging.debug("Accepting particle " + str(i) + " at population " + str(t) + " " + "theta=" + str(numpy.array(theta))  + " dist=" + str(minDist))
                 currentTheta.append(theta)
                 
-                if t == self.T-1: 
-                    self.appendResults(theta, dist, S)
-
                 if t == 0:
                     currentWeights[i] = 1
                 else:
@@ -137,4 +133,6 @@ class ABCSMC(multiprocessing.Process):
             currentWeights = currentWeights/numpy.sum(currentWeights)
             t += 1
         
-        logging.debug("Finished ABC procedure, total iterations " + str(iter))
+        logging.debug("Finished ABC procedure") 
+        
+        return currentTheta 

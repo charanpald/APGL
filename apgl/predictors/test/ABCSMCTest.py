@@ -103,30 +103,15 @@ class ABCSMCTest(unittest.TestCase):
         Sprime = numpy.mean(summaryArray)
         logging.debug(("Real summary statistic: " + str(Sprime)))
 
-        #Create shared variables
-        thetaQueue = multiprocessing.Queue()
-        distQueue = multiprocessing.Queue()
-        summaryQueue = multiprocessing.Queue()
-        args = (thetaQueue, distQueue, summaryQueue)
 
         numProcesses = 2
         abcList = []
         
         abcMetrics = ABCMetrics()
 
-        for i in range(numProcesses):
-            abcList.append(ABCSMC(args, epsilonArray, Sprime, createModelFunc, abcParams, abcMetrics))
-            abcList[i].setPosteriorSampleSize(posteriorSampleSize)
-            abcList[i].start()
 
-        for i in range(numProcesses):
-            abcList[i].join()
-
-        logging.debug(("Queue size = " + str(thetaQueue.qsize())))
-        thetasArray = numpy.zeros((thetaQueue.qsize(), 2))
-
-        for i in range(thetaQueue.qsize()):
-            thetasArray[i, :] = numpy.array(thetaQueue.get())
+        abcSMC = ABCSMC(epsilonArray, Sprime, createModelFunc, abcParams, abcMetrics)
+        thetasArray = abcSMC.run()
 
         meanTheta = numpy.mean(thetasArray, 0)
         logging.debug((thetasArray.shape))
