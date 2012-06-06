@@ -16,7 +16,7 @@ class ABCSMC(multiprocessing.Process):
         Create a multiprocessing SMCABC object with the given arguments. The aim
         is to estimate a posterior pi(theta| x) propto f(x|theta) pi(theta) without
         requiring an explicit form of the likelihood. Here, theta is a set of
-        parameters and x is a data observation.The algorithm can be run in a
+        parameters and x is a data observation. The algorithm can be run in a
         multiprocessing system.
 
         :param args: a tuple containing (theta, distance, summary) queues.
