@@ -4,6 +4,7 @@ from apgl.graph.VertexList import VertexList
 from apgl.util import *
 import unittest
 import apgl
+import pickle
 
 try: 
     from apgl.graph.PySparseGraph import PySparseGraph
@@ -30,8 +31,8 @@ class PySparseGraphTest(unittest.TestCase, MatrixGraphTest):
         graph = PySparseGraph(vList)
 
         self.assertRaises(ValueError, PySparseGraph, [])
+        
 
-
-if __name__ == "__main__" and importsWorked:
+if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
