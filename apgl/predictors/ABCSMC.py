@@ -10,6 +10,17 @@ from datetime import datetime
 from apgl.util.Util import Util 
 from apgl.util.Parameter import Parameter 
 
+def runModel(args):
+    theta, createModel, metrics, Sprime, t = args 
+    model = createModel(t)
+    model.setParams(theta)
+    D = model.simulate()
+    del model 
+    S = metrics.summary(D)
+    del D
+    dist = metrics.distance(S, Sprime) 
+    return dist      
+
 class ABCSMC(object):
     def __init__(self, epsilonArray, Sprime, createModel, paramsObj, metrics):
         """
@@ -59,42 +70,34 @@ class ABCSMC(object):
         Find a theta to accept. 
         """
         minDist = numpy.float("inf")
-                
-        def runModel(theta): 
-            model = self.createModel(t)
-            model.setParams(theta)
-            D = model.simulate()
-            S = self.metrics.summary(D)
-            dist = self.metrics.distance(S, self.Sprime) 
-
-            return dist                
-                
-        theta = self.abcParams.sampleParams()
-        while self.abcParams.priorDensity(theta) == 0 or minDist > self.epsilonArray[t]:
+        tempTheta = self.abcParams.sampleParams()
+        
+        while minDist > self.epsilonArray[t]:
             thetaList = []   
             
             for i in range(self.numProcesses):             
                 if t == 0:
-                    thetaList.append(self.abcParams.sampleParams())
-                else:
+                    tempTheta = self.abcParams.sampleParams()
+                    thetaList.append((tempTheta.copy(), self.createModel, self.metrics, self.Sprime, t))
+                else:  
                     while True: 
                         tempTheta = lastTheta[Util.randomChoice(lastWeights)]
                         tempTheta = self.abcParams.purtubationKernel(tempTheta)
                         if self.abcParams.priorDensity(tempTheta) != 0: 
                             break 
-                    thetaList.append(tempTheta)
-
+                    thetaList.append((tempTheta.copy(), self.createModel, self.metrics, self.Sprime, t))
 
             pool = multiprocessing.Pool(processes=self.numProcesses)               
-            resultIterator = pool.map(runModel, range(10))     
+            resultIterator = pool.map(runModel, thetaList)     
     
             i = 0 
             for dist in resultIterator: 
                 if dist <= minDist:
-                    logging.debug("Best distance so far: theta=" + str(numpy.array(thetaList[i])) + " dist=" + str(dist))
+                    logging.debug("Best distance so far: theta=" + str(numpy.array(thetaList[i][0])) + " dist=" + str(dist))
                     minDist = dist
-                    bestTheta = thetaList[i]
+                    bestTheta = thetaList[i][0]
                 i += 1 
+            pool.terminate()
             
         return bestTheta, minDist
 
@@ -106,16 +109,14 @@ class ABCSMC(object):
         logging.debug("Parent PID: " + str(os.getppid()) + " Child PID: " + str(os.getpid()))
         currentWeights = numpy.zeros(self.N)
         currentTheta = []
-        t = 0
-        
-        while t < self.T and len(currentTheta) < self.N:
-            i = 0
+
+        for t in range(self.T):
             lastTheta = currentTheta
             lastWeights = currentWeights
             currentTheta = []
             currentWeights = numpy.zeros(self.N)
 
-            while i < self.N and len(currentTheta) < self.N:
+            for i in range(self.N):
                 theta, minDist = self.findTheta(lastTheta, lastWeights, t)
                 logging.debug("Accepting particle " + str(i) + " at population " + str(t) + " " + "theta=" + str(numpy.array(theta))  + " dist=" + str(minDist))
                 currentTheta.append(theta)
@@ -128,10 +129,8 @@ class ABCSMC(object):
                         normalisation += lastWeights[j]*self.abcParams.purtubationKernelDensity(lastTheta[j], theta)
 
                     currentWeights[i] = self.abcParams.priorDensity(theta)/normalisation
-                i += 1
 
             currentWeights = currentWeights/numpy.sum(currentWeights)
-            t += 1
         
         logging.debug("Finished ABC procedure") 
         
