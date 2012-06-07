@@ -5,6 +5,8 @@ from apgl.util.PathDefaults import PathDefaults
 import numpy
 import os
 import logging
+import pickle
+import numpy.testing as nptst 
 """
 A class which encapsulates common tests for classes than inherit from AbtractMatrixGraph.
 """
@@ -2294,4 +2296,34 @@ class MatrixGraphTest():
         for e in edges:
             self.assertTrue(graph.getEdge(e[0], e[1]) == igraph.es[i]["value"])
             i += 1 
+            
+    def testPickle(self): 
+        numVertices = 10
+        numFeatures = 1
+        vList = VertexList(numVertices, numFeatures)
+        graph = self.GraphType(vList)  
+        graph[0, 0] = 1
+        graph[3, 5] = 0.1
+        graph.setVertex(0, numpy.array([12.3]))
         
+        output = pickle.dumps(graph)
+        newGraph = pickle.loads(output)
+        
+        graph[2, 2] = 1
+        
+        self.assertEquals(newGraph[0, 0], 1)
+        self.assertEquals(newGraph[3, 5], 0.1)
+        self.assertEquals(newGraph[2, 2], 0.0)
+        self.assertEquals(newGraph.getNumEdges(), 2)
+        self.assertEquals(newGraph.getNumVertices(), numVertices)
+        self.assertEquals(newGraph.isUndirected(), True)
+        
+        self.assertEquals(graph[0, 0], 1)
+        self.assertEquals(graph[3, 5], 0.1)
+        self.assertEquals(graph[2, 2], 1)
+        self.assertEquals(graph.getNumEdges(), 3)
+        self.assertEquals(graph.getNumVertices(), numVertices)
+        self.assertEquals(graph.isUndirected(), True)
+        
+        for i in range(numVertices): 
+            nptst.assert_array_equal(graph.getVertex(i), newGraph.getVertex(i))
