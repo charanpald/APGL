@@ -316,7 +316,7 @@ class Util(object):
         file = open(filename, 'rb')
         obj = pickle.load(file)
         file.close()
-        logging.debug("Loaded " + filename + " with object " + str(type(obj)))
+        #logging.debug("Loaded " + filename + " with object " + str(type(obj)))
 
         return obj
 
@@ -328,7 +328,7 @@ class Util(object):
         file = open(filename, 'wb')
         pickle.dump(obj, file)
         file.close()
-        logging.debug("Saved file " + filename + " containing object of type " + str(type(obj)))
+        #logging.debug("Saved file " + filename + " containing object of type " + str(type(obj)))
 
     @staticmethod
     def incompleteCholesky(X, k):
