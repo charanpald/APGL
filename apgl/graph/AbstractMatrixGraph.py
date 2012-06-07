@@ -590,6 +590,8 @@ class AbstractMatrixGraph(AbstractSingleGraph):
         finally:
             os.chdir(originalPath)
             
+        os.rmdir(tempPath)
+            
         return path + "/" + filename + '.zip'
 
     @classmethod
@@ -609,14 +611,18 @@ class AbstractMatrixGraph(AbstractSingleGraph):
         (path, filename) = os.path.split(filename)
         if path == "":
             path = "./"
-
+        
+        tempPath = tempfile.mkdtemp()
         originalPath = os.getcwd()
+        
         try:
             os.chdir(path)
 
             myzip = zipfile.ZipFile(filename + '.zip', 'r')
-            myzip.extractall()
+            myzip.extractall(tempPath)
             myzip.close()
+
+            os.chdir(tempPath)
 
             #Deal with legacy files 
             try:
@@ -637,6 +643,8 @@ class AbstractMatrixGraph(AbstractSingleGraph):
                 os.remove(tempFile)
         finally:
             os.chdir(originalPath)
+
+        os.rmdir(tempPath)
 
         return graph
 
@@ -1280,10 +1288,13 @@ class AbstractMatrixGraph(AbstractSingleGraph):
         
         self.save(tempFile.name)
         uu.encode(tempFile.name + ".zip", tempFile2.name)
+        os.remove(tempFile.name)
+        os.remove(tempFile.name + ".zip")
         
         tempFile = open(tempFile2.name, "r")
         outputStr = tempFile.read() 
         tempFile.close() 
+        os.remove(tempFile2.name)
         
         return outputStr 
         
@@ -1304,6 +1315,10 @@ class AbstractMatrixGraph(AbstractSingleGraph):
         self.W = newGraph.W 
         self.undirected = newGraph.undirected 
         self.vList = newGraph.vList
+        
+        os.remove(tempFile.name)
+        os.remove(tempFile2.name)
+        os.remove(tempFile2.name + ".zip")
 
     vList = None
     undirected = None
