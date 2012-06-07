@@ -19,6 +19,11 @@ class HIVABCParameters(object):
         self.priorDensities = []
         self.purtubationKernels = []
         self.purtubationKernelDensities = []
+        
+        self.meanTheta = meanTheta
+        self.sigmaScale = sigmaScale 
+        self.purtScale = purtScale 
+        self.upperInfected = upperInfected
 
         #Now set up all the parameters
         ind = 0 
@@ -210,3 +215,22 @@ class HIVABCParameters(object):
         else: 
             return density.prod()
 
+    def __getstate__(self): 
+        odict = self.__dict__.copy() 
+        del odict['paramFuncs']   
+        del odict['priorDists']   
+        del odict['priorDensities']   
+        del odict['purtubationKernels']   
+        del odict['purtubationKernelDensities']   
+        
+        return odict
+        
+    def __setstate__(self, dict):
+        params = HIVABCParameters(dict["meanTheta"], dict["sigmaScale"], dict["purtScale"], dict["upperInfected"])
+        self.__dict__.update(dict)   
+        self.paramFuncs = params.paramFuncs     
+        self.priorDists = params.priorDists     
+        self.priorDensities = params.priorDensities     
+        self.purtubationKernels = params.purtubationKernels     
+        self.purtubationKernelDensities = params.purtubationKernelDensities 
+        
