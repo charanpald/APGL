@@ -4,6 +4,9 @@ import heapq
 import scipy
 import logging
 import os.path
+import tempfile 
+import uu 
+import shutil 
 
 import apgl
 from apgl.util.Util import Util
@@ -553,14 +556,16 @@ class AbstractMatrixGraph(AbstractSingleGraph):
         """
         Parameter.checkClass(filename, str)
         import zipfile
-
+        
         (path, filename) = os.path.split(filename)
         if path == "":
-            path = "./"
+            path = "./"        
+        
+        tempPath = tempfile.mkdtemp()
 
         originalPath = os.getcwd()
         try:
-            os.chdir(path)
+            os.chdir(tempPath)
 
             self.saveMatrix(self.W, self.wFilename)
             vListFilename = self.vList.save(self.verticesFilename)
@@ -580,8 +585,8 @@ class AbstractMatrixGraph(AbstractSingleGraph):
             os.remove(self.wFilename)
             os.remove(vListFilename)
             os.remove(self.metaFilename)
-
-            logging.debug("Dumped graph into " + filename + '.zip')
+            
+            shutil.move(filename + ".zip", path + "/" + filename + '.zip')
         finally:
             os.chdir(originalPath)
             
@@ -633,7 +638,6 @@ class AbstractMatrixGraph(AbstractSingleGraph):
         finally:
             os.chdir(originalPath)
 
-        logging.debug("Loaded graph from file " + filename)
         return graph
 
     def setVertexList(self, vList):
@@ -1267,6 +1271,39 @@ class AbstractMatrixGraph(AbstractSingleGraph):
         """
         vertexIndex1, vertexIndex2 = vertexIndices
         self.addEdge(vertexIndex1, vertexIndex2, value)
+
+    def __getstate__(self): 
+        tempFile = tempfile.NamedTemporaryFile(delete=False)
+        tempFile.close()
+        tempFile2 = tempfile.NamedTemporaryFile(delete=False)
+        tempFile2.close()
+        
+        self.save(tempFile.name)
+        uu.encode(tempFile.name + ".zip", tempFile2.name)
+        
+        tempFile = open(tempFile2.name, "r")
+        outputStr = tempFile.read() 
+        tempFile.close() 
+        
+        return outputStr 
+        
+    def __setstate__(self, pkle): 
+        tempFile = tempfile.NamedTemporaryFile(delete=False)
+        tempFile.close()
+        
+        tempFile2 = tempfile.NamedTemporaryFile(delete=False)
+        tempFile2.close()
+        
+        tempFile = open(tempFile.name, "wb")
+        tempFile.write(pkle) 
+        tempFile.close() 
+        
+        uu.decode(tempFile.name, tempFile2.name + ".zip")
+        
+        newGraph = self.load(tempFile2.name)
+        self.W = newGraph.W 
+        self.undirected = newGraph.undirected 
+        self.vList = newGraph.vList
 
     vList = None
     undirected = None
