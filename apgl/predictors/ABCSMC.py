@@ -53,7 +53,7 @@ class ABCSMC(object):
         self.T = epsilonArray.shape[0]
         #Size of population
         self.N = 10
-        self.numProcesses = 8 
+        self.numProcesses = multiprocessing.cpu_count() 
 
     def setPosteriorSampleSize(self, posteriorSampleSize):
         """
@@ -65,14 +65,14 @@ class ABCSMC(object):
         Parameter.checkInt(posteriorSampleSize, 0, numpy.float('inf'))
         self.N = posteriorSampleSize
         
-    def findTheta(self, lastTheta, lastWeights, t): 
+    def findThetas(self, lastTheta, lastWeights, t): 
         """
         Find a theta to accept. 
         """
-        minDist = numpy.float("inf")
         tempTheta = self.abcParams.sampleParams()
+        currentTheta = []
         
-        while minDist > self.epsilonArray[t]:
+        while len(currentTheta) != self.N:
             thetaList = []   
             
             for i in range(self.numProcesses):             
@@ -92,14 +92,13 @@ class ABCSMC(object):
     
             i = 0 
             for dist in resultIterator: 
-                if dist <= minDist:
-                    logging.debug("Best distance so far: theta=" + str(numpy.array(thetaList[i][0])) + " dist=" + str(dist))
-                    minDist = dist
-                    bestTheta = thetaList[i][0]
+                if dist <= self.epsilonArray[t] and len(currentTheta) !=self.N:
+                    logging.debug("Accepting particle " + str(len(currentTheta)) + " at population " + str(t) + " " + "theta=" + str(thetaList[i][0])  + " dist=" + str(dist))
+                    currentTheta.append(thetaList[i][0])
                 i += 1 
             pool.terminate()
             
-        return bestTheta, minDist
+        return currentTheta
 
     def run(self):
         """
@@ -107,19 +106,18 @@ class ABCSMC(object):
         statistics S for a real dataset. 
         """
         logging.debug("Parent PID: " + str(os.getppid()) + " Child PID: " + str(os.getpid()))
-        currentWeights = numpy.zeros(self.N)
         currentTheta = []
+        currentWeights = numpy.zeros(self.N)
 
         for t in range(self.T):
             lastTheta = currentTheta
             lastWeights = currentWeights
-            currentTheta = []
             currentWeights = numpy.zeros(self.N)
 
+            currentTheta = self.findThetas(lastTheta, lastWeights, t)
+                   
             for i in range(self.N):
-                theta, minDist = self.findTheta(lastTheta, lastWeights, t)
-                logging.debug("Accepting particle " + str(i) + " at population " + str(t) + " " + "theta=" + str(numpy.array(theta))  + " dist=" + str(minDist))
-                currentTheta.append(theta)
+                theta = currentTheta[i]                
                 
                 if t == 0:
                     currentWeights[i] = 1
