@@ -1,54 +1,60 @@
-
 import numpy
 import logging
 import sys 
 import matplotlib.pyplot as plt 
 
-from apgl.graph import *
+from apgl.graph.GraphStatistics import GraphStatistics 
 from apgl.util.PathDefaults import PathDefaults
 from apgl.util.Util import Util 
-from apgl.viroscopy.model.HIVGraph import HIVGraph
-from apgl.viroscopy.model.HIVVertices import HIVVertices
+from exp.viroscopy.model.HIVGraph import HIVGraph
+from exp.viroscopy.model.HIVVertices import HIVVertices
+from exp.viroscopy.model.HIVModelUtils import HIVModelUtils
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 plotStyles = ['ko-', 'kx-', 'k+-', 'k.-', 'k*-']
 
 outputDir = PathDefaults.getOutputDir() + "viroscopy/"
+resultsDir = PathDefaults.getOutputDir() + "viroscopy/toy/" 
 figureDir = PathDefaults.getOutputDir() + "viroscopy/figures/toyExample/"
 saveResults = False
 graphStats = GraphStatistics()
+
+#We plot some stats for the ideal simulated epidemic 
+#and those epidemics found using ABC. 
 
 if saveResults:
     infectedGraphList = []
     removedGraphList = []
     endGraphList = []  #This is a list of each graph at the end time point
-    numGraphs = 10
+    
+    thetaFileName =  resultsDir + "ThetaDistSimulated.pkl"
+    thetaArray = Util.loadPickle(thetaFileName)
+    
+    thetaArray = numpy.array(thetaArray) 
+    numGraphs = thetaArray.shape[0]
 
-    timesFileName = outputDir + "epidemicTimes.pkl"
-    times = Util.loadPickle(timesFileName)
-    numTimes = len(times)
-    infectedArray = numpy.zeros((numGraphs, numTimes))
-    removedArray = numpy.zeros((numGraphs, numTimes))
-    maleArray = numpy.zeros((numGraphs, numTimes))
-    femaleArray = numpy.zeros((numGraphs, numTimes))
-    heteroArray = numpy.zeros((numGraphs, numTimes))
-    biArray = numpy.zeros((numGraphs, numTimes))
+    numTimeSteps = 10 
+    T, recordStep, printStep, M = HIVModelUtils.defaultSimulationParams()
+    times = numpy.linspace(0, T, numTimeSteps)
+    
+    numSnapshots = times.shape[0]+2
+    infectedArray = numpy.zeros((numGraphs, numSnapshots))
+    removedArray = numpy.zeros((numGraphs, numSnapshots))
+    maleArray = numpy.zeros((numGraphs, numSnapshots))
+    femaleArray = numpy.zeros((numGraphs, numSnapshots))
+    heteroArray = numpy.zeros((numGraphs, numSnapshots))
+    biArray = numpy.zeros((numGraphs, numSnapshots))
 
     for i in range(numGraphs):
-        graphFileName = outputDir + "epidemicGraph" + str(i) 
-        evolutionFileName = outputDir + "epidemicEvolution"  + str(i) + ".pkl"
-
-        graph = HIVGraph.load(graphFileName, globals()["HIVVertices"])
-        vList = graph.getVertexList()
-        V = vList.getVertices()
-        infectedIndices, removedIndices, times = Util.loadPickle(evolutionFileName)
+        times, infectedIndices, removedIndices, graph = HIVModelUtils.defaultSimulate(thetaArray[i])
+        V = graph.getVertexList().getVertices()
         allIndices = [range(graph.getNumVertices())]
 
         infectedGraphList.append((graph, infectedIndices))
         removedGraphList.append((graph, removedIndices))
         endGraphList.append((graph, allIndices))
-
+        
         infectedArray[i, :] = numpy.array([len(x) for x in infectedIndices])
         removedArray[i, :] = numpy.array([len(x) for x in removedIndices])
         maleArray[i, :] = numpy.array([numpy.sum(V[x, HIVVertices.genderIndex]==HIVVertices.male) for x in removedIndices])
