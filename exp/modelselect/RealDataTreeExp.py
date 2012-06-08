@@ -14,6 +14,7 @@ from exp.sandbox.predictors.PenaltyDecisionTree import PenaltyDecisionTree
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 numpy.seterr(all="raise")
+numpy.random.seed(21)
 dataDir = PathDefaults.getDataDir() 
 dataDir += "modelPenalisation/benchmark/"
 
