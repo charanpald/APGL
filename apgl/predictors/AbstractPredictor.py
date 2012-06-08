@@ -362,6 +362,7 @@ class AbstractPredictor(object):
 
             pool = multiprocessing.Pool(processes=self.processes, maxtasksperchild=100)
             resultsIterator = pool.imap(computeTestError, paramList, self.chunkSize)
+            #resultsIterator =  itertools.imap(computeTestError, paramList)
         
             indexIter = itertools.product(*gridInds)
             for inds in indexIter: 
