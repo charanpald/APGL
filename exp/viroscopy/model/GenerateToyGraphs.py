@@ -31,8 +31,6 @@ undirected = True
 outputDir = PathDefaults.getOutputDir() + "viroscopy/toy/"
 theta = HIVModelUtils.defaultTheta() 
 
-thetaFileName = outputDir + "ThetaToy.pkl"
-Util.savePickle(theta, thetaFileName)
 
 graphList = []
 
