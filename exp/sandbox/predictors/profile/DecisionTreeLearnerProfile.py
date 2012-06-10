@@ -13,12 +13,13 @@ numpy.random.seed(22)
 class DecisionTreeLearnerProfile(object):
     def profileLearnModel(self):
         numExamples = 1000
-        numFeatures = 20
+        numFeatures = 50
         minSplit = 10
         maxDepth = 20
         
         generator = ExamplesGenerator()
         X, y = generator.generateBinaryExamples(numExamples, numFeatures)   
+        y = numpy.array(y, numpy.float)
             
         learner = DecisionTreeLearner(minSplit=minSplit, maxDepth=maxDepth, pruneType="REP-CV") 
         #learner.learnModel(X, y)
