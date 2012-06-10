@@ -71,12 +71,14 @@ def getSetup(learnerName, dataDir, outputDir, numProcesses):
         paramDict["setMinSplit"] = 2**numpy.arange(2, 6, dtype=numpy.int) 
     elif learnerName=="DTRP": 
         learner = DecisionTreeLearner(criterion="mse", maxDepth=30, minSplit=5, pruneType="REP-CV")
+        learner.setChunkSize(5)
         loadMethod = ModelSelectUtils.loadRegressDataset
         dataDir += "regression/"
         outputDir += "regression/" + learnerName + "/"
 
         paramDict = {} 
-        paramDict["setAlphaThreshold"] = 2**numpy.arange(-0.1, 0.1, 0.01) 
+        paramDict["setAlphaThreshold"] = numpy.arange(-0.1, 0.1, 0.01) 
+        paramDict["setPruneCV"] = numpy.arange(6, 11, 2, numpy.int)
     else: 
         raise ValueError("Unknown learnerName: " + learnerName)
                 
