@@ -251,6 +251,13 @@ class DecisionTreeLearner(AbstractPredictor):
         Parameter.checkFloat(alphaThreshold, -float("inf"), float("inf"))
         self.alphaThreshold = alphaThreshold
         
+    def setPruneCV(self, folds): 
+        Parameter.checkInt(folds, 1, float("inf"))
+        self.folds = folds
+        
+    def getPruneCV(self): 
+        return self.folds
+        
     def getLeftChildId(self, nodeId): 
         leftChildId = list(nodeId)
         leftChildId.append(0)
