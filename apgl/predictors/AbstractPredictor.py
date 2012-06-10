@@ -523,3 +523,7 @@ class AbstractPredictor(object):
             currentInd += 1 
             
         return paramsArray 
+        
+    def setChunkSize(self, chunkSize): 
+        Parameter.checkInt(chunkSize, 1, float("inf"))
+        self.chunkSize = chunkSize 
