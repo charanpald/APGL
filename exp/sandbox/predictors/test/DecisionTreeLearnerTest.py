@@ -250,13 +250,17 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         learner.learnModel(trainX, trainY)
         
         #print(learner.getTree())
+        print(learner.tree)  
+        
         vertexIds = learner.tree.getAllVertexIds()         
         
         learner.repPrune(trainX, trainY)
+        print(learner.getAlphaThreshold())
         
         vertexIds2 = learner.tree.getAllVertexIds() 
         
         #No pruning if we test using training set 
+        print(len(vertexIds), len(vertexIds2))
         self.assertEquals(vertexIds, vertexIds2)
         
         #Now prune using test set 
@@ -284,10 +288,19 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         
         unprunedTree = learner.getTree().copy()
              
+        learner.minAlpha = float("inf")
+        learner.maxAlpha = -float("inf")                  
+             
         #Now randomly assign alpha values 
         for vertexId in learner.tree.getAllVertexIds(): 
             learner.tree.getVertex(vertexId).alpha = numpy.random.randn()
-        
+            
+            if learner.tree.getVertex(vertexId).alpha < learner.minAlpha:
+                    learner.minAlpha = learner.tree.getVertex(vertexId).alpha 
+                
+            if learner.tree.getVertex(vertexId).alpha > learner.maxAlpha: 
+                learner.maxAlpha = learner.tree.getVertex(vertexId).alpha
+
         learner.recursivePrune((0,))
         
         for vertexId in learner.tree.getAllVertexIds(): 
@@ -319,11 +332,11 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         
         #print(learner.getTree())
         unprunedTree = learner.tree.copy() 
-        learner.setAlphaThreshold(100.0)
+        learner.setGamma(1.0)
         learner.cvPrune(trainX, trainY)
         
         self.assertEquals(unprunedTree.getNumVertices(), learner.tree.getNumVertices())
-        learner.setAlphaThreshold(0.0)
+        learner.setGamma(0.0)
         learner.cvPrune(trainX, trainY)
         
         #Test if pruned tree is subtree of current: 
@@ -337,7 +350,7 @@ class DecisionTreeLearnerTest(unittest.TestCase):
       
         error2 = Evaluator.rootMeanSqError(learner.predict(testX), testY)
         
-        self.assertTrue(error1 > =error2)
+        self.assertTrue(error1 >= error2)
 
         
 

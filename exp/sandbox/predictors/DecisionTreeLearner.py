@@ -9,9 +9,11 @@ from apgl.util.Parameter import Parameter
 from apgl.util.Evaluator import Evaluator
     
 class DecisionTreeLearner(AbstractPredictor): 
-    def __init__(self, criterion="mse", maxDepth=10, minSplit=30, type="reg", pruneType="none", alphaThreshold=0.0, folds=5):
+    def __init__(self, criterion="mse", maxDepth=10, minSplit=30, type="reg", pruneType="none", gamma=0.0, folds=5):
         """
         Need a minSplit for the internal nodes and one for leaves. 
+        
+        :param gamma: A value between 0 (no pruning) and 1 (full pruning) which decides how much pruning to do. 
         """
         super(DecisionTreeLearner, self).__init__()
         self.maxDepth = maxDepth
@@ -19,7 +21,7 @@ class DecisionTreeLearner(AbstractPredictor):
         self.criterion = criterion
         self.type = type
         self.pruneType = pruneType 
-        self.alphaThreshold = alphaThreshold
+        self.setGamma(gamma)
         self.folds = 5
     
     def learnModel(self, X, y):
@@ -179,6 +181,9 @@ class DecisionTreeLearner(AbstractPredictor):
         return numpy.sum((trueY - predY)**2)
     
     def computeAlphas(self): 
+        self.minAlpha = float("inf")
+        self.maxAlpha = -float("inf")        
+        
         for vertexId in self.tree.getAllVertexIds(): 
             currentNode = self.tree.getVertex(vertexId)
             subtreeLeaves = self.tree.leaves(vertexId)
@@ -189,7 +194,13 @@ class DecisionTreeLearner(AbstractPredictor):
             
             #Alpha is normalised difference in error 
             if currentNode.getTestInds().shape[0] != 0: 
-                currentNode.alpha = (testErrorSum - currentNode.getTestError())/float(currentNode.getTestInds().shape[0])        
+                currentNode.alpha = (testErrorSum - currentNode.getTestError())/float(currentNode.getTestInds().shape[0])       
+                
+                if currentNode.alpha < self.minAlpha:
+                    self.minAlpha = currentNode.alpha 
+                
+                if currentNode.alpha > self.maxAlpha: 
+                    self.maxAlpha = currentNode.alpha
         
     def repPrune(self, validX, validY): 
         """
@@ -207,7 +218,7 @@ class DecisionTreeLearner(AbstractPredictor):
         """
         node = self.tree.getVertex(nodeId)
 
-        if node.alpha > self.alphaThreshold: 
+        if node.alpha > self.getAlphaThreshold(): 
             self.tree.pruneVertex(nodeId)
         else: 
             for childId in [self.getLeftChildId(nodeId), self.getRightChildId(nodeId)]: 
@@ -275,7 +286,7 @@ class DecisionTreeLearner(AbstractPredictor):
         """
         Copies parameter values only 
         """
-        newLearner = DecisionTreeLearner(self.criterion, self.maxDepth, self.minSplit, self.type, self.pruneType, self.alphaThreshold, self.folds)
+        newLearner = DecisionTreeLearner(self.criterion, self.maxDepth, self.minSplit, self.type, self.pruneType, self.gamma, self.folds)
         return newLearner 
         
     def getMetricMethod(self): 
@@ -285,11 +296,11 @@ class DecisionTreeLearner(AbstractPredictor):
             return Evaluator.binaryError      
             
     def getAlphaThreshold(self): 
-        return self.alphaThreshold
+        return self.minAlpha + (self.maxAlpha - self.minAlpha)*self.gamma
     
-    def setAlphaThreshold(self, alphaThreshold): 
-        Parameter.checkFloat(alphaThreshold, -float("inf"), float("inf"))
-        self.alphaThreshold = alphaThreshold
+    def setGamma(self, gamma): 
+        Parameter.checkFloat(gamma, 0.0, 1.0)
+        self.gamma = gamma
         
     def setPruneCV(self, folds): 
         Parameter.checkInt(folds, 1, float("inf"))
