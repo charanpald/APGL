@@ -34,7 +34,8 @@ class DecisionTreeLearner(AbstractPredictor):
             argsortX[:, i] = numpy.argsort(X[:, i])
             argsortX[:, i] = numpy.argsort(argsortX[:, i])
         
-        self.recursiveSplit(X, y, argsortX, nodeId)
+        self.growSkLearn(X, y)
+        #self.recursiveSplit(X, y, argsortX, nodeId)
         
         if self.pruneType == "REP": 
             self.repPrune(X, y)
@@ -76,7 +77,46 @@ class DecisionTreeLearner(AbstractPredictor):
             
             if rightChild.getTrainInds().shape[0] >= self.minSplit: 
                 self.recursiveSplit(X, y, argsortX, rightChildId)
+    
+    def growSkLearn(self, X, y): 
+        """
+        Grow a decision tree from sklearn. 
+        """
         
+        from sklearn.tree import DecisionTreeRegressor
+        regressor = DecisionTreeRegressor(max_depth = self.maxDepth, min_samples_split=self.minSplit)
+        regressor.fit(X, y)
+        
+        #Convert the sklearn tree into our tree 
+        nodeId = (0, )          
+        nodeStack = [(nodeId, 0)] 
+        
+        node = DecisionNode(numpy.arange(X.shape[0]), regressor.tree_.value[0])
+        self.tree.setVertex(nodeId, node)
+        
+        while len(nodeStack) != 0: 
+            nodeId, nodeInd = nodeStack.pop()
+            
+            node = self.tree.getVertex(nodeId)
+            node.setError(regressor.tree_.best_error[nodeInd])
+            node.setFeatureInd(regressor.tree_.feature[nodeInd])
+            node.setThreshold(regressor.tree_.threshold[nodeInd])
+                
+            if regressor.tree_.children[nodeInd, 0] != -1: 
+                leftChildInds = node.getTrainInds()[X[node.getTrainInds(), node.getFeatureInd()] < node.getThreshold()] 
+                leftChildId = self.getLeftChildId(nodeId)
+                leftChild = DecisionNode(leftChildInds, regressor.tree_.value[regressor.tree_.children[nodeInd, 0]])
+                self.tree.addChild(nodeId, leftChildId, leftChild)
+                nodeStack.append((self.getLeftChildId(nodeId), regressor.tree_.children[nodeInd, 0]))
+                
+            if regressor.tree_.children[nodeInd, 1] != -1: 
+                rightChildInds = node.getTrainInds()[X[node.getTrainInds(), node.getFeatureInd()] >= node.getThreshold()]
+                rightChildId = self.getRightChildId(nodeId)
+                rightChild = DecisionNode(rightChildInds, regressor.tree_.value[regressor.tree_.children[nodeInd, 1]])
+                self.tree.addChild(nodeId, rightChildId, rightChild)
+                nodeStack.append((self.getRightChildId(nodeId), regressor.tree_.children[nodeInd, 1]))
+
+    
     def predict(self, X): 
         """
         Make a prediction for the set of examples given in the matrix X. 

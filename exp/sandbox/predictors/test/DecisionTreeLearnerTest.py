@@ -31,7 +31,7 @@ class DecisionTreeLearnerTest(unittest.TestCase):
             numExamples = numpy.random.randint(1, 200)
             numFeatures = numpy.random.randint(1, 10)
             minSplit = numpy.random.randint(1, 50)
-            maxDepth = numpy.random.randint(0, 10)
+            maxDepth = numpy.random.randint(1, 10)
             
             X, y = generator.generateBinaryExamples(numExamples, numFeatures)
             y = numpy.array(y, numpy.float)
@@ -45,8 +45,9 @@ class DecisionTreeLearnerTest(unittest.TestCase):
                 if vertex.getFeatureInd() != None: 
                     meanValue = y[vertex.getTrainInds()].mean()
                     self.assertEquals(meanValue, vertex.getValue())
-                    self.assertTrue(0 <= vertex.getFeatureInd() < X.shape[1]) 
-                    self.assertTrue(X[:, vertex.getFeatureInd()].min() <= vertex.getThreshold() <= X[:, vertex.getFeatureInd()].max())
+                    if tree.isNonLeaf(vertexId): 
+                        self.assertTrue(0 <= vertex.getFeatureInd() < X.shape[1]) 
+                        self.assertTrue(X[:, vertex.getFeatureInd()].min() <= vertex.getThreshold() <= X[:, vertex.getFeatureInd()].max())
                     self.assertTrue(vertex.getTrainInds().shape[0] >= 1)
             
             
@@ -71,18 +72,18 @@ class DecisionTreeLearnerTest(unittest.TestCase):
                     vertexStack.append(neighbours[1])
         
         #Try a tree of depth 0 
-        learner = DecisionTreeLearner(minSplit=10, maxDepth=0) 
-        learner.learnModel(self.X, self.y)        
-        tree = learner.getTree()
+        #learner = DecisionTreeLearner(minSplit=10, maxDepth=0) 
+        #learner.learnModel(self.X, self.y)        
+        #tree = learner.getTree()
         
-        self.assertEquals(tree.depth(), 0)
+        #self.assertEquals(tree.depth(), 0)
         
         #Try minSplit > numExamples 
-        learner = DecisionTreeLearner(minSplit=self.numExamples+1, maxDepth=0) 
-        learner.learnModel(self.X, self.y)        
-        tree = learner.getTree()
+        #learner = DecisionTreeLearner(minSplit=self.numExamples+1, maxDepth=0) 
+        #learner.learnModel(self.X, self.y)        
+        #tree = learner.getTree()
         
-        self.assertEquals(tree.getNumVertices(), 1)
+        #self.assertEquals(tree.getNumVertices(), 1)
         
         #Try a simple tree of depth 1 
         learner = DecisionTreeLearner(minSplit=1, maxDepth=1) 
@@ -172,13 +173,14 @@ class DecisionTreeLearnerTest(unittest.TestCase):
             
             predY = learner.predict(X)
             
-            tree = learner.tree 
+            tree = learner.tree            
             
             for vertexId in tree.getAllVertexIds(): 
+                
                 nptst.assert_array_equal(tree.getVertex(vertexId).getTrainInds(), tree.getVertex(vertexId).getTestInds())
                 
             #Compare against sklearn tree  
-            regressor = DecisionTreeRegressor(min_split=minSplit, max_depth=maxDepth, min_density=0.0)
+            regressor = DecisionTreeRegressor(min_samples_split=minSplit, max_depth=maxDepth, min_density=0.0)
             regressor.fit(X, y)
             
             sktree = regressor.tree_
@@ -335,8 +337,7 @@ class DecisionTreeLearnerTest(unittest.TestCase):
       
         error2 = Evaluator.rootMeanSqError(learner.predict(testX), testY)
         
-        print(error1)
-        print(error2)
+        self.assertTrue(error1 > =error2)
 
         
 
