@@ -77,7 +77,7 @@ def getSetup(learnerName, dataDir, outputDir, numProcesses):
         outputDir += "regression/" + learnerName + "/"
 
         paramDict = {} 
-        paramDict["setAlphaThreshold"] = numpy.arange(-0.1, 0.1, 0.01) 
+        paramDict["setGamma"] = numpy.linspace(0.0, 1.0, 10) 
         paramDict["setPruneCV"] = numpy.arange(6, 11, 2, numpy.int)
     else: 
         raise ValueError("Unknown learnerName: " + learnerName)

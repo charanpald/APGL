@@ -296,11 +296,14 @@ class DecisionTreeLearner(AbstractPredictor):
             return Evaluator.binaryError      
             
     def getAlphaThreshold(self): 
-        return self.minAlpha + (self.maxAlpha - self.minAlpha)*self.gamma
+        return self.maxAlpha - (self.maxAlpha - self.minAlpha)*self.gamma
     
     def setGamma(self, gamma): 
         Parameter.checkFloat(gamma, 0.0, 1.0)
         self.gamma = gamma
+        
+    def getGamma(self): 
+        return self.gamma 
         
     def setPruneCV(self, folds): 
         Parameter.checkInt(folds, 1, float("inf"))

@@ -246,25 +246,22 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         testX = X[numTrain:, :]
         testY = y[numTrain:]
         
-        learner = DecisionTreeLearner()
+        #In this case we set alpha = maxAlpha which is 0.0 
+        learner = DecisionTreeLearner(gamma=0.0)
         learner.learnModel(trainX, trainY)
-        
-        #print(learner.getTree())
-        print(learner.tree)  
         
         vertexIds = learner.tree.getAllVertexIds()         
         
         learner.repPrune(trainX, trainY)
-        print(learner.getAlphaThreshold())
+        self.assertEquals(learner.maxAlpha, 0.0)
         
         vertexIds2 = learner.tree.getAllVertexIds() 
         
         #No pruning if we test using training set 
-        print(len(vertexIds), len(vertexIds2))
         self.assertEquals(vertexIds, vertexIds2)
         
         #Now prune using test set 
-        learner.setAlphaThreshold(100.0)
+        learner.setGamma(1.0)
         learner.repPrune(testX, testY)
         toPrune = []
         
@@ -272,13 +269,13 @@ class DecisionTreeLearnerTest(unittest.TestCase):
             if learner.tree.getVertex(vertexId).alpha > 0: 
                 toPrune.append(vertexId)       
         
-        learner.setAlphaThreshold(0.0)
+        learner.setGamma(0.0)
         learner.repPrune(testX, testY)
         
         self.assertTrue((0, 0, 1, 0) not in learner.tree.getAllVertexIds())
         
         #Now try max pruning 
-        learner.setAlphaThreshold(-100.0)
+        learner.setGamma(1.0)
         learner.repPrune(testX, testY)
         self.assertEquals(learner.tree.getNumVertices(), 1)
     
@@ -304,7 +301,7 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         learner.recursivePrune((0,))
         
         for vertexId in learner.tree.getAllVertexIds(): 
-            if learner.tree.getVertex(vertexId).alpha > 0: 
+            if learner.tree.getVertex(vertexId).alpha > learner.getAlphaThreshold(): 
                 self.assertTrue(learner.tree.isLeaf(vertexId))
                 
         self.assertTrue(learner.tree.isSubtree(unprunedTree))
@@ -332,11 +329,11 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         
         #print(learner.getTree())
         unprunedTree = learner.tree.copy() 
-        learner.setGamma(1.0)
+        learner.setGamma(0.0)
         learner.cvPrune(trainX, trainY)
         
         self.assertEquals(unprunedTree.getNumVertices(), learner.tree.getNumVertices())
-        learner.setGamma(0.0)
+        learner.setGamma(0.5)
         learner.cvPrune(trainX, trainY)
         
         #Test if pruned tree is subtree of current: 
