@@ -4,7 +4,7 @@ import sys
 import scipy.stats 
 from apgl.util.Latex import Latex
 from apgl.util.PathDefaults import PathDefaults
-from apgl.modelselect.ModelSelectUtils import ModelSelectUtils
+from exp.modelselect.ModelSelectUtils import ModelSelectUtils
 import matplotlib.pyplot as plt
 
 #Produce latex tables from the benchmark results
@@ -235,11 +235,12 @@ def plotResults(datasetName, sampleSizes, foldsSet, cvScalings, sampleMethods, f
     plt.show()
 
 #outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/SVR/"
-outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/DTR/"
+outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/DTRP/"
 
 #First output the fine grained results 
 sampleSizes = numpy.array([50, 100, 200])
-sampleMethods = ["CV","SS", "SS66", "SS90"]
+#sampleMethods = ["CV","SS", "SS66", "SS90"]
+sampleMethods = ["SS66", "SS90"]
 cvScalings = numpy.arange(0.8, 1.81, 0.2)
 foldsSet = numpy.arange(2, 13, 2)
 #datasetNames = ModelSelectUtils.getRatschDatasets()
