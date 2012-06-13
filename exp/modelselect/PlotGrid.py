@@ -193,7 +193,8 @@ def plotGrids(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fi
             plt.show()
 
 #outputDir = PathDefaults.getOutputDir() + "modelPenalisation/classification/"
-outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/SVR/"
+#outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/SVR/"
+outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/DTRP/"
 
 svm = LibSVM()
 Cs = svm.getCs()
