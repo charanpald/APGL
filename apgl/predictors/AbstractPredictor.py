@@ -84,7 +84,7 @@ def computeIdealPenalty(args):
 class AbstractPredictor(object):
     def __init__(self): 
         #Used in multiprocessing code 
-        self.processes = None 
+        self.processes = multiprocessing.cpu_count() 
         self.chunkSize = 10 
     """
     An abstract classifier for binary labelled data. 
