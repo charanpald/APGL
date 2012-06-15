@@ -9,7 +9,7 @@ from apgl.util.Parameter import Parameter
 from apgl.util.Evaluator import Evaluator
     
 class DecisionTreeLearner(AbstractPredictor): 
-    def __init__(self, criterion="mse", maxDepth=10, minSplit=30, type="reg", pruneType="none", gamma=0.0, folds=5):
+    def __init__(self, criterion="mse", maxDepth=10, minSplit=30, type="reg", pruneType="none", gamma=0.0, folds=5, processes=None):
         """
         Need a minSplit for the internal nodes and one for leaves. 
         
@@ -23,6 +23,7 @@ class DecisionTreeLearner(AbstractPredictor):
         self.pruneType = pruneType 
         self.setGamma(gamma)
         self.folds = 5
+        self.processes = processes
     
     def learnModel(self, X, y):
         nodeId = (0, )         
@@ -40,6 +41,7 @@ class DecisionTreeLearner(AbstractPredictor):
         #self.recursiveSplit(X, y, argsortX, nodeId)
         
         if self.pruneType == "REP": 
+            #Note: This should be a seperate validation set 
             self.repPrune(X, y)
         elif self.pruneType == "REP-CV":
             self.cvPrune(X, y)
@@ -218,7 +220,7 @@ class DecisionTreeLearner(AbstractPredictor):
         """
         node = self.tree.getVertex(nodeId)
 
-        if node.alpha > self.getAlphaThreshold(): 
+        if node.alpha >= self.getAlphaThreshold(): 
             self.tree.pruneVertex(nodeId)
         else: 
             for childId in [self.getLeftChildId(nodeId), self.getRightChildId(nodeId)]: 
