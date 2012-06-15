@@ -4,7 +4,9 @@ import numpy.testing as nptst
 from exp.sandbox.predictors.DecisionTreeLearner import DecisionTreeLearner
 from apgl.data.ExamplesGenerator import ExamplesGenerator
 from apgl.data.Standardiser import Standardiser    
+from apgl.util.Sampling import Sampling
 from sklearn.tree import DecisionTreeRegressor 
+from apgl.predictors.LibSVM import LibSVM
 import sklearn.datasets as data 
 from apgl.util.Evaluator import Evaluator
 
@@ -349,10 +351,54 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         
         self.assertTrue(error1 >= error2)
 
+    @unittest.skip("")  
+    def testModelSelect(self): 
         
-
+        """
+        We test the results on some data and compare to SVR. 
+        """
+        numExamples = 200
+        X, y = data.make_regression(numExamples, noise=0.5)  
         
+        X = Standardiser().standardiseArray(X)
+        y = Standardiser().standardiseArray(y)
+        
+        trainX = X[0:100, :]
+        trainY = y[0:100]
+        testX = X[100:, :]
+        testY = y[100:]
+        
+        learner = DecisionTreeLearner(maxDepth=20, minSplit=10, pruneType="REP-CV")
+        learner.setPruneCV(8)
+        
+        paramDict = {} 
+        paramDict["setGamma"] = numpy.linspace(0.0, 1.0, 10) 
+        paramDict["setPruneCV"] = numpy.arange(6, 11, 2, numpy.int)
+        
+        folds = 5
+        idx = Sampling.crossValidation(folds, trainX.shape[0])
+        bestTree, cvGrid = learner.parallelModelSelect(trainX, trainY, idx, paramDict)
 
+
+        predY = bestTree.predict(testX)
+        error = Evaluator.rootMeanSqError(testY, predY)
+        print(error)
+              
+            
+        #Let's compare to the SVM 
+        learner2 = LibSVM(kernel='gaussian', type="Epsilon_SVR") 
+        
+        paramDict = {} 
+        paramDict["setC"] = 2.0**numpy.arange(-10, 14, 2, dtype=numpy.float)
+        paramDict["setGamma"] = 2.0**numpy.arange(-10, 4, 2, dtype=numpy.float)
+        paramDict["setEpsilon"] = learner2.getEpsilons()
+        
+        idx = Sampling.crossValidation(folds, trainX.shape[0])
+        bestSVM, cvGrid = learner2.parallelModelSelect(trainX, trainY, idx, paramDict)
+
+        predY = bestSVM.predict(testX)
+        error = Evaluator.rootMeanSqError(testY, predY)
+        print(error)
      
 if __name__ == "__main__":
     unittest.main()
