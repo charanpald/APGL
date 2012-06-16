@@ -383,8 +383,23 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         predY = bestTree.predict(testX)
         error = Evaluator.rootMeanSqError(testY, predY)
         print(error)
+        
+        
+        learner = DecisionTreeLearner(maxDepth=20, minSplit=5, pruneType="CART")
+        
+        paramDict = {} 
+        paramDict["setGamma"] = numpy.linspace(0.0, 1.0, 50) 
+        
+        folds = 5
+        idx = Sampling.crossValidation(folds, trainX.shape[0])
+        bestTree, cvGrid = learner.parallelModelSelect(trainX, trainY, idx, paramDict)
+
+
+        predY = bestTree.predict(testX)
+        error = Evaluator.rootMeanSqError(testY, predY)
+        print(error)
               
-            
+        return 
         #Let's compare to the SVM 
         learner2 = LibSVM(kernel='gaussian', type="Epsilon_SVR") 
         
@@ -399,6 +414,40 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         predY = bestSVM.predict(testX)
         error = Evaluator.rootMeanSqError(testY, predY)
         print(error)
+
+    def testCARTPrune(self): 
+        numExamples = 200
+        X, y = data.make_regression(numExamples)  
+        
+        y = Standardiser().standardiseArray(y)
+        
+        numTrain = numpy.round(numExamples * 0.33)     
+        numValid = numpy.round(numExamples * 0.33) 
+        
+        trainX = X[0:numTrain, :]
+        trainY = y[0:numTrain]
+        validX = X[numTrain:numTrain+numValid, :]
+        validY = y[numTrain:numTrain+numValid]
+        testX = X[numTrain+numValid:, :]
+        testY = y[numTrain+numValid:]
+        
+        learner = DecisionTreeLearner(pruneType="CART", maxDepth=3, gamma=0.0)
+        learner.learnModel(trainX, trainY)
+        
+        predY = learner.predict(trainX)
+        
+        learner = DecisionTreeLearner(pruneType="none", maxDepth=3, gamma=0.0)
+        learner.learnModel(trainX, trainY)
+        predY2 = learner.predict(trainX)
+        
+        #Gamma = 0 implies no pruning 
+        nptst.assert_array_equal(predY, predY2)
+        
+        #Full pruning 
+        learner = DecisionTreeLearner(pruneType="CART", maxDepth=3, gamma=1.0)
+        learner.learnModel(trainX, trainY)
+        
+        
      
 if __name__ == "__main__":
     unittest.main()

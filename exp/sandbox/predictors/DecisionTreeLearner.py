@@ -45,6 +45,8 @@ class DecisionTreeLearner(AbstractPredictor):
             self.repPrune(X, y)
         elif self.pruneType == "REP-CV":
             self.cvPrune(X, y)
+        elif self.pruneType == "CART": 
+            self.cartPrune(X, y)
         elif self.pruneType == "none": 
             pass
         else:
@@ -203,7 +205,36 @@ class DecisionTreeLearner(AbstractPredictor):
                 
                 if currentNode.alpha > self.maxAlpha: 
                     self.maxAlpha = currentNode.alpha
+                    
+    def computeCARTAlphas(self, X):
+        """
+        Solve for the CART complexity based pruning. 
+        """
+        self.minAlpha = float("inf")
+        self.maxAlpha = -float("inf")        
         
+        for vertexId in self.tree.getAllVertexIds(): 
+            currentNode = self.tree.getVertex(vertexId)
+            subtreeLeaves = self.tree.leaves(vertexId)
+
+            testErrorSum = 0 
+            for leaf in subtreeLeaves: 
+                testErrorSum += self.tree.getVertex(leaf).getTestError()
+            
+            subtreeSize = len(self.tree.subtreeIds(vertexId))            
+            
+            #Alpha is reduction in error per leaf - larger alphas are better 
+            if currentNode.getTestInds().shape[0] != 0 and subtreeSize != 1: 
+                currentNode.alpha = (currentNode.getTestError() - testErrorSum)/float(X.shape[0]*(subtreeSize-1))
+                #Flip alpha so that pruning works 
+                currentNode.alpha = -currentNode.alpha
+                
+                if currentNode.alpha < self.minAlpha:
+                    self.minAlpha = currentNode.alpha 
+                
+                if currentNode.alpha > self.maxAlpha: 
+                    self.maxAlpha = currentNode.alpha                    
+
     def repPrune(self, validX, validY): 
         """
         Prune the decision tree using reduced error pruning. 
@@ -220,12 +251,24 @@ class DecisionTreeLearner(AbstractPredictor):
         """
         node = self.tree.getVertex(nodeId)
 
-        if node.alpha >= self.getAlphaThreshold(): 
+        if node.alpha > self.getAlphaThreshold(): 
             self.tree.pruneVertex(nodeId)
         else: 
             for childId in [self.getLeftChildId(nodeId), self.getRightChildId(nodeId)]: 
                 if self.tree.vertexExists(childId):
                     self.recursivePrune(childId)
+                    
+    def cartPrune(self, trainX, trainY): 
+        """
+        Prune the tree according to the CART algorithm. Here, the chosen 
+        tree is selected by thresholding alpha. In CART itself the best 
+        tree is selected by using an independent pruning set. 
+        """
+        rootId = (0,)
+        self.tree.getVertex(rootId).setTestInds(numpy.arange(trainX.shape[0]))
+        self.recursiveSetPrune(trainX, trainY, rootId)        
+        self.computeCARTAlphas(trainX)    
+        self.recursivePrune(rootId)
                 
     def cvPrune(self, validX, validY): 
         """
