@@ -296,4 +296,4 @@ findErrorGrid(regressiondatasetNames, numProcesses, "GridResults50", learnerName
 findErrorGrid(regressiondatasetNames, numProcesses, "GridResults100", learnerName="DTRP", sampleSize=100)
 findErrorGrid(regressiondatasetNames, numProcesses, "GridResults200", learnerName="DTRP", sampleSize=200)
 extSampleSizes = numpy.array([500])
-runBenchmarkExp(regressiondatasetNames, extSampleSizes, extFoldsSet, cvScalings, extSampleMethods, numProcesses, extFileNameSuffix, "DTRP")
+runBenchmarkExp(regressiondatasetNames, extSampleSizes, foldsSet, cvScalings, extSampleMethods, numProcesses, extFileNameSuffix, "DTRP")
