@@ -122,6 +122,7 @@ def summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, file
             #print("Mean error is: " + str(numpy.mean(meanErrors)) + "\n")
             
             #This is a table with V=10, alpha=1 and CV sampling 
+            """
             print(meanErrors[0, 4, 0])
             table1Error = numpy.zeros(len(sampleSizes)*2)
             table1Std = numpy.zeros(len(sampleSizes)*2)
@@ -154,6 +155,7 @@ def summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, file
             table3Error[1, j] = meanErrors[hundredMIndex, fourFoldIndex, 3]
             table3Stds[0, j] = stdErrors[hundredMIndex, fourFoldIndex, 0]
             table3Stds[1, j] = stdErrors[hundredMIndex, fourFoldIndex, 3]
+            """
 
         table3 +=  Latex.addRowNames([datasetNames[i] + " Std ", datasetNames[i] + " PenVF "], Latex.array2DToRows(table3Error, table3Stds))            
             
@@ -246,12 +248,12 @@ foldsSet = numpy.arange(2, 13, 2)
 #datasetNames = ModelSelectUtils.getRatschDatasets()
 datasetNames = ModelSelectUtils.getRegressionDatasets()
 fileNameSuffix = 'Results'
-summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
+#summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
 
 #plotResults("waveform", sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
 
 #Now run some extended results
-sampleSizes = numpy.array([25, 50, 100])
+sampleSizes = numpy.array([500])
 foldsSet = numpy.arange(10, 51, 10)
 cvScalings = numpy.arange(0.8, 1.81, 0.2)
 sampleMethods = ["CV"]
