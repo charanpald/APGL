@@ -81,7 +81,7 @@ A short introduction to the main features of the library is available in the PDF
     array([0, 2, 3])
     >>> graph.neighbours(0)
     array([2, 1], dtype=int32)
-	>>> print(graph)
+    >>> print(graph)
     SparseGraph: vertices 5, edges 4, undirected, vertex list type: GeneralVertexList
 
 The :doc:`SparseGraph` is initialised as an undirected graph with :doc:`GeneralVertexList`, which stores the labels on vertices and can take any values as the vertex labels. Edges are added between vertices (0, 1), (0, 2), (1, 2) and (3, 4). Following, the first and second vertices (indexed by 0 and 1 respectively) are initialised with "abc" and 123 respectively, and we then compute some properties over the resulting graph. 
