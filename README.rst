@@ -6,6 +6,7 @@ This project develops a simple, fast and easy to use Python graph library using 
 Changelog 
 ---------
 Changes in version 0.7.1: 
+
 * Pickling of graphs 
 * Update of ABCSMC algorithm for better multiprocessing 
 
