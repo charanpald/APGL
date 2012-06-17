@@ -55,22 +55,36 @@ and check that all tested pass.
 User Guide
 ----------
 
-A short introduction to the main features of the library is available `here <ApglGuide.pdf>`_. This is the best way to learn the key features of APGL. In the meanwhile, here is small example of how to create a graph using the SparseGraph class which is based on scipy.sparse matrices. 
+A short introduction to the main features of the library is available in the PDF document `"An Introduction to APGL" <ApglGuide.pdf>`_. This is the best way to learn the key features of APGL. In the meanwhile, here is small example of how to create a graph using the SparseGraph class which is based on scipy.sparse matrices. 
 
 ::
 
-	from apgl.graph import * 
-	import numpy 
+    >>> from apgl.graph import GeneralVertexList, SparseGraph 
+    >>> import numpy 
+    >>> numVertices = 5
+    >>> graph = SparseGraph(GeneralVertexList(numVertices))
+    >>> graph[0,1] = 1
+    >>> graph[0,2] = 3
+    >>> graph[1,2] = 0.1
+    >>> graph[3,4] = 2
+    >>> graph.setVertex(0, "abc") 
+    >>> graph.setVertex(1, 123)
+    >>> graph.findConnectedComponents()
+    [[0, 1, 2], [3, 4]]
+    >>> graph.getWeightMatrix()
+    array([[ 0. ,  1. ,  3. ,  0. ,  0. ],
+           [ 1. ,  0. ,  0.1,  0. ,  0. ],
+           [ 3. ,  0.1,  0. ,  0. ,  0. ],
+           [ 0. ,  0. ,  0. ,  0. ,  2. ],
+           [ 0. ,  0. ,  0. ,  2. ,  0. ]])
+    >>> graph.degreeDistribution()
+    array([0, 2, 3])
+    >>> graph.neighbours(0)
+    array([2, 1], dtype=int32)
+	>>> print(graph)
+    SparseGraph: vertices 5, edges 4, undirected, vertex list type: GeneralVertexList
 
-	numVertices = 10
-	vList = GeneralVertexList(numVertices)
-	sGraph = SparseGraph(vList)
-	sGraph[0,1] = 1
-	sGraph[0,2] = 3
-	sGraph.setVertex(0, "abc") 
-	sGraph.setVertex(1, 123)
-	
-The SparseGraph is initialised with GeneralVertexList, which can take any values as the vertex labels. Edges are added between vertices (0, 1) and (0, 2). Following, the first and second vertices (indexed by 0 and 1 respectively) are initialised with "abc" and 123 respectively. 
+The :doc:`SparseGraph` is initialised as an undirected graph with :doc:`GeneralVertexList`, which stores the labels on vertices and can take any values as the vertex labels. Edges are added between vertices (0, 1), (0, 2), (1, 2) and (3, 4). Following, the first and second vertices (indexed by 0 and 1 respectively) are initialised with "abc" and 123 respectively, and we then compute some properties over the resulting graph. 
 
 To learn more consult the reference documentation: 
 
