@@ -59,9 +59,9 @@ class DecisionTree(AbstractWeightedPredictor):
             self.worstResponse = classes[classes!=self.bestResponse][0]
         
         if self.type == "class": 
-            self.learner = tree.DecisionTreeClassifier(criterion=self.criterion, max_depth=self.maxDepth, min_split=self.minSplit)
+            self.learner = tree.DecisionTreeClassifier(criterion=self.criterion, max_depth=self.maxDepth, min_samples_split=self.minSplit)
         else: 
-            self.learner = tree.DecisionTreeRegressor(criterion=self.criterion, max_depth=self.maxDepth, min_split=self.minSplit)          
+            self.learner = tree.DecisionTreeRegressor(criterion=self.criterion, max_depth=self.maxDepth, min_samples_split=self.minSplit)          
             
         self.learner = self.learner.fit(X, y)
 
