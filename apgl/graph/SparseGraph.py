@@ -261,7 +261,7 @@ class SparseGraph(AbstractMatrixGraph):
 
     def setWeightMatrixSparse(self, W):
         """
-        Set the weight matrix of this graph. Requires as input an sparse matrix with the
+        Set the weight matrix of this graph. Requires as input a scipy sparse matrix with the
         same dimensions as the current weight matrix. Edges are represented by
         non-zero edges.
 
