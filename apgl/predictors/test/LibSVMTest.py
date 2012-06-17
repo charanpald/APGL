@@ -150,7 +150,7 @@ class LibSVMTest(unittest.TestCase):
         #logging.debug(b)
         
 
-    @unittest.skip("")
+    @apgl.skip("")
     def testGetWeights(self):
         try:
             import sklearn
@@ -251,7 +251,7 @@ class LibSVMTest(unittest.TestCase):
 
         self.assertTrue(0 <= Evaluator.binaryError(y2, yp2)  <= 1)
 
-    @unittest.skip("")
+    @apgl.skip("")
     def testSaveParams(self):
         try:
             import sklearn
