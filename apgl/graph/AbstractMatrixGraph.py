@@ -5,7 +5,7 @@ import scipy
 import logging
 import os.path
 import tempfile 
-import uu 
+import base64 
 import shutil 
 
 import apgl
@@ -1283,18 +1283,19 @@ class AbstractMatrixGraph(AbstractSingleGraph):
     def __getstate__(self): 
         tempFile = tempfile.NamedTemporaryFile(delete=False)
         tempFile.close()
-        tempFile2 = tempfile.NamedTemporaryFile(delete=False)
-        tempFile2.close()
-        
+
         self.save(tempFile.name)
-        uu.encode(tempFile.name + ".zip", tempFile2.name)
+        infile = open(tempFile.name + ".zip", "rb")
+        fileStr = infile.read()        
+        infile.close() 
+        
+        try: 
+            outputStr = base64.encodebytes(fileStr) 
+        except AttributeError: 
+            outputStr= base64.encodestring(fileStr)
+            
         os.remove(tempFile.name)
         os.remove(tempFile.name + ".zip")
-        
-        tempFile = open(tempFile2.name, "r")
-        outputStr = tempFile.read() 
-        tempFile.close() 
-        os.remove(tempFile2.name)
         
         return outputStr 
         
@@ -1302,23 +1303,22 @@ class AbstractMatrixGraph(AbstractSingleGraph):
         tempFile = tempfile.NamedTemporaryFile(delete=False)
         tempFile.close()
         
-        tempFile2 = tempfile.NamedTemporaryFile(delete=False)
-        tempFile2.close()
-        
-        tempFile = open(tempFile.name, "wb")
-        tempFile.write(pkle) 
-        tempFile.close() 
-        
-        uu.decode(tempFile.name, tempFile2.name + ".zip")
-        
-        newGraph = self.load(tempFile2.name)
+        try: 
+            zipstr = base64.decodebytes(pkle)
+        except AttributeError: 
+            zipstr = base64.decodestring(pkle)
+
+        outFile = open(tempFile.name + ".zip" , "wb")
+        outFile.write(zipstr) 
+        outFile.close() 
+
+        newGraph = self.load(tempFile.name)
         self.W = newGraph.W 
         self.undirected = newGraph.undirected 
         self.vList = newGraph.vList
         
         os.remove(tempFile.name)
-        os.remove(tempFile2.name)
-        os.remove(tempFile2.name + ".zip")
+        os.remove(outFile.name)
 
     vList = None
     undirected = None
