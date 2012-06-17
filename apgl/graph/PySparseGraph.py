@@ -1,4 +1,5 @@
 import numpy
+import scipy.sparse as sparse
 from apgl.graph.AbstractMatrixGraph import AbstractMatrixGraph
 from apgl.graph.AbstractVertexList import AbstractVertexList
 from apgl.util.Parameter import Parameter
@@ -375,3 +376,28 @@ class PySparseGraph(AbstractMatrixGraph):
 
     def saveMatrix(self, W, filename):
         W.export_mtx(filename)
+        
+    def setWeightMatrixSparse(self, W):
+        """
+        Set the weight matrix of this graph. Requires as input a scipy sparse matrix with the
+        same dimensions as the current weight matrix. Edges are represented by
+        non-zero edges.
+
+        :param W:  The weight matrix to use. 
+        """
+        if not sparse.issparse(W):
+            raise ValueError("Input must be a sparse matrix, not " + str(type(W)))
+
+        if W.shape != (self.vList.getNumVertices(), self.vList.getNumVertices()):
+            raise ValueError("Weight matrix has wrong shape : " + str(W.shape))
+
+        if self.undirected and (W - W.transpose()).nonzero()[0].shape[0]:
+            raise ValueError("Weight matrix of undirected graph must be symmetric")
+        
+        self.W = spmatrix.ll_mat(W.shape[0], W.shape[0], W.getnnz())
+        rowInds, colInds = W.nonzero()
+        
+        for i in range(rowInds.shape[0]):
+            self.W[int(rowInds[i]), int(colInds[i])] = W[rowInds[i], colInds[i]]
+        
+        
