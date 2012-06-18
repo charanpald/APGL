@@ -302,7 +302,10 @@ logging.debug("Process id: " + str(os.getpid()))
 #runBenchmarkExp(regressiondatasetNames, extSampleSizes, foldsSet, cvScalings, extSampleMethods, numProcesses, extFileNameSuffix, learnerName)
 
 learnerName = "CART"
+cvScalings = numpy.arange(0.6, 1.61, 0.2)
 runBenchmarkExp(regressiondatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, numProcesses, fileNameSuffix, learnerName)
 findErrorGrid(regressiondatasetNames, numProcesses, "GridResults50", learnerName=learnerName, sampleSize=50)
 findErrorGrid(regressiondatasetNames, numProcesses, "GridResults100", learnerName=learnerName, sampleSize=100)
 findErrorGrid(regressiondatasetNames, numProcesses, "GridResults200", learnerName=learnerName, sampleSize=200)
+extSampleSizes = numpy.array([500])
+runBenchmarkExp(regressiondatasetNames, extSampleSizes, foldsSet, cvScalings, extSampleMethods, numProcesses, extFileNameSuffix, learnerName)
