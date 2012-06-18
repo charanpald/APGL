@@ -211,7 +211,8 @@ class DecisionTreeLearner(AbstractPredictor):
         Solve for the CART complexity based pruning. 
         """
         self.minAlpha = float("inf")
-        self.maxAlpha = -float("inf")        
+        self.maxAlpha = -float("inf")      
+        alphas = [] 
         
         for vertexId in self.tree.getAllVertexIds(): 
             currentNode = self.tree.getVertex(vertexId)
@@ -229,11 +230,19 @@ class DecisionTreeLearner(AbstractPredictor):
                 #Flip alpha so that pruning works 
                 currentNode.alpha = -currentNode.alpha
                 
+                alphas.append(currentNode.alpha)
+                
+                """
                 if currentNode.alpha < self.minAlpha:
                     self.minAlpha = currentNode.alpha 
                 
                 if currentNode.alpha > self.maxAlpha: 
-                    self.maxAlpha = currentNode.alpha                    
+                    self.maxAlpha = currentNode.alpha   
+                """
+        alphas = numpy.array(alphas)
+        self.alphas = numpy.unique(alphas)
+        self.minAlpha = numpy.min(self.alphas)
+        self.maxAlpha = numpy.max(self.alphas)
 
     def repPrune(self, validX, validY): 
         """
@@ -341,8 +350,10 @@ class DecisionTreeLearner(AbstractPredictor):
             return Evaluator.binaryError      
             
     def getAlphaThreshold(self): 
-        return self.maxAlpha - (self.maxAlpha - self.minAlpha)*self.gamma
-    
+        #return self.maxAlpha - (self.maxAlpha - self.minAlpha)*self.gamma
+        #A more natural way of defining gamma 
+        return self.alphas[numpy.round((1-self.gamma)*(self.alphas.shape[0]-1))]        
+        
     def setGamma(self, gamma): 
         Parameter.checkFloat(gamma, 0.0, 1.0)
         self.gamma = gamma

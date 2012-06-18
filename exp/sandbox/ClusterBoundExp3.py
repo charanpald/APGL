@@ -38,9 +38,9 @@ def clusterBound(sigma, rho, lmbda, k):
     bound = gammaSqSum + lmbdaSqSum - 2*sigmaSqSum
     print("r=" + str(r))
     
-    #print("gammaSqSum=" + str(gammaSqSum))    
-    #print("lmbdaSqSum=" + str(lmbdaSqSum))    
-    #print("sigmaSqSum=" + str(sigmaSqSum))    
+    print("gammaSqSum=" + str(gammaSqSum))    
+    print("lmbdaSqSum=" + str(lmbdaSqSum))    
+    print("sigmaSqSum=" + str(sigmaSqSum))    
     
     return bound 
 
