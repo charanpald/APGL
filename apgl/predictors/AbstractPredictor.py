@@ -359,7 +359,7 @@ class AbstractPredictor(object):
                     currentInd += 1                    
                 
                 paramList.append((trainX, trainY, testX, testY, learner))
-
+            
             pool = multiprocessing.Pool(processes=self.processes, maxtasksperchild=100)
             resultsIterator = pool.imap(computeTestError, paramList, self.chunkSize)
             #resultsIterator =  itertools.imap(computeTestError, paramList)
@@ -496,7 +496,7 @@ class AbstractPredictor(object):
                 currentInd += 1                    
             
             paramList.append((trainX, trainY, fullX, fullY, learner))
-
+        
         pool = multiprocessing.Pool(processes=self.processes, maxtasksperchild=100)
         resultsIterator = pool.imap(errorFunc, paramList, self.chunkSize)
         indexIter = itertools.product(*gridInds)
@@ -507,8 +507,14 @@ class AbstractPredictor(object):
         pool.terminate()
 
         return idealPenalties
-        
-    def getParamsArray(self, paramDict): 
+
+    def parallelSplitGrid(self, trainX, trainY, testX, testY, paramDict):
+        """
+        Find out the "ideal" error using a training set and the full dataset. 
+        """
+        return self.parallelPenaltyGrid(trainX, trainY, testX, testY, paramDict, computeTestError)
+   
+    def getParamsArray(self, trainX, trainY, fullX, fullY, paramDict, errorFunc=computeIdealPenalty): 
         """
         A method to return an array of parameters for a given paramDict 
         """
