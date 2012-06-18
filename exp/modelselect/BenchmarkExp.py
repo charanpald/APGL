@@ -71,7 +71,7 @@ def getSetup(learnerName, dataDir, outputDir, numProcesses):
         paramDict["setMinSplit"] = 2**numpy.arange(2, 6, dtype=numpy.int) 
     elif learnerName=="DTRP": 
         learner = DecisionTreeLearner(criterion="mse", maxDepth=30, minSplit=5, pruneType="REP-CV", processes=numProcesses)
-        learner.setChunkSize(5)
+        learner.setChunkSize(2)
         loadMethod = ModelSelectUtils.loadRegressDataset
         dataDir += "regression/"
         outputDir += "regression/" + learnerName + "/"
@@ -81,7 +81,7 @@ def getSetup(learnerName, dataDir, outputDir, numProcesses):
         paramDict["setPruneCV"] = numpy.arange(6, 11, 2, numpy.int)
     elif learnerName=="CART": 
         learner = DecisionTreeLearner(criterion="mse", maxDepth=30, minSplit=5, pruneType="CART", processes=numProcesses)
-        learner.setChunkSize(5)
+        learner.setChunkSize(2)
         loadMethod = ModelSelectUtils.loadRegressDataset
         dataDir += "regression/"
         outputDir += "regression/" + learnerName + "/"
