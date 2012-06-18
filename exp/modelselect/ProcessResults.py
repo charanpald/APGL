@@ -238,6 +238,7 @@ def plotResults(datasetName, sampleSizes, foldsSet, cvScalings, sampleMethods, f
 
 #outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/SVR/"
 outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/DTRP/"
+#outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/CART/"
 
 #First output the fine grained results 
 sampleSizes = numpy.array([50, 100, 200])
@@ -248,13 +249,13 @@ foldsSet = numpy.arange(2, 13, 2)
 #datasetNames = ModelSelectUtils.getRatschDatasets()
 datasetNames = ModelSelectUtils.getRegressionDatasets()
 fileNameSuffix = 'Results'
-#summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
+summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
 
 #plotResults("waveform", sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
 
 #Now run some extended results
 sampleSizes = numpy.array([500])
-foldsSet = numpy.arange(10, 51, 10)
+foldsSet = numpy.arange(2, 13, 2)
 cvScalings = numpy.arange(0.8, 1.81, 0.2)
 sampleMethods = ["CV"]
 datasetNames = ModelSelectUtils.getRegressionDatasets()
