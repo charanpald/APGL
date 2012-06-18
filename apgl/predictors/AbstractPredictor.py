@@ -514,7 +514,7 @@ class AbstractPredictor(object):
         """
         return self.parallelPenaltyGrid(trainX, trainY, testX, testY, paramDict, computeTestError)
    
-    def getParamsArray(self, trainX, trainY, fullX, fullY, paramDict, errorFunc=computeIdealPenalty): 
+    def getParamsArray(self, paramDict): 
         """
         A method to return an array of parameters for a given paramDict 
         """
