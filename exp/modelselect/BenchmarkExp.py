@@ -261,13 +261,16 @@ def shuffleSplit90(repetitions, numExamples):
     """
     return Sampling.shuffleSplit(repetitions, numExamples, 0.9)
 
+def repCrossValidation3(folds, numExamples): 
+    return Sampling.repCrossValidation(folds, numExamples, repetitions=3)
+
 if len(sys.argv) > 1:
     numProcesses = int(sys.argv[1])
 else: 
     numProcesses = multiprocessing.cpu_count()
 
 
-sampleMethods = [("CV", Sampling.crossValidation), ("SS", Sampling.shuffleSplit), ("SS66", shuffleSplit66), ("SS90", shuffleSplit90)]
+sampleMethods = [("CV", Sampling.crossValidation), ("SS", Sampling.shuffleSplit), ("SS66", shuffleSplit66), ("SS90", shuffleSplit90), ("RCV", repCrossValidation3)]
 cvScalings = numpy.arange(0.8, 1.81, 0.2)
 
 sampleSizes = numpy.array([50, 100, 200])
