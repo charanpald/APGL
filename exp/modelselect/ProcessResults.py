@@ -237,14 +237,14 @@ def plotResults(datasetName, sampleSizes, foldsSet, cvScalings, sampleMethods, f
     plt.show()
 
 #outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/SVR/"
-outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/DTRP/"
-#outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/CART/"
+#outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/DTRP/"
+outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/CART/"
 
 #First output the fine grained results 
 sampleSizes = numpy.array([50, 100, 200])
 sampleMethods = ["CV","SS", "SS66", "SS90"]
 #sampleMethods = ["SS66", "SS90"]
-cvScalings = numpy.arange(0.8, 1.81, 0.2)
+cvScalings = numpy.arange(0.6, 1.61, 0.2)
 foldsSet = numpy.arange(2, 13, 2)
 #datasetNames = ModelSelectUtils.getRatschDatasets()
 datasetNames = ModelSelectUtils.getRegressionDatasets()
