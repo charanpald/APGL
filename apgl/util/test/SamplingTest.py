@@ -79,7 +79,22 @@ class  SamplingTest(unittest.TestCase):
             self.assertTrue(indices[i][0].shape[0] == trainSize)
 
         indices = Sampling.shuffleSplit(folds, numExamples, 0.55)
-        #print(indices)
+    
+    def testRepCrossValidation(self): 
+        numExamples = 10
+        folds = 3
+        repetitions = 1
+
+        indices = Sampling.repCrossValidation(folds, numExamples, repetitions)
+        
+        for i in range(folds):
+            self.assertTrue((numpy.union1d(indices[i][0], indices[i][1]) == numpy.arange(numExamples)).all())
+        
+        repetitions = 2
+        indices = Sampling.repCrossValidation(folds, numExamples, repetitions)
+        
+        for i in range(folds):
+            self.assertTrue((numpy.union1d(indices[i][0], indices[i][1]) == numpy.arange(numExamples)).all())
 
 if __name__ == '__main__':
     unittest.main()
