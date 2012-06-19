@@ -19,12 +19,16 @@ dataDir += "modelPenalisation/regression/"
 
 loadMethod = ModelSelectUtils.loadRegressDataset
 datasets = ModelSelectUtils.getRegressionDatasets(True)
-datasetName, numRealisations = datasets[0]
+datasetName, numRealisations = datasets[2]
 
 logging.debug("Dataset " + datasetName)
 
 errors = numpy.zeros(numRealisations)
-sampleMethod = Sampling.crossValidation
+
+def repCrossValidation(folds, numExamples): 
+    return Sampling.repCrossValidation(folds, numExamples, repetitions=3)
+
+sampleMethod = repCrossValidation
 
 numProcesses = multiprocessing.cpu_count()
 learner = DecisionTreeLearner(criterion="mse", maxDepth=50, minSplit=2, pruneType="CART", processes=numProcesses)
@@ -37,7 +41,7 @@ alpha = 0.6
 folds = 5
 numRealisations = 10
 numMethods = 3
-sampleSize = 200 
+sampleSize = 50 
 Cvs = numpy.array([folds-1])*alpha
 
 meanCvGrid = numpy.zeros((numMethods, paramDict["setGamma"].shape[0]))
@@ -46,6 +50,8 @@ meanTrainError = numpy.zeros(paramDict["setGamma"].shape[0])
 meanErrors = numpy.zeros(numMethods)
 meanDepths = numpy.zeros(numMethods)
 meanSizes = numpy.zeros(numMethods)
+
+treeSizes = numpy.zeros(paramDict["setGamma"].shape[0])
 
 for j in range(numRealisations):
     print("")
@@ -88,6 +94,14 @@ for j in range(numRealisations):
     meanDepths[2] += bestLearner.tree.depth()
     meanSizes[2] += bestLearner.tree.getNumVertices()
     
+    #Compute tree sizes 
+    i = 0 
+    for gamma in paramDict["setGamma"]: 
+        learner.setGamma(gamma)
+        learner.learnModel(trainX, trainY)
+        treeSizes[i] = learner.tree.getNumVertices()
+        i +=1 
+    
 meanCvGrid /=  numRealisations   
 meanPenalties /=  numRealisations   
 meanTrainError /=  numRealisations   
@@ -99,6 +113,8 @@ print("\n")
 print("meanErrors=" + str(meanErrors))
 print("meanDepths=" + str(meanDepths))
 print("meanSizes=" + str(meanSizes))
+
+print("treeSizes=" + str(treeSizes))
 
 plt.figure(0)
 plt.plot(paramDict["setGamma"], meanCvGrid[0, :], label="CV")
