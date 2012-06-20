@@ -369,22 +369,23 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         testY = y[numTrain+numValid:]
         
         learner = DecisionTreeLearner(pruneType="none", maxDepth=10, minSplit=2)
-        learner.learnModel(trainX, trainY)
-        numVertices = learner.tree.getNumVertices()        
+        learner.learnModel(trainX, trainY)    
         
         learner = DecisionTreeLearner(pruneType="CART", maxDepth=10, minSplit=2, gamma=1000)
         learner.learnModel(trainX, trainY)
-        self.assertEquals(learner.tree.getNumVertices(), numVertices)
-        
-        learner = DecisionTreeLearner(pruneType="CART", maxDepth=10, minSplit=2, gamma=200)
-        learner.learnModel(trainX, trainY)
-        print(learner.getGamma())
-        print(learner.tree.getNumVertices())
-        self.assertTrue(learner.tree.getNumVertices(), numVertices)
-        
+        self.assertTrue(learner.tree.getNumVertices() <= 1000)
         predY = learner.predict(trainX)
+
+        learner.setGamma(200)
+        learner.learnModel(trainX, trainY)
+        self.assertTrue(learner.tree.getNumVertices() <= 200)
         
-        learner = DecisionTreeLearner(pruneType="none", maxDepth=3, gamma=100)
+        learner.setGamma(100)
+        learner.learnModel(trainX, trainY)
+        self.assertTrue(learner.tree.getNumVertices() <= 100)
+        
+
+        learner = DecisionTreeLearner(pruneType="none", maxDepth=10, minSplit=2)
         learner.learnModel(trainX, trainY)
         predY2 = learner.predict(trainX)
         
@@ -394,6 +395,7 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         #Full pruning 
         learner = DecisionTreeLearner(pruneType="CART", maxDepth=3, gamma=1)
         learner.learnModel(trainX, trainY)
+        self.assertEquals(learner.tree.getNumVertices(), 1)
         
         
      

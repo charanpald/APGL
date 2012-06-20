@@ -24,6 +24,7 @@ class DecisionTreeLearner(AbstractPredictor):
         self.setGamma(gamma)
         self.folds = 5
         self.processes = processes
+        self.alphas = numpy.array([])
     
     def learnModel(self, X, y):
         nodeId = (0, )         
@@ -264,11 +265,11 @@ class DecisionTreeLearner(AbstractPredictor):
         
         while self.tree.getNumVertices() > self.gamma and i >= 0: 
             #print(self.alphas[i], self.tree.getNumVertices())
-            alphaThreshold = self.alphas[i]  
+            alphaThreshold = self.alphas[i] 
             toPrune = []
             
             for vertexId in self.tree.getAllVertexIds(): 
-                if self.tree.getVertex(vertexId).alpha > alphaThreshold: 
+                if self.tree.getVertex(vertexId).alpha >= alphaThreshold: 
                     toPrune.append(vertexId)
 
             for vertexId in toPrune: 
