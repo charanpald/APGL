@@ -9,7 +9,7 @@ from apgl.util.Parameter import Parameter
 from apgl.util.Evaluator import Evaluator
     
 class DecisionTreeLearner(AbstractPredictor): 
-    def __init__(self, criterion="mse", maxDepth=10, minSplit=30, type="reg", pruneType="none", gamma=0.0, folds=5, processes=None):
+    def __init__(self, criterion="mse", maxDepth=10, minSplit=30, type="reg", pruneType="none", gamma=1000, folds=5, processes=None):
         """
         Need a minSplit for the internal nodes and one for leaves. 
         
@@ -252,20 +252,31 @@ class DecisionTreeLearner(AbstractPredictor):
         self.tree.getVertex(rootId).setTestInds(numpy.arange(validX.shape[0]))
         self.recursiveSetPrune(validX, validY, rootId)        
         self.computeAlphas()        
-        self.recursivePrune(rootId)
+        self.prune()
                             
-    def recursivePrune(self, nodeId): 
+    def prune(self): 
         """
-        We prune as early as possible.   
+        We prune as early as possible and make sure the final tree has at most 
+        gamma vertices. 
         """
-        node = self.tree.getVertex(nodeId)
+        i = self.alphas.shape[0]-1 
+        #print(self.alphas)
+        
+        while self.tree.getNumVertices() > self.gamma and i >= 0: 
+            #print(self.alphas[i], self.tree.getNumVertices())
+            alphaThreshold = self.alphas[i]  
+            toPrune = []
+            
+            for vertexId in self.tree.getAllVertexIds(): 
+                if self.tree.getVertex(vertexId).alpha > alphaThreshold: 
+                    toPrune.append(vertexId)
 
-        if node.alpha > self.getAlphaThreshold(): 
-            self.tree.pruneVertex(nodeId)
-        else: 
-            for childId in [self.getLeftChildId(nodeId), self.getRightChildId(nodeId)]: 
-                if self.tree.vertexExists(childId):
-                    self.recursivePrune(childId)
+            for vertexId in toPrune: 
+                if self.tree.vertexExists(vertexId):
+                    self.tree.pruneVertex(vertexId)                    
+                    
+            i -= 1
+
                     
     def cartPrune(self, trainX, trainY): 
         """
@@ -277,7 +288,7 @@ class DecisionTreeLearner(AbstractPredictor):
         self.tree.getVertex(rootId).setTestInds(numpy.arange(trainX.shape[0]))
         self.recursiveSetPrune(trainX, trainY, rootId)        
         self.computeCARTAlphas(trainX)    
-        self.recursivePrune(rootId)
+        self.prune()
                 
     def cvPrune(self, validX, validY): 
         """
@@ -334,7 +345,7 @@ class DecisionTreeLearner(AbstractPredictor):
                         child.setTestInds(tempTestInds[childInds])
         
         self.computeAlphas()
-        self.recursivePrune(rootId)
+        self.prune()
         
     def copy(self): 
         """
@@ -355,7 +366,10 @@ class DecisionTreeLearner(AbstractPredictor):
         return self.alphas[numpy.round((1-self.gamma)*(self.alphas.shape[0]-1))]        
         
     def setGamma(self, gamma): 
-        Parameter.checkFloat(gamma, 0.0, 1.0)
+        """
+        Gamma is an upper bound on the number of nodes in the tree. 
+        """
+        Parameter.checkInt(gamma, 1, float("inf"))
         self.gamma = gamma
         
     def getGamma(self): 

@@ -234,78 +234,15 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         nptst.assert_array_equal(inds, numpy.arange(testY.shape[0]))
         
         
-    
-    def testPrune(self):
-        numExamples = 500
-        X, y = data.make_regression(numExamples)  
         
-        y = Standardiser().standardiseArray(y)
-        
-        numTrain = numpy.round(numExamples * 0.66)     
-        
-        trainX = X[0:numTrain, :]
-        trainY = y[0:numTrain]
-        testX = X[numTrain:, :]
-        testY = y[numTrain:]
-        
-        #In this case we set alpha = maxAlpha which is 0.0 
-        learner = DecisionTreeLearner(gamma=0.0)
-        learner.learnModel(trainX, trainY)
-        
-        vertexIds = learner.tree.getAllVertexIds()         
-        
-        learner.repPrune(trainX, trainY)
-        self.assertEquals(learner.maxAlpha, 0.0)
-        
-        vertexIds2 = learner.tree.getAllVertexIds() 
-        
-        #No pruning if we test using training set 
-        self.assertEquals(vertexIds, vertexIds2)
-        
-        #Now prune using test set 
-        learner.setGamma(1.0)
-        learner.repPrune(testX, testY)
-        toPrune = []
-        
-        for  vertexId in learner.tree.getAllVertexIds(): 
-            if learner.tree.getVertex(vertexId).alpha > 0: 
-                toPrune.append(vertexId)       
-        
-        learner.setGamma(0.0)
-        learner.repPrune(testX, testY)
-        
-        self.assertTrue((0, 0, 1, 0) not in learner.tree.getAllVertexIds())
-        
-        #Now try max pruning 
-        learner.setGamma(1.0)
-        learner.repPrune(testX, testY)
-        self.assertEquals(learner.tree.getNumVertices(), 1)
-    
-    def testRecursivePrune(self): 
+    def testprune(self): 
         learner = DecisionTreeLearner(minSplit=5)
         learner.learnModel(self.X, self.y)
         
         unprunedTree = learner.getTree().copy()
-             
-        learner.minAlpha = float("inf")
-        learner.maxAlpha = -float("inf")                  
-             
-        #Now randomly assign alpha values 
-        for vertexId in learner.tree.getAllVertexIds(): 
-            learner.tree.getVertex(vertexId).alpha = numpy.random.randn()
-            
-            if learner.tree.getVertex(vertexId).alpha < learner.minAlpha:
-                    learner.minAlpha = learner.tree.getVertex(vertexId).alpha 
-                
-            if learner.tree.getVertex(vertexId).alpha > learner.maxAlpha: 
-                learner.maxAlpha = learner.tree.getVertex(vertexId).alpha
-
-        learner.recursivePrune((0,))
         
-        for vertexId in learner.tree.getAllVertexIds(): 
-            if learner.tree.getVertex(vertexId).alpha > learner.getAlphaThreshold(): 
-                self.assertTrue(learner.tree.isLeaf(vertexId))
-                
+        learner.cartPrune(self.X, self.y)
+    
         self.assertTrue(learner.tree.isSubtree(unprunedTree))
         
     
@@ -331,11 +268,11 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         
         #print(learner.getTree())
         unprunedTree = learner.tree.copy() 
-        learner.setGamma(0.0)
+        learner.setGamma(1000)
         learner.cvPrune(trainX, trainY)
         
         self.assertEquals(unprunedTree.getNumVertices(), learner.tree.getNumVertices())
-        learner.setGamma(0.5)
+        learner.setGamma(100)
         learner.cvPrune(trainX, trainY)
         
         #Test if pruned tree is subtree of current: 
@@ -416,7 +353,7 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         print(error)
 
     def testCARTPrune(self): 
-        numExamples = 200
+        numExamples = 500
         X, y = data.make_regression(numExamples)  
         
         y = Standardiser().standardiseArray(y)
@@ -431,12 +368,23 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         testX = X[numTrain+numValid:, :]
         testY = y[numTrain+numValid:]
         
-        learner = DecisionTreeLearner(pruneType="CART", maxDepth=3, gamma=0.0)
+        learner = DecisionTreeLearner(pruneType="none", maxDepth=10, minSplit=2)
         learner.learnModel(trainX, trainY)
+        numVertices = learner.tree.getNumVertices()        
+        
+        learner = DecisionTreeLearner(pruneType="CART", maxDepth=10, minSplit=2, gamma=1000)
+        learner.learnModel(trainX, trainY)
+        self.assertEquals(learner.tree.getNumVertices(), numVertices)
+        
+        learner = DecisionTreeLearner(pruneType="CART", maxDepth=10, minSplit=2, gamma=200)
+        learner.learnModel(trainX, trainY)
+        print(learner.getGamma())
+        print(learner.tree.getNumVertices())
+        self.assertTrue(learner.tree.getNumVertices(), numVertices)
         
         predY = learner.predict(trainX)
         
-        learner = DecisionTreeLearner(pruneType="none", maxDepth=3, gamma=0.0)
+        learner = DecisionTreeLearner(pruneType="none", maxDepth=3, gamma=100)
         learner.learnModel(trainX, trainY)
         predY2 = learner.predict(trainX)
         
@@ -444,7 +392,7 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         nptst.assert_array_equal(predY, predY2)
         
         #Full pruning 
-        learner = DecisionTreeLearner(pruneType="CART", maxDepth=3, gamma=1.0)
+        learner = DecisionTreeLearner(pruneType="CART", maxDepth=3, gamma=1)
         learner.learnModel(trainX, trainY)
         
         
