@@ -80,14 +80,14 @@ def getSetup(learnerName, dataDir, outputDir, numProcesses):
         paramDict["setGamma"] = numpy.linspace(0.0, 1.0, 10) 
         paramDict["setPruneCV"] = numpy.arange(6, 11, 2, numpy.int)
     elif learnerName=="CART": 
-        learner = DecisionTreeLearner(criterion="mse", maxDepth=30, minSplit=5, pruneType="CART", processes=numProcesses)
+        learner = DecisionTreeLearner(criterion="mse", maxDepth=20, minSplit=5, pruneType="CART", processes=numProcesses)
         learner.setChunkSize(2)
         loadMethod = ModelSelectUtils.loadRegressDataset
         dataDir += "regression/"
         outputDir += "regression/" + learnerName + "/"
 
         paramDict = {} 
-        paramDict["setGamma"] = numpy.linspace(0.0, 1.0, 20) 
+        paramDict["setGamma"] =  2**numpy.arange(1, 12, dtype=numpy.int)-1
     else: 
         raise ValueError("Unknown learnerName: " + learnerName)
                 
@@ -270,7 +270,8 @@ else:
     numProcesses = multiprocessing.cpu_count()
 
 
-sampleMethods = [("CV", Sampling.crossValidation), ("SS", Sampling.shuffleSplit), ("SS66", shuffleSplit66), ("SS90", shuffleSplit90), ("RCV", repCrossValidation3)]
+#sampleMethods = [("CV", Sampling.crossValidation), ("SS", Sampling.shuffleSplit), ("SS66", shuffleSplit66), ("SS90", shuffleSplit90), ("RCV", repCrossValidation3)]
+sampleMethods = [("CV", Sampling.crossValidation)]
 cvScalings = numpy.arange(0.8, 1.81, 0.2)
 
 sampleSizes = numpy.array([50, 100, 200])
@@ -305,7 +306,6 @@ logging.debug("Process id: " + str(os.getpid()))
 #runBenchmarkExp(regressiondatasetNames, extSampleSizes, foldsSet, cvScalings, extSampleMethods, numProcesses, extFileNameSuffix, learnerName)
 
 learnerName = "CART"
-cvScalings = numpy.arange(0.6, 1.61, 0.2)
 runBenchmarkExp(regressiondatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, numProcesses, fileNameSuffix, learnerName)
 findErrorGrid(regressiondatasetNames, numProcesses, "GridResults50", learnerName=learnerName, sampleSize=50)
 findErrorGrid(regressiondatasetNames, numProcesses, "GridResults100", learnerName=learnerName, sampleSize=100)

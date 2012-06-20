@@ -19,7 +19,7 @@ dataDir += "modelPenalisation/regression/"
 
 loadMethod = ModelSelectUtils.loadRegressDataset
 datasets = ModelSelectUtils.getRegressionDatasets(True)
-datasetName, numRealisations = datasets[2]
+datasetName, numRealisations = datasets[5]
 
 logging.debug("Dataset " + datasetName)
 
@@ -35,13 +35,13 @@ learner = DecisionTreeLearner(criterion="mse", maxDepth=50, minSplit=2, pruneTyp
 learner.setChunkSize(3)
 
 paramDict = {} 
-paramDict["setGamma"] = numpy.linspace(0.0, 1.0, 20) 
+paramDict["setGamma"] = 2**numpy.arange(1, 12, dtype=numpy.int)-1
 
 alpha = 0.6
 folds = 5
 numRealisations = 10
 numMethods = 3
-sampleSize = 50 
+sampleSize = 100 
 Cvs = numpy.array([folds-1])*alpha
 
 meanCvGrid = numpy.zeros((numMethods, paramDict["setGamma"].shape[0]))
@@ -117,17 +117,17 @@ print("meanSizes=" + str(meanSizes))
 print("treeSizes=" + str(treeSizes))
 
 plt.figure(0)
-plt.plot(paramDict["setGamma"], meanCvGrid[0, :], label="CV")
-plt.plot(paramDict["setGamma"], meanCvGrid[1, :], label="Pen")
-plt.plot(paramDict["setGamma"], meanCvGrid[2, :], label="Test")
-plt.xlabel("Gamma")
+plt.plot(numpy.log2(paramDict["setGamma"]), meanCvGrid[0, :], label="CV")
+plt.plot(numpy.log2(paramDict["setGamma"]), meanCvGrid[1, :], label="Pen")
+plt.plot(numpy.log2(paramDict["setGamma"]), meanCvGrid[2, :], label="Test")
+plt.xlabel("log(gamma)")
 plt.ylabel("Error/Penalty")
 plt.legend()
 
 plt.figure(1)
-plt.plot(paramDict["setGamma"], meanPenalties, label="Penalty")
-plt.plot(paramDict["setGamma"], meanTrainError, label="Train Error")
-plt.xlabel("Gamma")
+plt.plot(numpy.log2(paramDict["setGamma"]), meanPenalties, label="Penalty")
+plt.plot(numpy.log2(paramDict["setGamma"]), meanTrainError, label="Train Error")
+plt.xlabel("log(gamma)")
 plt.ylabel("Error/Penalty")
 plt.legend()
     
