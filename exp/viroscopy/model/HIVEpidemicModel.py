@@ -6,7 +6,7 @@ from exp.viroscopy.model.HIVGraph import HIVGraph
 from exp.viroscopy.model.HIVVertices import HIVVertices
 
 class HIVEpidemicModel():
-    def __init__(self, graph, rates, T=100.0):
+    def __init__(self, graph, rates, T=100.0, T0=0.0):
         """
         This class models an epidemic occuring via sexual contact. We create an 
         epidemic model with a HIVGraph and a class which models the rate of 
@@ -15,6 +15,8 @@ class HIVEpidemicModel():
         :param graph: Initial HIVGraph to use for modelling 
         
         :param rates: A class modelling the event rates in the model 
+        
+        :param T0: This is the starting time of the simulation 
         """
         Parameter.checkClass(graph, HIVGraph)
 
@@ -25,6 +27,7 @@ class HIVEpidemicModel():
         self.setPrintStep(10000)
         self.breakFunc = None
         self.standardiseResults = True
+        self.T0 = T0
 
     def setBreakFunction(self, breakFunc):
         """
@@ -97,7 +100,7 @@ class HIVEpidemicModel():
         contactList = list(contactSet)
 
         vList = self.graph.getVertexList()
-        t = 0
+        t = self.T0
         times = [t]
         #A list of lists of infected indices 
         infectedIndices = [infectedList]
@@ -222,7 +225,7 @@ class HIVEpidemicModel():
         """
         Make sure that the results for the simulations are recorded for all times
         """
-        idealTimes = list(range(0, int(self.T), self.recordStep))
+        idealTimes = range(int(self.T0), int(self.T), self.recordStep)
 
         newInfectedIndices = []
         newRemovedIndices = []
