@@ -1325,6 +1325,8 @@ class AbstractMatrixGraph(AbstractSingleGraph):
     wFilename = "weightMatrix.mtx"
     metaFilename = "metaDict.dat"
     verticesFilename = "vertices"
+    
+    size = property(getNumVertices, doc="The number of vertices in the graph")
 
     matExt = ".mtx"
     boolExt = ".dir"
