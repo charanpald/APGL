@@ -1,8 +1,7 @@
 """
 A script to estimate the HIV epidemic model parameters using ABC.
 """
-from apgl.graph.SparseGraph import SparseGraph
-from apgl.graph.GraphStatistics import GraphStatistics
+
 from apgl.util import *
 from exp.viroscopy.model.HIVGraph import HIVGraph
 from exp.viroscopy.model.HIVABCParameters import HIVABCParameters
@@ -11,13 +10,11 @@ from exp.viroscopy.model.HIVRates import HIVRates
 from exp.viroscopy.model.HIVModelUtils import HIVModelUtils
 from exp.viroscopy.model.HIVGraphMetrics import HIVGraphMetrics2
 from apgl.predictors.ABCSMC import ABCSMC
-from apgl.util.ProfileUtils import ProfileUtils 
 
 import logging
 import sys
 import numpy
 import multiprocessing
-import scipy.stats 
 
 FORMAT = "%(levelname)s:root:%(process)d:%(message)s"
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format=FORMAT)
