@@ -96,7 +96,7 @@ class HIVGraphMetrics2(object):
 
         for i in range(self.times.shape[0]): 
             t = self.times[i]     
-            subgraph = graph.subgraph(graph.infectedIndsAt(t))   
+            subgraph = graph.subgraph(graph.removedIndsAt(t))   
             summaryList.append(subgraph)
         
         return summaryList 
