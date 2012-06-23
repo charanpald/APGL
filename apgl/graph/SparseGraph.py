@@ -152,8 +152,10 @@ class SparseGraph(AbstractMatrixGraph):
 
         :returns: A numpy.ndarray weight matrix.
         """
-
-        return self.W.toarray()
+        if self.getVertexList().getNumVertices() != 0: 
+            return self.W.toarray()
+        else: 
+            return numpy.zeros((0, 0))
 
     def getSparseWeightMatrix(self):
         """
