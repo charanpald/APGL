@@ -105,11 +105,11 @@ class HIVEpidemicModel():
         #A list of lists of infected indices 
         infectedIndices = [infectedList]
         removedIndices = [removedList]
-        nextStep = self.recordStep
-        nextPrintStep = 0
+        nextStep = t + self.recordStep
+        nextPrintStep = t
         numContacts = 0 
 
-        logging.debug("Starting simulation")
+        logging.debug("Starting simulation at time " + str(t) + " with graph of size " + str(self.graph.size))
 
         #Now, start the simulation
         while t < self.T and len(infectedSet) != 0:
