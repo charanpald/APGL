@@ -28,7 +28,8 @@ hivReader = HIVGraphReader()
 targetGraph = hivReader.readSimulationHIVGraph()
 
 numTimeSteps = 20 
-T, recordStep, printStep, M = HIVModelUtils.defaultSimulationParams()
+recordStep = 100 
+printStep = 100 
 #This needs to be from 1986 to 2004 
 M = targetGraph.size * 2
 startDate = CsvConverters.dateConv("01/01/1984")
@@ -37,13 +38,10 @@ endDate = CsvConverters.dateConv("31/12/2004")
 times = numpy.linspace(startDate, endDate, numTimeSteps)
 graphMetrics = HIVGraphMetrics2(times)
 
-print(type(targetGraph))
-
 realSummary = graphMetrics.summary(targetGraph)
 epsilonArray = numpy.array([0.8, 0.6, 0.5])*numTimeSteps
 
 def breakFunc(graph, currentTime): 
-    print(graph.size, realSummary[0].size)
     return graphMetrics.shouldBreak(realSummary, graph, epsilonArray[0], currentTime)
 
 def createModel(t):
@@ -51,7 +49,7 @@ def createModel(t):
     The parameter t is the particle index. 
     """
     undirected = True
-    T, recordStep, printStep, M = HIVModelUtils.defaultSimulationParams()
+    M = targetGraph.size * 2
     graph = HIVGraph(M, undirected)
     
     alpha = 2
@@ -60,7 +58,7 @@ def createModel(t):
     hiddenDegSeq = Util.randomChoice(p, graph.getNumVertices())
 
     rates = HIVRates(graph, hiddenDegSeq)
-    model = HIVEpidemicModel(graph, rates, T, T0=startDate)
+    model = HIVEpidemicModel(graph, rates, T=float(endDate), T0=float(startDate))
     model.setRecordStep(recordStep)
     model.setPrintStep(printStep)
     model.setBreakFunction(breakFunc) 
