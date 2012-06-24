@@ -567,24 +567,24 @@ class AbstractMatrixGraph(AbstractSingleGraph):
         try:
             os.chdir(tempPath)
 
-            self.saveMatrix(self.W, self.wFilename)
-            vListFilename = self.vList.save(self.verticesFilename)
+            self.saveMatrix(self.W, self._wFilename)
+            vListFilename = self.vList.save(self._verticesFilename)
 
             metaDict = {}
             metaDict["version"] = apgl.__version__
             metaDict["undirected"] = self.undirected
             metaDict["vListType"] = self.vList.__class__.__name__
-            Util.savePickle(metaDict, self.metaFilename)
+            Util.savePickle(metaDict, self._metaFilename)
 
             myzip = zipfile.ZipFile(filename + '.zip', 'w')
-            myzip.write(self.wFilename)
+            myzip.write(self._wFilename)
             myzip.write(vListFilename)
-            myzip.write(self.metaFilename)
+            myzip.write(self._metaFilename)
             myzip.close()
 
-            os.remove(self.wFilename)
+            os.remove(self._wFilename)
             os.remove(vListFilename)
-            os.remove(self.metaFilename)
+            os.remove(self._metaFilename)
             
             shutil.move(filename + ".zip", path + "/" + filename + '.zip')
         finally:
@@ -626,15 +626,15 @@ class AbstractMatrixGraph(AbstractSingleGraph):
 
             #Deal with legacy files 
             try:
-                W = cls.loadMatrix(cls.wFilename)
-                metaDict = Util.loadPickle(cls.metaFilename)
-                vList = globals()[metaDict["vListType"]].load(cls.verticesFilename)
+                W = cls.loadMatrix(cls._wFilename)
+                metaDict = Util.loadPickle(cls._metaFilename)
+                vList = globals()[metaDict["vListType"]].load(cls._verticesFilename)
                 undirected = metaDict["undirected"]
 
             except IOError:
-                W = cls.loadMatrix(filename + cls.matExt)
+                W = cls.loadMatrix(filename + cls._matExt)
                 vList = VertexList.load(filename)
-                undirected = Util.loadPickle(filename + cls.boolExt)
+                undirected = Util.loadPickle(filename + cls._boolExt)
 
             graph = cls(vList, undirected)
             graph.W = W
@@ -1322,12 +1322,14 @@ class AbstractMatrixGraph(AbstractSingleGraph):
 
     vList = None
     undirected = None
-    wFilename = "weightMatrix.mtx"
-    metaFilename = "metaDict.dat"
-    verticesFilename = "vertices"
+    _wFilename = "weightMatrix.mtx"
+    _metaFilename = "metaDict.dat"
+    _verticesFilename = "vertices"
+    _matExt = ".mtx"
+    _boolExt = ".dir"
     
     size = property(getNumVertices, doc="The number of vertices in the graph")
+    vlist = property(getVertexList, doc="The vertex list")
 
-    matExt = ".mtx"
-    boolExt = ".dir"
+
 
