@@ -148,6 +148,33 @@ class GraphMatchTest(unittest.TestCase):
         distance = GraphMatch(alpha=alpha).distance(graph1, graph1, permutation, True, True)
         self.assertEquals(distance, 0)
         
+        #Now, just one graph is empty 
+        alpha = 0.0
+        permutation = numpy.arange(10, dtype=numpy.int)
+        distance = GraphMatch(alpha=alpha).distance(self.graph1, graph1, permutation, True, True)
+        self.assertEquals(distance, 1.0)
+        
+        permutation = numpy.arange(10, dtype=numpy.int)
+        distance = GraphMatch(alpha=alpha).distance(self.graph2, graph1, permutation, True, True)
+        self.assertEquals(distance, 1.0)
+        
+        distance = GraphMatch(alpha=alpha).distance(self.graph1, graph1, permutation, False, False)
+        self.assertEquals(distance, numpy.linalg.norm(self.graph1.getWeightMatrix())**2)
+        
+        alpha = 1.0
+        permutation = numpy.arange(10, dtype=numpy.int)
+        distance = GraphMatch(alpha=alpha).distance(self.graph1, graph1, permutation, True, True)
+        self.assertEquals(distance, 1.0)
+        
+        permutation = numpy.arange(10, dtype=numpy.int)
+        distance = GraphMatch(alpha=alpha).distance(self.graph2, graph1, permutation, True, True)
+        self.assertEquals(distance, 1.0)
+        
+        alpha = 0.5
+        permutation = numpy.arange(10, dtype=numpy.int)
+        distance = GraphMatch(alpha=alpha).distance(self.graph2, graph1, permutation, True, True)
+        self.assertEquals(distance, 1.0)
+        
     def testDistance2(self): 
         permutation = numpy.arange(self.numVertices)
         dist =  GraphMatch(alpha=0.0).distance2(self.graph1, self.graph1, permutation)

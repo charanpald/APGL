@@ -145,14 +145,25 @@ class GraphMatch(object):
         return permutation, distanceVector, time 
         
     def vertexSimilarities(self, graph1, graph2): 
-        if graph1.size == 0 or graph2.size == 0: 
+        """
+        Each vertex array is normalised to have norm 1 and we then compute the 
+        similarity as 2 - dist(v1, v2). 
+        """        
+        
+        if graph1.size == 0 and graph2.size == 0: 
             return numpy.zeros((graph1.size, graph2.size)) 
         
-        V1 = graph1.getVertexList().getVertices()
-        V2 = graph2.getVertexList().getVertices()
+        V1 = graph1.vlist.getVertices()
+        V2 = graph2.vlist.getVertices()
         
         V1 = Standardiser().normaliseArray(V1.T).T
         V2 = Standardiser().normaliseArray(V2.T).T
+         
+        #Extend arrays with zeros to make them the same size
+        if V1.shape[0] < V2.shape[0]: 
+            V1 = Util.extendArray(V1, (V2.shape[0], V2.shape[1]))
+        elif V2.shape[0] < V1.shape[0]: 
+            V2 = Util.extendArray(V2, (V1.shape[0], V1.shape[1]))
           
         #Let's compute C as the distance between vertices 
         #Distance is bounded by 2 
@@ -194,11 +205,7 @@ class GraphMatch(object):
         
         #Now compute the vertex similarities trace         
         C = self.vertexSimilarities(graph1, graph2)
-        
-        if C.shape[0] != C.shape[1]: 
-            n = max(C.shape[0], C.shape[1])
-            C = Util.extendArray(C, (n,n))
-        
+
         dist2 = numpy.trace(C.T.dot(P))
         
         if normalised: 
