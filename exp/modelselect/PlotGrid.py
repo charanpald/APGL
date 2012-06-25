@@ -6,7 +6,6 @@ import logging
 import sys
 import matplotlib.pyplot as plt
 from apgl.util.PathDefaults import PathDefaults
-from apgl.predictors.LibSVM import LibSVM
 from exp.modelselect.ModelSelectUtils import ModelSelectUtils
 from operator import itemgetter
 
@@ -27,10 +26,90 @@ def plotErrorGrid(plt, Cs, gammas, errorGrid, title, regression):
     top10 = numpy.array(sorted(error10,key=itemgetter(2)))[0:10, :]
     plt.scatter(top10[:, 0], top10[:, 1])
 
+def plotErrorGridCART(plt, gammas, errorGrid, title):    
+    plt.plot(numpy.log2(gammas), errorGrid, label=title)
+    plt.xlabel("log(gamma)")
+    plt.ylabel("error")
+    plt.title(title)
+    
+def plotGridsCART(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix, regression=False): 
+    figInd = 0 
+    for i in range(len(datasetNames)):
+        figInd = 0 
+        for m in range(len(sampleMethods)):
+            logging.debug(datasetNames[i] + " " + sampleMethods[m])
+
+            #Print the errors
+            for n in range(sampleSizes.shape[0]):
+    
+                outfileName = outputDir + datasetNames[i] + "GridResults" + str(sampleSizes[n]) + ".npz"
+                data = numpy.load(outfileName)
+                errors = data["arr_0"]
+                meanErrors = numpy.mean(errors, 0)
+                stdErrors = numpy.std(errors, 0)     
+                
+                
+                j = 1
+                plt.figure(figInd)
+                #plt.subplot(3, 3, j)
+                plt.plot(numpy.log2(gammas), meanErrors, label="Accurate")
+                j += 1    
+                
+                outfileName = outputDir + datasetNames[i] + sampleMethods[m] + fileNameSuffix  + ".npz"
+                data = numpy.load(outfileName)
+                meanErrorGrids = data["arr_2"]
+                stdErrorGrids= data["arr_3"]
+                idealGrids = data["arr_4"]
+                stdIdealGrids = data["arr_5"]
+                approxGrids = data["arr_6"]
+                stdApproxGrids = data["arr_7"]
+            
+                sampleSizeInd = n
+                methodInd = 0
+                foldsInd = 1
+                
+                errorGrid = meanErrorGrids[sampleSizeInd, foldsInd, methodInd, :]
+                #plt.subplot(3, 3, j)
+                plt.plot(numpy.log2(gammas), errorGrid, label="CV")
+                j += 1
+                
+                methodInd = 1
+                errorGrid = meanErrorGrids[sampleSizeInd, foldsInd, methodInd, :]
+                #plt.subplot(3, 3, j)
+                plt.plot(numpy.log2(gammas), errorGrid, label="BIC")
+                j += 1
+            
+                for k in range(cvScalings.shape[0]):
+                    methodInd = 2+k
+                    errorGrid = meanErrorGrids[sampleSizeInd, foldsInd, methodInd, :]
+                    #plt.subplot(3, 3, j)
+                    plt.plot(numpy.log2(gammas), errorGrid, label="VFPen Cv=" + str(cvScalings[k]))
+                    j += 1    
+                
+                plt.title("CV Grid n = " + str(sampleSizes[sampleSizeInd]) + " folds = " + str(foldsSet[foldsInd]))
+                plt.legend()
+                plt.xlabel("log(gamma)")
+                plt.ylabel("error")
+                
+                figInd += 1    
+    
+                #Now plot ideal versus approx penalty 
+                grid1 = idealGrids[sampleSizeInd, foldsInd, methodInd, ].flatten()
+                grid2 = approxGrids[sampleSizeInd, foldsInd, methodInd, :].flatten()
+                
+                print(idealGrids.shape, approxGrids.shape)
+                
+                plt.figure(figInd)
+                plt.scatter(grid1, grid2)
+                plt.xlabel("Ideal penalty")
+                plt.ylabel("Approximate penalty")
+                plt.title("Penalty n = " + str(sampleSizes[sampleSizeInd]) + " folds = " + str(foldsSet[foldsInd]))
+                
+                figInd += 1  
+    
+    plt.show()
 
 def plotGrids(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix, regression=False):
-    
-
     for i in range(len(datasetNames)):
         figInd = 0 
         for m in range(len(sampleMethods)):
@@ -43,7 +122,6 @@ def plotGrids(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fi
                 errors = data["arr_0"]
                 meanErrors = numpy.mean(errors, 0)
                 stdErrors = numpy.std(errors, 0)                
-                    
                 
                 j = 1
                 plt.figure(figInd)
@@ -194,16 +272,15 @@ def plotGrids(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fi
 
 #outputDir = PathDefaults.getOutputDir() + "modelPenalisation/classification/"
 #outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/SVR/"
-outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/DTRP/"
+outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/CART/"
 
-svm = LibSVM()
-Cs = svm.getCs()
-gammas = svm.getGammas()
+
 sampleSizes = numpy.array([50, 100, 200])
 foldsSet = numpy.arange(2, 13, 2)
 cvScalings = numpy.arange(0.8, 1.81, 0.2)
 numMethods = 2+cvScalings.shape[0]
-sampleMethods = ["CV","SS", "SS66", "SS90"]
+#sampleMethods = ["CV","SS", "SS66", "SS90"]
+sampleMethods = ["CV"]
 fileNameSuffix = 'Results'
 
 #datasetNames = ModelSelectUtils.getRatschDatasets()
@@ -213,6 +290,9 @@ datasetNames = ModelSelectUtils.getRegressionDatasets()
 #datasetNames = ["abalone"]
 datasetNames = ["comp-activ"]
 
-Cs = 2.0**numpy.arange(-10, 14, 2, dtype=numpy.float)
-gammas = 2.0**numpy.arange(-10, 4, 2, dtype=numpy.float)
-plotGrids(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix, True)
+#Cs = 2.0**numpy.arange(-10, 14, 2, dtype=numpy.float)
+#gammas = 2.0**numpy.arange(-10, 4, 2, dtype=numpy.float)
+#plotGrids(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix, True)
+
+gammas = numpy.array(numpy.round(2**numpy.arange(1, 10, 0.5)-1), dtype=numpy.int)
+plotGridsCART(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
