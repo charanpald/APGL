@@ -97,6 +97,9 @@ def summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, file
             meanApproxGrids = data["arr_6"]
             stdApproxGrids = data["arr_7"]
 
+            #print(params.mean(0))
+            #print(meanErrorGrids[0, 0, 0, :])            
+            
             errorTable, meanErrors, stdErrors = getLatexTable(errors, cvScalings)
 
             wins = getWins(errors)
@@ -238,12 +241,13 @@ def plotResults(datasetName, sampleSizes, foldsSet, cvScalings, sampleMethods, f
 
 #outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/SVR/"
 #outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/DTRP/"
-outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/CART/"
+outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/CART/old/"
 
 #First output the fine grained results 
 sampleSizes = numpy.array([50, 100, 200])
-sampleMethods = ["CV","SS", "SS66", "SS90"]
+#sampleMethods = ["CV","SS", "SS66", "SS90"]
 #sampleMethods = ["SS66", "SS90"]
+sampleMethods = ["CV", "RCV"]
 cvScalings = numpy.arange(0.6, 1.61, 0.2)
 foldsSet = numpy.arange(2, 13, 2)
 #datasetNames = ModelSelectUtils.getRatschDatasets()
@@ -254,9 +258,9 @@ summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileName
 #plotResults("waveform", sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
 
 #Now run some extended results
-sampleSizes = numpy.array([500])
+sampleSizes = numpy.array([25, 50, 100])
 foldsSet = numpy.arange(2, 13, 2)
-cvScalings = numpy.arange(0.8, 1.81, 0.2)
+cvScalings = numpy.arange(0.6, 1.61, 0.2)
 sampleMethods = ["CV"]
 datasetNames = ModelSelectUtils.getRegressionDatasets()
 

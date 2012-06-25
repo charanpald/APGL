@@ -87,7 +87,7 @@ def getSetup(learnerName, dataDir, outputDir, numProcesses):
         outputDir += "regression/" + learnerName + "/"
 
         paramDict = {} 
-        paramDict["setGamma"] =  numpy.round(2**numpy.arange(1, 10, 0.5)-1)
+        paramDict["setGamma"] =  numpy.array(numpy.round(2**numpy.arange(1, 10, 0.5)-1), dtype=numpy.int)
     else: 
         raise ValueError("Unknown learnerName: " + learnerName)
                 
