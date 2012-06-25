@@ -80,7 +80,7 @@ def getSetup(learnerName, dataDir, outputDir, numProcesses):
         paramDict["setGamma"] = numpy.linspace(0.0, 1.0, 10) 
         paramDict["setPruneCV"] = numpy.arange(6, 11, 2, numpy.int)
     elif learnerName=="CART": 
-        learner = DecisionTreeLearner(criterion="mse", maxDepth=20, minSplit=5, pruneType="CART", processes=numProcesses)
+        learner = DecisionTreeLearner(criterion="mse", maxDepth=30, minSplit=1, pruneType="CART", processes=numProcesses)
         learner.setChunkSize(2)
         loadMethod = ModelSelectUtils.loadRegressDataset
         dataDir += "regression/"
