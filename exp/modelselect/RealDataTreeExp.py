@@ -19,7 +19,7 @@ dataDir += "modelPenalisation/regression/"
 
 loadMethod = ModelSelectUtils.loadRegressDataset
 datasets = ModelSelectUtils.getRegressionDatasets(True)
-datasetName, numRealisations = datasets[5]
+datasetName, numRealisations = datasets[7]
 
 logging.debug("Dataset " + datasetName)
 
@@ -28,30 +28,32 @@ errors = numpy.zeros(numRealisations)
 def repCrossValidation(folds, numExamples): 
     return Sampling.repCrossValidation(folds, numExamples, repetitions=3)
 
-sampleMethod = repCrossValidation
+sampleMethod = Sampling.crossValidation
 
+#Setting maxDepth = 50 and minSplit = 5 doesn't effect results 
 numProcesses = multiprocessing.cpu_count()
-learner = DecisionTreeLearner(criterion="mse", maxDepth=50, minSplit=2, pruneType="CART", processes=numProcesses)
+learner = DecisionTreeLearner(criterion="mse", maxDepth=20, minSplit=5, pruneType="CART", processes=numProcesses)
 learner.setChunkSize(3)
 
 paramDict = {} 
-paramDict["setGamma"] = 2**numpy.arange(1, 12, dtype=numpy.int)-1
+paramDict["setGamma"] = numpy.array(numpy.round(2**numpy.arange(1, 10, 0.5)-1), dtype=numpy.int)
+numParams = paramDict["setGamma"].shape[0]
 
-alpha = 0.6
+alpha = 1.0
 folds = 5
 numRealisations = 10
 numMethods = 3
 sampleSize = 100 
 Cvs = numpy.array([folds-1])*alpha
 
-meanCvGrid = numpy.zeros((numMethods, paramDict["setGamma"].shape[0]))
-meanPenalties = numpy.zeros(paramDict["setGamma"].shape[0])
-meanTrainError = numpy.zeros(paramDict["setGamma"].shape[0])
+meanCvGrid = numpy.zeros((numMethods, numParams))
+meanPenalties = numpy.zeros(numParams)
+meanTrainError = numpy.zeros(numParams)
 meanErrors = numpy.zeros(numMethods)
 meanDepths = numpy.zeros(numMethods)
 meanSizes = numpy.zeros(numMethods)
 
-treeSizes = numpy.zeros(paramDict["setGamma"].shape[0])
+treeSizes = numpy.zeros(numParams)
 
 for j in range(numRealisations):
     print("")
