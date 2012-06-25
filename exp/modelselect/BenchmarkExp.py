@@ -87,7 +87,7 @@ def getSetup(learnerName, dataDir, outputDir, numProcesses):
         outputDir += "regression/" + learnerName + "/"
 
         paramDict = {} 
-        paramDict["setGamma"] =  2**numpy.arange(1, 12, dtype=numpy.int)-1
+        paramDict["setGamma"] =  numpy.round(2**numpy.arange(1, 10, 0.5)-1)
     else: 
         raise ValueError("Unknown learnerName: " + learnerName)
                 
@@ -271,7 +271,7 @@ else:
 
 
 #sampleMethods = [("CV", Sampling.crossValidation), ("SS", Sampling.shuffleSplit), ("SS66", shuffleSplit66), ("SS90", shuffleSplit90), ("RCV", repCrossValidation3)]
-sampleMethods = [("CV", Sampling.crossValidation), ("RCV", repCrossValidation3)]
+sampleMethods = [("CV", Sampling.crossValidation)]
 cvScalings = numpy.arange(0.6, 1.61, 0.2)
 
 sampleSizes = numpy.array([50, 100, 200])
