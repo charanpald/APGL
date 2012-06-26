@@ -19,7 +19,10 @@ dataDir += "modelPenalisation/regression/"
 
 loadMethod = ModelSelectUtils.loadRegressDataset
 datasets = ModelSelectUtils.getRegressionDatasets(True)
-datasetName, numRealisations = datasets[7]
+datasetName, numRealisations = datasets[0]
+
+#Comp-activ and concrete are bad cases 
+#pumadyn-32nh is good one 
 
 logging.debug("Dataset " + datasetName)
 
@@ -32,14 +35,14 @@ sampleMethod = Sampling.crossValidation
 
 #Setting maxDepth = 50 and minSplit = 5 doesn't effect results 
 numProcesses = multiprocessing.cpu_count()
-learner = DecisionTreeLearner(criterion="mse", maxDepth=20, minSplit=5, pruneType="CART", processes=numProcesses)
+learner = DecisionTreeLearner(criterion="mse", maxDepth=100, minSplit=1, pruneType="CART", processes=numProcesses)
 learner.setChunkSize(3)
 
 paramDict = {} 
 paramDict["setGamma"] = numpy.array(numpy.round(2**numpy.arange(1, 10, 0.5)-1), dtype=numpy.int)
 numParams = paramDict["setGamma"].shape[0]
 
-alpha = 1.0
+alpha = 1
 folds = 5
 numRealisations = 10
 numMethods = 3
@@ -54,6 +57,7 @@ meanDepths = numpy.zeros(numMethods)
 meanSizes = numpy.zeros(numMethods)
 
 treeSizes = numpy.zeros(numParams)
+treeDepths = numpy.zeros(numParams)
 
 for j in range(numRealisations):
     print("")
@@ -102,6 +106,7 @@ for j in range(numRealisations):
         learner.setGamma(gamma)
         learner.learnModel(trainX, trainY)
         treeSizes[i] = learner.tree.getNumVertices()
+        treeDepths[i] = learner.tree.depth()
         i +=1 
     
 meanCvGrid /=  numRealisations   
@@ -117,6 +122,7 @@ print("meanDepths=" + str(meanDepths))
 print("meanSizes=" + str(meanSizes))
 
 print("treeSizes=" + str(treeSizes))
+print("treeDepths=" + str(treeDepths))
 
 plt.figure(0)
 plt.plot(numpy.log2(paramDict["setGamma"]), meanCvGrid[0, :], label="CV")
