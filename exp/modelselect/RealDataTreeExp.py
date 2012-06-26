@@ -46,7 +46,7 @@ alpha = 1
 folds = 5
 numRealisations = 10
 numMethods = 4
-sampleSize = 200 
+sampleSize = 300 
 Cvs = numpy.array([folds-1])*alpha
 
 meanCvGrid = numpy.zeros((numMethods, numParams))
@@ -64,7 +64,7 @@ for j in range(numRealisations):
     print("")
     logging.debug("j=" + str(j))
     trainX, trainY, testX, testY = loadMethod(dataDir, datasetName, j)
-    logging.debug("Loaded dataset with " + str(trainX.shape) " train and " + str(testX.shape) + " test examples")
+    logging.debug("Loaded dataset with " + str(trainX.shape) +  " train and " + str(testX.shape) + " test examples")
     
     trainInds = numpy.random.permutation(trainX.shape[0])[0:sampleSize]
     trainX = trainX[trainInds,:]
