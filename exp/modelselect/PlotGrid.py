@@ -52,7 +52,7 @@ def plotGridsCART(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods
                 j = 1
                 plt.figure(figInd)
                 #plt.subplot(3, 3, j)
-                plt.plot(numpy.log2(gammas), meanErrors, label="Accurate")
+                plt.plot(numpy.log2(gammas), meanErrors, ".-", label="Accurate")
                 j += 1    
                 
                 outfileName = outputDir + datasetNames[i] + sampleMethods[m] + fileNameSuffix  + ".npz"
@@ -70,7 +70,7 @@ def plotGridsCART(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods
                 
                 errorGrid = meanErrorGrids[sampleSizeInd, foldsInd, methodInd, :]
                 #plt.subplot(3, 3, j)
-                plt.plot(numpy.log2(gammas), errorGrid, label="CV")
+                plt.plot(numpy.log2(gammas), errorGrid, "--", label="CV")
                 j += 1
                 
                 methodInd = 1
@@ -97,8 +97,6 @@ def plotGridsCART(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods
                 grid1 = idealGrids[sampleSizeInd, foldsInd, methodInd, ].flatten()
                 grid2 = approxGrids[sampleSizeInd, foldsInd, methodInd, :].flatten()
                 
-                print(idealGrids.shape, approxGrids.shape)
-                
                 plt.figure(figInd)
                 plt.scatter(grid1, grid2)
                 plt.xlabel("Ideal penalty")
@@ -107,7 +105,7 @@ def plotGridsCART(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods
                 
                 figInd += 1  
     
-    plt.show()
+        plt.show()
 
 def plotGrids(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix, regression=False):
     for i in range(len(datasetNames)):
@@ -277,7 +275,7 @@ outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/CART/"
 
 sampleSizes = numpy.array([50, 100, 200])
 foldsSet = numpy.arange(2, 13, 2)
-cvScalings = numpy.arange(0.8, 1.81, 0.2)
+cvScalings = numpy.arange(0.6, 1.61, 0.2)
 numMethods = 2+cvScalings.shape[0]
 #sampleMethods = ["CV","SS", "SS66", "SS90"]
 sampleMethods = ["CV"]
@@ -288,7 +286,7 @@ datasetNames = ModelSelectUtils.getRegressionDatasets()
 #datasetNames = ["add10"] 
 #datasetNames = ["slice-loc"]
 #datasetNames = ["abalone"]
-datasetNames = ["comp-activ"]
+#datasetNames = ["comp-activ"]
 
 #Cs = 2.0**numpy.arange(-10, 14, 2, dtype=numpy.float)
 #gammas = 2.0**numpy.arange(-10, 4, 2, dtype=numpy.float)
