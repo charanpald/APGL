@@ -19,7 +19,7 @@ dataDir += "modelPenalisation/regression/"
 
 loadMethod = ModelSelectUtils.loadRegressDataset
 datasets = ModelSelectUtils.getRegressionDatasets(True)
-datasetName, numRealisations = datasets[0]
+datasetName, numRealisations = datasets[3]
 
 #Comp-activ and concrete are bad cases 
 #pumadyn-32nh is good one 
@@ -45,8 +45,8 @@ numParams = paramDict["setGamma"].shape[0]
 alpha = 1
 folds = 5
 numRealisations = 10
-numMethods = 3
-sampleSize = 100 
+numMethods = 4
+sampleSize = 200 
 Cvs = numpy.array([folds-1])*alpha
 
 meanCvGrid = numpy.zeros((numMethods, numParams))
@@ -58,12 +58,13 @@ meanSizes = numpy.zeros(numMethods)
 
 treeSizes = numpy.zeros(numParams)
 treeDepths = numpy.zeros(numParams)
+treeLeaveSizes = numpy.zeros(numParams)
 
 for j in range(numRealisations):
     print("")
     logging.debug("j=" + str(j))
     trainX, trainY, testX, testY = loadMethod(dataDir, datasetName, j)
-    logging.debug("Loaded dataset")
+    logging.debug("Loaded dataset with " + str(trainX.shape) " train and " + str(testX.shape) + " test examples")
     
     trainInds = numpy.random.permutation(trainX.shape[0])[0:sampleSize]
     trainX = trainX[trainInds,:]
@@ -100,13 +101,32 @@ for j in range(numRealisations):
     meanDepths[2] += bestLearner.tree.depth()
     meanSizes[2] += bestLearner.tree.getNumVertices()
     
-    #Compute tree sizes 
+    #Compute true error grid using only training data 
+    methodInd = 3
+    cvGrid  = learner.parallelSplitGrid(trainX, trainY, trainX, trainY, paramDict)    
+    meanCvGrid[methodInd, :] += cvGrid
+    bestLearner.setGamma(paramDict["setGamma"][numpy.argmin(cvGrid)])
+    bestLearner.learnModel(trainX, trainY)
+    predY = bestLearner.predict(testX)
+    meanErrors[methodInd] += bestLearner.getMetricMethod()(testY, predY)
+    meanDepths[methodInd] += bestLearner.tree.depth()
+    meanSizes[methodInd] += bestLearner.tree.getNumVertices()
+    
+    #Compute tree properties 
     i = 0 
     for gamma in paramDict["setGamma"]: 
         learner.setGamma(gamma)
         learner.learnModel(trainX, trainY)
         treeSizes[i] = learner.tree.getNumVertices()
         treeDepths[i] = learner.tree.depth()
+        
+        tempMean = 0 
+        for leaf in learner.tree.leaves(): 
+            tempMean += learner.tree.getVertex(leaf).getTrainInds().shape[0]
+
+        tempMean /= float(len(learner.tree.leaves()))
+        treeLeaveSizes[i] += tempMean 
+        
         i +=1 
     
 meanCvGrid /=  numRealisations   
@@ -115,19 +135,23 @@ meanTrainError /=  numRealisations
 meanErrors /=  numRealisations 
 meanDepths /= numRealisations
 meanSizes /= numRealisations
+treeLeaveSizes /= numRealisations
 
 print("\n")
 print("meanErrors=" + str(meanErrors))
 print("meanDepths=" + str(meanDepths))
 print("meanSizes=" + str(meanSizes))
 
+print("Test error" + str(meanCvGrid[2, :]))
 print("treeSizes=" + str(treeSizes))
 print("treeDepths=" + str(treeDepths))
+print("treeLeaveSizes=" + str(treeLeaveSizes))
 
 plt.figure(0)
 plt.plot(numpy.log2(paramDict["setGamma"]), meanCvGrid[0, :], label="CV")
 plt.plot(numpy.log2(paramDict["setGamma"]), meanCvGrid[1, :], label="Pen")
 plt.plot(numpy.log2(paramDict["setGamma"]), meanCvGrid[2, :], label="Test")
+plt.plot(numpy.log2(paramDict["setGamma"]), meanCvGrid[3, :], label="Train Error")
 plt.xlabel("log(gamma)")
 plt.ylabel("Error/Penalty")
 plt.legend()
