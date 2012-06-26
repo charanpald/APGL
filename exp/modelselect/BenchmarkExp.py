@@ -51,15 +51,6 @@ def getSetup(learnerName, dataDir, outputDir, numProcesses):
         paramDict = {} 
         paramDict["setMaxDepth"] = numpy.arange(1, 31, 2)
         paramDict["setMinSplit"] = 2**numpy.arange(1, 7, dtype=numpy.int) 
-    elif learnerName=="DTR": 
-        learner = DecisionTree(criterion="mse", type="reg")
-        loadMethod = ModelSelectUtils.loadRegressDataset
-        dataDir += "regression/"
-        outputDir += "regression/" + learnerName + "/"
-
-        paramDict = {} 
-        paramDict["setMaxDepth"] = numpy.arange(1, 31, 2)
-        paramDict["setMinSplit"] = 2**numpy.arange(1, 7, dtype=numpy.int) 
     elif learnerName=="RFR": 
         learner = RandomForest(criterion="mse", type="reg")
         loadMethod = ModelSelectUtils.loadRegressDataset
@@ -69,16 +60,6 @@ def getSetup(learnerName, dataDir, outputDir, numProcesses):
         paramDict = {} 
         paramDict["setNumTrees"] = 2**numpy.arange(3, 9, 2, dtype=numpy.int) 
         paramDict["setMinSplit"] = 2**numpy.arange(2, 6, dtype=numpy.int) 
-    elif learnerName=="DTRP": 
-        learner = DecisionTreeLearner(criterion="mse", maxDepth=30, minSplit=5, pruneType="REP-CV", processes=numProcesses)
-        learner.setChunkSize(2)
-        loadMethod = ModelSelectUtils.loadRegressDataset
-        dataDir += "regression/"
-        outputDir += "regression/" + learnerName + "/"
-
-        paramDict = {} 
-        paramDict["setGamma"] = numpy.linspace(0.0, 1.0, 10) 
-        paramDict["setPruneCV"] = numpy.arange(6, 11, 2, numpy.int)
     elif learnerName=="CART": 
         learner = DecisionTreeLearner(criterion="mse", maxDepth=30, minSplit=1, pruneType="CART", processes=numProcesses)
         learner.setChunkSize(2)
