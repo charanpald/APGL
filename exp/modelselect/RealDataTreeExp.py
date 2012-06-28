@@ -22,7 +22,7 @@ figInd = 0
 loadMethod = ModelSelectUtils.loadRegressDataset
 datasets = ModelSelectUtils.getRegressionDatasets(True)
 
-datasets = [datasets[0]]
+datasets = [datasets[5]]
 
 for datasetName, numRealisations in datasets:
     #Comp-activ and concrete are bad cases 
@@ -46,7 +46,7 @@ for datasetName, numRealisations in datasets:
     paramDict["setGamma"] = numpy.array(numpy.round(2**numpy.arange(1, 10, 0.5)-1), dtype=numpy.int)
     numParams = paramDict["setGamma"].shape[0]
     
-    alpha = 1
+    alpha = 1.0
     folds = 5
     numRealisations = 10
     numMethods = 4
@@ -55,6 +55,8 @@ for datasetName, numRealisations in datasets:
     
     meanCvGrid = numpy.zeros((numMethods, numParams))
     meanPenalties = numpy.zeros(numParams)
+    meanIdealPenalities = numpy.zeros(numParams)
+    meanAllErrors = numpy.zeros(numParams) 
     meanTrainError = numpy.zeros(numParams)
     meanErrors = numpy.zeros(numMethods)
     meanDepths = numpy.zeros(numMethods)
@@ -94,6 +96,19 @@ for datasetName, numRealisations in datasets:
         meanErrors[1] += bestLearner.getMetricMethod()(testY, predY)
         meanDepths[1] += bestLearner.tree.depth()
         meanSizes[1] += bestLearner.tree.getNumVertices()
+        
+        #Compute ideal penalties and error on training data 
+        meanIdealPenalities += learner.parallelPenaltyGrid(trainX, trainY, testX, testY, paramDict)
+        for i in range(len(paramDict["setGamma"])):
+            allError = 0    
+            learner.setGamma(paramDict["setGamma"][i])
+            for trainInds, testInds in idx: 
+                validX = trainX[trainInds, :]
+                validY = trainY[trainInds]
+                learner.learnModel(validX, validY)
+                predY = learner.predict(trainX)
+                allError += learner.getMetricMethod()(predY, trainY)
+            meanAllErrors[i] += allError/float(len(idx))
         
         #Compute true error grid 
         cvGrid  = learner.parallelSplitGrid(trainX, trainY, testX, testY, paramDict)    
@@ -137,11 +152,13 @@ for datasetName, numRealisations in datasets:
         
     meanCvGrid /=  numRealisations   
     meanPenalties /=  numRealisations   
+    meanIdealPenalities /= numRealisations
     meanTrainError /=  numRealisations   
     meanErrors /=  numRealisations 
     meanDepths /= numRealisations
     meanSizes /= numRealisations
     treeLeaveSizes /= numRealisations
+    meanAllErrors /= numRealisations
     
     print("\n")
     print("meanErrors=" + str(meanErrors))
@@ -161,15 +178,17 @@ for datasetName, numRealisations in datasets:
     plt.xlabel("log(gamma)")
     plt.ylabel("Error/Penalty")
     plt.legend()
-    plt.savefig("error_" + datasetName + ".eps")
+    #plt.savefig("error_" + datasetName + ".eps")
     figInd += 1
     
     plt.figure(figInd)
     plt.plot(numpy.log2(paramDict["setGamma"]), meanPenalties, label="Penalty")
-    plt.plot(numpy.log2(paramDict["setGamma"]), meanTrainError, label="Train Error")
+    plt.plot(numpy.log2(paramDict["setGamma"]), meanIdealPenalities, label="Ideal Penalty")
+    plt.plot(numpy.log2(paramDict["setGamma"]), meanTrainError, label="Valid Error")
+    plt.plot(numpy.log2(paramDict["setGamma"]), meanAllErrors, label="Train Error")
     plt.xlabel("log(gamma)")
     plt.ylabel("Error/Penalty")
     plt.legend()
     figInd += 1
     
-plt.show()
+    plt.show()
