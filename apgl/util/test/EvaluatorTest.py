@@ -137,6 +137,20 @@ class  EvaluatorTestCase(unittest.TestCase):
         self.assertEquals(Evaluator.binaryBootstrapError(testY, testY, trainY, predTrainY, 0.1), 0.9)
 
         self.assertEquals(Evaluator.binaryBootstrapError(testY, predY, trainY, trainY, 0.1), 0.1)
+        
+    def testMeanAbsError(self): 
+        testY = numpy.array([1, 2, 1.5])
+        predY = numpy.array([2, 1, 0.5]) 
+        
+        self.assertEquals(Evaluator.meanAbsError(testY, predY), 1.0)
+        self.assertEquals(Evaluator.meanAbsError(testY, testY), 0.0)
+        
+        testY = numpy.random.rand(10)
+        predY = numpy.random.rand(10)
+        
+        error = numpy.abs(testY - predY).mean()
+        self.assertEquals(error, Evaluator.meanAbsError(testY, predY))
+    
 if __name__ == '__main__':
     unittest.main()
 
