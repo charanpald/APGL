@@ -54,6 +54,23 @@ class Evaluator(object):
             raise ValueError("Labels vector much be same dimensions as predicted labels")
 
         return numpy.linalg.norm(testY - predY)/numpy.sqrt(testY.size)
+    
+    @staticmethod
+    def meanAbsError(testY, predY): 
+        if testY.shape[0] != predY.shape[0]:
+            raise ValueError("Labels vector much be same dimensions as predicted labels")
+            
+        return numpy.abs(testY - predY).mean()
+    
+    @staticmethod
+    def meanSqError(testY, predY):
+        """
+        This is the error given by the mean squared difference between examamples 
+        """
+        if testY.shape[0] != predY.shape[0]:
+            raise ValueError("Labels vector much be same dimensions as predicted labels")
+
+        return ((testY - predY)**2).mean()
 
     @staticmethod
     def evaluateWindowError(D, windowSize, pairIndices):
