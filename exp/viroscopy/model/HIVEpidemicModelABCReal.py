@@ -17,6 +17,8 @@ import sys
 import numpy
 import multiprocessing
 
+assert False, "Must run with -O flag"
+
 FORMAT = "%(levelname)s:root:%(process)d:%(message)s"
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format=FORMAT)
 numpy.set_printoptions(suppress=True, precision=4, linewidth=100)
