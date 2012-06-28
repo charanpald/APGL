@@ -357,7 +357,9 @@ class DecisionTreeLearner(AbstractPredictor):
         
     def getMetricMethod(self): 
         if self.type == "reg": 
-            return Evaluator.rootMeanSqError
+            #return Evaluator.rootMeanSqError
+            #return Evaluator.meanAbsError
+            return Evaluator.meanSqError
         else:
             return Evaluator.binaryError      
             
