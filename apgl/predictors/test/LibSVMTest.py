@@ -421,7 +421,7 @@ class LibSVMTest(unittest.TestCase):
                         svm.setEpsilon(epsilon)
                         svm.learnModel(trainX, trainY)
                         predY = svm.predict(testX)
-                        error += Evaluator.rootMeanSqError(predY, testY)
+                        error += svm.getMetricMethod()(predY, testY)
 
                     meanErrors2[j, k, i] = error/len(idx)
 
@@ -514,12 +514,12 @@ class LibSVMTest(unittest.TestCase):
                         svm.learnModel(trainX, trainY)
                         predY = svm.predict(self.X)
                         predTrainY = svm.predict(trainX)
-                        penalty += Evaluator.rootMeanSqError(predY, self.y) - Evaluator.rootMeanSqError(predTrainY, trainY)
+                        penalty += svm.getMetricMethod()(predY, self.y) - svm.getMetricMethod()(predTrainY, trainY)
 
                     penalty = penalty*Cv[0]/len(idx)
                     svm.learnModel(self.X, self.y)
                     predY = svm.predict(self.X)
-                    meanErrors2[j, k, i] = Evaluator.rootMeanSqError(predY, self.y) + penalty
+                    meanErrors2[j, k, i] = svm.getMetricMethod()(predY, self.y) + penalty
 
                     if meanErrors2[j, k, i] < bestError:
                         bestC = C
@@ -667,7 +667,7 @@ class LibSVMTest(unittest.TestCase):
                     svm.learnModel(trainX, trainY)
                     predY = svm.predict(self.X)
                     predTrainY = svm.predict(trainX)
-                    penalty = Evaluator.rootMeanSqError(predY, self.y) - Evaluator.rootMeanSqError(predTrainY, trainY)
+                    penalty = svm.getMetricMethod()(predY, self.y) - svm.getMetricMethod()(predTrainY, trainY)
 
                     idealPenalties2[j, k, i] = penalty
 
@@ -751,7 +751,7 @@ class LibSVMTest(unittest.TestCase):
                     svm.learnModel(trainX, trainY)
                     predY = svm.predict(self.X)
                     predTrainY = svm.predict(trainX)
-                    penalty = Evaluator.rootMeanSqError(predY, self.y) - Evaluator.rootMeanSqError(predTrainY, trainY)
+                    penalty = svm.getMetricMethod()(predY, self.y) - svm.getMetricMethod()(predTrainY, trainY)
 
                     idealPenalties2[j, k, i] = penalty
 

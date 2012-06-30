@@ -59,7 +59,7 @@ class LibSVM(AbstractPredictor):
         if self.type == "Epsilon_SVR":
             self.model = SVR(C=self.C, kernel=self.kernel, degree=self.kernelParam, gamma=self.kernelParam, epsilon=self.epsilon, tol=self.tol)
         elif self.type == "C_SVC":
-            self.model = SVC(C=self.C, kernel=self.kernel, degree=self.kernelParam, gamma=self.kernelParam, tol=self.tol)
+            self.model = SVC(C=self.C, kernel=self.kernel, degree=self.kernelParam, gamma=self.kernelParam, tol=self.tol, class_weight={-1:1, 1:self.errorCost})
         else:
             raise ValueError("Invalid type : " + str(type))
 
@@ -145,8 +145,9 @@ class LibSVM(AbstractPredictor):
             from sklearn.svm import SVC 
         except:
             raise 
-
-        self.model.fit(X, y, class_weight={-1:1, 1:self.errorCost})
+        
+        self.__updateParams()
+        self.model.fit(X, y)
 
     def classify(self, X):
         try:
