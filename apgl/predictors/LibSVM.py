@@ -116,7 +116,8 @@ class LibSVM(AbstractPredictor):
         if self.getType() == "C_SVC":
             return Evaluator.binaryError
         else:
-            return Evaluator.rootMeanSqError
+            #return Evaluator.rootMeanSqError
+            return Evaluator.meanAbsError
         
 
     def setErrorCost(self, errorCost):
