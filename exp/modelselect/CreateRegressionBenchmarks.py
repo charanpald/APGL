@@ -49,7 +49,7 @@ def processSimpleDataset(name, numRealisations, split, ext=".csv", delimiter=","
     idx = Sampling.shuffleSplit(numRealisations, X.shape[0], split)
     preprocessSave(X, y, outputDir, idx)
 
-def processParkinsonsDataset(name):
+def processParkinsonsDataset(name, numRealisations):
     numpy.random.seed(21)
     dataDir = PathDefaults.getDataDir() + "modelPenalisation/regression/"
     fileName = dataDir + name + ".data"
@@ -64,7 +64,6 @@ def processParkinsonsDataset(name):
     #We don't keep whole collections of patients
     split = 0.5
 
-    numRealisations = 100
     idx = Sampling.shuffleSplit(numRealisations, X.shape[0], split)
 
     outputDir = PathDefaults.getDataDir() + "modelPenalisation/regression/" + name + "-motor/"
@@ -73,14 +72,14 @@ def processParkinsonsDataset(name):
     outputDir = PathDefaults.getDataDir() + "modelPenalisation/regression/" + name + "-total/"
     preprocessSave(X, y2, outputDir, idx)
 
-numRealisations = 100 
-#processSimpleDataset("winequality-white", numRealisations, 2.0/3.0, delimiter=";")
-#processSimpleDataset("winequality-red", numRealisations, 2.0/3.0, delimiter=";")
-#processSimpleDataset("concrete", numRealisations, 0.3)
-#processSimpleDataset("slice-loc", numRealisations, 0.5, usecols=tuple(range(1, 386)))
-#processParkinsonsDataset("parkinsons")
-#processSimpleDataset("abalone", numRealisations, 0.2, ext=".data", delimiter=",", skiprows=0) 
-#processSimpleDataset("comp-activ", numRealisations, 0.3, ext=".data", delimiter=" ", usecols=tuple(range(1, 24)), skiprows=0) 
-#processSimpleDataset("add10", numRealisations, 0.3, ext=".data", delimiter=" ", skiprows=0) 
+numRealisations = 200 
 
+processSimpleDataset("abalone", numRealisations, 0.2, ext=".data", delimiter=",", skiprows=0) 
+processSimpleDataset("add10", numRealisations, 0.3, ext=".data", delimiter=" ", skiprows=0) 
+processSimpleDataset("comp-activ", numRealisations, 0.3, ext=".data", delimiter=" ", usecols=tuple(range(1, 24)), skiprows=0) 
+processSimpleDataset("concrete", numRealisations, 0.3)
+processParkinsonsDataset("parkinsons", numRealisations)
 processSimpleDataset("pumadyn-32nh", numRealisations, 0.4, ext=".data", delimiter=None, skiprows=0) 
+processSimpleDataset("slice-loc", numRealisations, 0.5, usecols=tuple(range(1, 386)))
+processSimpleDataset("winequality-red", numRealisations, 2.0/3.0, delimiter=";")
+processSimpleDataset("winequality-white", numRealisations, 2.0/3.0, delimiter=";")
