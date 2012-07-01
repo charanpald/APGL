@@ -291,4 +291,4 @@ runBenchmarkExp(regressiondatasetNames, extSampleSizes, extFoldsSet, cvScalings,
 #findErrorGrid(regressiondatasetNames, numProcesses, "GridResults50", learnerName=learnerName, sampleSize=50)
 #findErrorGrid(regressiondatasetNames, numProcesses, "GridResults100", learnerName=learnerName, sampleSize=100)
 #findErrorGrid(regressiondatasetNames, numProcesses, "GridResults200", learnerName=learnerName, sampleSize=200)
-#runBenchmarkExp(regressiondatasetNames, extSampleSizes, foldsSet, cvScalings, extSampleMethods, numProcesses, extFileNameSuffix, learnerName)
+#runBenchmarkExp(regressiondatasetNames, extSampleSizes, extFoldsSet, cvScalings, extSampleMethods, numProcesses, extFileNameSuffix, learnerName)
