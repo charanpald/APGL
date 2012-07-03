@@ -22,7 +22,7 @@ figInd = 0
 loadMethod = ModelSelectUtils.loadRegressDataset
 datasets = ModelSelectUtils.getRegressionDatasets(True)
 
-datasets = [datasets[5]]
+#datasets = [datasets[1]]
 
 for datasetName, numRealisations in datasets:
     #Comp-activ and concrete are bad cases 
@@ -47,10 +47,10 @@ for datasetName, numRealisations in datasets:
     numParams = paramDict["setGamma"].shape[0]
     
     alpha = 1.0
-    folds = 5
+    folds = 10
     numRealisations = 10
     numMethods = 4
-    sampleSize = 100 
+    sampleSize = 200 
     Cvs = numpy.array([folds-1])*alpha
     
     meanCvGrid = numpy.zeros((numMethods, numParams))
@@ -181,8 +181,13 @@ for datasetName, numRealisations in datasets:
     #plt.savefig("error_" + datasetName + ".eps")
     figInd += 1
     
+    sigma = 5
+    idealAlphas = meanIdealPenalities/meanPenalties
+    estimatedAlpha = (1-numpy.exp(-sigma*meanTrainError)) + (float(folds)/(folds-1))*numpy.exp(-sigma*meanTrainError)    
+    
     plt.figure(figInd)
     plt.plot(numpy.log2(paramDict["setGamma"]), meanPenalties, label="Penalty")
+    plt.plot(numpy.log2(paramDict["setGamma"]), meanPenalties*estimatedAlpha, label="Corrected Penalty")
     plt.plot(numpy.log2(paramDict["setGamma"]), meanIdealPenalities, label="Ideal Penalty")
     plt.plot(numpy.log2(paramDict["setGamma"]), meanTrainError, label="Valid Error")
     plt.plot(numpy.log2(paramDict["setGamma"]), meanAllErrors, label="Train Error")
@@ -190,5 +195,20 @@ for datasetName, numRealisations in datasets:
     plt.ylabel("Error/Penalty")
     plt.legend()
     figInd += 1
+    
+
+    plt.figure(figInd)
+    plt.scatter(idealAlphas[4:], meanTrainError[4:])
+    plt.xlabel("Ideal Alpha")
+    plt.ylabel("Train Error")
+    figInd += 1
+    
+    plt.figure(figInd)
+    plt.scatter(idealAlphas[4:], estimatedAlpha[4:])
+    plt.xlabel("Ideal Alpha")
+    plt.ylabel("Estimated alpha")    
+    
+    print("Ideal alphas=" + str(idealAlphas))
+    print(estimatedAlpha)
     
     plt.show()
