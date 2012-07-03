@@ -68,7 +68,7 @@ def getSetup(learnerName, dataDir, outputDir, numProcesses):
         outputDir += "regression/" + learnerName + "/"
 
         paramDict = {} 
-        paramDict["setGamma"] =  numpy.array(numpy.round(2**numpy.arange(1, 10, 0.5)-1), dtype=numpy.int)
+        paramDict["setGamma"] =  numpy.array(numpy.round(2**numpy.arange(1, 7.5, 0.5)-1), dtype=numpy.int)
     else: 
         raise ValueError("Unknown learnerName: " + learnerName)
                 
@@ -272,23 +272,16 @@ regressiondatasetNames = ModelSelectUtils.getRegressionDatasets(True)
 logging.debug("Using " + str(numProcesses) + " processes")
 logging.debug("Process id: " + str(os.getpid()))
 
-runBenchmarkExp(regressiondatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, numProcesses, fileNameSuffix, "SVR")
-findErrorGrid(regressiondatasetNames, numProcesses, "GridResults50", learnerName="SVR", sampleSize=50)
-findErrorGrid(regressiondatasetNames, numProcesses, "GridResults100", learnerName="SVR", sampleSize=100)
-findErrorGrid(regressiondatasetNames, numProcesses, "GridResults200", learnerName="SVR", sampleSize=200)
-runBenchmarkExp(regressiondatasetNames, extSampleSizes, extFoldsSet, cvScalings, extSampleMethods, numProcesses, extFileNameSuffix, "SVR")
-
-#learnerName = "DTRP"
-#runBenchmarkExp(regressiondatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, numProcesses, fileNameSuffix, learnerName)
-#findErrorGrid(regressiondatasetNames, numProcesses, "GridResults50", learnerName=learnerName, sampleSize=50)
-#findErrorGrid(regressiondatasetNames, numProcesses, "GridResults100", learnerName=learnerName, sampleSize=100)
-#findErrorGrid(regressiondatasetNames, numProcesses, "GridResults200", learnerName=learnerName, sampleSize=200)
-#extSampleSizes = numpy.array([500])
-#runBenchmarkExp(regressiondatasetNames, extSampleSizes, foldsSet, cvScalings, extSampleMethods, numProcesses, extFileNameSuffix, learnerName)
-
-#learnerName = "CART"
+#learnerName = SVR
 #runBenchmarkExp(regressiondatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, numProcesses, fileNameSuffix, learnerName)
 #findErrorGrid(regressiondatasetNames, numProcesses, "GridResults50", learnerName=learnerName, sampleSize=50)
 #findErrorGrid(regressiondatasetNames, numProcesses, "GridResults100", learnerName=learnerName, sampleSize=100)
 #findErrorGrid(regressiondatasetNames, numProcesses, "GridResults200", learnerName=learnerName, sampleSize=200)
 #runBenchmarkExp(regressiondatasetNames, extSampleSizes, extFoldsSet, cvScalings, extSampleMethods, numProcesses, extFileNameSuffix, learnerName)
+
+learnerName = "CART"
+runBenchmarkExp(regressiondatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, numProcesses, fileNameSuffix, learnerName)
+findErrorGrid(regressiondatasetNames, numProcesses, "GridResults50", learnerName=learnerName, sampleSize=50)
+findErrorGrid(regressiondatasetNames, numProcesses, "GridResults100", learnerName=learnerName, sampleSize=100)
+findErrorGrid(regressiondatasetNames, numProcesses, "GridResults200", learnerName=learnerName, sampleSize=200)
+runBenchmarkExp(regressiondatasetNames, extSampleSizes, extFoldsSet, cvScalings, extSampleMethods, numProcesses, extFileNameSuffix, learnerName)
