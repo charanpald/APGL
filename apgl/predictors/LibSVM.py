@@ -117,8 +117,8 @@ class LibSVM(AbstractPredictor):
             return Evaluator.binaryError
         else:
             #return Evaluator.rootMeanSqError
-            #return Evaluator.meanAbsError
-            return Evaluator.meanSqError
+            return Evaluator.meanAbsError
+            #return Evaluator.meanSqError
         
 
     def setErrorCost(self, errorCost):
