@@ -72,7 +72,7 @@ def processParkinsonsDataset(name, numRealisations):
     outputDir = PathDefaults.getDataDir() + "modelPenalisation/regression/" + name + "-total/"
     preprocessSave(X, y2, outputDir, idx)
 
-numRealisations = 200 
+numRealisations = 100 
 
 processSimpleDataset("abalone", numRealisations, 0.2, ext=".data", delimiter=",", skiprows=0) 
 processSimpleDataset("add10", numRealisations, 0.3, ext=".data", delimiter=" ", skiprows=0) 

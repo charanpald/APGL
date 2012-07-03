@@ -85,7 +85,7 @@ class ModelSelectUtils(object):
 
     @staticmethod
     def getRegressionDatasets(withRealisations=False):
-        numRealisations = 200        
+        numRealisations = 100        
         
         datasetNames = []
         datasetNames.append(("abalone", numRealisations))
