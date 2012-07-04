@@ -438,11 +438,20 @@ class AbstractPredictor(object):
         pool.terminate()
 
         #Store v fold penalised error
+        #In the case that Cv < 0 we use the corrected penalisation 
         resultsList = []
         for k in range(Cvs.shape[0]):
             Cv = Cvs[k]
-            logging.debug("Computing penalisation of Cv=" + str(Cv))
-            currentPenalties = penalties*Cv
+            
+            if Cv >= 0: 
+                logging.debug("Computing penalisation of Cv=" + str(Cv))
+                currentPenalties = penalties*Cv
+            else: 
+                logging.debug("Computing corrected penalisation with sigma=" + str(abs(Cv)))
+                sigma = abs(Cv)
+                dynamicCv = (1-numpy.exp(-sigma*trainErrors)) + float(folds)*numpy.exp(-sigma*trainErrors)    
+                currentPenalties = penalties*dynamicCv
+                
             meanErrors = trainErrors + currentPenalties
             
             bestInds = numpy.unravel_index(numpy.argmin(meanErrors), meanErrors.shape)
