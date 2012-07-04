@@ -47,7 +47,7 @@ for datasetName, numRealisations in datasets:
     numParams = paramDict["setGamma"].shape[0]
     
     alpha = 1.0
-    folds = 10
+    folds = 2
     numRealisations = 10
     numMethods = 4
     sampleSize = 200 
@@ -186,12 +186,12 @@ for datasetName, numRealisations in datasets:
     estimatedAlpha = (1-numpy.exp(-sigma*meanTrainError)) + (float(folds)/(folds-1))*numpy.exp(-sigma*meanTrainError)    
     
     plt.figure(figInd)
-    plt.plot(numpy.log2(paramDict["setGamma"]), meanPenalties, label="Penalty")
-    plt.plot(numpy.log2(paramDict["setGamma"]), meanPenalties*estimatedAlpha, label="Corrected Penalty")
-    plt.plot(numpy.log2(paramDict["setGamma"]), meanIdealPenalities, label="Ideal Penalty")
-    plt.plot(numpy.log2(paramDict["setGamma"]), meanTrainError, label="Valid Error")
-    plt.plot(numpy.log2(paramDict["setGamma"]), meanAllErrors, label="Train Error")
-    plt.xlabel("log(gamma)")
+    plt.plot(numpy.log2(treeSizes), meanPenalties, label="Penalty")
+    plt.plot(numpy.log2(treeSizes), meanPenalties*estimatedAlpha, label="Corrected Penalty")
+    plt.plot(numpy.log2(treeSizes), meanIdealPenalities, label="Ideal Penalty")
+    plt.plot(numpy.log2(treeSizes), meanTrainError, label="Valid Error")
+    plt.plot(numpy.log2(treeSizes), meanAllErrors, label="Train Error")
+    plt.xlabel("log(treeSize)")
     plt.ylabel("Error/Penalty")
     plt.legend()
     figInd += 1
