@@ -149,8 +149,8 @@ def runBenchmarkExp(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMetho
                             #v fold penalisation
                             if runVfpen:
                                 logging.debug("Running penalisation using " + str(sampleMethod))
-                                #BIC penalisation
-                                Cv = float((folds-1) * numpy.log(validX.shape[0]) / 2)
+                                #Corrected penalisation
+                                Cv = -5                                
                                 tempCvScalings = cvScalings * (folds-1)
                                 tempCvScalings = numpy.insert(tempCvScalings, 0, Cv)
 
