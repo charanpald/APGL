@@ -292,5 +292,5 @@ datasetNames = ModelSelectUtils.getRegressionDatasets()
 #gammas = 2.0**numpy.arange(-10, 4, 2, dtype=numpy.float)
 #plotGrids(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix, True)
 
-gammas = numpy.array(numpy.round(2**numpy.arange(1, 10, 0.5)-1), dtype=numpy.int)
+gammas = numpy.array(numpy.round(2**numpy.arange(1, 7.5, 0.5)-1), dtype=numpy.int)
 plotGridsCART(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
