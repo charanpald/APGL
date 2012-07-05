@@ -79,11 +79,11 @@ def runBenchmarkExp(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMetho
     outputDir = PathDefaults.getOutputDir() + "modelPenalisation/"
 
     learner, loadMethod, dataDir, outputDir, paramDict = getSetup(learnerName, dataDir, outputDir, numProcesses)
-
+    
+    sigmas = numpy.array([3, 5, 7])
     numParams = len(paramDict.keys())
-    numMethods = 1 + (cvScalings.shape[0] + 1)
-
-    runIdeal = True
+    numMethods = 1 + (cvScalings.shape[0] + sigmas.shape[0])
+    
     runCv = True
     runVfpen = True
 
@@ -110,9 +110,12 @@ def runBenchmarkExp(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMetho
                 gridShape.extend(list(learner.gridShape(paramDict)))   
                 gridShape = tuple(gridShape)
                 
+                idealErrorShape = [numRealisations, len(sampleSizes)]
+                idealErrorShape.extend(list(learner.gridShape(paramDict)))   
+                idealErrorShape = tuple(idealErrorShape)
+                
                 errorGrids = numpy.zeros(errorShape)
                 approxGrids = numpy.zeros(errorShape)
-                idealGrids = numpy.zeros(gridShape)
 
                 for j in range(numRealisations):
                     Util.printIteration(j, 1, numRealisations, "Realisation: ")
@@ -130,42 +133,36 @@ def runBenchmarkExp(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMetho
                             validX = trainX[trainInds,:]
                             validY = trainY[trainInds]
 
-                            #Find ideal penalties
-                            if runIdeal:
-                                logging.debug("Finding ideal grid of penalties")
-                                idealGrids[j, k, m,:] = learner.parallelPenaltyGrid(validX, validY, testX, testY, paramDict)
-
                             #Cross validation
                             if runCv:
                                 logging.debug("Running simple sampling using " + str(sampleMethod))
                                 methodInd = 0
                                 idx = sampleMethod(folds, validY.shape[0])
-                                bestSVM, cvGrid = learner.parallelModelSelect(validX, validY, idx, paramDict)
-                                predY = bestSVM.predict(testX)
-                                errors[j, k, m, methodInd] = bestSVM.getMetricMethod()(testY, predY)
-                                params[j, k, m, methodInd, :] = bestSVM.getParamsArray(paramDict)
+                                bestLearner, cvGrid = learner.parallelModelSelect(validX, validY, idx, paramDict)
+                                predY = bestLearner.predict(testX)
+                                errors[j, k, m, methodInd] = bestLearner.getMetricMethod()(testY, predY)
+                                params[j, k, m, methodInd, :] = bestLearner.getParamsArray(paramDict)
                                 errorGrids[j, k, m, methodInd, :] = cvGrid
 
                             #v fold penalisation
                             if runVfpen:
                                 logging.debug("Running penalisation using " + str(sampleMethod))
-                                #Corrected penalisation
-                                Cv = -5                                
+                                #Corrected penalisation give by sigmas 
                                 tempCvScalings = cvScalings * (folds-1)
-                                tempCvScalings = numpy.insert(tempCvScalings, 0, Cv)
-
+                                tempCvScalings = numpy.insert(tempCvScalings, numpy.zeros(sigmas.shape[0]), -sigmas)
+                                
                                 idx = sampleMethod(folds, validY.shape[0])
                                 svmGridResults = learner.parallelPen(validX, validY, idx, paramDict, tempCvScalings)
 
                                 for n in range(len(tempCvScalings)):
-                                    bestSVM, trainErrors, approxGrid = svmGridResults[n]
-                                    predY = bestSVM.predict(testX)
+                                    bestLearner, trainErrors, approxGrid = svmGridResults[n]
+                                    predY = bestLearner.predict(testX)
                                     methodInd = n + 1
-                                    errors[j, k, m, methodInd] = bestSVM.getMetricMethod()(testY, predY)
-                                    params[j, k, m, methodInd, :] = bestSVM.getParamsArray(paramDict)
+                                    errors[j, k, m, methodInd] = bestLearner.getMetricMethod()(testY, predY)
+                                    params[j, k, m, methodInd, :] = bestLearner.getParamsArray(paramDict)
                                     errorGrids[j, k, m, methodInd, :] = trainErrors + approxGrid
                                     approxGrids[j, k, m, methodInd, :] = approxGrid
-
+                        
                 meanErrors = numpy.mean(errors, 0)
                 print(meanErrors)
 
@@ -174,14 +171,11 @@ def runBenchmarkExp(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMetho
 
                 meanErrorGrids = numpy.mean(errorGrids, 0)
                 stdErrorGrids = numpy.std(errorGrids, 0)
-
-                meanIdealGrids = numpy.mean(idealGrids, 0)
-                stdIdealGrids = numpy.std(idealGrids, 0)
-
+            
                 meanApproxGrids = numpy.mean(approxGrids, 0)
                 stdApproxGrids = numpy.std(approxGrids, 0)
 
-                numpy.savez(outfileName, errors, params, meanErrorGrids, stdErrorGrids, meanIdealGrids, stdIdealGrids, meanApproxGrids, stdApproxGrids)
+                numpy.savez(outfileName, errors, params, meanErrorGrids, stdErrorGrids, meanApproxGrids, stdApproxGrids)
                 logging.debug("Saved results as file " + outfileName + ".npz")
                 fileLock.unlock()
             else:
@@ -190,11 +184,16 @@ def runBenchmarkExp(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMetho
     logging.debug("All done!")
 
 
-def findErrorGrid(datasetNames, numProcesses, fileNameSuffix, learnerName="SVM", sampleSize=None): 
+def findErrorGrid(datasetNames, numProcesses, fileNameSuffix, learnerName, sampleSizes): 
     dataDir = PathDefaults.getDataDir() + "modelPenalisation/"
     outputDir = PathDefaults.getOutputDir() + "modelPenalisation/"
 
     learner, loadMethod, dataDir, outputDir, paramDict = getSetup(learnerName, dataDir, outputDir, numProcesses)
+    
+    numParams = len(paramDict.keys())    
+    
+    runIdeal = True 
+    runTest = True 
     
     for i in range(len(datasetNames)):
         logging.debug("Learning using dataset " + datasetNames[i][0])
@@ -206,23 +205,51 @@ def findErrorGrid(datasetNames, numProcesses, fileNameSuffix, learnerName="SVM",
             
             numRealisations = datasetNames[i][1]            
             
-            gridShape = [numRealisations]
+            gridShape = [numRealisations, sampleSizes.shape[0]]
             gridShape.extend(list(learner.gridShape(paramDict)))   
-            gridShape = tuple(gridShape)            
-            errors = numpy.zeros(gridShape)
-    
-            for j in range(numRealisations):
-                Util.printIteration(j, 1, numRealisations, "Realisation: ")
-                trainX, trainY, testX, testY = loadMethod(dataDir, datasetNames[i][0], j)
+            gridShape = tuple(gridShape)   
+            
+            idealPenGrids = numpy.zeros(gridShape)
+            idealErrorGrids = numpy.zeros(gridShape)
+            idealErrors = numpy.zeros((numRealisations, sampleSizes.shape[0]))
                 
-                if sampleSize != None: 
-                    trainInds = numpy.random.permutation(trainX.shape[0])[0:sampleSize]
-                    trainX = trainX[trainInds,:]
-                    trainY = trainY[trainInds]
+            params = numpy.zeros((numRealisations, len(sampleSizes), numParams))    
+            
+            
+            for k in range(sampleSizes.shape[0]):
+                sampleSize = sampleSizes[k]
                 
-                errors[j,:] = learner.parallelPenaltyGrid(trainX, trainY, testX, testY, paramDict, errorFunc=computeTestError)            
-                    
-            numpy.savez(outfileName, errors)
+                logging.debug("Using sample size " + str(sampleSize))
+                for j in range(numRealisations):
+                        Util.printIteration(j, 1, numRealisations, "Realisation: ")
+                        trainX, trainY, testX, testY = loadMethod(dataDir, datasetNames[i][0], j)
+                        
+                        trainInds = numpy.random.permutation(trainX.shape[0])[0:sampleSize]
+                        validX = trainX[trainInds,:]
+                        validY = trainY[trainInds]
+                        
+                        #Find ideal penalties
+                        if runIdeal:
+                            logging.debug("Finding ideal grid of penalties")
+                            idealPenGrids[j, k, :] = learner.parallelPenaltyGrid(validX, validY, testX, testY, paramDict)                        
+                        
+                        #Find ideal model using the test set 
+                        if runTest: 
+                            logging.debug("Running test set sampling") 
+                            cvGrid = learner.parallelSplitGrid(validX, validY, testX, testY, paramDict)
+                            bestLearner = learner.getBestLearner(cvGrid, paramDict, validX, validY)
+                            predY = bestLearner.predict(testX)
+                            idealErrors[j, k] = bestLearner.getMetricMethod()(testY, predY)
+                            params[j, k, :] = bestLearner.getParamsArray(paramDict)
+                            idealErrorGrids[j, k, :] = cvGrid
+            
+            meanIdealPenGrids = idealPenGrids.mean(0)
+            stdIdealPenGrids = idealPenGrids.std(0)
+            
+            meanIdealErrorGrids = idealErrorGrids.mean(0)
+            stdIdealErrorGrids = idealErrorGrids.std(0)
+            
+            numpy.savez(outfileName, idealErrors, params, meanIdealErrorGrids, stdIdealErrorGrids, meanIdealPenGrids, stdIdealPenGrids)
             logging.debug("Saved results as file " + outfileName + ".npz")
             fileLock.unlock()
         else:
@@ -274,14 +301,10 @@ logging.debug("Process id: " + str(os.getpid()))
 
 #learnerName = SVR
 #runBenchmarkExp(regressiondatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, numProcesses, fileNameSuffix, learnerName)
-#findErrorGrid(regressiondatasetNames, numProcesses, "GridResults50", learnerName=learnerName, sampleSize=50)
-#findErrorGrid(regressiondatasetNames, numProcesses, "GridResults100", learnerName=learnerName, sampleSize=100)
-#findErrorGrid(regressiondatasetNames, numProcesses, "GridResults200", learnerName=learnerName, sampleSize=200)
+#findErrorGrid(regressiondatasetNames, numProcesses, "GridResults", learnerName, sampleSizes)
 #runBenchmarkExp(regressiondatasetNames, extSampleSizes, extFoldsSet, cvScalings, extSampleMethods, numProcesses, extFileNameSuffix, learnerName)
 
 learnerName = "CART"
 runBenchmarkExp(regressiondatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, numProcesses, fileNameSuffix, learnerName)
-findErrorGrid(regressiondatasetNames, numProcesses, "GridResults50", learnerName=learnerName, sampleSize=50)
-findErrorGrid(regressiondatasetNames, numProcesses, "GridResults100", learnerName=learnerName, sampleSize=100)
-findErrorGrid(regressiondatasetNames, numProcesses, "GridResults200", learnerName=learnerName, sampleSize=200)
-runBenchmarkExp(regressiondatasetNames, extSampleSizes, extFoldsSet, cvScalings, extSampleMethods, numProcesses, extFileNameSuffix, learnerName)
+findErrorGrid(regressiondatasetNames, numProcesses, "GridResults", learnerName, sampleSizes)
+#runBenchmarkExp(regressiondatasetNames, extSampleSizes, extFoldsSet, cvScalings, extSampleMethods, numProcesses, extFileNameSuffix, learnerName)
