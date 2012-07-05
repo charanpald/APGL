@@ -47,14 +47,15 @@ for datasetName, numRealisations in datasets:
     numParams = paramDict["setGamma"].shape[0]
     
     alpha = 1.0
-    folds = 2
+    folds = 6
     numRealisations = 10
-    numMethods = 4
-    sampleSize = 200 
-    Cvs = numpy.array([folds-1])*alpha
+    numMethods = 5
+    sampleSize = 50 
+    Cvs = numpy.array([-5, (folds-1)*alpha])
     
     meanCvGrid = numpy.zeros((numMethods, numParams))
     meanPenalties = numpy.zeros(numParams)
+    meanCorrectedPenalties = numpy.zeros(numParams)
     meanIdealPenalities = numpy.zeros(numParams)
     meanAllErrors = numpy.zeros(numParams) 
     meanTrainError = numpy.zeros(numParams)
@@ -77,25 +78,37 @@ for datasetName, numRealisations in datasets:
         trainY = trainY[trainInds]
         
         #logging.debug("Training set size: " + str(trainX.shape))
-        
+        methodInd = 0 
         idx = sampleMethod(folds, trainX.shape[0])
         bestLearner, cvGrid = learner.parallelModelSelect(trainX, trainY, idx, paramDict)
         predY = bestLearner.predict(testX)
-        meanCvGrid[0, :] += cvGrid     
-        meanErrors[0] += bestLearner.getMetricMethod()(testY, predY)
-        meanDepths[0] += bestLearner.tree.depth()
-        meanSizes[0] += bestLearner.tree.getNumVertices()
+        meanCvGrid[methodInd, :] += cvGrid     
+        meanErrors[methodInd] += bestLearner.getMetricMethod()(testY, predY)
+        meanDepths[methodInd] += bestLearner.tree.depth()
+        meanSizes[methodInd] += bestLearner.tree.getNumVertices()
     
         #Now try penalisation
+        methodInd = 1
         resultsList = learner.parallelPen(trainX, trainY, idx, paramDict, Cvs)
-        bestLearner, trainErrors, currentPenalties = resultsList[0]
-        meanCvGrid[1, :] += trainErrors + currentPenalties
+        bestLearner, trainErrors, currentPenalties = resultsList[1]
+        meanCvGrid[methodInd, :] += trainErrors + currentPenalties
         meanPenalties += currentPenalties
         meanTrainError += trainErrors
         predY = bestLearner.predict(testX)
-        meanErrors[1] += bestLearner.getMetricMethod()(testY, predY)
-        meanDepths[1] += bestLearner.tree.depth()
-        meanSizes[1] += bestLearner.tree.getNumVertices()
+        meanErrors[methodInd] += bestLearner.getMetricMethod()(testY, predY)
+        meanDepths[methodInd] += bestLearner.tree.depth()
+        meanSizes[methodInd] += bestLearner.tree.getNumVertices()
+        
+        #Corrected penalisation 
+        methodInd = 2
+        bestLearner, trainErrors, currentPenalties = resultsList[0]
+        meanCvGrid[methodInd, :] += trainErrors + currentPenalties
+        meanCorrectedPenalties += currentPenalties
+        meanTrainError += trainErrors
+        predY = bestLearner.predict(testX)
+        meanErrors[methodInd] += bestLearner.getMetricMethod()(testY, predY)
+        meanDepths[methodInd] += bestLearner.tree.depth()
+        meanSizes[methodInd] += bestLearner.tree.getNumVertices()
         
         #Compute ideal penalties and error on training data 
         meanIdealPenalities += learner.parallelPenaltyGrid(trainX, trainY, testX, testY, paramDict)
@@ -111,17 +124,18 @@ for datasetName, numRealisations in datasets:
             meanAllErrors[i] += allError/float(len(idx))
         
         #Compute true error grid 
+        methodInd = 3
         cvGrid  = learner.parallelSplitGrid(trainX, trainY, testX, testY, paramDict)    
-        meanCvGrid[2, :] += cvGrid
+        meanCvGrid[methodInd, :] += cvGrid
         bestLearner.setGamma(paramDict["setGamma"][numpy.argmin(cvGrid)])
         bestLearner.learnModel(trainX, trainY)
         predY = bestLearner.predict(testX)
-        meanErrors[2] += bestLearner.getMetricMethod()(testY, predY)
-        meanDepths[2] += bestLearner.tree.depth()
-        meanSizes[2] += bestLearner.tree.getNumVertices()
+        meanErrors[methodInd] += bestLearner.getMetricMethod()(testY, predY)
+        meanDepths[methodInd] += bestLearner.tree.depth()
+        meanSizes[methodInd] += bestLearner.tree.getNumVertices()
         
         #Compute true error grid using only training data 
-        methodInd = 3
+        methodInd = 4
         cvGrid  = learner.parallelSplitGrid(trainX, trainY, trainX, trainY, paramDict)    
         meanCvGrid[methodInd, :] += cvGrid
         bestLearner.setGamma(paramDict["setGamma"][numpy.argmin(cvGrid)])
@@ -152,6 +166,7 @@ for datasetName, numRealisations in datasets:
         
     meanCvGrid /=  numRealisations   
     meanPenalties /=  numRealisations   
+    meanCorrectedPenalties /= numRealisations 
     meanIdealPenalities /= numRealisations
     meanTrainError /=  numRealisations   
     meanErrors /=  numRealisations 
@@ -173,8 +188,9 @@ for datasetName, numRealisations in datasets:
     plt.figure(figInd)
     plt.plot(numpy.log2(paramDict["setGamma"]), meanCvGrid[0, :], label="CV")
     plt.plot(numpy.log2(paramDict["setGamma"]), meanCvGrid[1, :], label="Pen")
-    plt.plot(numpy.log2(paramDict["setGamma"]), meanCvGrid[2, :], label="Test")
-    plt.plot(numpy.log2(paramDict["setGamma"]), meanCvGrid[3, :], label="Train Error")
+    plt.plot(numpy.log2(paramDict["setGamma"]), meanCvGrid[2, :], label="Corrected Pen")
+    plt.plot(numpy.log2(paramDict["setGamma"]), meanCvGrid[3, :], label="Test")
+    plt.plot(numpy.log2(paramDict["setGamma"]), meanCvGrid[4, :], label="Train Error")
     plt.xlabel("log(gamma)")
     plt.ylabel("Error/Penalty")
     plt.legend()
@@ -187,7 +203,7 @@ for datasetName, numRealisations in datasets:
     
     plt.figure(figInd)
     plt.plot(numpy.log2(treeSizes), meanPenalties, label="Penalty")
-    plt.plot(numpy.log2(treeSizes), meanPenalties*estimatedAlpha, label="Corrected Penalty")
+    plt.plot(numpy.log2(treeSizes), meanCorrectedPenalties, label="Corrected Penalty")
     plt.plot(numpy.log2(treeSizes), meanIdealPenalities, label="Ideal Penalty")
     plt.plot(numpy.log2(treeSizes), meanTrainError, label="Valid Error")
     plt.plot(numpy.log2(treeSizes), meanAllErrors, label="Train Error")

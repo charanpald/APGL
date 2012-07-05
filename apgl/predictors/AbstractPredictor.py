@@ -449,7 +449,7 @@ class AbstractPredictor(object):
             else: 
                 logging.debug("Computing corrected penalisation with sigma=" + str(abs(Cv)))
                 sigma = abs(Cv)
-                dynamicCv = (1-numpy.exp(-sigma*trainErrors)) + float(folds)*numpy.exp(-sigma*trainErrors)    
+                dynamicCv = (folds-1)*(1-numpy.exp(-sigma*trainErrors)) + float(folds)*numpy.exp(-sigma*trainErrors)    
                 currentPenalties = penalties*dynamicCv
                 
             meanErrors = trainErrors + currentPenalties
