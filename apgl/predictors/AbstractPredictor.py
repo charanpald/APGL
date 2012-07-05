@@ -475,7 +475,24 @@ class AbstractPredictor(object):
             gridSize.append(paramDict[key].shape[0])
             
         return tuple(gridSize)
-            
+        
+    def getBestLearner(self, meanErrors, paramDict, X, y): 
+        """
+        Given a grid of errors, paramDict and examples, labels, find the 
+        best learner and train it. 
+        """
+        bestInds = numpy.unravel_index(numpy.argmin(meanErrors), meanErrors.shape)
+        currentInd = 0    
+        learner = self.copy()         
+    
+        for key, val in paramDict.items():
+            method = getattr(learner, key)
+            method(val[bestInds[currentInd]])
+            currentInd += 1   
+        
+        learner.learnModel(X, y)            
+        return learner 
+    
     
     def parallelPenaltyGrid(self, trainX, trainY, fullX, fullY, paramDict, errorFunc=computeIdealPenalty):
         """
