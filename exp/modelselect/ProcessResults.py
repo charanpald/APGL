@@ -44,17 +44,18 @@ def getWins(errors):
                     
     return stdWins
 
-def getRowNames(cvScalings):
+def getRowNames(cvScalings, sigmas):
     rowNames = [""]
     for j in range(sampleSizes.shape[0]):
         rowNames.append("Std" + " $m=" + str(sampleSizes[j]) + "$")
-        rowNames.append("PenBIC" + " $m=" + str(sampleSizes[j]) + "$")
+        for k in range(sigmas.shape[0]):
+            rowNames.append("PenVF+" + " $m=" + str(sampleSizes[j]) + "$ $\\sigma=" + str(sigmas[k]) + "$")
         for k in range(cvScalings.shape[0]):
             rowNames.append("PenVF" + " $m=" + str(sampleSizes[j]) + "$ $\\alpha=" + str(cvScalings[k]) + "$")
     return rowNames 
 
-def getLatexTable(measures, cvScalings):
-    rowNames = getRowNames(cvScalings)
+def getLatexTable(measures, cvScalings, sigma):
+    rowNames = getRowNames(cvScalings, sigma)
     table = Latex.array1DToRow(foldsSet) + "\\\\ \n"
 
     for j in range(sampleSizes.shape[0]):
@@ -65,11 +66,11 @@ def getLatexTable(measures, cvScalings):
     table = Latex.addRowNames(rowNames, table)
     return table, meanMeasures, stdMeasures
 
-def summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix):
+def summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix, sigmas):
     """
     Print the errors for all results plus a summary. 
     """
-    numMethods = (1+(cvScalings.shape[0]+1))
+    numMethods = (1+(cvScalings.shape[0]+sigmas.shape[0]))
     numDatasets = len(datasetNames)
     overallErrors = numpy.zeros((numDatasets, len(sampleMethods), sampleSizes.shape[0], foldsSet.shape[0], numMethods))
     overallStdWins = numpy.zeros((len(sampleMethods), len(sampleSizes), foldsSet.shape[0], numMethods, 3), numpy.int)
@@ -92,15 +93,13 @@ def summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, file
             params = data["arr_1"]
             meanErrorGrids = data["arr_2"]
             stdErrorGrids = data["arr_3"]
-            meanIdealGrids = data["arr_4"]
-            stdIdealGrids = data["arr_5"]
-            meanApproxGrids = data["arr_6"]
-            stdApproxGrids = data["arr_7"]
+            meanApproxGrids = data["arr_4"]
+            stdApproxGrids = data["arr_5"]
 
             #print(params.mean(0))
             #print(meanErrorGrids[0, 0, 0, :])            
             
-            errorTable, meanErrors, stdErrors = getLatexTable(errors, cvScalings)
+            errorTable, meanErrors, stdErrors = getLatexTable(errors, cvScalings, sigmas)
 
             wins = getWins(errors)
             excessError = numpy.zeros(errors.shape)
@@ -110,7 +109,7 @@ def summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, file
 
             meanExcessError = numpy.mean(excessError, 0)
             stdExcessError = numpy.std(excessError, 0)
-            excessErrorTable, meanExcessErrors, stdExcessErrors = getLatexTable(excessError, cvScalings)
+            excessErrorTable, meanExcessErrors, stdExcessErrors = getLatexTable(excessError, cvScalings, sigmas)
             #print(excessErrorTable)
             #print(-meanExcessError > stdExcessError)
             #lossInd = 2
@@ -167,7 +166,7 @@ def summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, file
         for j in range(len(sampleSizes)):
             datasetMeanErrors += Latex.array2DToRows(overallErrorsPerSampMethod[i, :, j, :].T) + "\n"
 
-        datasetMeanErrors = Latex.addRowNames(getRowNames(cvScalings), datasetMeanErrors)
+        datasetMeanErrors = Latex.addRowNames(getRowNames(cvScalings, sigmas), datasetMeanErrors)
         print(datasetMeanErrors)
      
     print("="*50 + "\n" + "Sliced Tables" + "\n" + "="*50)   
@@ -186,7 +185,7 @@ def summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, file
         overallErrorTable = Latex.array1DToRow(foldsSet) + "\\\\ \n"
         overallWinsTable = Latex.array1DToRow(foldsSet) + " & Total & "  +Latex.array1DToRow(foldsSet) + " & Total \\\\ \n"
 
-        rowNames = getRowNames(cvScalings)
+        rowNames = getRowNames(cvScalings, sigmas)
 
         for j in range(sampleSizes.shape[0]):
             overallErrorTable += Latex.array2DToRows(overallMeanErrors[i, j, :, :].T, overallStdErrors[i, j, :, :].T, bold=overallMeanErrors[i, j, :, :].T<0) + "\n"
@@ -234,7 +233,7 @@ def plotResults(datasetName, sampleSizes, foldsSet, cvScalings, sampleMethods, f
                 plt.xlabel("Folds")
                 plt.ylabel('Error')
 
-            labels = ["VFCV", "BIC"]
+            labels = ["VFCV", "PenVF+"]
             labels.extend(["VFP s=" + str(x) for x in cvScalings])
             plt.legend(tuple(labels))
     plt.show()
@@ -248,14 +247,15 @@ sampleSizes = numpy.array([50, 100, 200])
 #sampleMethods = ["CV","SS", "SS66", "SS90"]
 #sampleMethods = ["SS66", "SS90"]
 sampleMethods = ["CV"]
+sigmas = numpy.array([3, 5, 7])
 cvScalings = numpy.arange(0.6, 1.61, 0.2)
 foldsSet = numpy.arange(2, 13, 2)
 #datasetNames = ModelSelectUtils.getRatschDatasets()
 datasetNames = ModelSelectUtils.getRegressionDatasets()
 fileNameSuffix = 'Results'
-summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
+summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix, sigmas)
 
-#plotResults("waveform", sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
+#plotResults("add10", sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
 
 #Now run some extended results
 sampleSizes = numpy.array([25, 50, 100])
