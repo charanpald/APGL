@@ -1,4 +1,7 @@
 import numpy 
+import itertools 
+import multiprocessing 
+import logging 
 from apgl.predictors.AbstractPredictor import AbstractPredictor
 from apgl.graph.DictTree import DictTree
 from exp.sandbox.predictors.TreeCriterion import findBestSplit
@@ -399,3 +402,111 @@ class DecisionTreeLearner(AbstractPredictor):
    
     def getTree(self): 
         return self.tree 
+        
+    def complexity(self): 
+        return self.tree.size
+        
+    def getBestLearner(self, meanErrors, paramDict, X, y, idx): 
+        """
+        Given a grid of errors, paramDict and examples, labels, find the 
+        best learner and train it. In this case we set gamma to the real 
+        size of the tree as learnt using CV. 
+        """
+        bestInds = numpy.unravel_index(numpy.argmin(meanErrors), meanErrors.shape)
+        currentInd = 0    
+        learner = self.copy()         
+    
+        for key, val in paramDict.items():
+            method = getattr(learner, key)
+            method(val[bestInds[currentInd]])
+            currentInd += 1 
+         
+        treeSizes = []
+        for trainInds, testInds in idx: 
+            validX = X[trainInds, :]
+            validY = y[trainInds]
+            learner.learnModel(validX, validY)
+            
+            treeSizes.append(learner.tree.getNumVertices())
+        
+        bestGamma = int(numpy.round(numpy.array(treeSizes).mean()))
+        
+        learner.setGamma(bestGamma)
+        learner.learnModel(X, y)            
+        return learner 
+
+
+    def parallelPen(self, X, y, idx, paramDict, Cvs):
+        """
+        Perform parallel penalisation using any learner. 
+        Using the best set of parameters train using the whole dataset. In this 
+        case if gamma > max(treeSize) the penalty is infinite. 
+
+        :param X: The examples as rows
+        :type X: :class:`numpy.ndarray`
+
+        :param y: The binary -1/+1 labels 
+        :type y: :class:`numpy.ndarray`
+
+        :param idx: A list of train/test splits
+
+        :param paramDict: A dictionary index by the method name and with value as an array of values
+        :type X: :class:`dict`
+
+        """
+        Parameter.checkClass(X, numpy.ndarray)
+        Parameter.checkClass(y, numpy.ndarray)
+        folds = len(idx)
+
+        gridSize = [] 
+        gridInds = [] 
+        for key in paramDict.keys(): 
+            gridSize.append(paramDict[key].shape[0])
+            gridInds.append(numpy.arange(paramDict[key].shape[0])) 
+            
+        trainErrors = numpy.zeros(tuple(gridSize))
+        penalties = numpy.zeros(tuple(gridSize))
+
+        indexIter = itertools.product(*gridInds)
+        paramList = []
+        for inds in indexIter: 
+            learner = self.copy()     
+            currentInd = 0             
+        
+            for key, val in paramDict.items():
+                method = getattr(learner, key)
+                method(val[inds[currentInd]])
+                currentInd += 1                    
+            
+            paramList.append((X, y, idx, learner, 1.0))
+
+        pool = multiprocessing.Pool(processes=self.processes, maxtasksperchild=100)
+        #Change this bit here to return tree size 
+        resultsIterator = pool.imap(computePenalisedError, paramList, self.chunkSize)
+
+        indexIter = itertools.product(*gridInds)
+        for inds in indexIter: 
+            trainErrors[inds], penalties[inds] = resultsIterator.next()
+
+        pool.terminate()
+
+        #Store v fold penalised error
+        #In the case that Cv < 0 we use the corrected penalisation 
+        resultsList = []
+        for k in range(Cvs.shape[0]):
+            Cv = Cvs[k]
+            
+            if Cv >= 0: 
+                logging.debug("Computing penalisation of Cv=" + str(Cv))
+                currentPenalties = penalties*Cv
+            else: 
+                logging.debug("Computing corrected penalisation with sigma=" + str(abs(Cv)))
+                sigma = abs(Cv)
+                dynamicCv = (folds-1)*(1-numpy.exp(-sigma*trainErrors)) + float(folds)*numpy.exp(-sigma*trainErrors)    
+                currentPenalties = penalties*dynamicCv
+                
+            meanErrors = trainErrors + currentPenalties
+            learner = self.getBestLearner(meanErrors, paramDict, X, y, idx)
+            resultsList.append((learner, trainErrors, currentPenalties))
+
+        return resultsList
