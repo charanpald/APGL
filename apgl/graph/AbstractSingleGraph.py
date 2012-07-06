@@ -264,3 +264,6 @@ class AbstractSingleGraph(AbstractGraph):
         else:
             output += ", directed"
         return output
+        
+    size = property(getNumVertices, doc="The number of vertices in the graph")
+    
