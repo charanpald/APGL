@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 numpy.seterr(all="raise")
-numpy.random.seed(21)
+numpy.random.seed(45)
 dataDir = PathDefaults.getDataDir() 
 dataDir += "modelPenalisation/regression/"
 
@@ -24,7 +24,7 @@ loadMethod = ModelSelectUtils.loadRegressDataset
 datasets = ModelSelectUtils.getRegressionDatasets(True)
 
 sampleSize = 100
-foldSizes = numpy.arange(2, 14, 2)
+foldSizes = numpy.arange(2, 9, 1)
 
 #datasets = [datasets[1]]
 
@@ -47,11 +47,11 @@ for datasetName, numRealisations in datasets:
         learner.setChunkSize(3)
         
         paramDict = {} 
-        paramDict["setGamma"] = numpy.array([151], dtype=numpy.int)
+        paramDict["setGamma"] = numpy.array([3], dtype=numpy.int)
         numParams = paramDict["setGamma"].shape[0]
         
         alpha = 1.0
-        numRealisations = 10
+        numRealisations = 20
         
         #Cvs = numpy.array([folds-1])*alpha
         Cvs = numpy.array([1])
@@ -118,8 +118,19 @@ for datasetName, numRealisations in datasets:
     """
     tempFoldSizes = numpy.array(foldSizes, numpy.float)    
     
+    print(meanIdealPenalities)
+    print(meanPenalties)
+    print(numpy.log(meanPenalties))
+    print(numpy.log((tempFoldSizes-1)/tempFoldSizes*sampleSize))
+    print(numpy.log(meanPenalties)+numpy.log(foldSizes))
+    
+    y = numpy.log(meanPenalties)+numpy.log(foldSizes)    
+    x = numpy.log((tempFoldSizes-1)/tempFoldSizes*sampleSize)
+    
+    print((y[-1]-y[0])/(x[-1]-x[0]))    
+    
     plt.figure(1)
-    plt.plot(numpy.log((tempFoldSizes-1)/tempFoldSizes*sampleSize), numpy.log(meanPenalties)+numpy.log(folds), label="Penalty")
+    plt.plot(numpy.log((tempFoldSizes-1)/tempFoldSizes*sampleSize), numpy.log(meanPenalties)+numpy.log(foldSizes), label="Penalty")
     plt.xlabel("log(sampleSize*folds)")
     plt.ylabel("log(meanPenalties)")   
     plt.legend()
