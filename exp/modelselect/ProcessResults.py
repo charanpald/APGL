@@ -11,7 +11,36 @@ import matplotlib.pyplot as plt
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
-def getWins(errors):
+def getIdealWins(errors, testErrors, p=0.1): 
+    """
+    Figure out whether the ideal error obtained using the test set is an improvement 
+    over model selection using CV. 
+    """
+    winsShape = list(errors.shape[1:-1]) 
+    winsShape.append(3)
+    stdWins = numpy.zeros(winsShape, numpy.int)
+       
+    for i in range(len(sampleSizes)):
+        for j in range(foldsSet.shape[0]): 
+            s1 = errors[:, i, j, 0]
+            s2 = testErrors[:, i]
+            
+            s1Mean = numpy.mean(s1)
+            s2Mean = numpy.mean(s2)                
+            
+            t, prob = scipy.stats.ttest_ind(s1, s2)
+            if prob < p: 
+                if s1Mean > s2Mean: 
+                    stdWins[i, j, 2] = 1 
+                elif s1Mean < s2Mean:
+                    stdWins[i, j, 0] = 1
+            else: 
+                stdWins[i, j, 1] = 1 
+                    
+    return stdWins
+    
+
+def getWins(errors, p = 0.1):
     """
     Want to compute the number of wins/ties/losses versus CV 
     """
@@ -19,12 +48,10 @@ def getWins(errors):
     winsShape = list(errors.shape[1:]) 
     winsShape.append(3)
     stdWins = numpy.zeros(winsShape, numpy.int)
-    p = 0.1
     
     meanErrors = numpy.mean(errors, 0)
    
     for i in range(len(sampleSizes)):
-        #Now figure out if wins are significant 
         for j in range(foldsSet.shape[0]): 
             for k in range(meanErrors.shape[2]): 
                 s1 = errors[:, i, j, 0]
@@ -44,7 +71,10 @@ def getWins(errors):
                     
     return stdWins
 
-def getRowNames(cvScalings, sigmas):
+def getRowNames(cvScalings, sigmas, idealError=False):
+    """
+    Return a lost of the method types. 
+    """
     rowNames = [""]
     for j in range(sampleSizes.shape[0]):
         rowNames.append("Std" + " $m=" + str(sampleSizes[j]) + "$")
@@ -52,16 +82,23 @@ def getRowNames(cvScalings, sigmas):
             rowNames.append("PenVF+" + " $m=" + str(sampleSizes[j]) + "$ $\\sigma=" + str(sigmas[k]) + "$")
         for k in range(cvScalings.shape[0]):
             rowNames.append("PenVF" + " $m=" + str(sampleSizes[j]) + "$ $\\alpha=" + str(cvScalings[k]) + "$")
+        
+        if idealError: 
+            rowNames.append("Test $m=" + str(sampleSizes[j]) + "$")
     return rowNames 
 
-def getLatexTable(measures, cvScalings, sigma):
-    rowNames = getRowNames(cvScalings, sigma)
+def getLatexTable(measures, cvScalings, sigma, idealMeasures):
+    rowNames = getRowNames(cvScalings, sigma, True)
     table = Latex.array1DToRow(foldsSet) + "\\\\ \n"
 
     for j in range(sampleSizes.shape[0]):
         meanMeasures = numpy.mean(measures, 0)
         stdMeasures = numpy.std(measures, 0)
         table += Latex.array2DToRows(meanMeasures[j, :, :].T, stdMeasures[j, :, :].T) + "\n"
+        
+        meanIdealMeasures = numpy.mean(idealMeasures, 0)
+        stdIdealMeasures = numpy.std(idealMeasures, 0)
+        table += Latex.array2DToRows(numpy.ones((1, len(foldsSet)))*meanIdealMeasures[j], numpy.ones((1, len(foldsSet)))*stdIdealMeasures[j]) + "\n"
 
     table = Latex.addRowNames(rowNames, table)
     return table, meanMeasures, stdMeasures
@@ -73,7 +110,7 @@ def summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, file
     numMethods = (1+(cvScalings.shape[0]+sigmas.shape[0]))
     numDatasets = len(datasetNames)
     overallErrors = numpy.zeros((numDatasets, len(sampleMethods), sampleSizes.shape[0], foldsSet.shape[0], numMethods))
-    overallStdWins = numpy.zeros((len(sampleMethods), len(sampleSizes), foldsSet.shape[0], numMethods, 3), numpy.int)
+    overallStdWins = numpy.zeros((len(sampleMethods), len(sampleSizes), foldsSet.shape[0], numMethods+1, 3), numpy.int)
     overallErrorsPerSampMethod = numpy.zeros((numDatasets, len(sampleMethods), len(sampleSizes), numMethods), numpy.float)
     
     table1 = ""
@@ -86,6 +123,8 @@ def summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, file
         
         for j in range(len(sampleMethods)):
             print("="*50 + "\n" + datasetNames[i] + "-" + sampleMethods[j] + "\n" + "="*50 )
+            
+            
             outfileName = outputDir + datasetNames[i] + sampleMethods[j] + fileNameSuffix + ".npz"
             data = numpy.load(outfileName)
 
@@ -94,14 +133,17 @@ def summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, file
             meanErrorGrids = data["arr_2"]
             stdErrorGrids = data["arr_3"]
             meanApproxGrids = data["arr_4"]
-            stdApproxGrids = data["arr_5"]
-
-            #print(params.mean(0))
-            #print(meanErrorGrids[0, 0, 0, :])            
+            stdApproxGrids = data["arr_5"]      
             
-            errorTable, meanErrors, stdErrors = getLatexTable(errors, cvScalings, sigmas)
+            #Load ideal results 
+            outfileName = outputDir + datasetNames[i]  + "GridResults.npz"
+            data = numpy.load(outfileName)
+            idealErrors = data["arr_0"]
+            
+            errorTable, meanErrors, stdErrors = getLatexTable(errors, cvScalings, sigmas, idealErrors)
 
             wins = getWins(errors)
+            idealWins = getIdealWins(errors, idealErrors)
             excessError = numpy.zeros(errors.shape)
 
             for k in range(errors.shape[1]):
@@ -109,15 +151,12 @@ def summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, file
 
             meanExcessError = numpy.mean(excessError, 0)
             stdExcessError = numpy.std(excessError, 0)
-            excessErrorTable, meanExcessErrors, stdExcessErrors = getLatexTable(excessError, cvScalings, sigmas)
-            #print(excessErrorTable)
-            #print(-meanExcessError > stdExcessError)
-            #lossInd = 2
-            #print(numpy.c_[wins[0, :, :, lossInd], wins[1, :, :, lossInd], wins[2, :, :, lossInd]].T)
+            excessErrorTable, meanExcessErrors, stdExcessErrors = getLatexTable(excessError, cvScalings, sigmas, idealErrors)
 
             overallErrorsPerSampMethod[i, j, :, :] = numpy.mean(meanErrors, 1)
             overallErrors[i, j, :, :, :] = meanExcessError
-            overallStdWins[j, :] += wins
+            overallStdWins[j, :, :, 0:-1, :] += wins
+            overallStdWins[j, :, :, -1, :] += idealWins
             print(errorTable)
             #print("Min error is: " + str(numpy.min(meanErrors)))
             #print("Max error is: " + str(numpy.max(meanErrors)))
@@ -195,6 +234,8 @@ def summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, file
             overallWinsTable += Latex.array2DToRows(tiesWins.T) + "\n"
 
         overallErrorTable = Latex.addRowNames(rowNames, overallErrorTable)
+        
+        rowNames = getRowNames(cvScalings, sigmas, True)
         overallWinsTable = Latex.addRowNames(rowNames, overallWinsTable)
 
         print(Latex.latexTable(overallWinsTable, "Wins for " + sampleMethods[i], True))
@@ -239,7 +280,6 @@ def plotResults(datasetName, sampleSizes, foldsSet, cvScalings, sampleMethods, f
     plt.show()
 
 #outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/SVR/"
-#outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/DTRP/"
 outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/CART/"
 
 #First output the fine grained results 
