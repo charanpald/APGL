@@ -93,8 +93,7 @@ def plotGridsCART(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods
                 #Now plot ideal versus approx penalty 
                 grid1 = meanIdealPenGrids[sampleSizeInd, :].flatten()
                 grid2 = meanApproxGrids[sampleSizeInd, foldsInd, methodInd, :].flatten()
-                
-                print(grid1.shape, grid2.shape)                
+                           
                 
                 plt.figure(figInd)
                 plt.scatter(grid1, grid2)
