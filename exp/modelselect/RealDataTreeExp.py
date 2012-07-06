@@ -182,6 +182,7 @@ for datasetName, numRealisations in datasets:
     
     print("Test error" + str(meanCvGrid[2, :]))
     print("treeSizes=" + str(treeSizes))
+    print("gammas=" + str(paramDict["setGamma"]))
     print("treeDepths=" + str(treeDepths))
     print("treeLeaveSizes=" + str(treeLeaveSizes))
     
