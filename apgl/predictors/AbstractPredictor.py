@@ -372,16 +372,7 @@ class AbstractPredictor(object):
 
             m += 1 
 
-        bestInds = numpy.unravel_index(numpy.argmin(meanErrors), meanErrors.shape)
-        currentInd = 0    
-        learner = self.copy()         
-    
-        for key, val in paramDict.items():
-            method = getattr(learner, key)
-            method(val[bestInds[currentInd]])
-            currentInd += 1   
-        
-        learner.learnModel(X, y)
+        learner = self.getBestLearner(meanErrors, paramDict, X, y, idx)
 
         return learner, meanErrors
 
@@ -453,17 +444,7 @@ class AbstractPredictor(object):
                 currentPenalties = penalties*dynamicCv
                 
             meanErrors = trainErrors + currentPenalties
-            
-            bestInds = numpy.unravel_index(numpy.argmin(meanErrors), meanErrors.shape)
-            currentInd = 0    
-            learner = self.copy()         
-        
-            for key, val in paramDict.items():
-                method = getattr(learner, key)
-                method(val[bestInds[currentInd]])
-                currentInd += 1   
-            
-            learner.learnModel(X, y)            
+            learner = self.getBestLearner(meanErrors, paramDict, X, y, idx)
             resultsList.append((learner, trainErrors, currentPenalties))
 
         return resultsList
@@ -476,7 +457,7 @@ class AbstractPredictor(object):
             
         return tuple(gridSize)
         
-    def getBestLearner(self, meanErrors, paramDict, X, y): 
+    def getBestLearner(self, meanErrors, paramDict, X, y, idx): 
         """
         Given a grid of errors, paramDict and examples, labels, find the 
         best learner and train it. 
@@ -555,7 +536,13 @@ class AbstractPredictor(object):
             currentInd += 1 
             
         return paramsArray 
-        
+    
+    def complexity(self):
+        """
+        Return a complexity measure of the current model. 
+        """
+        Util.abstract()
+    
     def setChunkSize(self, chunkSize): 
         Parameter.checkInt(chunkSize, 1, float("inf"))
         self.chunkSize = chunkSize 
