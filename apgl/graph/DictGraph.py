@@ -382,3 +382,4 @@ class DictGraph(AbstractSingleGraph):
     vertices = None 
     adjacencies = None 
     undirected = None
+    size = property(getNumVertices, doc="The number of vertices in the graph")
