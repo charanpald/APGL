@@ -186,12 +186,15 @@ for datasetName, numRealisations in datasets:
     print("treeDepths=" + str(treeDepths))
     print("treeLeaveSizes=" + str(treeLeaveSizes))
     
+    gammas = paramDict["setGamma"]
+    inds = numpy.arange(gammas.shape[0])[meanCvGrid[1, :] < float("inf")]   
+    
     plt.figure(figInd)
-    plt.plot(numpy.log2(paramDict["setGamma"]), meanCvGrid[0, :], label="CV")
-    plt.plot(numpy.log2(paramDict["setGamma"]), meanCvGrid[1, :], label="Pen")
-    plt.plot(numpy.log2(paramDict["setGamma"]), meanCvGrid[2, :], label="Corrected Pen")
-    plt.plot(numpy.log2(paramDict["setGamma"]), meanCvGrid[3, :], label="Test")
-    plt.plot(numpy.log2(paramDict["setGamma"]), meanCvGrid[4, :], label="Train Error")
+    plt.plot(numpy.log2(gammas[inds]), meanCvGrid[0, inds], label="CV")
+    plt.plot(numpy.log2(gammas[inds]), meanCvGrid[1, inds], label="Pen")
+    plt.plot(numpy.log2(gammas[inds]), meanCvGrid[2, inds], label="Corrected Pen")
+    plt.plot(numpy.log2(gammas[inds]), meanCvGrid[3, inds], label="Test")
+    plt.plot(numpy.log2(gammas[inds]), meanCvGrid[4, inds], label="Train Error")
     plt.xlabel("log(gamma)")
     plt.ylabel("Error/Penalty")
     plt.legend()
