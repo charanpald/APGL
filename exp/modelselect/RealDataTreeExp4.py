@@ -101,7 +101,7 @@ for datasetName, numRealisations in datasets:
             
             print(meanPenalties)        
             
-            if meanPenalties.shape[0] != 0: 
+            if meanPenalties.shape[0] > 1: 
                 x = numpy.log((tempFoldSizes-1)/tempFoldSizes*sampleSize)
                 y = numpy.log(meanPenalties)+numpy.log(tempFoldSizes)    
             
