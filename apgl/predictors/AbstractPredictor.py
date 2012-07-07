@@ -376,7 +376,7 @@ class AbstractPredictor(object):
 
         return learner, meanErrors
 
-    def parallelPen(self, X, y, idx, paramDict, Cvs):
+    def parallelPen(self, X, y, idx, paramDict, Cvs, errorFunc=computePenalisedError):
         """
         Perform parallel penalisation using any learner. 
         Using the best set of parameters train using the whole dataset.
@@ -420,7 +420,7 @@ class AbstractPredictor(object):
             paramList.append((X, y, idx, learner, 1.0))
 
         pool = multiprocessing.Pool(processes=self.processes, maxtasksperchild=100)
-        resultsIterator = pool.imap(computePenalisedError, paramList, self.chunkSize)
+        resultsIterator = pool.imap(errorFunc, paramList, self.chunkSize)
 
         indexIter = itertools.product(*gridInds)
         for inds in indexIter: 
