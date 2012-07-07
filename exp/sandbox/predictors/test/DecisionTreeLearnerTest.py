@@ -397,7 +397,42 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         learner.learnModel(trainX, trainY)
         self.assertEquals(learner.tree.getNumVertices(), 1)
         
+    def testParallelPen(self): 
+        #Check if penalisation == inf when treeSize < gamma 
+        numExamples = 100
+        X, y = data.make_regression(numExamples) 
+        learner = DecisionTreeLearner(pruneType="CART", maxDepth=10, minSplit=2)
         
-     
+        paramDict = {} 
+        paramDict["setGamma"] = numpy.array(numpy.round(2**numpy.arange(1, 10, 0.5)-1), dtype=numpy.int)
+        
+        folds = 3
+        alpha = 1.0
+        Cvs = numpy.array([(folds-1)*alpha])
+        
+        idx = Sampling.crossValidation(folds, X.shape[0])
+        
+        resultsList = learner.parallelPen(X, y, idx, paramDict, Cvs)
+        
+        learner, trainErrors, currentPenalties = resultsList[0]
+        
+        learner.setGamma(2**10)
+        treeSize = 0
+        #Let's work out the size of the unpruned tree 
+        for trainInds, testInds in idx: 
+            trainX = X[trainInds, :]
+            trainY = y[trainInds]
+            
+            learner.learnModel(trainX, trainY)
+            treeSize += learner.tree.size 
+        
+        treeSize /= float(folds)         
+        
+        self.assertTrue(numpy.isinf(currentPenalties[paramDict["setGamma"]>treeSize]).all())      
+        self.assertTrue(not numpy.isinf(currentPenalties[paramDict["setGamma"]<treeSize]).all())
+
+        
+        
+        
 if __name__ == "__main__":
     unittest.main()

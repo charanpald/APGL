@@ -10,6 +10,42 @@ from exp.sandbox.predictors.DecisionNode import DecisionNode
 from apgl.util.Sampling import Sampling
 from apgl.util.Parameter import Parameter
 from apgl.util.Evaluator import Evaluator
+
+def computePenaltyTree(args):
+    """
+    Used in conjunction with the parallel model selection.
+    """
+    (X, y, idx, learner, Cv) = args
+    penalty = 0
+    treeSize = 0
+    folds = len(idx)
+
+    for idxtr, idxts in idx:
+        trainX, trainY = X[idxtr, :], y[idxtr]
+        learner.learnModel(trainX, trainY)
+        predY = learner.predict(X)
+        predTrainY = learner.predict(trainX)
+        penalty += learner.getMetricMethod()(predY, y) - learner.getMetricMethod()(predTrainY, trainY)
+        treeSize += learner.getUnprunedTreeSize()
+            
+    penalty *= Cv/folds
+    treeSize /= float(folds)
+    
+    if treeSize < learner.getGamma(): 
+        penalty = float("inf")
+    
+    return penalty
+    
+def computePenalisedErrorTree(args):
+    """
+    Used in conjunction with the parallel model selection. It returns the
+    binary error on the whole training set and the penalty
+    """
+    (X, y, idx, learner, Cv) = args
+    penalty = computePenaltyTree(args)
+    learner.learnModel(X, y)
+    predY = learner.predict(X)
+    return learner.getMetricMethod()(predY, y), penalty    
     
 class DecisionTreeLearner(AbstractPredictor): 
     def __init__(self, criterion="mse", maxDepth=10, minSplit=30, type="reg", pruneType="none", gamma=1000, folds=5, processes=None):
@@ -43,6 +79,7 @@ class DecisionTreeLearner(AbstractPredictor):
         
         self.growSkLearn(X, y)
         #self.recursiveSplit(X, y, argsortX, nodeId)
+        self.unprunedTreeSize = self.tree.size
         
         if self.pruneType == "REP": 
             #Note: This should be a seperate validation set 
@@ -434,7 +471,12 @@ class DecisionTreeLearner(AbstractPredictor):
         learner.setGamma(bestGamma)
         learner.learnModel(X, y)            
         return learner 
-
+        
+    def getUnprunedTreeSize(self): 
+        """
+        Return the size of the tree before pruning was performed. 
+        """
+        return self.unprunedTreeSize
 
     def parallelPen(self, X, y, idx, paramDict, Cvs):
         """
@@ -454,59 +496,5 @@ class DecisionTreeLearner(AbstractPredictor):
         :type X: :class:`dict`
 
         """
-        Parameter.checkClass(X, numpy.ndarray)
-        Parameter.checkClass(y, numpy.ndarray)
-        folds = len(idx)
-
-        gridSize = [] 
-        gridInds = [] 
-        for key in paramDict.keys(): 
-            gridSize.append(paramDict[key].shape[0])
-            gridInds.append(numpy.arange(paramDict[key].shape[0])) 
-            
-        trainErrors = numpy.zeros(tuple(gridSize))
-        penalties = numpy.zeros(tuple(gridSize))
-
-        indexIter = itertools.product(*gridInds)
-        paramList = []
-        for inds in indexIter: 
-            learner = self.copy()     
-            currentInd = 0             
+        return super(DecisionTreeLearner, self).parallelPen(X, y, idx, paramDict, Cvs, computePenalisedErrorTree)
         
-            for key, val in paramDict.items():
-                method = getattr(learner, key)
-                method(val[inds[currentInd]])
-                currentInd += 1                    
-            
-            paramList.append((X, y, idx, learner, 1.0))
-
-        pool = multiprocessing.Pool(processes=self.processes, maxtasksperchild=100)
-        #Change this bit here to return tree size 
-        resultsIterator = pool.imap(computePenalisedError, paramList, self.chunkSize)
-
-        indexIter = itertools.product(*gridInds)
-        for inds in indexIter: 
-            trainErrors[inds], penalties[inds] = resultsIterator.next()
-
-        pool.terminate()
-
-        #Store v fold penalised error
-        #In the case that Cv < 0 we use the corrected penalisation 
-        resultsList = []
-        for k in range(Cvs.shape[0]):
-            Cv = Cvs[k]
-            
-            if Cv >= 0: 
-                logging.debug("Computing penalisation of Cv=" + str(Cv))
-                currentPenalties = penalties*Cv
-            else: 
-                logging.debug("Computing corrected penalisation with sigma=" + str(abs(Cv)))
-                sigma = abs(Cv)
-                dynamicCv = (folds-1)*(1-numpy.exp(-sigma*trainErrors)) + float(folds)*numpy.exp(-sigma*trainErrors)    
-                currentPenalties = penalties*dynamicCv
-                
-            meanErrors = trainErrors + currentPenalties
-            learner = self.getBestLearner(meanErrors, paramDict, X, y, idx)
-            resultsList.append((learner, trainErrors, currentPenalties))
-
-        return resultsList
