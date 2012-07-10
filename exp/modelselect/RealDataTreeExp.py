@@ -10,17 +10,21 @@ from exp.modelselect.ModelSelectUtils import ModelSelectUtils
 from apgl.util.Sampling import Sampling
 from exp.sandbox.predictors.DecisionTreeLearner import DecisionTreeLearner
 import matplotlib.pyplot as plt 
+from apgl.util import Util 
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 numpy.seterr(all="raise")
 numpy.random.seed(21)
 dataDir = PathDefaults.getDataDir() 
 dataDir += "modelPenalisation/regression/"
+outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/CART/"
 
 figInd = 0 
 
 loadMethod = ModelSelectUtils.loadRegressDataset
 datasets = ModelSelectUtils.getRegressionDatasets(True)
+
+gammas = numpy.unique(numpy.array(numpy.round(2**numpy.arange(1, 7.25, 0.25)-1), dtype=numpy.int))
 
 #datasets = [datasets[1]]
 
@@ -43,19 +47,29 @@ for datasetName, numRealisations in datasets:
     learner.setChunkSize(3)
     
     paramDict = {} 
-    paramDict["setGamma"] = numpy.array(numpy.round(2**numpy.arange(1, 10, 0.5)-1), dtype=numpy.int)
+    paramDict["setGamma"] = gammas
     numParams = paramDict["setGamma"].shape[0]
     
     alpha = 1.0
-    folds = 6
-    numRealisations = 10
-    numMethods = 5
-    sampleSize = 50 
-    Cvs = numpy.array([-5, (folds-1)*alpha])
+    folds = 2
+    numRealisations = 5
+    numMethods = 6
+    sampleSizes = [50, 100, 200]
+    
+    sampleSizeInd = 2 
+    sampleSize = sampleSizes[sampleSizeInd]
+    
+    #Lets load the learning rates 
+    betaFilename = outputDir + datasetName + "Beta.npz"    
+    beta = numpy.load(betaFilename)["arr_0"]
+    beta = numpy.clip(beta, 0, 1)    
+    
+    Cvs = [-5, (folds-1)*alpha, beta[:, sampleSizeInd]]
     
     meanCvGrid = numpy.zeros((numMethods, numParams))
     meanPenalties = numpy.zeros(numParams)
     meanCorrectedPenalties = numpy.zeros(numParams)
+    meanBetaPenalties = numpy.zeros(numParams)
     meanIdealPenalities = numpy.zeros(numParams)
     meanAllErrors = numpy.zeros(numParams) 
     meanTrainError = numpy.zeros(numParams)
@@ -104,7 +118,16 @@ for datasetName, numRealisations in datasets:
         bestLearner, trainErrors, currentPenalties = resultsList[0]
         meanCvGrid[methodInd, :] += trainErrors + currentPenalties
         meanCorrectedPenalties += currentPenalties
-        meanTrainError += trainErrors
+        predY = bestLearner.predict(testX)
+        meanErrors[methodInd] += bestLearner.getMetricMethod()(testY, predY)
+        meanDepths[methodInd] += bestLearner.tree.depth()
+        meanSizes[methodInd] += bestLearner.tree.getNumVertices()
+        
+        #Learning rate penalisation 
+        methodInd = 3
+        bestLearner, trainErrors, currentPenalties = resultsList[2]
+        meanCvGrid[methodInd, :] += trainErrors + currentPenalties
+        meanBetaPenalties += currentPenalties
         predY = bestLearner.predict(testX)
         meanErrors[methodInd] += bestLearner.getMetricMethod()(testY, predY)
         meanDepths[methodInd] += bestLearner.tree.depth()
@@ -124,7 +147,7 @@ for datasetName, numRealisations in datasets:
             meanAllErrors[i] += allError/float(len(idx))
         
         #Compute true error grid 
-        methodInd = 3
+        methodInd = 4
         cvGrid  = learner.parallelSplitGrid(trainX, trainY, testX, testY, paramDict)    
         meanCvGrid[methodInd, :] += cvGrid
         bestLearner.setGamma(paramDict["setGamma"][numpy.argmin(cvGrid)])
@@ -135,7 +158,7 @@ for datasetName, numRealisations in datasets:
         meanSizes[methodInd] += bestLearner.tree.getNumVertices()
         
         #Compute true error grid using only training data 
-        methodInd = 4
+        methodInd = 5
         cvGrid  = learner.parallelSplitGrid(trainX, trainY, trainX, trainY, paramDict)    
         meanCvGrid[methodInd, :] += cvGrid
         bestLearner.setGamma(paramDict["setGamma"][numpy.argmin(cvGrid)])
@@ -167,6 +190,7 @@ for datasetName, numRealisations in datasets:
     meanCvGrid /=  numRealisations   
     meanPenalties /=  numRealisations   
     meanCorrectedPenalties /= numRealisations 
+    meanBetaPenalties /= numRealisations
     meanIdealPenalities /= numRealisations
     meanTrainError /=  numRealisations   
     meanErrors /=  numRealisations 
@@ -193,11 +217,12 @@ for datasetName, numRealisations in datasets:
     plt.plot(numpy.log2(gammas[inds]), meanCvGrid[0, inds], label="CV")
     plt.plot(numpy.log2(gammas[inds]), meanCvGrid[1, inds], label="Pen")
     plt.plot(numpy.log2(gammas[inds]), meanCvGrid[2, inds], label="Corrected Pen")
-    plt.plot(numpy.log2(gammas[inds]), meanCvGrid[3, inds], label="Test")
-    plt.plot(numpy.log2(gammas[inds]), meanCvGrid[4, inds], label="Train Error")
+    plt.plot(numpy.log2(gammas[inds]), meanCvGrid[3, inds], label="Beta Pen")
+    plt.plot(numpy.log2(gammas[inds]), meanCvGrid[4, inds], label="Test")
+    plt.plot(numpy.log2(gammas[inds]), meanCvGrid[5, inds], label="Train Error")
     plt.xlabel("log(gamma)")
     plt.ylabel("Error/Penalty")
-    plt.legend()
+    plt.legend(loc="lower left")
     #plt.savefig("error_" + datasetName + ".eps")
     figInd += 1
     
@@ -208,27 +233,17 @@ for datasetName, numRealisations in datasets:
     plt.figure(figInd)
     plt.plot(numpy.log2(treeSizes), meanPenalties, label="Penalty")
     plt.plot(numpy.log2(treeSizes), meanCorrectedPenalties, label="Corrected Penalty")
+    plt.plot(numpy.log2(treeSizes), meanBetaPenalties, label="Beta Penalty")
     plt.plot(numpy.log2(treeSizes), meanIdealPenalities, label="Ideal Penalty")
     plt.plot(numpy.log2(treeSizes), meanTrainError, label="Valid Error")
     plt.plot(numpy.log2(treeSizes), meanAllErrors, label="Train Error")
     plt.xlabel("log(treeSize)")
     plt.ylabel("Error/Penalty")
-    plt.legend()
+    plt.legend(loc="center left")
     figInd += 1
     
-
-    plt.figure(figInd)
-    plt.scatter(idealAlphas[4:], meanTrainError[4:])
-    plt.xlabel("Ideal Alpha")
-    plt.ylabel("Train Error")
-    figInd += 1
-    
-    plt.figure(figInd)
-    plt.scatter(idealAlphas[4:], estimatedAlpha[4:])
-    plt.xlabel("Ideal Alpha")
-    plt.ylabel("Estimated alpha")    
     
     print("Ideal alphas=" + str(idealAlphas))
-    print(estimatedAlpha)
+    print("Estimated alphas=" + str(estimatedAlpha)) 
     
     plt.show()
