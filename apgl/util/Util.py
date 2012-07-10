@@ -631,3 +631,18 @@ class Util(object):
         D **= 0.5         
         
         return D 
+
+    @staticmethod
+    def cumMin(v): 
+        """
+        Find the minimum element of a 1d array v for each subarray, starting 
+        with the 1st elemnt. 
+        """
+        u = numpy.zeros(v.shape[0])
+        
+        for i in range(v.shape[0]):
+            u[i] = numpy.min(v[0:i+1])
+            
+        return u 
+        
+        

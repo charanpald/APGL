@@ -317,6 +317,19 @@ class UtilTest(unittest.TestCase):
                 D2[i, j] = numpy.sqrt(numpy.sum((U[i, :] - V[j, :])**2))
                 
         nptst.assert_almost_equal(D, D2)
+
+    def testCumMin(self): 
+        v = numpy.array([5, 6, 4, 5, 1])
+        u = Util.cumMin(v)
+        nptst.assert_array_equal(u, numpy.array([5, 5, 4, 4, 1]))
         
+        v = numpy.array([5, 4, 3, 2, 1])
+        u = Util.cumMin(v)
+        nptst.assert_array_equal(u, v)
+    
+        v = numpy.array([1, 2, 3])
+        u = Util.cumMin(v)
+        nptst.assert_array_equal(u, numpy.ones(3))    
+    
 if __name__ == "__main__":
     unittest.main()
