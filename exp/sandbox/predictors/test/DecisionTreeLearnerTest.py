@@ -431,8 +431,23 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         self.assertTrue(numpy.isinf(currentPenalties[paramDict["setGamma"]>treeSize]).all())      
         self.assertTrue(not numpy.isinf(currentPenalties[paramDict["setGamma"]<treeSize]).all())
 
+    def testLearningRate(self): 
+        numExamples = 150
+        X, y = data.make_regression(numExamples) 
+        X = Standardiser().normaliseArray(X)
+        y = Standardiser().normaliseArray(y)
+        learner = DecisionTreeLearner(pruneType="CART", maxDepth=20, minSplit=1)
         
         
+        foldsSet = numpy.arange(2, 13, 1)
+        
+        paramDict = {} 
+        paramDict["setGamma"] = numpy.array(numpy.round(2**numpy.arange(1, 8, 1)-1), dtype=numpy.int)
+        
+        betaGrid = learner.learningRate(X, y, foldsSet, paramDict)
+        
+        
+        print(betaGrid)
         
 if __name__ == "__main__":
     unittest.main()

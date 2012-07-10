@@ -25,8 +25,9 @@ figInd = 0
 loadMethod = ModelSelectUtils.loadRegressDataset
 datasets = ModelSelectUtils.getRegressionDatasets(True)
 
-sampleSizes = numpy.array([50, 100, 200])
-foldSizes = numpy.arange(2, 13, 1)
+#sampleSizes = numpy.array([50, 100, 200])
+sampleSizes = numpy.array([50])
+foldsSet = numpy.arange(2, 13, 1)
 alpha = 1.0
 
 gammas = numpy.unique(numpy.array(numpy.round(2**numpy.arange(1, 7.25, 0.25)-1), dtype=numpy.int))
@@ -52,18 +53,18 @@ for datasetName, numRealisations in datasets:
     
     fileLock = FileLock(outfileName + ".npz")
     if not fileLock.isLocked() and not fileLock.fileExists():
-        fileLock.lock()    
+        #fileLock.lock()    
     
         for m in range(sampleSizes.shape[0]): 
             sampleSize = sampleSizes[m]
             logging.debug("Sample size " + str(sampleSize))
         
-            meanPenalties = numpy.zeros((foldSizes.shape[0], numParams))
+            meanPenalties = numpy.zeros((foldsSet.shape[0], numParams))
         
-            numRealisations = 10
+            numRealisations = 1
             
             k = 0 
-            for folds in foldSizes: 
+            for folds in foldsSet: 
                 logging.debug("Folds " + str(folds))
                 errors = numpy.zeros(numRealisations)
                         
@@ -72,7 +73,7 @@ for datasetName, numRealisations in datasets:
                     logging.debug("Realisation: " + str(j))
                     trainX, trainY, testX, testY = loadMethod(dataDir, datasetName, j)
                     
-                    trainInds = numpy.random.permutation(trainX.shape[0])[0:sampleSize]
+                    trainInds = numpy.arange(sampleSize)
                     trainX = trainX[trainInds,:]
                     trainY = trainY[trainInds]
                     
@@ -88,24 +89,34 @@ for datasetName, numRealisations in datasets:
             numRealisations = float(numRealisations)
             meanPenalties /=  numRealisations 
             
+            print("meanPenalties="+str(meanPenalties))
+            
             for i in range(gammas.shape[0]): 
                 inds = numpy.logical_and(numpy.isfinite(meanPenalties[:, i]), meanPenalties[:, i]>0)
                 tempMeanPenalties = meanPenalties[:, i][inds]
-                tempFoldSizes = numpy.array(foldSizes, numpy.float)[inds]                
+                tempfoldsSet = numpy.array(foldsSet, numpy.float)[inds]                
                 
+                print("tempMeanPenalties=" + str(tempMeanPenalties)) 
                 
                 if tempMeanPenalties.shape[0] > 1: 
-                    x = numpy.log((tempFoldSizes-1)/tempFoldSizes*sampleSize)
-                    y = numpy.log(tempMeanPenalties)+numpy.log(tempFoldSizes)    
+                    x = numpy.log((tempfoldsSet-1)/tempfoldsSet*sampleSize)
+                    y = numpy.log(tempMeanPenalties)+numpy.log(tempfoldsSet)    
                 
                     clf = linear_model.LinearRegression()
                     clf.fit(numpy.array([x]).T, y)
-                    betas[i, m] = clf.coef_[0]
-                    print(gammas[i], betas[i, m])        
+                    betas[i, m] = clf.coef_[0]    
             
         print(-betas) 
+        
+        betas2 = learner.learningRate(trainX, trainY, foldsSet, paramDict)
+        print(betas2)
+        
+        resultsList = learner.parallelPen(trainX, trainY, idx, paramDict, Cvs)
+        bestLearner, trainErrors, currentPenalties = resultsList[0]
+        print(currentPenalties)
         
         
         numpy.savez(outfileName, -betas)
         logging.debug("Saved results as file " + outfileName + ".npz")
-        fileLock.unlock()
+        break 
+        #fileLock.unlock()

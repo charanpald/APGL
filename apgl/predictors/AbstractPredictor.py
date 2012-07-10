@@ -12,6 +12,7 @@ import logging
 import gc
 import itertools 
 import multiprocessing 
+from sklearn import linear_model 
 
 
 #Start with some functions used for multiprocessing 
@@ -431,17 +432,23 @@ class AbstractPredictor(object):
         #Store v fold penalised error
         #In the case that Cv < 0 we use the corrected penalisation 
         resultsList = []
-        for k in range(Cvs.shape[0]):
+        for k in range(len(Cvs)):
             Cv = Cvs[k]
             
-            if Cv >= 0: 
-                logging.debug("Computing penalisation of Cv=" + str(Cv))
-                currentPenalties = penalties*Cv
-            else: 
-                logging.debug("Computing corrected penalisation with sigma=" + str(abs(Cv)))
-                sigma = abs(Cv)
-                dynamicCv = (folds-1)*(1-numpy.exp(-sigma*trainErrors)) + float(folds)*numpy.exp(-sigma*trainErrors)    
-                currentPenalties = penalties*dynamicCv
+            #If Cv is an array then each value is learning rate beta for the corresponding params 
+            if type(Cv) == numpy.ndarray:            
+                tempCv = ((folds-1)**Cv/(folds**(Cv-1)))
+                logging.debug("Computing learning rate penalisation with Cv=" + str(tempCv))
+                currentPenalties = penalties*tempCv
+            else:
+                if Cv >= 0: 
+                    logging.debug("Computing penalisation of Cv=" + str(Cv))
+                    currentPenalties = penalties*Cv
+                else: 
+                    logging.debug("Computing corrected penalisation with sigma=" + str(abs(Cv)))
+                    sigma = abs(Cv)
+                    dynamicCv = (folds-1)*(1-numpy.exp(-sigma*trainErrors)) + float(folds)*numpy.exp(-sigma*trainErrors)    
+                    currentPenalties = penalties*dynamicCv
                 
             meanErrors = trainErrors + currentPenalties
             learner = self.getBestLearner(meanErrors, paramDict, X, y, idx)
@@ -546,3 +553,70 @@ class AbstractPredictor(object):
     def setChunkSize(self, chunkSize): 
         Parameter.checkInt(chunkSize, 1, float("inf"))
         self.chunkSize = chunkSize 
+        
+    def learningRate(self, X, y, foldsSet, paramDict): 
+        """
+        Find a matrix beta which has the same dimensions as the parameter grid. 
+        Each value in the grid represents the learning rate with respect to 
+        those particular parameters.         
+        
+        :param X: The examples as rows
+        :type X: :class:`numpy.ndarray`
+
+        :param y: The binary -1/+1 labels 
+        :type y: :class:`numpy.ndarray`
+
+        :param foldsSet: A list of folds to try. 
+
+        :param paramDict: A dictionary index by the method name and with value as an array of values
+        :type X: :class:`dict`
+        """ 
+        
+        gridSize = [] 
+        gridInds = [] 
+        for key in paramDict.keys(): 
+            gridSize.append(paramDict[key].shape[0])
+            gridInds.append(numpy.arange(paramDict[key].shape[0])) 
+            
+        betaGrid = numpy.zeros(tuple(gridSize))
+        
+        gridSize.insert(0, foldsSet.shape[0])
+        penalties = numpy.zeros(tuple(gridSize))
+        Cvs = numpy.array([1])        
+        
+        for i in range(foldsSet.shape[0]):
+            folds = foldsSet[i]
+            
+            idx = Sampling.crossValidation(folds, X.shape[0])
+            resultsList = self.parallelPen(X, y, idx, paramDict, Cvs)
+            bestLearner, trainErrors, currentPenalties = resultsList[0]
+            penalties[i, :] = currentPenalties
+        
+        
+        indexIter = itertools.product(*gridInds)
+        print(penalties)
+        #Correct up to here 
+
+        for inds in indexIter: 
+            print
+            print(inds)
+            tempPenalties = penalties[:, inds]
+            print("tempPenalties=" + str(tempPenalties)) 
+            
+            penInds = numpy.logical_and(numpy.isfinite(tempPenalties), tempPenalties>0)
+            penInds = numpy.squeeze(penInds)
+            tempPenalties = tempPenalties[penInds].flatten()
+            tempfoldsSet = numpy.array(foldsSet, numpy.float)[penInds]  
+
+            print("tempPenalties=" + str(tempPenalties))  
+            print(tempfoldsSet)
+                   
+            if tempPenalties.shape[0] > 1: 
+                xp = numpy.log((tempfoldsSet-1)/(tempfoldsSet*X.shape[0]))
+                yp = numpy.log(tempfoldsSet)+numpy.log(tempfoldsSet)    
+            
+                clf = linear_model.LinearRegression()
+                clf.fit(numpy.array([xp]).T, yp)
+                betaGrid[inds] = clf.coef_[0]    
+        
+        return -betaGrid 
