@@ -74,15 +74,13 @@ def getSetup(learnerName, dataDir, outputDir, numProcesses):
                 
     return learner, loadMethod, dataDir, outputDir, paramDict 
 
-def runBenchmarkExp(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, numProcesses, fileNameSuffix, learnerName="SVM"):
+def runBenchmarkExp(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, numProcesses, fileNameSuffix, learnerName, betaName):
     dataDir = PathDefaults.getDataDir() + "modelPenalisation/"
     outputDir = PathDefaults.getOutputDir() + "modelPenalisation/"
 
     learner, loadMethod, dataDir, outputDir, paramDict = getSetup(learnerName, dataDir, outputDir, numProcesses)
-    
-    sigmas = numpy.array([3, 5, 7])
     numParams = len(paramDict.keys())
-    numMethods = 1 + (cvScalings.shape[0] + sigmas.shape[0])
+    numMethods = 1 + (cvScalings.shape[0] + 1)
     
     runCv = True
     runVfpen = True
@@ -93,7 +91,7 @@ def runBenchmarkExp(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMetho
         logging.debug("Learning using dataset " + datasetName)
         
         #Load learning rates for penalisation 
-        betafileName = outputDir + datasetNames[i][0] + "Beta.npz"
+        betafileName = outputDir + datasetNames[i][0] + betaName + ".npz"
         betaGrids = numpy.load(betafileName)["arr_0"]
         betaGrids = numpy.clip(betaGrids, 0, 1)    
 
@@ -156,8 +154,7 @@ def runBenchmarkExp(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMetho
                                 #Corrected penalisation give by using learning rate 
 
                                 tempCvScalings = list(cvScalings * (folds-1))
-                                #Need to change this line for the SVM 
-                                tempCvScalings.insert(0, Util.cumMin(betaGrids[j, k, :])) 
+                                tempCvScalings.insert(0, betaGrids[j, k, :]) 
                                 
                                 idx = sampleMethod(folds, validY.shape[0])
                                 svmGridResults = learner.parallelPen(validX, validY, idx, paramDict, tempCvScalings)
@@ -333,6 +330,7 @@ cvScalings = numpy.arange(0.6, 1.61, 0.2)
 
 sampleSizes = numpy.array([50, 100, 200])
 foldsSet = numpy.arange(2, 13, 2)
+betaName = "Beta"
 betaFoldsSet = numpy.arange(2, 13, 1)
 datasetNames = ModelSelectUtils.getRatschDatasets(True)
 fileNameSuffix = "Results"
@@ -340,6 +338,7 @@ fileNameSuffix = "Results"
 extSampleMethods = [("CV", Sampling.crossValidation)]
 extSampleSizes = numpy.array([25, 50, 100])
 extFoldsSet = numpy.arange(10, 51, 10)
+betaNameExt = "BetaExt"
 extDatasetNames = ModelSelectUtils.getRatschDatasetsExt(True)
 extFileNameSuffix = "ResultsExt"
 
@@ -349,14 +348,18 @@ regressiondatasetNames = ModelSelectUtils.getRegressionDatasets(True)
 logging.debug("Using " + str(numProcesses) + " processes")
 logging.debug("Process id: " + str(os.getpid()))
 
-#learnerName = SVR
+#learnerName = "SVR"
+#computeLearningRates(regressiondatasetNames, numProcesses, betaName, learnerName, sampleSizes, betaFoldsSet)
 #findErrorGrid(regressiondatasetNames, numProcesses, "GridResults", learnerName, sampleSizes)
-#runBenchmarkExp(regressiondatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, numProcesses, fileNameSuffix, learnerName)
-#runBenchmarkExp(regressiondatasetNames, extSampleSizes, extFoldsSet, cvScalings, extSampleMethods, numProcesses, extFileNameSuffix, learnerName)
+#runBenchmarkExp(regressiondatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, numProcesses, fileNameSuffix, learnerName, betaName)
+
+#computeLearningRates(regressiondatasetNames, numProcesses, betaNameExt, learnerName, sampleSizes, betaFoldsSet)
+#runBenchmarkExp(regressiondatasetNames, extSampleSizes, extFoldsSet, cvScalings, extSampleMethods, numProcesses, extFileNameSuffix, learnerName, betaNameExt)
 
 learnerName = "CART"
-computeLearningRates(regressiondatasetNames, numProcesses, "Beta", learnerName, sampleSizes, betaFoldsSet)
+computeLearningRates(regressiondatasetNames, numProcesses, betaName, learnerName, sampleSizes, betaFoldsSet)
 findErrorGrid(regressiondatasetNames, numProcesses, "GridResults", learnerName, sampleSizes)
-runBenchmarkExp(regressiondatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, numProcesses, fileNameSuffix, learnerName)
+runBenchmarkExp(regressiondatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, numProcesses, fileNameSuffix, learnerName, betaName)
 
-runBenchmarkExp(regressiondatasetNames, extSampleSizes, extFoldsSet, cvScalings, extSampleMethods, numProcesses, extFileNameSuffix, learnerName)
+computeLearningRates(regressiondatasetNames, numProcesses, betaNameExt, learnerName, sampleSizes, betaFoldsSet)
+runBenchmarkExp(regressiondatasetNames, extSampleSizes, extFoldsSet, cvScalings, extSampleMethods, numProcesses, extFileNameSuffix, learnerName, betaNameExt)
