@@ -596,7 +596,10 @@ class AbstractPredictor(object):
         indexIter = itertools.product(*gridInds)
 
         for inds in indexIter: 
-            tempPenalties = penalties[:, inds]
+            inds2 = [slice(0, penalties.shape[0])]
+            inds2.extend(inds)
+            inds2 = tuple(inds2)
+            tempPenalties = penalties[inds2]
             
             penInds = numpy.logical_and(numpy.isfinite(tempPenalties), tempPenalties>0)
             penInds = numpy.squeeze(penInds)
