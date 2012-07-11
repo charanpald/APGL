@@ -578,45 +578,37 @@ class AbstractPredictor(object):
             gridSize.append(paramDict[key].shape[0])
             gridInds.append(numpy.arange(paramDict[key].shape[0])) 
             
-        betaGrid = numpy.zeros(tuple(gridSize))
+        betaGrid = numpy.ones(tuple(gridSize))
         
         gridSize.insert(0, foldsSet.shape[0])
         penalties = numpy.zeros(tuple(gridSize))
-        Cvs = numpy.array([1])        
+        Cvs = numpy.array([1])
         
         for i in range(foldsSet.shape[0]):
             folds = foldsSet[i]
-            
+            logging.debug("Folds " + str(folds))
+                       
             idx = Sampling.crossValidation(folds, X.shape[0])
             resultsList = self.parallelPen(X, y, idx, paramDict, Cvs)
             bestLearner, trainErrors, currentPenalties = resultsList[0]
             penalties[i, :] = currentPenalties
         
-        
         indexIter = itertools.product(*gridInds)
-        print(penalties)
-        #Correct up to here 
 
         for inds in indexIter: 
-            print
-            print(inds)
             tempPenalties = penalties[:, inds]
-            print("tempPenalties=" + str(tempPenalties)) 
             
             penInds = numpy.logical_and(numpy.isfinite(tempPenalties), tempPenalties>0)
             penInds = numpy.squeeze(penInds)
             tempPenalties = tempPenalties[penInds].flatten()
             tempfoldsSet = numpy.array(foldsSet, numpy.float)[penInds]  
-
-            print("tempPenalties=" + str(tempPenalties))  
-            print(tempfoldsSet)
                    
             if tempPenalties.shape[0] > 1: 
-                xp = numpy.log((tempfoldsSet-1)/(tempfoldsSet*X.shape[0]))
-                yp = numpy.log(tempfoldsSet)+numpy.log(tempfoldsSet)    
+                xp = numpy.log((tempfoldsSet-1)/tempfoldsSet*X.shape[0])
+                yp = numpy.log(tempPenalties)+numpy.log(tempfoldsSet)    
             
                 clf = linear_model.LinearRegression()
                 clf.fit(numpy.array([xp]).T, yp)
-                betaGrid[inds] = clf.coef_[0]    
+                betaGrid[inds] = clf.coef_[0]  
         
         return -betaGrid 

@@ -1,6 +1,7 @@
 import numpy 
 import unittest
 import numpy.testing as nptst
+import logging
 from exp.sandbox.predictors.DecisionTreeLearner import DecisionTreeLearner
 from apgl.data.ExamplesGenerator import ExamplesGenerator
 from apgl.data.Standardiser import Standardiser    
@@ -9,6 +10,8 @@ from sklearn.tree import DecisionTreeRegressor
 from apgl.predictors.LibSVM import LibSVM
 import sklearn.datasets as data 
 from apgl.util.Evaluator import Evaluator
+from sklearn import linear_model
+
 
 class DecisionTreeLearnerTest(unittest.TestCase):
     def setUp(self):
@@ -432,22 +435,56 @@ class DecisionTreeLearnerTest(unittest.TestCase):
         self.assertTrue(not numpy.isinf(currentPenalties[paramDict["setGamma"]<treeSize]).all())
 
     def testLearningRate(self): 
-        numExamples = 150
-        X, y = data.make_regression(numExamples) 
-        X = Standardiser().normaliseArray(X)
-        y = Standardiser().normaliseArray(y)
+        numExamples = 100
+        trainX, trainY = data.make_regression(numExamples) 
+        trainX = Standardiser().normaliseArray(trainX)
+        trainY = Standardiser().normaliseArray(trainY)
         learner = DecisionTreeLearner(pruneType="CART", maxDepth=20, minSplit=1)
         
         
-        foldsSet = numpy.arange(2, 13, 1)
+        foldsSet = numpy.arange(2, 7, 2)
         
+        gammas = numpy.array(numpy.round(2**numpy.arange(1, 8, 1)-1), dtype=numpy.int)
         paramDict = {} 
-        paramDict["setGamma"] = numpy.array(numpy.round(2**numpy.arange(1, 8, 1)-1), dtype=numpy.int)
+        paramDict["setGamma"] = gammas
         
-        betaGrid = learner.learningRate(X, y, foldsSet, paramDict)
+        betaGrid = learner.learningRate(trainX, trainY, foldsSet, paramDict)
         
+        #Compute beta more directly 
+        numParams = gammas.shape[0]
+        sampleSize = trainX.shape[0]
+        sampleMethod = Sampling.crossValidation
+        Cvs = numpy.array([1])
+        penalties = numpy.zeros((foldsSet.shape[0], numParams))
+        betas = numpy.zeros(gammas.shape[0])
         
-        print(betaGrid)
+        for k in range(foldsSet.shape[0]): 
+            folds = foldsSet[k]
+            logging.debug("Folds " + str(folds))
+            
+            idx = sampleMethod(folds, trainX.shape[0])   
+            
+            #Now try penalisation
+            resultsList = learner.parallelPen(trainX, trainY, idx, paramDict, Cvs)
+            bestLearner, trainErrors, currentPenalties = resultsList[0]
+            penalties[k, :] = currentPenalties
+        
+        for i in range(gammas.shape[0]): 
+            inds = numpy.logical_and(numpy.isfinite(penalties[:, i]), penalties[:, i]>0)
+            tempPenalties = penalties[:, i][inds]
+            tempfoldsSet = numpy.array(foldsSet, numpy.float)[inds]                            
+            
+            if tempPenalties.shape[0] > 1: 
+                x = numpy.log((tempfoldsSet-1)/tempfoldsSet*sampleSize)
+                y = numpy.log(tempPenalties)+numpy.log(tempfoldsSet)   
+            
+                clf = linear_model.LinearRegression()
+                clf.fit(numpy.array([x]).T, y)
+                betas[i] = clf.coef_[0]    
+                
+        betas = -betas   
+        
+        nptst.assert_array_equal(betaGrid, betas)
         
 if __name__ == "__main__":
     unittest.main()
