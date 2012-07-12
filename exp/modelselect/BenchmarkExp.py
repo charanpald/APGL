@@ -157,10 +157,10 @@ def runBenchmarkExp(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMetho
                                 tempCvScalings.insert(0, betaGrids[j, k, :]) 
                                 
                                 idx = sampleMethod(folds, validY.shape[0])
-                                svmGridResults = learner.parallelPen(validX, validY, idx, paramDict, tempCvScalings)
+                                learnerGridResults = learner.parallelPen(validX, validY, idx, paramDict, tempCvScalings)
 
                                 for n in range(len(tempCvScalings)):
-                                    bestLearner, trainErrors, approxGrid = svmGridResults[n]
+                                    bestLearner, trainErrors, approxGrid = learnerGridResults[n]
                                     predY = bestLearner.predict(testX)
                                     methodInd = n + 1
                                     errors[j, k, m, methodInd] = bestLearner.getMetricMethod()(testY, predY)
@@ -174,11 +174,21 @@ def runBenchmarkExp(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMetho
                 meanParams = numpy.mean(params, 0)
                 print(meanParams)
 
+                #When using CART trees the penalty can be inf in which case std is undefined
+                #In this case we set to zero any infinite values 
                 meanErrorGrids = numpy.mean(errorGrids, 0)
-                stdErrorGrids = numpy.std(errorGrids, 0)
+                try: 
+                    stdErrorGrids = numpy.std(errorGrids, 0)
+                except FloatingPointError:
+                    errorGrids[numpy.isinf(errorGrids)] = 0 
+                    stdErrorGrids = numpy.std(errorGrids, 0)
             
-                meanApproxGrids = numpy.mean(approxGrids, 0)
-                stdApproxGrids = numpy.std(approxGrids, 0)
+                meanApproxGrids = numpy.mean(approxGrids, 0) 
+                try: 
+                    stdApproxGrids = numpy.std(approxGrids, 0)
+                except FloatingPointError:
+                    approxGrids[numpy.isinf(approxGrids)] = 0 
+                    stdApproxGrids = numpy.std(approxGrids, 0)
 
                 numpy.savez(outfileName, errors, params, meanErrorGrids, stdErrorGrids, meanApproxGrids, stdApproxGrids)
                 logging.debug("Saved results as file " + outfileName + ".npz")
