@@ -443,12 +443,16 @@ class DecisionTreeLearner(AbstractPredictor):
     def complexity(self): 
         return self.tree.size
         
-    def getBestLearner(self, meanErrors, paramDict, X, y, idx): 
+    def getBestLearner(self, meanErrors, paramDict, X, y, idx=None): 
         """
         Given a grid of errors, paramDict and examples, labels, find the 
         best learner and train it. In this case we set gamma to the real 
-        size of the tree as learnt using CV. 
+        size of the tree as learnt using CV. If idx == None then we simply 
+        use the gamma corresponding to the lowest error. 
         """
+        if idx == None: 
+            return super(DecisionTreeLearner, self).getBestLearner(meanErrors, paramDict, X, y, idx)
+        
         bestInds = numpy.unravel_index(numpy.argmin(meanErrors), meanErrors.shape)
         currentInd = 0    
         learner = self.copy()         
