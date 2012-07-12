@@ -13,6 +13,7 @@ import scipy
 import scipy.sparse
 import multiprocessing
 import itertools
+import sklearn.metrics
 
 
 class LibSVM(AbstractPredictor):
@@ -35,6 +36,7 @@ class LibSVM(AbstractPredictor):
         self.processes = processes
         self.chunkSize = 10
         self.timeout = 5
+        self.normModelSelect = False 
 
         #Parameters used for model selection
         self.Cs = 2.0**numpy.arange(-10, 20, dtype=numpy.float)
@@ -235,6 +237,9 @@ class LibSVM(AbstractPredictor):
     def getGamma(self):
         return self.kernelParam
 
+    def getDegree(self): 
+        return self.kernelParam
+
     def __str__(self):
         return str(self.model)
 
@@ -335,5 +340,64 @@ class LibSVM(AbstractPredictor):
                 
         return self.parallelPenaltyGrid(trainX, trainY, fullX, fullY, paramDict)
 
-
+    def weightNorm(self): 
+        """
+        Return the norm of the weight vector. 
+        """
         
+        v = numpy.squeeze(self.model.dual_coef_)
+        SV = self.model.support_vectors_
+        
+        if self.kernel == "linear": 
+            K = sklearn.metrics.pairwise.linear_kernel(SV, SV)
+        elif self.kernel == "poly": 
+            K = sklearn.metrics.pairwise.poly_kernel(SV, SV, self.getDegree()) 
+        elif self.kernel == "rbf": 
+            K = sklearn.metrics.pairwise.rbf_kernel(SV, SV, self.getGamma())
+        else: 
+            raise ValueError("Unknown kernel: " + self.kernel)
+        
+        return numpy.sqrt(v.T.dot(K).dot(v))
+    
+    def getBestLearner(self, meanErrors, paramDict, X, y, idx=None): 
+        """
+        Given a grid of errors, paramDict and examples, labels, find the 
+        best learner and train it. In this case we set gamma to the real 
+        size of the tree as learnt using CV. If idx == None then we simply 
+        use the gamma corresponding to the lowest error. 
+        """
+        if idx == None or not self.normModelSelect: 
+            return super(LibSVM, self).getBestLearner(meanErrors, paramDict, X, y, idx)
+        
+        bestInds = numpy.unravel_index(numpy.argmin(meanErrors), meanErrors.shape)
+        currentInd = 0    
+        learner = self.copy()         
+    
+        for key, val in paramDict.items():
+            method = getattr(learner, key)
+            method(val[bestInds[currentInd]])
+            currentInd += 1 
+         
+        norms = []
+        for trainInds, testInds in idx: 
+            validX = X[trainInds, :]
+            validY = y[trainInds]
+            learner.learnModel(validX, validY)
+            
+            norms.append(learner.weightNorm())
+        
+        bestNorm = numpy.array(norms).mean()
+        
+        norms = numpy.zeros(paramDict["setC"].shape[0])        
+        
+        #We select C closest to the best norm 
+        for i, C in enumerate(paramDict["setC"]): 
+            learner.setC(C)
+            learner.learnModel(X, y)
+            norms[i] = learner.weightNorm()          
+            
+        bestC = paramDict["setC"][numpy.abs(norms-bestNorm).argmin()]
+        learner.setC(bestC)
+        learner.learnModel(X, y)            
+        return learner     
+    
