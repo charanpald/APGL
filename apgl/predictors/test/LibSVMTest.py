@@ -848,6 +848,47 @@ class LibSVMTest(unittest.TestCase):
         tol = 10**-6 
         self.assertTrue(numpy.linalg.norm(idealPenalties2.T - idealPenalties) < tol)
 
+    def testGetBestLearner(self): 
+        svm = self.svm
+        paramDict = {} 
+        paramDict["setC"] = svm.getCs()
+        paramDict["setGamma"] = svm.getGammas()      
+
+        errors = numpy.random.rand(svm.getCs().shape[0], svm.getGammas().shape[0])
+
+        folds = 5 
+        idx = Sampling.crossValidation(folds, self.X.shape[0])
+
+        svm.normModelSelect = True 
+        svm.setKernel("gaussian")
+        learner = svm.getBestLearner(errors, paramDict, self.X, self.y, idx)
+        
+        bestC = learner.getC()
+        
+        #Find the best norm 
+        bestInds = numpy.unravel_index(numpy.argmin(errors), errors.shape)
+        learner.setC(svm.getCs()[bestInds[0]])
+        learner.setGamma(svm.getGammas()[bestInds[1]])              
+        
+        norms = []
+        for trainInds, testInds in idx: 
+            validX = self.X[trainInds, :]
+            validY = self.y[trainInds]
+            learner.learnModel(validX, validY)
+            
+            norms.append(learner.weightNorm())  
+        
+        bestNorm = numpy.array(norms).mean()
+        
+        norms = numpy.zeros(paramDict["setC"].shape[0]) 
+        for i, C in enumerate(paramDict["setC"]): 
+            learner.setC(C)
+            learner.learnModel(self.X, self.y)
+            norms[i] = learner.weightNorm()            
+            
+        bestC2 = paramDict["setC"][numpy.abs(norms-bestNorm).argmin()]
+        
+        self.assertEquals(bestC, bestC2)
         
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
