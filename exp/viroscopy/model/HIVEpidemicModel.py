@@ -210,7 +210,7 @@ class HIVEpidemicModel():
                 logging.debug("t=" + str(t) + " S=" + str(len(susceptibleSet)) + " I=" + str(len(infectedSet)) + " R=" + str(len(removedSet)) + " C=" + str(numContacts) + " E=" + str(self.graph.getNumEdges()))
                 nextPrintStep += self.printStep
 
-        logging.debug("Finished simulation at time " + str(t))
+        logging.debug("Finished simulation at time " + str(t) + " for a total time of " + str(t-self.T0))
 
         if self.standardiseResults:
             times, infectedIndices, removedIndices = self.findStandardResults(times, infectedIndices, removedIndices)
