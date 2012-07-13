@@ -74,3 +74,4 @@ class AbstractGraph(object):
         """
         Util.abstract() 
 
+    size = property(getNumVertices, doc="The number of vertices in the graph")
