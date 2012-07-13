@@ -1329,6 +1329,6 @@ class AbstractMatrixGraph(AbstractSingleGraph):
     _boolExt = ".dir"
     
     vlist = property(getVertexList, doc="The vertex list")
-
+    size = property(getNumVertices, doc="The number of vertices in the graph")
 
 
