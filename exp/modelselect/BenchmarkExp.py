@@ -371,5 +371,8 @@ computeLearningRates(regressiondatasetNames, numProcesses, betaName, learnerName
 findErrorGrid(regressiondatasetNames, numProcesses, "GridResults", learnerName, sampleSizes)
 runBenchmarkExp(regressiondatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, numProcesses, fileNameSuffix, learnerName, betaName)
 
+extSampleSizes = numpy.array([500, 1000])
+extFoldsSet = numpy.arange(2, 13, 2)
 computeLearningRates(regressiondatasetNames, numProcesses, betaNameExt, learnerName, sampleSizes, betaFoldsSet)
+findErrorGrid(regressiondatasetNames, numProcesses, "GridResultsExt", learnerName, extSampleSizes)
 runBenchmarkExp(regressiondatasetNames, extSampleSizes, extFoldsSet, cvScalings, extSampleMethods, numProcesses, extFileNameSuffix, learnerName, betaNameExt)
