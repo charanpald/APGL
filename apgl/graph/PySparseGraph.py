@@ -248,17 +248,23 @@ class PySparseGraph(AbstractMatrixGraph):
         :param W: The name of the file to load.
         :type W: :class:`ndarray`
         """
-        Parameter.checkClass(W, numpy.ndarray)
+        #Parameter.checkClass(W, numpy.ndarray)
 
         if W.shape != (self.vList.getNumVertices(), self.vList.getNumVertices()):
             raise ValueError("Weight matrix has wrong shape : " + str(W.shape))
 
-        if self.undirected and (W != W.T).any():
+        if self.undirected and type(W) == numpy.ndarray and (W != W.T).any():
             raise ValueError("Weight matrix of undirected graph must be symmetric")
 
         self.W = spmatrix.ll_mat(self.getNumVertices(), self.getNumVertices())
-        rowInds, colInds = numpy.nonzero(W)
-        self.W.put(W[(rowInds, colInds)], rowInds, colInds)
+        
+        if type(W) == numpy.ndarray:         
+            rowInds, colInds = numpy.nonzero(W)
+            self.W.put(W[(rowInds, colInds)], rowInds, colInds)
+        elif sparse.issparse(W): 
+            self.setWeightMatrixSparse(W)
+        else: 
+            raise ValueError("Invalid matrix type: " + str(type(W)))
 
     def weightMatrixType(self):
         """
