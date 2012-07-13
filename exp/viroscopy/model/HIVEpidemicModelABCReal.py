@@ -24,7 +24,6 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format=FORMAT)
 numpy.set_printoptions(suppress=True, precision=4, linewidth=100)
 numpy.seterr(invalid='raise')
 
-#First try the experiment on some toy data 
 resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/" 
 hivReader = HIVGraphReader()
 targetGraph = hivReader.readSimulationHIVGraph()
@@ -91,5 +90,5 @@ logging.debug("meanTheta=" + str(meanTheta))
 logging.debug("stdTheta=" + str(stdTheta))
 logging.debug("realTheta=" + str(HIVModelUtils.defaultTheta()))
 
-thetaFileName =  resultsDir + "ThetaDistSimulated.pkl"
+thetaFileName =  resultsDir + "ThetaDistReal.pkl"
 Util.savePickle(thetasArray, thetaFileName)
