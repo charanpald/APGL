@@ -131,4 +131,15 @@ class HIVGraph(PySparseGraph):
         inds = numpy.arange(self.getNumVertices())[numpy.logical_and(vertexArray[:, HIVVertices.detectionTimeIndex] <= t, vertexArray[:, HIVVertices.detectionTimeIndex] >= 0)]
         
         return inds
+
+    def endTime(self): 
+        """
+        Return the time of the last infection or detection event. 
+        """
+        vertexArray = self.getVertexList().getVertices()
+        imin = numpy.max(vertexArray[:, HIVVertices.infectionTimeIndex])
+        rmin = numpy.max(vertexArray[:, HIVVertices.detectionTimeIndex]) 
+        
+        return numpy.max(numpy.array([imin, rmin]))
+        
         
