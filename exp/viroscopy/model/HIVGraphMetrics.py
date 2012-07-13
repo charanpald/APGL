@@ -90,12 +90,17 @@ class HIVGraphMetrics2(object):
     def summary(self, graph): 
         """
         Compute a summary statistic on the input HIV graph. In this case, it is 
-        just the graphs at each time point.
+        just the graphs at each time point until the last infection/detection 
+        of the graph. 
         """
         summaryList = [] 
+        
+        endTimeInd = numpy.sum(self.times <= graph.endTime()) + 1
+        times = self.times[0:endTimeInd]
 
-        for i in range(self.times.shape[0]): 
-            t = self.times[i]     
+        for i in range(times.shape[0]): 
+            t = times[i] 
+            logging.debug("Computing summary at time " + str(t))
             subgraph = graph.subgraph(graph.removedIndsAt(t))   
             summaryList.append(subgraph)
         
@@ -113,11 +118,20 @@ class HIVGraphMetrics2(object):
         :param summary2: A modelled list of HIVGraphs. 
         """ 
         totalDist = 0 
-        
-        for i in range(self.times.shape[0]): 
+        logging.debug("Computing total distance")
+        for i in range(numpy.min(numpy.array([len(summary1), len(summary2)]))): 
+            logging.debug("Time = " + str(self.times[i]) + " sizes = " + str(summary1[i].size) + ", " + str(summary2[i].size))
             permutation, distance, time = self.matcher.match(summary1[i], summary2[i])
-            totalDist += self.matcher.distance(summary1[i], summary2[i], permutation, True, True) 
+            lastDist = self.matcher.distance(summary1[i], summary2[i], permutation, True, True) 
+            totalDist += lastDist
+            logging.debug("Distance = " + str(lastDist))
+            
+        #If one summary stat is too small we extend it to be the same length as the other one 
+        #by copying the last value (using the same distance)
+        for j in range(i, self.times.shape[0]): 
+            totalDist += lastDist 
         
+        logging.debug("Computed total distance as " + str(totalDist))
         return totalDist 
         
     def shouldBreak(self, realSummary, graph, epsilon, currentTime): 
@@ -135,8 +149,7 @@ class HIVGraphMetrics2(object):
         
         """
         newTimes = self.times[self.times <= currentTime]
-        summaryStat = self.summary(graph)
-        
+
         tempMetrics = HIVGraphMetrics2(newTimes)
         realSummary = realSummary[0:newTimes.shape[0]]
         summaryStat = tempMetrics.summary(graph)
