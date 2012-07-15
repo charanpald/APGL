@@ -10,7 +10,7 @@ class AbstractTreeRank(AbstractPredictor):
     """
     Some common functionality between TreeRank and TreeRankForest.
     """
-    def __init__(self, generateLeafRank):
+    def __init__(self, leafRanklearner):
         """
         Create the AbstractTreeRank with the given leaf rank generator. 
         """
@@ -18,7 +18,7 @@ class AbstractTreeRank(AbstractPredictor):
         self.minSplit = 50
         self.bestResponse = 1
         self.featureSize = 1.0
-        self.generateLeafRank = generateLeafRank
+        self.leafRanklearner = leafRanklearner
         
         self.minLabelCount = 5
 
