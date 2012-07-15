@@ -17,7 +17,7 @@ import sklearn.metrics
 
 
 class LibSVM(AbstractPredictor):
-    def __init__(self, kernel='linear', kernelParam=0.1, C=1.0, cost=1.0, type="C_SVC", processes=None, epsilon=0.001):
+    def __init__(self, kernel='linear', kernelParam=0.1, C=1.0, cost=0.5, type="C_SVC", processes=None, epsilon=0.001):
         try:
             from sklearn.svm import SVC 
         except ImportError:
@@ -42,6 +42,12 @@ class LibSVM(AbstractPredictor):
         self.Cs = 2.0**numpy.arange(-10, 20, dtype=numpy.float)
         self.gammas = 2.0**numpy.arange(-10, 4, dtype=numpy.float)
         self.epsilons = 2.0**numpy.arange(-4, -2, dtype=numpy.float)
+        
+        #Default error functions 
+        if self.getType() == "C_SVC":
+            self.metricMethod = "binaryError"
+        else:
+            self.metricMethod = "meanAbsError"
 
     def getCs(self):
         return self.Cs
@@ -61,7 +67,7 @@ class LibSVM(AbstractPredictor):
         if self.type == "Epsilon_SVR":
             self.model = SVR(C=self.C, kernel=self.kernel, degree=self.kernelParam, gamma=self.kernelParam, epsilon=self.epsilon, tol=self.tol)
         elif self.type == "C_SVC":
-            self.model = SVC(C=self.C, kernel=self.kernel, degree=self.kernelParam, gamma=self.kernelParam, tol=self.tol, class_weight={-1:1, 1:self.errorCost})
+            self.model = SVC(C=self.C, kernel=self.kernel, degree=self.kernelParam, gamma=self.kernelParam, tol=self.tol, class_weight={-1:1-self.errorCost, 1:self.errorCost})
         else:
             raise ValueError("Invalid type : " + str(type))
 
@@ -115,12 +121,7 @@ class LibSVM(AbstractPredictor):
         Depending on the type "Epsilon_SVR" or "C_SVC" returns a way to measure
         the performance of the classifier.
         """
-        if self.getType() == "C_SVC":
-            return Evaluator.binaryError
-        else:
-            #return Evaluator.rootMeanSqError
-            return Evaluator.meanAbsError
-            #return Evaluator.meanSqError
+        return getattr(Evaluator, self.metricMethod)
         
 
     def setErrorCost(self, errorCost):
@@ -128,7 +129,7 @@ class LibSVM(AbstractPredictor):
         The penalty on errors on positive labels. The penalty for negative labels
         is 1.
         """
-        Parameter.checkFloat(errorCost, 0.0, float('inf'))
+        Parameter.checkFloat(errorCost, 0.0, 1.0)
         self.errorCost = errorCost
 
     def setEpsilon(self, epsilon):
@@ -287,6 +288,10 @@ class LibSVM(AbstractPredictor):
         Return a new copied version of this object. 
         """
         svm = LibSVM(kernel=self.kernel, kernelParam=self.kernelParam, C=self.C, cost=self.errorCost, type=self.type, processes=self.processes, epsilon=self.epsilon)
+        svm.metricMethod = self.metricMethod
+        svm.chunkSize = self.chunkSize
+        svm.timeout = self.chunkSize
+        svm.normModelSelect = svm.chunkSize 
         return svm 
 
 
@@ -359,17 +364,20 @@ class LibSVM(AbstractPredictor):
         
         return numpy.sqrt(v.T.dot(K).dot(v))
     
-    def getBestLearner(self, meanErrors, paramDict, X, y, idx=None): 
+    def getBestLearner(self, meanErrors, paramDict, X, y, idx=None, best="min"): 
         """
         Given a grid of errors, paramDict and examples, labels, find the 
-        best learner and train it. In this case we set gamma to the real 
-        size of the tree as learnt using CV. If idx == None then we simply 
-        use the gamma corresponding to the lowest error. 
+        best learner and train it. If idx == None then we simply 
+        use the parameter corresponding to the lowest error. 
         """
         if idx == None or not self.normModelSelect: 
-            return super(LibSVM, self).getBestLearner(meanErrors, paramDict, X, y, idx)
+            return super(LibSVM, self).getBestLearner(meanErrors, paramDict, X, y, idx, best)
         
-        bestInds = numpy.unravel_index(numpy.argmin(meanErrors), meanErrors.shape)
+        if best == "min": 
+            bestInds = numpy.unravel_index(numpy.argmin(meanErrors), meanErrors.shape)
+        else: 
+            bestInds = numpy.unravel_index(numpy.argmax(meanErrors), meanErrors.shape)     
+            
         currentInd = 0    
         learner = self.copy()         
     
@@ -400,4 +408,19 @@ class LibSVM(AbstractPredictor):
         learner.setC(bestC)
         learner.learnModel(X, y)            
         return learner     
-    
+        
+    def setWeight(self, weight):
+        """
+        :param weight: the weight on the positive examples between 0 and 1 (the negative weight is 1-weight)
+        :type weight: :class:`float`
+        """
+        return self.setErrorCost(weight)
+
+    def getWeight(self):
+        """
+        :return: the weight on the positive examples between 0 and 1 (the negative weight is 1-weight)
+        """
+        return self.getErrorCost()
+        
+    def setMetricMethod(self, metricMethod): 
+        self.metricMethod = metricMethod 
