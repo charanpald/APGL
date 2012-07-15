@@ -363,7 +363,6 @@ class AbstractPredictor(object):
             
             pool = multiprocessing.Pool(processes=self.processes, maxtasksperchild=100)
             resultsIterator = pool.imap(computeTestError, paramList, self.chunkSize)
-            #resultsIterator =  itertools.imap(computeTestError, paramList)
         
             indexIter = itertools.product(*gridInds)
             for inds in indexIter: 
@@ -464,12 +463,15 @@ class AbstractPredictor(object):
             
         return tuple(gridSize)
         
-    def getBestLearner(self, meanErrors, paramDict, X, y, idx): 
+    def getBestLearner(self, meanErrors, paramDict, X, y, idx, best="min"): 
         """
         Given a grid of errors, paramDict and examples, labels, find the 
         best learner and train it. 
         """
-        bestInds = numpy.unravel_index(numpy.argmin(meanErrors), meanErrors.shape)
+        if best == "min": 
+            bestInds = numpy.unravel_index(numpy.argmin(meanErrors), meanErrors.shape)
+        else: 
+            bestInds = numpy.unravel_index(numpy.argmax(meanErrors), meanErrors.shape)
         currentInd = 0    
         learner = self.copy()         
     
