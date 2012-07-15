@@ -14,15 +14,15 @@ class TreeRankProfile(object):
         self.folds = 3 
         self.paramDict = {} 
         self.paramDict["setC"] = 2**numpy.arange(-5, 5, dtype=numpy.float)  
-        self.leafRanklearner = SVMLeafRank(self.paramDict, self.folds)
+        self.leafRanklearner = SVMLeafRank(self.paramDict, self.folds, sampleSize=100)
 
     def profileLearnModel(self):
         treeRank = TreeRank(self.leafRanklearner)
         treeRank.setMaxDepth(2)
         treeRank.setMinSplit(50)
 
-        numExamples = 1000
-        numFeatures = 950
+        numExamples = 100
+        numFeatures = 10
 
         X = numpy.random.rand(numExamples, numFeatures)
         Y = numpy.array(numpy.random.rand(numExamples) < 0.1, numpy.int)*2-1

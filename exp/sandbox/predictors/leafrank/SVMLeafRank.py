@@ -7,12 +7,17 @@ class SVMLeafRank(LibSVM):
     """
     This is a subclass of LibSVM which will do model selection before learning. 
     """
-    def __init__(self, paramDict, folds):
+    def __init__(self, paramDict, folds, sampleSize=None):
+        """
+        sampleSize is the number of randomly chosen examples to use for model 
+        selection 
+        """
         super(SVMLeafRank, self).__init__()
         self.paramDict = paramDict
         self.folds = folds 
         self.chunkSize = 2
-        self.setMetricMethod("auc")          
+        self.setMetricMethod("auc")  
+        self.sampleSize = sampleSize        
             
     def generateLearner(self, X, y):
         """
@@ -24,8 +29,14 @@ class SVMLeafRank(LibSVM):
             raise ValueError("Can only operate on binary data")
 
         #Do model selection first 
-        idx = Sampling.crossValidation(self.folds, X.shape[0])
-        learner, meanErrors = self.parallelModelSelect(X, y, idx, self.paramDict)
+        if self.sampleSize == None: 
+            idx = Sampling.crossValidation(self.folds, X.shape[0])
+            learner, meanErrors = self.parallelModelSelect(X, y, idx, self.paramDict)
+        else: 
+            idx = Sampling.crossValidation(self.folds, self.sampleSize)
+            inds = numpy.random.permutation(X.shape[0])[0:self.sampleSize]
+            learner, meanErrors = self.parallelModelSelect(X[inds, :], y[inds], idx, self.paramDict)
+            learner = self.getBestLearner(meanErrors, self.paramDict, X, y)
         
         return learner
 
