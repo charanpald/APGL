@@ -2,10 +2,10 @@
 import numpy 
 import unittest
 
-from exp.metabolomics.TreeRank import TreeRank
-from exp.metabolomics.RankNode import RankNode
-from exp.metabolomics.leafrank.LinearSVM import LinearSVM
-from exp.metabolomics.leafrank.DecisionTree import DecisionTree
+from exp.sandbox.predictors.TreeRank import TreeRank
+from exp.sandbox.predictors.RankNode import RankNode
+from exp.sandbox.predictors.leafrank.SVMLeafRank import SVMLeafRank
+from exp.sandbox.predictors.leafrank.DecisionTree import DecisionTree
 from apgl.util.PathDefaults import PathDefaults
 from apgl.graph.DictTree import DictTree
 from apgl.util.Evaluator import Evaluator
@@ -15,8 +15,11 @@ class TreeRankTestCase(unittest.TestCase):
     def setUp(self):
         numpy.random.seed(21)
         numpy.seterr(all="raise")
-
-        self.generateleafRank = LinearSVM
+        
+        self.folds = 3 
+        self.paramDict = {} 
+        self.paramDict["setC"] = 2**numpy.arange(-5, 5, dtype=numpy.float)  
+        self.leafRanklearner = SVMLeafRank(self.paramDict, self.folds)
 
         numExamples = 200
         numFeatures = 10
@@ -25,11 +28,11 @@ class TreeRankTestCase(unittest.TestCase):
         self.y = numpy.array(numpy.sign(numpy.random.rand(numExamples)-0.5), numpy.int)
 
     def testInit(self):
-        treeRank = TreeRank(self.generateleafRank)
-
+        treeRank = TreeRank(self.leafRanklearner)
+        
     def testLearnModel(self):
         maxDepth = 2
-        treeRank = TreeRank(self.generateleafRank)
+        treeRank = TreeRank(self.leafRanklearner)
         treeRank.setMaxDepth(maxDepth)
         treeRank.learnModel(self.X, self.y)
         tree = treeRank.getTree()
@@ -41,7 +44,7 @@ class TreeRankTestCase(unittest.TestCase):
         k = 0
         maxDepth = 1 
         inds = numpy.arange(self.y.shape[0])
-        treeRank = TreeRank(self.generateleafRank)
+        treeRank = TreeRank(self.leafRanklearner)
         treeRank.setMaxDepth(maxDepth)
         
         node = RankNode(inds, numpy.arange(self.X.shape[1]))
@@ -58,11 +61,11 @@ class TreeRankTestCase(unittest.TestCase):
         self.assertTrue(tree.getVertex((1, 1)).isLeafNode())
 
         self.assertTrue(tree.depth() <= maxDepth)
-
+        
     def testClassifyNode(self):
         #Try on a single split tree
         maxDepth = 1
-        treeRank = TreeRank(self.generateleafRank)
+        treeRank = TreeRank(self.leafRanklearner)
         treeRank.setMaxDepth(maxDepth)
 
         treeRank.learnModel(self.X, self.y)
@@ -78,7 +81,7 @@ class TreeRankTestCase(unittest.TestCase):
 
     def testPredict(self):
         maxDepth = 2
-        treeRank = TreeRank(self.generateleafRank)
+        treeRank = TreeRank(self.leafRanklearner)
         treeRank.setMaxDepth(maxDepth)
         treeRank.learnModel(self.X, self.y)
 
@@ -105,7 +108,7 @@ class TreeRankTestCase(unittest.TestCase):
     def testMaxDepth(self):
         maxDepth = 10 
 
-        treeRank = TreeRank(self.generateleafRank)
+        treeRank = TreeRank(self.leafRanklearner)
         treeRank.setMaxDepth(maxDepth)
         treeRank.learnModel(self.X, self.y)
 
@@ -123,7 +126,7 @@ class TreeRankTestCase(unittest.TestCase):
     def testMinSplit(self):
         maxDepth = 10
         minSplit = 100
-        treeRank = TreeRank(self.generateleafRank)
+        treeRank = TreeRank(self.leafRanklearner)
         treeRank.setMaxDepth(maxDepth)
         treeRank.setMinSplit(minSplit)
         treeRank.learnModel(self.X, self.y)
@@ -135,9 +138,9 @@ class TreeRankTestCase(unittest.TestCase):
             node = tree.getVertex(vertexId)
             if not node.isLeafNode():
                 self.assertTrue(node.getTrainInds().shape[0] >= minSplit)
-
+            
     def testFeaturesSize(self):
-        treeRank = TreeRank(self.generateleafRank)
+        treeRank = TreeRank(self.leafRanklearner)
         featureSize = 0.5
         treeRank.setFeatureSize(featureSize)
         treeRank.learnModel(self.X, self.y)
@@ -177,7 +180,7 @@ class TreeRankTestCase(unittest.TestCase):
         
         #The results are approximately the same, but not exactly 
         for maxDepth in maxDepths:
-            treeRank = TreeRank(self.generateleafRank)
+            treeRank = TreeRank(self.leafRanklearner)
             treeRank.setMaxDepth(maxDepth)
             treeRank.learnModel(X, y)
             trainScores = treeRank.predict(X)
@@ -187,6 +190,7 @@ class TreeRankTestCase(unittest.TestCase):
             self.assertAlmostEquals(Evaluator.auc(testScores, testY), testAucs[i], 1)
             i+=1 
 
+    @unittest.skip("")
     def testPredict2(self):
         #Test on Gauss2D dataset
         dataDir = PathDefaults.getDataDir()
@@ -194,13 +198,13 @@ class TreeRankTestCase(unittest.TestCase):
         fileName = dataDir + "Gauss2D_learn.csv"
         XY = numpy.loadtxt(fileName, skiprows=1, usecols=(1,2,3), delimiter=",")
         X = XY[:, 0:2]
-        y = XY[:, 2]
+        y = XY[:, 2]*2-1
 
         fileName = dataDir + "Gauss2D_test.csv"
         testXY = numpy.loadtxt(fileName, skiprows=1, usecols=(1,2,3), delimiter=",")
         testX = testXY[:, 0:2]
-        testY = testXY[:, 2]
-
+        testY = testXY[:, 2]*2-1
+        
         #X = Standardiser().standardiseArray(X)
         #testX = Standardiser().standardiseArray(testX)
 
@@ -225,10 +229,11 @@ class TreeRankTestCase(unittest.TestCase):
 
         #Compare tree to that of R version 
         tree = treeRank.getTree()
-
+        
+    #@unittest.skip("")
     def testEvaluateCvOuter(self):
         maxDepth = 10
-        treeRank = TreeRank(self.generateleafRank)
+        treeRank = TreeRank(self.leafRanklearner)
         treeRank.setMaxDepth(maxDepth)
 
         folds = 3
@@ -238,7 +243,7 @@ class TreeRankTestCase(unittest.TestCase):
 
     def testCut(self):
         maxDepth = 10
-        treeRank = TreeRank(self.generateleafRank)
+        treeRank = TreeRank(self.leafRanklearner)
         treeRank.setMaxDepth(maxDepth)
         treeRank.learnModel(self.X, self.y)
 
@@ -256,11 +261,12 @@ class TreeRankTestCase(unittest.TestCase):
 
         for leaf in cutTree.leaves():
             self.assertTrue(cutTree.getVertex(leaf).isLeafNode())
-
+            
+    @unittest.skip("")
     def testLearnModelCut(self):
         maxDepth = 5
         minSplit = 10 
-        treeRank = TreeRank(self.generateleafRank)
+        treeRank = TreeRank(self.leafRanklearner)
         treeRank.setMaxDepth(maxDepth)
         treeRank.setMinSplit(minSplit)
         treeRank.learnModelCut(self.X, self.y)
