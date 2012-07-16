@@ -102,7 +102,7 @@ def getLatexTable(measures, cvScalings, idealMeasures):
     table = Latex.addRowNames(rowNames, table)
     return table, meanMeasures, stdMeasures
 
-def summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix):
+def summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix, gridResultsSuffix="GridResults"):
     """
     Print the errors for all results plus a summary. 
     """
@@ -123,79 +123,82 @@ def summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, file
         for j in range(len(sampleMethods)):
             print("="*50 + "\n" + datasetNames[i] + "-" + sampleMethods[j] + "\n" + "="*50 )
             
-            
             outfileName = outputDir + datasetNames[i] + sampleMethods[j] + fileNameSuffix + ".npz"
-            data = numpy.load(outfileName)
-
-            errors = data["arr_0"]
-            params = data["arr_1"]
-            meanErrorGrids = data["arr_2"]
-            stdErrorGrids = data["arr_3"]
-            meanApproxGrids = data["arr_4"]
-            stdApproxGrids = data["arr_5"]      
-            
-            #Load ideal results 
-            outfileName = outputDir + datasetNames[i]  + "GridResults.npz"
-            data = numpy.load(outfileName)
-            idealErrors = data["arr_0"]
-            
-            errorTable, meanErrors, stdErrors = getLatexTable(errors, cvScalings, idealErrors)
-
-            wins = getWins(errors)
-            idealWins = getIdealWins(errors, idealErrors)
-            excessError = numpy.zeros(errors.shape)
-
-            for k in range(errors.shape[1]):
-                excessError[:, k, :, :] = errors[:, k, :, :] - numpy.tile(errors[:, k, :, 0, numpy.newaxis], (1, 1, numMethods))
-
-            meanExcessError = numpy.mean(excessError, 0)
-            stdExcessError = numpy.std(excessError, 0)
-            excessErrorTable, meanExcessErrors, stdExcessErrors = getLatexTable(excessError, cvScalings, idealErrors)
-
-            overallErrorsPerSampMethod[i, j, :, :] = numpy.mean(meanErrors, 1)
-            overallErrors[i, j, :, :, :] = meanExcessError
-            overallStdWins[j, :, :, 0:-1, :] += wins
-            overallStdWins[j, :, :, -1, :] += idealWins
-            print(errorTable)
-            #print("Min error is: " + str(numpy.min(meanErrors)))
-            #print("Max error is: " + str(numpy.max(meanErrors)))
-            #print("Mean error is: " + str(numpy.mean(meanErrors)) + "\n")
-            
-            #This is a table with V=10, alpha=1 and CV sampling 
-            """
-            print(meanErrors[0, 4, 0])
-            table1Error = numpy.zeros(len(sampleSizes)*2)
-            table1Std = numpy.zeros(len(sampleSizes)*2)
-            for  k in range(len(sampleSizes)):
-                table1Error[k*2] = meanErrors[k, 4, 0]
-                table1Error[k*2+1] = meanErrors[k, 4, 3]
-                table1Std[k*2] = stdErrors[k, 4, 0]
-                table1Std[k*2+1] = stdErrors[k, 4, 3]
+            try: 
                 
-            if j == 0: 
-                table1 += datasetNames[i] + " & " + Latex.array2DToRows(numpy.array([table1Error]), numpy.array([table1Std])) + "\n"
-            
-            tenFoldIndex = 4            
-            
-            #See how alpha varies with V=10, CV sampling 
-            table2Error = numpy.zeros(range(numMethods-2))
-            table2Std = numpy.zeros(range(numMethods-2))
-            for s in range(len(sampleSizes)): 
-                table2Error = meanErrors[s, tenFoldIndex, 2:]
-                table2Std = stdErrors[s, tenFoldIndex, 2:]
-            
+                data = numpy.load(outfileName)
+    
+                errors = data["arr_0"]
+                params = data["arr_1"]
+                meanErrorGrids = data["arr_2"]
+                stdErrorGrids = data["arr_3"]
+                meanApproxGrids = data["arr_4"]
+                stdApproxGrids = data["arr_5"]      
+                
+                #Load ideal results 
+                outfileName = outputDir + datasetNames[i]  + gridResultsSuffix + ".npz"
+                data = numpy.load(outfileName)
+                idealErrors = data["arr_0"]
+                
+                errorTable, meanErrors, stdErrors = getLatexTable(errors, cvScalings, idealErrors)
+    
+                wins = getWins(errors)
+                idealWins = getIdealWins(errors, idealErrors)
+                excessError = numpy.zeros(errors.shape)
+    
+                for k in range(errors.shape[1]):
+                    excessError[:, k, :, :] = errors[:, k, :, :] - numpy.tile(errors[:, k, :, 0, numpy.newaxis], (1, 1, numMethods))
+    
+                meanExcessError = numpy.mean(excessError, 0)
+                stdExcessError = numpy.std(excessError, 0)
+                excessErrorTable, meanExcessErrors, stdExcessErrors = getLatexTable(excessError, cvScalings, idealErrors)
+    
+                overallErrorsPerSampMethod[i, j, :, :] = numpy.mean(meanErrors, 1)
+                overallErrors[i, j, :, :, :] = meanExcessError
+                overallStdWins[j, :, :, 0:-1, :] += wins
+                overallStdWins[j, :, :, -1, :] += idealWins
+                print(errorTable)
+                #print("Min error is: " + str(numpy.min(meanErrors)))
+                #print("Max error is: " + str(numpy.max(meanErrors)))
+                #print("Mean error is: " + str(numpy.mean(meanErrors)) + "\n")
+                
+                #This is a table with V=10, alpha=1 and CV sampling 
+                """
+                print(meanErrors[0, 4, 0])
+                table1Error = numpy.zeros(len(sampleSizes)*2)
+                table1Std = numpy.zeros(len(sampleSizes)*2)
+                for  k in range(len(sampleSizes)):
+                    table1Error[k*2] = meanErrors[k, 4, 0]
+                    table1Error[k*2+1] = meanErrors[k, 4, 3]
+                    table1Std[k*2] = stdErrors[k, 4, 0]
+                    table1Std[k*2+1] = stdErrors[k, 4, 3]
+                    
                 if j == 0: 
-                    table2 += datasetNames[i] + " $m=" + str(sampleSizes[s]) + "$ & " + Latex.array2DToRows(numpy.array([table2Error]), numpy.array([table2Std])) + "\n"
-
-            #See how each sample method effects CV and pen alpha=1
-            fourFoldIndex = 4  
-            hundredMIndex = 1            
-            
-            table3Error[0, j] = meanErrors[hundredMIndex, fourFoldIndex, 0]
-            table3Error[1, j] = meanErrors[hundredMIndex, fourFoldIndex, 3]
-            table3Stds[0, j] = stdErrors[hundredMIndex, fourFoldIndex, 0]
-            table3Stds[1, j] = stdErrors[hundredMIndex, fourFoldIndex, 3]
-            """
+                    table1 += datasetNames[i] + " & " + Latex.array2DToRows(numpy.array([table1Error]), numpy.array([table1Std])) + "\n"
+                
+                tenFoldIndex = 4            
+                
+                #See how alpha varies with V=10, CV sampling 
+                table2Error = numpy.zeros(range(numMethods-2))
+                table2Std = numpy.zeros(range(numMethods-2))
+                for s in range(len(sampleSizes)): 
+                    table2Error = meanErrors[s, tenFoldIndex, 2:]
+                    table2Std = stdErrors[s, tenFoldIndex, 2:]
+                
+                    if j == 0: 
+                        table2 += datasetNames[i] + " $m=" + str(sampleSizes[s]) + "$ & " + Latex.array2DToRows(numpy.array([table2Error]), numpy.array([table2Std])) + "\n"
+    
+                #See how each sample method effects CV and pen alpha=1
+                fourFoldIndex = 4  
+                hundredMIndex = 1            
+                
+                table3Error[0, j] = meanErrors[hundredMIndex, fourFoldIndex, 0]
+                table3Error[1, j] = meanErrors[hundredMIndex, fourFoldIndex, 3]
+                table3Stds[0, j] = stdErrors[hundredMIndex, fourFoldIndex, 0]
+                table3Stds[1, j] = stdErrors[hundredMIndex, fourFoldIndex, 3]
+                """
+            except IOError: 
+                print("Failed to open file: " + outfileName)
 
         table3 +=  Latex.addRowNames([datasetNames[i] + " Std ", datasetNames[i] + " PenVF "], Latex.array2DToRows(table3Error, table3Stds))            
             
@@ -278,30 +281,29 @@ def plotResults(datasetName, sampleSizes, foldsSet, cvScalings, sampleMethods, f
             plt.legend(tuple(labels))
     plt.show()
 
+showCART = True 
+
 #outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/SVR/"
-outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/CART/"
 
-#First output the fine grained results 
-sampleSizes = numpy.array([50, 100, 200])
-#sampleMethods = ["CV","SS", "SS66", "SS90"]
-#sampleMethods = ["SS66", "SS90"]
-sampleMethods = ["CV"]
-cvScalings = numpy.arange(0.6, 1.61, 0.2)
-foldsSet = numpy.arange(2, 13, 2)
-#datasetNames = ModelSelectUtils.getRatschDatasets()
-datasetNames = ModelSelectUtils.getRegressionDatasets()
-fileNameSuffix = 'Results'
-summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
-
-#plotResults("add10", sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
-
-#Now run some extended results
-sampleSizes = numpy.array([25, 50, 100])
-foldsSet = numpy.arange(2, 13, 2)
-cvScalings = numpy.arange(0.6, 1.61, 0.2)
-sampleMethods = ["CV"]
-datasetNames = ModelSelectUtils.getRegressionDatasets()
-
-fileNameSuffix = "ResultsExt"
-summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
+if showCART: 
+    outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/CART/"
+    
+    #First output the fine grained results 
+    sampleSizes = numpy.array([50, 100, 200])
+    sampleMethods = ["CV"]
+    cvScalings = numpy.arange(0.6, 1.61, 0.2)
+    foldsSet = numpy.arange(2, 13, 2)
+    datasetNames = ModelSelectUtils.getRegressionDatasets()
+    fileNameSuffix = 'Results'
+    summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
+    
+    #plotResults("add10", sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
+    #Now run some extended results
+    sampleSizes = numpy.array([500, 1000])
+    sampleMethods = ["CV"]
+    cvScalings = numpy.arange(0.6, 1.61, 0.2)
+    foldsSet = numpy.arange(2, 13, 2)
+    datasetNames = ModelSelectUtils.getRegressionDatasets()
+    fileNameSuffix = "ResultsExt"
+    summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix, "GridResultsExt")
 
