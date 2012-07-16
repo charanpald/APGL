@@ -1,7 +1,6 @@
 
 import multiprocessing
 import sys
-from apgl.predictors.LibSVM import LibSVM, computeTestError
 from apgl.predictors.DecisionTree import DecisionTree
 from apgl.predictors.RandomForest import RandomForest
 from apgl.util.FileLock import FileLock
@@ -74,7 +73,7 @@ def getSetup(learnerName, dataDir, outputDir, numProcesses):
                 
     return learner, loadMethod, dataDir, outputDir, paramDict 
 
-def runBenchmarkExp(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, numProcesses, fileNameSuffix, learnerName, betaName):
+def runBenchmarkExp(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, numProcesses, fileNameSuffix, learnerName, betaNameSuffix):
     dataDir = PathDefaults.getDataDir() + "modelPenalisation/"
     outputDir = PathDefaults.getOutputDir() + "modelPenalisation/"
 
@@ -91,7 +90,7 @@ def runBenchmarkExp(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMetho
         logging.debug("Learning using dataset " + datasetName)
         
         #Load learning rates for penalisation 
-        betafileName = outputDir + datasetNames[i][0] + betaName + ".npz"
+        betafileName = outputDir + datasetNames[i][0] + betaNameSuffix + ".npz"
         betaGrids = numpy.load(betafileName)["arr_0"]
         betaGrids = numpy.clip(betaGrids, 0, 1)    
 
@@ -335,44 +334,60 @@ else:
 
 
 #sampleMethods = [("CV", Sampling.crossValidation), ("SS", Sampling.shuffleSplit), ("SS66", shuffleSplit66), ("SS90", shuffleSplit90), ("RCV", repCrossValidation3)]
-sampleMethods = [("CV", Sampling.crossValidation)]
 cvScalings = numpy.arange(0.6, 1.61, 0.2)
-
-sampleSizes = numpy.array([50, 100, 200])
-foldsSet = numpy.arange(2, 13, 2)
-betaName = "Beta"
 betaFoldsSet = numpy.arange(2, 13, 1)
-datasetNames = ModelSelectUtils.getRatschDatasets(True)
-fileNameSuffix = "Results"
 
-extSampleMethods = [("CV", Sampling.crossValidation)]
-extSampleSizes = numpy.array([25, 50, 100])
-extFoldsSet = numpy.arange(10, 51, 10)
-betaNameExt = "BetaExt"
-extDatasetNames = ModelSelectUtils.getRatschDatasetsExt(True)
+betaNameSuffix = "Beta"
+fileNameSuffix = "Results" 
+paramGridSuffix = "GridResults" 
+betaNameExtSuffix = "BetaExt"
 extFileNameSuffix = "ResultsExt"
+extParamGridSuffix = "GridResultsExt" 
 
 regressiondatasetNames = ModelSelectUtils.getRegressionDatasets(True)
-#regressiondatasetNames = [("winequality-red", 3)]
 
 logging.debug("Using " + str(numProcesses) + " processes")
 logging.debug("Process id: " + str(os.getpid()))
 
-#learnerName = "SVR"
-#computeLearningRates(regressiondatasetNames, numProcesses, betaName, learnerName, sampleSizes, betaFoldsSet)
-#findErrorGrid(regressiondatasetNames, numProcesses, "GridResults", learnerName, sampleSizes)
-#runBenchmarkExp(regressiondatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, numProcesses, fileNameSuffix, learnerName, betaName)
+runSVR = False 
+runCART = True 
 
-#computeLearningRates(regressiondatasetNames, numProcesses, betaNameExt, learnerName, sampleSizes, betaFoldsSet)
-#runBenchmarkExp(regressiondatasetNames, extSampleSizes, extFoldsSet, cvScalings, extSampleMethods, numProcesses, extFileNameSuffix, learnerName, betaNameExt)
+if runSVR: 
+    learnerName = "SVR"
 
-learnerName = "CART"
-computeLearningRates(regressiondatasetNames, numProcesses, betaName, learnerName, sampleSizes, betaFoldsSet)
-findErrorGrid(regressiondatasetNames, numProcesses, "GridResults", learnerName, sampleSizes)
-runBenchmarkExp(regressiondatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, numProcesses, fileNameSuffix, learnerName, betaName)
+    sampleMethods = [("CV", Sampling.crossValidation)]
+    sampleSizes = numpy.array([50, 100, 200])
+    foldsSet = numpy.arange(2, 13, 2)      
+    
+    computeLearningRates(regressiondatasetNames, numProcesses, betaNameSuffix, learnerName, sampleSizes, betaFoldsSet)
+    findErrorGrid(regressiondatasetNames, numProcesses, paramGridSuffix, learnerName, sampleSizes)
+    runBenchmarkExp(regressiondatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, numProcesses, fileNameSuffix, learnerName, betaNameSuffix)
+    
+    extSampleMethods = [("CV", Sampling.crossValidation)]
+    extSampleSizes = numpy.array([25, 50, 100])
+    extFoldsSet = numpy.arange(10, 51, 10)
 
-extSampleSizes = numpy.array([500, 1000])
-extFoldsSet = numpy.arange(2, 13, 2)
-computeLearningRates(regressiondatasetNames, numProcesses, betaNameExt, learnerName, sampleSizes, betaFoldsSet)
-findErrorGrid(regressiondatasetNames, numProcesses, "GridResultsExt", learnerName, extSampleSizes)
-runBenchmarkExp(regressiondatasetNames, extSampleSizes, extFoldsSet, cvScalings, extSampleMethods, numProcesses, extFileNameSuffix, learnerName, betaNameExt)
+    computeLearningRates(regressiondatasetNames, numProcesses, betaNameExtSuffix, learnerName, extSampleSizes, betaFoldsSet)
+    findErrorGrid(regressiondatasetNames, numProcesses, extParamGridSuffix, learnerName, extSampleSizes)
+    runBenchmarkExp(regressiondatasetNames, extSampleSizes, extFoldsSet, cvScalings, extSampleMethods, numProcesses, extFileNameSuffix, learnerName, betaNameExtSuffix)
+
+
+if runCART: 
+    learnerName = "CART"
+    
+    sampleMethods = [("CV", Sampling.crossValidation)]
+    sampleSizes = numpy.array([50, 100, 200])
+    foldsSet = numpy.arange(2, 13, 2)    
+    
+    computeLearningRates(regressiondatasetNames, numProcesses, betaNameSuffix, learnerName, sampleSizes, betaFoldsSet)
+    findErrorGrid(regressiondatasetNames, numProcesses, paramGridSuffix, learnerName, sampleSizes)
+    runBenchmarkExp(regressiondatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, numProcesses, fileNameSuffix, learnerName, betaNameSuffix)
+    
+    extSampleMethods = [("CV", Sampling.crossValidation)]
+    extSampleSizes = numpy.array([500, 1000])
+    extFoldsSet = numpy.arange(2, 13, 2)
+    
+    computeLearningRates(regressiondatasetNames, numProcesses, betaNameExtSuffix, learnerName, extSampleSizes, betaFoldsSet)
+    findErrorGrid(regressiondatasetNames, numProcesses, extParamGridSuffix, learnerName, extSampleSizes)
+    runBenchmarkExp(regressiondatasetNames, extSampleSizes, extFoldsSet, cvScalings, extSampleMethods, numProcesses, extFileNameSuffix, learnerName, betaNameExtSuffix)
+    
