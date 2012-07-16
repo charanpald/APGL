@@ -9,7 +9,8 @@ import logging
 import numpy
 import apgl
 import sys 
-from apgl.predictors.LibSVM import LibSVM, computeTestError, computePenalisedError, computePenalty, computeIdealPenalty, computeBootstrapError
+from apgl.predictors.LibSVM import LibSVM 
+from apgl.predictors.AbstractPredictor import computeTestError, computeIdealPenalty, computeBootstrapError
 from apgl.data.ExamplesGenerator import ExamplesGenerator 
 from apgl.util.Evaluator import Evaluator
 from apgl.util.Sampling import Sampling
@@ -581,29 +582,6 @@ class LibSVMTest(unittest.TestCase):
         error = computeBootstrapError(args)
 
 
-    def testComputePenalisedError(self):
-        C = 10.0
-        gamma = 0.5
-        Cv = 4
-        folds = 5
-
-        idx = Sampling.crossValidation(folds, self.y.shape[0])
-        svm = LibSVM('gaussian', gamma, C)
-
-        args = (self.X, self.y, idx, svm, Cv)
-        error = computePenalisedError(args)
-
-    def testComputePenalty(self):
-        C = 10.0
-        gamma = 0.5
-        Cv = 4
-        folds = 5
-
-        idx = Sampling.crossValidation(folds, self.y.shape[0])
-        svm = LibSVM("gaussian", gamma, C)
-
-        args = (self.X, self.y, idx, svm, Cv)
-        error = computePenalty(args)
 
     def testComputeIdealPenalty(self):
         C = 10.0
@@ -690,6 +668,7 @@ class LibSVMTest(unittest.TestCase):
         tol = 10**-6 
         bestError = 1
         meanErrors2 = numpy.zeros((svm.Cs.shape[0], svm.gammas.shape[0])) 
+        print("Computing real grid")
 
         for i in range(svm.Cs.shape[0]):
             C = svm.Cs[i]
@@ -714,7 +693,7 @@ class LibSVMTest(unittest.TestCase):
                     bestC = C
                     bestGamma = gamma
                     bestError = error
-                    
+            
         self.assertEquals(bestC, bestSVM.getC())
         self.assertEquals(bestGamma, bestSVM.getGamma())
         self.assertTrue(numpy.linalg.norm(meanErrors2.T - meanErrors) < tol)
