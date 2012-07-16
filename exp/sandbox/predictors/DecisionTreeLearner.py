@@ -11,41 +11,24 @@ from apgl.util.Sampling import Sampling
 from apgl.util.Parameter import Parameter
 from apgl.util.Evaluator import Evaluator
 
-def computePenaltyTree(args):
+def computeVFPenTree(args): 
     """
-    Used in conjunction with the parallel model selection.
+    Compute the penVF criteria for a single fold for a tree. 
     """
-    (X, y, idx, learner, Cv) = args
-    penalty = 0
-    treeSize = 0
-    folds = len(idx)
-
-    for idxtr, idxts in idx:
-        trainX, trainY = X[idxtr, :], y[idxtr]
-        learner.learnModel(trainX, trainY)
-        predY = learner.predict(X)
-        predTrainY = learner.predict(trainX)
-        penalty += learner.getMetricMethod()(predY, y) - learner.getMetricMethod()(predTrainY, trainY)
-        treeSize += learner.getUnprunedTreeSize()
-            
-    penalty *= Cv/folds
-    treeSize /= float(folds)
+    (trainX, trainY, X, y, learner) = args
+    
+    learner.learnModel(trainX, trainY)
+    predY = learner.predict(X)
+    predTrainY = learner.predict(trainX)
+    treeSize = learner.getUnprunedTreeSize()
     
     if treeSize < learner.getGamma(): 
         penalty = float("inf")
+    else: 
+        penalty = learner.getMetricMethod()(predY, y) - learner.getMetricMethod()(predTrainY, trainY)
     
     return penalty
     
-def computePenalisedErrorTree(args):
-    """
-    Used in conjunction with the parallel model selection. It returns the
-    binary error on the whole training set and the penalty
-    """
-    (X, y, idx, learner, Cv) = args
-    penalty = computePenaltyTree(args)
-    learner.learnModel(X, y)
-    predY = learner.predict(X)
-    return learner.getMetricMethod()(predY, y), penalty    
     
 class DecisionTreeLearner(AbstractPredictor): 
     def __init__(self, criterion="mse", maxDepth=10, minSplit=30, type="reg", pruneType="none", gamma=1000, folds=5, processes=None):
@@ -500,5 +483,5 @@ class DecisionTreeLearner(AbstractPredictor):
         :type X: :class:`dict`
 
         """
-        return super(DecisionTreeLearner, self).parallelPen(X, y, idx, paramDict, Cvs, computePenalisedErrorTree)
+        return super(DecisionTreeLearner, self).parallelPen(X, y, idx, paramDict, Cvs, computeVFPenTree)
         
