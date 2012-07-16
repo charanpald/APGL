@@ -11,7 +11,6 @@ from apgl.util.Sampling import Sampling
 from exp.sandbox.predictors.DecisionTreeLearner import DecisionTreeLearner
 import matplotlib.pyplot as plt 
 from sklearn import linear_model 
-from apgl.util.FileLock import FileLock
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 numpy.seterr(all="raise")
@@ -26,11 +25,11 @@ loadMethod = ModelSelectUtils.loadRegressDataset
 datasets = ModelSelectUtils.getRegressionDatasets(True)
 
 #sampleSizes = numpy.array([50, 100, 200])
-sampleSizes = numpy.array([200])
-foldsSet = numpy.arange(2, 13, 1)
+sampleSizes = numpy.array([500])
+foldsSet = numpy.arange(2, 13, 2)
 alpha = 1.0
 
-gammas = numpy.unique(numpy.array(numpy.round(2**numpy.arange(1, 7.25, 0.25)-1), dtype=numpy.int))
+gammas = numpy.array(numpy.round(2**numpy.arange(1, 7.5, 0.5)-1), dtype=numpy.int)
 
 paramDict = {} 
 paramDict["setGamma"] = gammas
@@ -42,8 +41,6 @@ Cvs = numpy.array([1])
 
 for datasetName, numRealisations in datasets:
     logging.debug("Dataset " + datasetName)
-    
-    
     learner = DecisionTreeLearner(criterion="mse", maxDepth=100, minSplit=1, pruneType="CART", processes=numProcesses)
     learner.setChunkSize(3)   
     
@@ -61,41 +58,15 @@ for datasetName, numRealisations in datasets:
             
             trainX, trainY, testX, testY = loadMethod(dataDir, datasetName, j)
             
-            trainInds = numpy.arange(sampleSize)
-            trainX = trainX[trainInds,:]
-            trainY = trainY[trainInds]
+            numpy.random.seed(21)
+            trainInds = numpy.random.permutation(trainX.shape[0])[0:sampleSize]
+            validX = trainX[trainInds,:]
+            validY = trainY[trainInds]
                            
-            for k in range(foldsSet.shape[0]): 
-                folds = foldsSet[k]
-                logging.debug("Folds " + str(folds))
-                
-                idx = sampleMethod(folds, trainX.shape[0])   
-                
-                #Now try penalisation
-                resultsList = learner.parallelPen(trainX, trainY, idx, paramDict, Cvs)
-                bestLearner, trainErrors, currentPenalties = resultsList[0]
-                penalties[k, :] += currentPenalties
-            
-            for i in range(gammas.shape[0]): 
-                inds = numpy.logical_and(numpy.isfinite(penalties[:, i]), penalties[:, i]>0)
-                tempPenalties = penalties[:, i][inds]
-                tempfoldsSet = numpy.array(foldsSet, numpy.float)[inds]                            
-                
-                if tempPenalties.shape[0] > 1: 
-                    x = numpy.log((tempfoldsSet-1)/tempfoldsSet*sampleSize)
-                    y = numpy.log(tempPenalties)+numpy.log(tempfoldsSet)   
-                
-                    clf = linear_model.LinearRegression()
-                    clf.fit(numpy.array([x]).T, y)
-                    betas[i, m] = clf.coef_[0]    
-                    
-            betas = -betas        
+            betas = learner.learningRate(validX, validY, foldsSet, paramDict)       
             print(betas) 
             
-            plt.plot(gammas, betas[:, 0])
+            plt.plot(gammas, betas)
             plt.show()
-            
-            betas2 = learner.learningRate(trainX, trainY, foldsSet, paramDict)
-            print(betas2)
-    
+        
     break 
