@@ -24,7 +24,7 @@ figInd = 0
 loadMethod = ModelSelectUtils.loadRegressDataset
 datasets = ModelSelectUtils.getRegressionDatasets(True)
 
-gammas = numpy.unique(numpy.array(numpy.round(2**numpy.arange(1, 7.25, 0.25)-1), dtype=numpy.int))
+gammas = numpy.array(numpy.round(2**numpy.arange(1, 7.5, 0.5)-1), dtype=numpy.int)
 
 #datasets = [datasets[1]]
 
@@ -63,9 +63,7 @@ for datasetName, numRealisations in datasets:
     betaFilename = outputDir + datasetName + "Beta.npz"    
     beta = numpy.load(betaFilename)["arr_0"]
     beta = numpy.clip(beta, 0, 1)    
-    
-    Cvs = [-5, (folds-1)*alpha, beta[:, sampleSizeInd]]
-    
+
     meanCvGrid = numpy.zeros((numMethods, numParams))
     meanPenalties = numpy.zeros(numParams)
     meanCorrectedPenalties = numpy.zeros(numParams)
@@ -100,6 +98,8 @@ for datasetName, numRealisations in datasets:
         meanErrors[methodInd] += bestLearner.getMetricMethod()(testY, predY)
         meanDepths[methodInd] += bestLearner.tree.depth()
         meanSizes[methodInd] += bestLearner.tree.getNumVertices()
+    
+        Cvs = [-5, (folds-1)*alpha, beta[j, sampleSizeInd, :]]    
     
         #Now try penalisation
         methodInd = 1
