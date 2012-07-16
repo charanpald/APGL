@@ -40,34 +40,26 @@ def computeBootstrapError(args):
     weight = 0.632
     return Evaluator.binaryBootstrapError(predTestY, testY, predTrainY, trainY, weight)
 
-def computePenalisedError(args):
+def computeTrainError(args): 
     """
-    Used in conjunction with the parallel model selection. It returns the
-    binary error on the whole training set and the penalty
+    Train on a set of examples of test on the same examples. 
     """
-    (X, y, idx, learner, Cv) = args
-    penalty = computePenalty(args)
+    (X, y, learner) = args
     learner.learnModel(X, y)
     predY = learner.predict(X)
-    return learner.getMetricMethod()(predY, y), penalty
+    return learner.getMetricMethod()(predY, y)
 
-def computePenalty(args):
+def computeVFPen(args): 
     """
-    Used in conjunction with the parallel model selection.
+    Compute the penVF criteria for a single fold 
     """
-    (X, y, idx, learner, Cv) = args
-    penalty = 0
-    folds = len(idx)
-
-    for idxtr, idxts in idx:
-        trainX, trainY = X[idxtr, :], y[idxtr]
-        learner.learnModel(trainX, trainY)
-        predY = learner.predict(X)
-        predTrainY = learner.predict(trainX)
-        penalty += learner.getMetricMethod()(predY, y) - learner.getMetricMethod()(predTrainY, trainY)
-            
-    penalty *= Cv/folds
-    return penalty
+    (trainX, trainY, X, y, learner) = args
+    
+    learner.learnModel(trainX, trainY)
+    predY = learner.predict(X)
+    predTrainY = learner.predict(trainX)
+    
+    return learner.getMetricMethod()(predY, y) - learner.getMetricMethod()(predTrainY, trainY)
 
 def computeIdealPenalty(args):
     """
@@ -342,14 +334,15 @@ class AbstractPredictor(object):
             
         meanErrors = numpy.zeros(tuple(gridSize))
         m = 0
-
+        paramList = []
+        
         for trainInds, testInds in idx:
             Util.printConciseIteration(m, 1, folds, "CV Inner fold: ")
             trainX, trainY = X[trainInds, :], y[trainInds]
             testX, testY = X[testInds, :], y[testInds]
             
             indexIter = itertools.product(*gridInds)
-            paramList = []
+            
             for inds in indexIter: 
                 learner = self.copy()     
                 currentInd = 0             
@@ -361,22 +354,24 @@ class AbstractPredictor(object):
                 
                 paramList.append((trainX, trainY, testX, testY, learner))
             
-            pool = multiprocessing.Pool(processes=self.processes, maxtasksperchild=100)
-            resultsIterator = pool.imap(computeTestError, paramList, self.chunkSize)
+            m += 1 
+            
+        pool = multiprocessing.Pool(processes=self.processes, maxtasksperchild=100)
+        resultsIterator = pool.imap(computeTestError, paramList, self.chunkSize)
         
+        for trainInds, testInds in idx:
             indexIter = itertools.product(*gridInds)
             for inds in indexIter: 
-                meanErrors[inds] += resultsIterator.next()/float(folds)
+                error = resultsIterator.next()
+                meanErrors[inds] += error/float(folds)
 
-            pool.terminate()
-
-            m += 1 
+        pool.terminate()
 
         learner = self.getBestLearner(meanErrors, paramDict, X, y, idx)
 
         return learner, meanErrors
 
-    def parallelPen(self, X, y, idx, paramDict, Cvs, errorFunc=computePenalisedError):
+    def parallelPen(self, X, y, idx, paramDict, Cvs, errorFunc=computeVFPen):
         """
         Perform parallel penalisation using any learner. 
         Using the best set of parameters train using the whole dataset.
@@ -408,6 +403,26 @@ class AbstractPredictor(object):
 
         indexIter = itertools.product(*gridInds)
         paramList = []
+        paramList2 = []
+        
+        for trainInds, testInds in idx:
+            trainX, trainY = X[trainInds, :], y[trainInds]
+            
+            indexIter = itertools.product(*gridInds)
+            
+            for inds in indexIter: 
+                learner = self.copy()     
+                currentInd = 0             
+            
+                for key, val in paramDict.items():
+                    method = getattr(learner, key)
+                    method(val[inds[currentInd]])
+                    currentInd += 1                    
+                
+                paramList.append((trainX, trainY, X, y, learner))
+        
+        #Create parameters for learning on all examples and test on all 
+        indexIter = itertools.product(*gridInds)
         for inds in indexIter: 
             learner = self.copy()     
             currentInd = 0             
@@ -417,14 +432,20 @@ class AbstractPredictor(object):
                 method(val[inds[currentInd]])
                 currentInd += 1                    
             
-            paramList.append((X, y, idx, learner, 1.0))
-
+            paramList2.append((X, y, learner))        
+        
         pool = multiprocessing.Pool(processes=self.processes, maxtasksperchild=100)
         resultsIterator = pool.imap(errorFunc, paramList, self.chunkSize)
+        resultsIterator2 = pool.imap(computeTrainError, paramList2, self.chunkSize)
+        
+        for trainInds, testInds in idx:
+            indexIter = itertools.product(*gridInds)
+            for inds in indexIter: 
+                penalties[inds] += resultsIterator.next()/float(folds)
 
         indexIter = itertools.product(*gridInds)
         for inds in indexIter: 
-            trainErrors[inds], penalties[inds] = resultsIterator.next()
+            trainErrors[inds] = resultsIterator2.next()
 
         pool.terminate()
 
