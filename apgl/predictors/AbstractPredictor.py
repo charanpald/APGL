@@ -78,7 +78,7 @@ class AbstractPredictor(object):
     def __init__(self): 
         #Used in multiprocessing code 
         self.processes = multiprocessing.cpu_count() 
-        self.chunkSize = 10 
+        self.chunkSize = 1 
     """
     An abstract classifier for binary labelled data. 
     """
