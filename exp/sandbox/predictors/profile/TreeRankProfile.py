@@ -14,14 +14,14 @@ class TreeRankProfile(object):
         self.folds = 3 
         self.paramDict = {} 
         self.paramDict["setC"] = 2**numpy.arange(-5, 5, dtype=numpy.float)  
-        self.leafRanklearner = SVMLeafRank(self.paramDict, self.folds, sampleSize=100)
+        self.leafRanklearner = SVMLeafRank(self.paramDict, self.folds)
 
     def profileLearnModel(self):
         treeRank = TreeRank(self.leafRanklearner)
-        treeRank.setMaxDepth(2)
+        treeRank.setMaxDepth(10)
         treeRank.setMinSplit(50)
 
-        numExamples = 100
+        numExamples = 5000
         numFeatures = 10
 
         X = numpy.random.rand(numExamples, numFeatures)
@@ -38,5 +38,3 @@ class TreeRankProfile(object):
 
 profiler = TreeRankProfile()
 profiler.profileLearnModel()
-
-#Takes 2.34 s versus 45 seconds for TreeRankR 
