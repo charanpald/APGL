@@ -1,18 +1,10 @@
 
 from apgl.predictors.AbstractPredictor import AbstractPredictor
-from apgl.predictors.AbstractPredictor import computeTestError, computeBootstrapError, computePenalisedError, computePenalty, computeIdealPenalty
 from apgl.util.Parameter import Parameter
-from apgl.util.Sampling import Sampling
 from apgl.util.Evaluator import Evaluator
-from apgl.util.Util import Util
-import os 
-import sys
-import logging 
 import numpy
 import scipy
 import scipy.sparse
-import multiprocessing
-import itertools
 import sklearn.metrics
 
 
@@ -34,7 +26,7 @@ class LibSVM(AbstractPredictor):
         self.setSvmType(type)
 
         self.processes = processes
-        self.chunkSize = 10
+        self.chunkSize = 2
         self.timeout = 5
         self.normModelSelect = False 
 
