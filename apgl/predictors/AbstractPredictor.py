@@ -337,7 +337,6 @@ class AbstractPredictor(object):
         paramList = []
         
         for trainInds, testInds in idx:
-            Util.printConciseIteration(m, 1, folds, "CV Inner fold: ")
             trainX, trainY = X[trainInds, :], y[trainInds]
             testX, testY = X[testInds, :], y[testInds]
             
