@@ -162,7 +162,7 @@ class Evaluator(object):
         labels. Note the order of parameters. 
         """
         try:
-            import scikits.learn as learn
+            import sklearn as learn
         except ImportError:
             raise
 
@@ -184,7 +184,7 @@ class Evaluator(object):
     @staticmethod
     def roc(testY, predY):
         try:
-            import scikits.learn as learn
+            import sklearn as learn
         except ImportError:
             raise
 

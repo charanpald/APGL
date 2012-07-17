@@ -1,6 +1,6 @@
 import numpy
 import logging
-import scikits.learn.cross_val as cross_val
+import sklearn.cross_val as cross_val
 from apgl.util.Util import Util
 from apgl.util.Parameter import Parameter
 from apgl.util.Evaluator import Evaluator

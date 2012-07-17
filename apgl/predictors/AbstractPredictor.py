@@ -109,7 +109,7 @@ class AbstractPredictor(object):
         Compute the stratified cross validation according to a given metric.
         """
         try:
-            from scikits.learn import cross_val
+            from sklearn.cross_validation import cross_val
             Parameter.checkInt(folds, 2, float('inf'))
             idx = cross_val.StratifiedKFold(y, folds)
             metrics = AbstractPredictor.evaluateLearn(X, y, idx, self.learnModel, self.predict, metricMethod)

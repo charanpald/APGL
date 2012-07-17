@@ -94,7 +94,7 @@ class  EvaluatorTestCase(unittest.TestCase):
 
         self.assertTrue(Evaluator.binaryErrorN(testY, predY) == 0.0)
 
-    @apgl.skipIf(not apgl.checkImport('scikits.learn'), 'No module scikits.learn')
+    @apgl.skipIf(not apgl.checkImport('sklearn'), 'No module scikits.learn')
     def testAuc(self):
         testY = numpy.array([-1, -1, 1, 1])
         predY = numpy.array([-1, 0, 1, 1])
@@ -111,7 +111,7 @@ class  EvaluatorTestCase(unittest.TestCase):
         #For a random score the AUC is approximately 0.5 
         self.assertAlmostEquals(Evaluator.auc(predY, testY), 0.5, 1)
 
-    @apgl.skipIf(not apgl.checkImport('scikits.learn'), 'No module scikits.learn')
+    @apgl.skipIf(not apgl.checkImport('sklearn'), 'No module scikits.learn')
     def testLocalAuc(self):
         testY = numpy.array([-1, -1, 1, 1, 1, 1, 1, -1, -1, 1])
         predY = numpy.array([0.987,  0.868,  0.512,  0.114,  0.755,  0.976,  0.05,  0.371, 0.629,  0.819])

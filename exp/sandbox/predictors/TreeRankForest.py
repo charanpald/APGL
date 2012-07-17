@@ -4,7 +4,6 @@ A Python implementation of ranking forests using TreeRank.
 """
 import numpy
 import logging
-import scikits.learn.cross_val as cross_val
 from exp.sandbox.predictors.AbstractTreeRank import AbstractTreeRank
 from exp.sandbox.predictors.TreeRank import TreeRank
 from apgl.util.Parameter import Parameter

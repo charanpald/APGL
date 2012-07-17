@@ -2,7 +2,7 @@
 A Python implementation of TreeRank. 
 """
 import numpy
-import scikits.learn.cross_val as cross_val
+import sklearn.cross_validation as cross_val
 from apgl.graph.DictTree import DictTree
 from apgl.util.Parameter import Parameter
 from apgl.util.Util import Util
