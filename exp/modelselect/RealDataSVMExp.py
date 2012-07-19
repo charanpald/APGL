@@ -20,7 +20,7 @@ numpy.random.seed(45)
 numpy.set_printoptions(linewidth=150)
 dataDir = PathDefaults.getDataDir() 
 dataDir += "modelPenalisation/regression/"
-outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/CART/"
+outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/SVR/"
 
 figInd = 0 
 
