@@ -4,6 +4,9 @@ import heapq
 import scipy
 import logging
 import os.path
+import tempfile 
+import base64 
+import shutil 
 
 import apgl
 from apgl.util.Util import Util
@@ -553,37 +556,41 @@ class AbstractMatrixGraph(AbstractSingleGraph):
         """
         Parameter.checkClass(filename, str)
         import zipfile
-
+        
         (path, filename) = os.path.split(filename)
         if path == "":
-            path = "./"
+            path = "./"        
+        
+        tempPath = tempfile.mkdtemp()
 
         originalPath = os.getcwd()
         try:
-            os.chdir(path)
+            os.chdir(tempPath)
 
-            self.saveMatrix(self.W, self.wFilename)
-            vListFilename = self.vList.save(self.verticesFilename)
+            self.saveMatrix(self.W, self._wFilename)
+            vListFilename = self.vList.save(self._verticesFilename)
 
             metaDict = {}
             metaDict["version"] = apgl.__version__
             metaDict["undirected"] = self.undirected
             metaDict["vListType"] = self.vList.__class__.__name__
-            Util.savePickle(metaDict, self.metaFilename)
+            Util.savePickle(metaDict, self._metaFilename)
 
             myzip = zipfile.ZipFile(filename + '.zip', 'w')
-            myzip.write(self.wFilename)
+            myzip.write(self._wFilename)
             myzip.write(vListFilename)
-            myzip.write(self.metaFilename)
+            myzip.write(self._metaFilename)
             myzip.close()
 
-            os.remove(self.wFilename)
+            os.remove(self._wFilename)
             os.remove(vListFilename)
-            os.remove(self.metaFilename)
-
-            logging.debug("Dumped graph into " + filename + '.zip')
+            os.remove(self._metaFilename)
+            
+            shutil.move(filename + ".zip", path + "/" + filename + '.zip')
         finally:
             os.chdir(originalPath)
+            
+        os.rmdir(tempPath)
             
         return path + "/" + filename + '.zip'
 
@@ -604,26 +611,30 @@ class AbstractMatrixGraph(AbstractSingleGraph):
         (path, filename) = os.path.split(filename)
         if path == "":
             path = "./"
-
+        
+        tempPath = tempfile.mkdtemp()
         originalPath = os.getcwd()
+        
         try:
             os.chdir(path)
 
             myzip = zipfile.ZipFile(filename + '.zip', 'r')
-            myzip.extractall()
+            myzip.extractall(tempPath)
             myzip.close()
+
+            os.chdir(tempPath)
 
             #Deal with legacy files 
             try:
-                W = cls.loadMatrix(cls.wFilename)
-                metaDict = Util.loadPickle(cls.metaFilename)
-                vList = globals()[metaDict["vListType"]].load(cls.verticesFilename)
+                W = cls.loadMatrix(cls._wFilename)
+                metaDict = Util.loadPickle(cls._metaFilename)
+                vList = globals()[metaDict["vListType"]].load(cls._verticesFilename)
                 undirected = metaDict["undirected"]
 
             except IOError:
-                W = cls.loadMatrix(filename + cls.matExt)
+                W = cls.loadMatrix(filename + cls._matExt)
                 vList = VertexList.load(filename)
-                undirected = Util.loadPickle(filename + cls.boolExt)
+                undirected = Util.loadPickle(filename + cls._boolExt)
 
             graph = cls(vList, undirected)
             graph.W = W
@@ -633,7 +644,8 @@ class AbstractMatrixGraph(AbstractSingleGraph):
         finally:
             os.chdir(originalPath)
 
-        logging.debug("Loaded graph from file " + filename)
+        os.rmdir(tempPath)
+
         return graph
 
     def setVertexList(self, vList):
@@ -1268,12 +1280,55 @@ class AbstractMatrixGraph(AbstractSingleGraph):
         vertexIndex1, vertexIndex2 = vertexIndices
         self.addEdge(vertexIndex1, vertexIndex2, value)
 
+    def __getstate__(self): 
+        tempFile = tempfile.NamedTemporaryFile(delete=False)
+        tempFile.close()
+
+        self.save(tempFile.name)
+        infile = open(tempFile.name + ".zip", "rb")
+        fileStr = infile.read()        
+        infile.close() 
+        
+        try: 
+            outputStr = base64.encodebytes(fileStr) 
+        except AttributeError: 
+            outputStr= base64.encodestring(fileStr)
+            
+        os.remove(tempFile.name)
+        os.remove(tempFile.name + ".zip")
+        
+        return outputStr 
+        
+    def __setstate__(self, pkle): 
+        tempFile = tempfile.NamedTemporaryFile(delete=False)
+        tempFile.close()
+        
+        try: 
+            zipstr = base64.decodebytes(pkle)
+        except AttributeError: 
+            zipstr = base64.decodestring(pkle)
+
+        outFile = open(tempFile.name + ".zip" , "wb")
+        outFile.write(zipstr) 
+        outFile.close() 
+
+        newGraph = self.load(tempFile.name)
+        self.W = newGraph.W 
+        self.undirected = newGraph.undirected 
+        self.vList = newGraph.vList
+        
+        os.remove(tempFile.name)
+        os.remove(outFile.name)
+
     vList = None
     undirected = None
-    wFilename = "weightMatrix.mtx"
-    metaFilename = "metaDict.dat"
-    verticesFilename = "vertices"
+    _wFilename = "weightMatrix.mtx"
+    _metaFilename = "metaDict.dat"
+    _verticesFilename = "vertices"
+    _matExt = ".mtx"
+    _boolExt = ".dir"
+    
+    vlist = property(getVertexList, doc="The vertex list")
+    size = property(getNumVertices, doc="The number of vertices in the graph")
 
-    matExt = ".mtx"
-    boolExt = ".dir"
 

@@ -18,7 +18,7 @@ class PenaltyDecisionTreeLearnerTest(unittest.TestCase):
         
         generator = ExamplesGenerator() 
         self.X, self.y = generator.generateBinaryExamples(self.numExamples, self.numFeatures)
-        self.y += 1 
+        #self.y += 1 
     
     def testLearnModel(self): 
         minSplit = 20
@@ -53,7 +53,7 @@ class PenaltyDecisionTreeLearnerTest(unittest.TestCase):
         for vertexId in tree.getAllVertexIds(): 
             vertex = tree.getVertex(vertexId)
             
-            self.assertTrue(vertex.getValue()==2.0 or vertex.getValue()==0.0)
+            self.assertTrue(vertex.getValue()==1.0 or vertex.getValue()==-1.0)
             if tree.isNonLeaf(vertexId): 
                 self.assertTrue(0 <= vertex.getFeatureInd() <= X.shape[1])
                 self.assertTrue(0 <= vertex.getError() <= 1)

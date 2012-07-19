@@ -2,6 +2,7 @@
 import apgl
 import numpy 
 import unittest
+import pickle 
 import numpy.testing as nptst 
 
 from exp.viroscopy.model.HIVGraph import HIVGraph
@@ -103,6 +104,33 @@ class  HIVGraphTest(unittest.TestCase):
         graph.getVertexList().setInfected(5, 12.0)
         nptst.assert_array_equal(inds, numpy.array([1, 2, 7]))
                 
+    def testPickle(self): 
+        numVertices = 10
+        graph = HIVGraph(numVertices)  
+        graph[0, 0] = 1
+        graph[3, 5] = 0.1
+        
+        output = pickle.dumps(graph)
+        newGraph = pickle.loads(output)
+        
+        graph[2, 2] = 1
+        
+        self.assertEquals(newGraph[0, 0], 1)
+        self.assertEquals(newGraph[3, 5], 0.1)
+        self.assertEquals(newGraph[2, 2], 0.0)
+        self.assertEquals(newGraph.getNumEdges(), 2)
+        self.assertEquals(newGraph.getNumVertices(), numVertices)
+        self.assertEquals(newGraph.isUndirected(), True)
+        
+        self.assertEquals(graph[0, 0], 1)
+        self.assertEquals(graph[3, 5], 0.1)
+        self.assertEquals(graph[2, 2], 1)
+        self.assertEquals(graph.getNumEdges(), 3)
+        self.assertEquals(graph.getNumVertices(), numVertices)
+        self.assertEquals(graph.isUndirected(), True)        
+        
+        for i in range(numVertices): 
+            nptst.assert_array_equal(graph.getVertex(i), newGraph.getVertex(i))
         
 if __name__ == '__main__':
     unittest.main()

@@ -4,25 +4,28 @@ import sys
 from apgl.graph import *
 from apgl.generator import *
 from apgl.util.ProfileUtils import ProfileUtils
-from exp.metabolomics.leafrank.LinearSVM import LinearSVM
-from exp.metabolomics.TreeRank import TreeRank
+from exp.sandbox.predictors.leafrank.SVMLeafRank import SVMLeafRank
+from exp.sandbox.predictors.TreeRank import TreeRank
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 class TreeRankProfile(object):
     def __init__(self):
-        pass
+        self.folds = 3 
+        self.paramDict = {} 
+        self.paramDict["setC"] = 2**numpy.arange(-5, 5, dtype=numpy.float)  
+        self.leafRanklearner = SVMLeafRank(self.paramDict, self.folds)
 
     def profileLearnModel(self):
-        treeRank = TreeRank(LinearSVM.generate(10.0))
-        treeRank.setMaxDepth(2)
+        treeRank = TreeRank(self.leafRanklearner)
+        treeRank.setMaxDepth(10)
         treeRank.setMinSplit(50)
 
-        numExamples = 650
-        numFeatures = 950
+        numExamples = 5000
+        numFeatures = 10
 
         X = numpy.random.rand(numExamples, numFeatures)
-        Y = numpy.array(numpy.random.rand(numExamples) < 0.1, numpy.int)
+        Y = numpy.array(numpy.random.rand(numExamples) < 0.1, numpy.int)*2-1
 
         def run():
             for i in range(5):
@@ -35,5 +38,3 @@ class TreeRankProfile(object):
 
 profiler = TreeRankProfile()
 profiler.profileLearnModel()
-
-#Takes 2.34 s versus 45 seconds for TreeRankR 

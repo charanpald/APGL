@@ -59,10 +59,12 @@ class HIVVertices(VertexList):
     detectionTypeIndex = 6
     hiddenDegreeIndex = 7
 
-    female = 0
-    male = 1
+    male = 0
+    female = 1
+    
     hetero = 0
     bi = 1
+    
     susceptible = 0
     infected = 1
     removed = 2

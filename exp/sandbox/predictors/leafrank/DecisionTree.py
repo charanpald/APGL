@@ -3,7 +3,7 @@ import orange
 import orngTree
 import numpy
 from apgl.util.Parameter import Parameter
-from apgl.metabolomics.leafrank.AbstractOrangePredictor import AbstractOrangePredictor
+from exp.sandbox.predictors.leafrank.AbstractOrangePredictor import AbstractOrangePredictor
 
 class DecisionTree(AbstractOrangePredictor):
     def __init__(self):
@@ -63,8 +63,8 @@ class DecisionTree(AbstractOrangePredictor):
         eTable, weightID = preprocessor(eTable)
         eTable.domain.addmeta(weightID, orange.FloatVariable("w"))
 
-        self.learner = orngTree.TreeLearner(mForPruning=self.m, measure="gainRatio")
-        self.learner.maxDepth = self.maxDepth
+        self.learner = orngTree.TreeLearner(m_pruning=self.m, measure="gainRatio")
+        self.learner.max_depth = self.maxDepth
         self.learner.stop = orange.TreeStopCriteria_common()
         self.learner.stop.minExamples = self.minSplit
         self.classifier = self.learner(eTable, weightID)

@@ -1,6 +1,6 @@
 import numpy 
 from apgl.util.Util import Util
-from apgl.metabolomics.leafrank.AbstractWeightedPredictor import AbstractWeightedPredictor
+from apgl.predictors.AbstractWeightedPredictor import AbstractWeightedPredictor
 
 class MajorityPredictor(AbstractWeightedPredictor):
     def learnModel(self, X, y):

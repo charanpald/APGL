@@ -4,6 +4,7 @@ from apgl.graph.GeneralVertexList import GeneralVertexList
 from apgl.graph.VertexList import VertexList
 from apgl.graph.test.MatrixGraphTest import MatrixGraphTest
 from apgl.util.Util import Util
+import scipy.sparse as sparse
 import unittest
 import numpy
 import scipy
@@ -134,7 +135,29 @@ class SparseGraphTest(unittest.TestCase, MatrixGraphTest):
                     L2[i, j] = -Wij
 
                 self.assertAlmostEquals(L[i, j], L2[i, j])
+    
+    def testSetWeightMatrixSparse(self): 
+        numVertices = 10
+        numFeatures = 0
 
+        vList = VertexList(numVertices, numFeatures)
+        graph = self.GraphType(vList)
+        graph[0, 1] = 1
+        
+        W = sparse.lil_matrix((numVertices, numVertices))
+        
+        W[2, 1] = 1 
+        W[1, 2] = 1 
+        W[3, 8] = 0.2 
+        W[8, 3] = 0.2 
+        
+        self.assertEquals(graph[0, 1], 1)
+        
+        graph.setWeightMatrixSparse(W)
+        self.assertEquals(graph[0, 1], 0)
+        self.assertEquals(graph[2, 1], 1)
+        self.assertEquals(graph[3, 8], 0.2)
+        
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

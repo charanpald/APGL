@@ -1,6 +1,8 @@
 from apgl.io.MultiGraphCsvReader import MultiGraphCsvReader
 from apgl.util.PathDefaults import PathDefaults
 from apgl.data.FeatureGenerator import FeatureGenerator
+from exp.viroscopy.model.HIVGraph import HIVGraph 
+from exp.viroscopy.model.HIVVertices import HIVVertices
 import datetime
 import numpy
 import logging
@@ -121,7 +123,7 @@ class CsvConverters():
 
         return tDelta.days
 
-class HIVGraphReader():
+class HIVGraphReader(object):
     def __init(self):
         pass
 
@@ -172,6 +174,46 @@ class HIVGraphReader():
         logging.info("Created " + str(sparseMultiGraph.getNumVertices()) + " examples with " + str(sparseMultiGraph.getVertexList().getNumFeatures()) + " features")
 
         return sparseMultiGraph
+        
+    def readSimulationHIVGraph(self): 
+        """
+        We want to read the HIV network into a HIVGraph object. 
+        """
+        hivReader = HIVGraphReader()
+        graph = hivReader.readHIVGraph()        
+        
+        edgeTypeIndex1 = 0
+        edgeTypeIndex2 = 1
+        sGraphContact = graph.getSparseGraph(edgeTypeIndex1)
+        sGraphInfect = graph.getSparseGraph(edgeTypeIndex2)
+        sGraphContact = sGraphContact.union(sGraphInfect)
+        sGraph = sGraphContact
+        
+        fInds = hivReader.getIndicatorFeatureIndices()
+        
+        hivGraph = HIVGraph(graph.getNumVertices())
+        hivGraph.setWeightMatrixSparse(sGraph.getSparseWeightMatrix())
+        
+        vertices = hivGraph.getVertexList()
+        
+        for i in range(sGraph.getNumVertices()): 
+            vertices.V[i, vertices.dobIndex] = sGraph.getVertex(i)[fInds["birthDate"]]
+            vertices.V[i, vertices.genderIndex] = sGraph.getVertex(i)[fInds["gender"]]
+            vertices.V[i, vertices.orientationIndex] = sGraph.getVertex(i)[fInds["orient"]]
+            vertices.V[i, vertices.stateIndex] = vertices.removed
+            #vertices.V[i, self.infectionTimeIndex]
+            vertices.V[i, vertices.detectionTimeIndex] = sGraph.getVertex(i)[fInds["detectDate"]]
+            
+            if sGraph.getVertex(i)[fInds["contactTrace"]]: 
+                vertices.V[i, vertices.detectionTypeIndex] = vertices.contactTrace
+            else:
+                vertices.V[i, vertices.detectionTypeIndex] = vertices.randomDetect
+            
+            #Not sure about this since the number of contacts changes over time 
+            #Possibly ignore when we compare graphs 
+            vertices.V[i, vertices.hiddenDegreeIndex] = sGraph.getVertex(i)[fInds["numContacts"]]
+            
+        return hivGraph 
 
     def getIndicatorFeatureIndices(self):
         #TODO: Complete this function

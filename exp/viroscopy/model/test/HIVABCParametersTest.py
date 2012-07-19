@@ -3,6 +3,7 @@ import apgl
 import numpy 
 import unittest
 import logging
+import pickle 
 import scipy.integrate
 from apgl.util.Util import Util 
 
@@ -137,6 +138,18 @@ class  HIVABCParametersTest(unittest.TestCase):
         self.assertAlmostEquals(numpy.min(sampleArray), 0, 1)
         self.assertTrue((numpy.mean(sampleArray) - mu)<1)
         #print(numpy.max(sampleArray))
+
+    def testPickle(self):         
+        output = pickle.dumps(self.hivAbcParams)
+        newParams = pickle.loads(output)
+             
+        thetas = numpy.zeros((100, 10))
+        for i in range(thetas.shape[0]): 
+            thetas[i, :] = newParams.sampleParams()
+            
+        meanTheta = thetas.mean(0)
+        self.assertTrue(numpy.linalg.norm(meanTheta - self.hivAbcParams.meanTheta) < 1)
+         
 
 if __name__ == '__main__':
     unittest.main()

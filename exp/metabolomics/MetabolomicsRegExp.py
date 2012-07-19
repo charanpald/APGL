@@ -13,7 +13,7 @@ from apgl.util.Util import Util
 from apgl.data.Standardiser import Standardiser 
 from apgl.predictors.AbstractPredictor import AbstractPredictor  
 from exp.metabolomics.MetabolomicsUtils import MetabolomicsUtils
-from scikits.learn import svm, linear_model
+from sklearn import svm, linear_model
 from socket import gethostname
 import rpy2 
 

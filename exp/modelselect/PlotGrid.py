@@ -6,7 +6,6 @@ import logging
 import sys
 import matplotlib.pyplot as plt
 from apgl.util.PathDefaults import PathDefaults
-from apgl.predictors.LibSVM import LibSVM
 from exp.modelselect.ModelSelectUtils import ModelSelectUtils
 from operator import itemgetter
 
@@ -27,10 +26,86 @@ def plotErrorGrid(plt, Cs, gammas, errorGrid, title, regression):
     top10 = numpy.array(sorted(error10,key=itemgetter(2)))[0:10, :]
     plt.scatter(top10[:, 0], top10[:, 1])
 
+def plotErrorGridCART(plt, gammas, errorGrid, title):    
+    plt.plot(numpy.log2(gammas), errorGrid, label=title)
+    plt.xlabel("log(gamma)")
+    plt.ylabel("error")
+    plt.title(title)
+    
+def plotGridsCART(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix, sigmas): 
+    figInd = 0 
+    for i in range(len(datasetNames)):
+        figInd = 0 
+        for m in range(len(sampleMethods)):
+            logging.debug(datasetNames[i] + " " + sampleMethods[m])
+
+            outfileName = outputDir + datasetNames[i] + "GridResults.npz"
+            data = numpy.load(outfileName)
+            idealErrors = data["arr_0"]
+            params = data["arr_1"]
+            meanIdealErrorGrids = data["arr_2"]
+            stdIdealErrorGrids = data["arr_3"]
+            meanIdealPenGrids = data["arr_4"]
+            stdIdealPenGrids = data["arr_5"]
+            
+            meanErrors = numpy.mean(idealErrors, 0)
+            stdErrors = numpy.std(idealErrors, 0)  
+            
+            outfileName = outputDir + datasetNames[i] + sampleMethods[m] + "Results.npz"
+            data = numpy.load(outfileName)
+            meanErrorGrids = data["arr_2"]
+            meanApproxGrids = data["arr_4"]
+
+            #Print the errors
+            for n in range(sampleSizes.shape[0]):
+                j = 1
+                plt.figure(figInd)
+                plt.plot(numpy.log2(gammas), meanIdealErrorGrids[n, :], ".-", label="Accurate")
+                j += 1    
+                            
+                sampleSizeInd = n
+                methodInd = 0
+                foldsInd = 1
+                
+                errorGrid = meanErrorGrids[sampleSizeInd, foldsInd, methodInd, :]
+                plt.plot(numpy.log2(gammas), errorGrid, "--", label="CV")
+                j += 1
+                
+                for k in range(sigmas.shape[0]): 
+                    methodInd = 1+k
+                    errorGrid = meanErrorGrids[sampleSizeInd, foldsInd, methodInd, :]
+                    plt.plot(numpy.log2(gammas), errorGrid, label="PenVF+ sigma=" + str(sigmas[k]))
+                    j += 1
+            
+                for k in range(cvScalings.shape[0]):
+                    methodInd = 1+sigmas.shape[0]+k
+                    errorGrid = meanErrorGrids[sampleSizeInd, foldsInd, methodInd, :]
+                    plt.plot(numpy.log2(gammas), errorGrid, label="VFPen alpha=" + str(cvScalings[k]))
+                    j += 1    
+                
+                plt.title("CV Grid n = " + str(sampleSizes[sampleSizeInd]) + " folds = " + str(foldsSet[foldsInd]))
+                plt.legend()
+                plt.xlabel("log(gamma)")
+                plt.ylabel("error")
+                
+                figInd += 1    
+    
+                #Now plot ideal versus approx penalty 
+                grid1 = meanIdealPenGrids[sampleSizeInd, :].flatten()
+                grid2 = meanApproxGrids[sampleSizeInd, foldsInd, methodInd, :].flatten()
+                           
+                
+                plt.figure(figInd)
+                plt.scatter(grid1, grid2)
+                plt.xlabel("Ideal penalty")
+                plt.ylabel("Approximate penalty")
+                plt.title("Penalty n = " + str(sampleSizes[sampleSizeInd]) + " folds = " + str(foldsSet[foldsInd]))
+                
+                figInd += 1  
+    
+        plt.show()
 
 def plotGrids(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix, regression=False):
-    
-
     for i in range(len(datasetNames)):
         figInd = 0 
         for m in range(len(sampleMethods)):
@@ -43,7 +118,6 @@ def plotGrids(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fi
                 errors = data["arr_0"]
                 meanErrors = numpy.mean(errors, 0)
                 stdErrors = numpy.std(errors, 0)                
-                    
                 
                 j = 1
                 plt.figure(figInd)
@@ -193,16 +267,17 @@ def plotGrids(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fi
             plt.show()
 
 #outputDir = PathDefaults.getOutputDir() + "modelPenalisation/classification/"
-outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/SVR/"
+#outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/SVR/"
+outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/CART/"
 
-svm = LibSVM()
-Cs = svm.getCs()
-gammas = svm.getGammas()
+
 sampleSizes = numpy.array([50, 100, 200])
 foldsSet = numpy.arange(2, 13, 2)
-cvScalings = numpy.arange(0.8, 1.81, 0.2)
+sigmas = numpy.array([3, 5, 7])
+cvScalings = numpy.arange(0.6, 1.61, 0.2)
 numMethods = 2+cvScalings.shape[0]
-sampleMethods = ["CV","SS", "SS66", "SS90"]
+#sampleMethods = ["CV","SS", "SS66", "SS90"]
+sampleMethods = ["CV"]
 fileNameSuffix = 'Results'
 
 #datasetNames = ModelSelectUtils.getRatschDatasets()
@@ -210,8 +285,11 @@ datasetNames = ModelSelectUtils.getRegressionDatasets()
 #datasetNames = ["add10"] 
 #datasetNames = ["slice-loc"]
 #datasetNames = ["abalone"]
-datasetNames = ["comp-activ"]
+#datasetNames = ["comp-activ"]
 
-Cs = 2.0**numpy.arange(-10, 14, 2, dtype=numpy.float)
-gammas = 2.0**numpy.arange(-10, 4, 2, dtype=numpy.float)
-plotGrids(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix, True)
+#Cs = 2.0**numpy.arange(-10, 14, 2, dtype=numpy.float)
+#gammas = 2.0**numpy.arange(-10, 4, 2, dtype=numpy.float)
+#plotGrids(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix, True)
+
+gammas = numpy.array(numpy.round(2**numpy.arange(1, 7.5, 0.5)-1), dtype=numpy.int)
+plotGridsCART(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix, sigmas)

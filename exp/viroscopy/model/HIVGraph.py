@@ -118,3 +118,28 @@ class HIVGraph(PySparseGraph):
         
         return inds
         
+    def removedIndsAt(self, t): 
+        """
+        Compute the indices of this graph consisting only of all vertices 
+        removed before time t
+        
+        :param t: The time point to consider. 
+        :type t: `float`
+        """
+        
+        vertexArray = self.getVertexList().getVertices()
+        inds = numpy.arange(self.getNumVertices())[numpy.logical_and(vertexArray[:, HIVVertices.detectionTimeIndex] <= t, vertexArray[:, HIVVertices.detectionTimeIndex] >= 0)]
+        
+        return inds
+
+    def endTime(self): 
+        """
+        Return the time of the last infection or detection event. 
+        """
+        vertexArray = self.getVertexList().getVertices()
+        imin = numpy.max(vertexArray[:, HIVVertices.infectionTimeIndex])
+        rmin = numpy.max(vertexArray[:, HIVVertices.detectionTimeIndex]) 
+        
+        return numpy.max(numpy.array([imin, rmin]))
+        
+        

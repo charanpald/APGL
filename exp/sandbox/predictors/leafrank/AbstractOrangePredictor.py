@@ -1,5 +1,5 @@
 import numpy 
-from apgl.metabolomics.leafrank.AbstractWeightedPredictor import AbstractWeightedPredictor
+from apgl.predictors.AbstractWeightedPredictor import AbstractWeightedPredictor
 
 class AbstractOrangePredictor(AbstractWeightedPredictor):
     def labelsToInds(self, y):

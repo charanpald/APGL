@@ -1,4 +1,7 @@
 import numpy 
+import itertools 
+import multiprocessing 
+import logging 
 from apgl.predictors.AbstractPredictor import AbstractPredictor
 from apgl.graph.DictTree import DictTree
 from exp.sandbox.predictors.TreeCriterion import findBestSplit
@@ -7,11 +10,32 @@ from exp.sandbox.predictors.DecisionNode import DecisionNode
 from apgl.util.Sampling import Sampling
 from apgl.util.Parameter import Parameter
 from apgl.util.Evaluator import Evaluator
+
+def computeVFPenTree(args): 
+    """
+    Compute the penVF criteria for a single fold for a tree. 
+    """
+    (trainX, trainY, X, y, learner) = args
+    
+    learner.learnModel(trainX, trainY)
+    predY = learner.predict(X)
+    predTrainY = learner.predict(trainX)
+    treeSize = learner.getUnprunedTreeSize()
+    
+    if treeSize < learner.getGamma(): 
+        penalty = float("inf")
+    else: 
+        penalty = learner.getMetricMethod()(predY, y) - learner.getMetricMethod()(predTrainY, trainY)
+    
+    return penalty
+    
     
 class DecisionTreeLearner(AbstractPredictor): 
-    def __init__(self, criterion="mse", maxDepth=10, minSplit=30, type="reg", pruneType="none", alphaThreshold=0.0, folds=5):
+    def __init__(self, criterion="mse", maxDepth=10, minSplit=30, type="reg", pruneType="none", gamma=1000, folds=5, processes=None):
         """
         Need a minSplit for the internal nodes and one for leaves. 
+        
+        :param gamma: A value between 0 (no pruning) and 1 (full pruning) which decides how much pruning to do. 
         """
         super(DecisionTreeLearner, self).__init__()
         self.maxDepth = maxDepth
@@ -19,8 +43,10 @@ class DecisionTreeLearner(AbstractPredictor):
         self.criterion = criterion
         self.type = type
         self.pruneType = pruneType 
-        self.alphaThreshold = alphaThreshold
+        self.setGamma(gamma)
         self.folds = 5
+        self.processes = processes
+        self.alphas = numpy.array([])
     
     def learnModel(self, X, y):
         nodeId = (0, )         
@@ -34,12 +60,17 @@ class DecisionTreeLearner(AbstractPredictor):
             argsortX[:, i] = numpy.argsort(X[:, i])
             argsortX[:, i] = numpy.argsort(argsortX[:, i])
         
-        self.recursiveSplit(X, y, argsortX, nodeId)
+        self.growSkLearn(X, y)
+        #self.recursiveSplit(X, y, argsortX, nodeId)
+        self.unprunedTreeSize = self.tree.size
         
         if self.pruneType == "REP": 
+            #Note: This should be a seperate validation set 
             self.repPrune(X, y)
         elif self.pruneType == "REP-CV":
             self.cvPrune(X, y)
+        elif self.pruneType == "CART": 
+            self.cartPrune(X, y)
         elif self.pruneType == "none": 
             pass
         else:
@@ -76,7 +107,46 @@ class DecisionTreeLearner(AbstractPredictor):
             
             if rightChild.getTrainInds().shape[0] >= self.minSplit: 
                 self.recursiveSplit(X, y, argsortX, rightChildId)
+    
+    def growSkLearn(self, X, y): 
+        """
+        Grow a decision tree from sklearn. 
+        """
         
+        from sklearn.tree import DecisionTreeRegressor
+        regressor = DecisionTreeRegressor(max_depth = self.maxDepth, min_samples_split=self.minSplit)
+        regressor.fit(X, y)
+        
+        #Convert the sklearn tree into our tree 
+        nodeId = (0, )          
+        nodeStack = [(nodeId, 0)] 
+        
+        node = DecisionNode(numpy.arange(X.shape[0]), regressor.tree_.value[0])
+        self.tree.setVertex(nodeId, node)
+        
+        while len(nodeStack) != 0: 
+            nodeId, nodeInd = nodeStack.pop()
+            
+            node = self.tree.getVertex(nodeId)
+            node.setError(regressor.tree_.best_error[nodeInd])
+            node.setFeatureInd(regressor.tree_.feature[nodeInd])
+            node.setThreshold(regressor.tree_.threshold[nodeInd])
+                
+            if regressor.tree_.children[nodeInd, 0] != -1: 
+                leftChildInds = node.getTrainInds()[X[node.getTrainInds(), node.getFeatureInd()] < node.getThreshold()] 
+                leftChildId = self.getLeftChildId(nodeId)
+                leftChild = DecisionNode(leftChildInds, regressor.tree_.value[regressor.tree_.children[nodeInd, 0]])
+                self.tree.addChild(nodeId, leftChildId, leftChild)
+                nodeStack.append((self.getLeftChildId(nodeId), regressor.tree_.children[nodeInd, 0]))
+                
+            if regressor.tree_.children[nodeInd, 1] != -1: 
+                rightChildInds = node.getTrainInds()[X[node.getTrainInds(), node.getFeatureInd()] >= node.getThreshold()]
+                rightChildId = self.getRightChildId(nodeId)
+                rightChild = DecisionNode(rightChildInds, regressor.tree_.value[regressor.tree_.children[nodeInd, 1]])
+                self.tree.addChild(nodeId, rightChildId, rightChild)
+                nodeStack.append((self.getRightChildId(nodeId), regressor.tree_.children[nodeInd, 1]))
+
+    
     def predict(self, X): 
         """
         Make a prediction for the set of examples given in the matrix X. 
@@ -139,6 +209,9 @@ class DecisionTreeLearner(AbstractPredictor):
         return numpy.sum((trueY - predY)**2)
     
     def computeAlphas(self): 
+        self.minAlpha = float("inf")
+        self.maxAlpha = -float("inf")        
+        
         for vertexId in self.tree.getAllVertexIds(): 
             currentNode = self.tree.getVertex(vertexId)
             subtreeLeaves = self.tree.leaves(vertexId)
@@ -149,8 +222,52 @@ class DecisionTreeLearner(AbstractPredictor):
             
             #Alpha is normalised difference in error 
             if currentNode.getTestInds().shape[0] != 0: 
-                currentNode.alpha = (testErrorSum - currentNode.getTestError())/float(currentNode.getTestInds().shape[0])        
+                currentNode.alpha = (testErrorSum - currentNode.getTestError())/float(currentNode.getTestInds().shape[0])       
+                
+                if currentNode.alpha < self.minAlpha:
+                    self.minAlpha = currentNode.alpha 
+                
+                if currentNode.alpha > self.maxAlpha: 
+                    self.maxAlpha = currentNode.alpha
+                    
+    def computeCARTAlphas(self, X):
+        """
+        Solve for the CART complexity based pruning. 
+        """
+        self.minAlpha = float("inf")
+        self.maxAlpha = -float("inf")      
+        alphas = [] 
         
+        for vertexId in self.tree.getAllVertexIds(): 
+            currentNode = self.tree.getVertex(vertexId)
+            subtreeLeaves = self.tree.leaves(vertexId)
+
+            testErrorSum = 0 
+            for leaf in subtreeLeaves: 
+                testErrorSum += self.tree.getVertex(leaf).getTestError()
+            
+            subtreeSize = len(self.tree.subtreeIds(vertexId))            
+            
+            #Alpha is reduction in error per leaf - larger alphas are better 
+            if currentNode.getTestInds().shape[0] != 0 and subtreeSize != 1: 
+                currentNode.alpha = (currentNode.getTestError() - testErrorSum)/float(X.shape[0]*(subtreeSize-1))
+                #Flip alpha so that pruning works 
+                currentNode.alpha = -currentNode.alpha
+                
+                alphas.append(currentNode.alpha)
+                
+                """
+                if currentNode.alpha < self.minAlpha:
+                    self.minAlpha = currentNode.alpha 
+                
+                if currentNode.alpha > self.maxAlpha: 
+                    self.maxAlpha = currentNode.alpha   
+                """
+        alphas = numpy.array(alphas)
+        self.alphas = numpy.unique(alphas)
+        self.minAlpha = numpy.min(self.alphas)
+        self.maxAlpha = numpy.max(self.alphas)
+
     def repPrune(self, validX, validY): 
         """
         Prune the decision tree using reduced error pruning. 
@@ -159,20 +276,43 @@ class DecisionTreeLearner(AbstractPredictor):
         self.tree.getVertex(rootId).setTestInds(numpy.arange(validX.shape[0]))
         self.recursiveSetPrune(validX, validY, rootId)        
         self.computeAlphas()        
-        self.recursivePrune(rootId)
+        self.prune()
                             
-    def recursivePrune(self, nodeId): 
+    def prune(self): 
         """
-        We prune as early as possible.   
+        We prune as early as possible and make sure the final tree has at most 
+        gamma vertices. 
         """
-        node = self.tree.getVertex(nodeId)
+        i = self.alphas.shape[0]-1 
+        #print(self.alphas)
+        
+        while self.tree.getNumVertices() > self.gamma and i >= 0: 
+            #print(self.alphas[i], self.tree.getNumVertices())
+            alphaThreshold = self.alphas[i] 
+            toPrune = []
+            
+            for vertexId in self.tree.getAllVertexIds(): 
+                if self.tree.getVertex(vertexId).alpha >= alphaThreshold: 
+                    toPrune.append(vertexId)
 
-        if node.alpha > self.alphaThreshold: 
-            self.tree.pruneVertex(nodeId)
-        else: 
-            for childId in [self.getLeftChildId(nodeId), self.getRightChildId(nodeId)]: 
-                if self.tree.vertexExists(childId):
-                    self.recursivePrune(childId)
+            for vertexId in toPrune: 
+                if self.tree.vertexExists(vertexId):
+                    self.tree.pruneVertex(vertexId)                    
+                    
+            i -= 1
+
+                    
+    def cartPrune(self, trainX, trainY): 
+        """
+        Prune the tree according to the CART algorithm. Here, the chosen 
+        tree is selected by thresholding alpha. In CART itself the best 
+        tree is selected by using an independent pruning set. 
+        """
+        rootId = (0,)
+        self.tree.getVertex(rootId).setTestInds(numpy.arange(trainX.shape[0]))
+        self.recursiveSetPrune(trainX, trainY, rootId)        
+        self.computeCARTAlphas(trainX)    
+        self.prune()
                 
     def cvPrune(self, validX, validY): 
         """
@@ -229,27 +369,44 @@ class DecisionTreeLearner(AbstractPredictor):
                         child.setTestInds(tempTestInds[childInds])
         
         self.computeAlphas()
-        self.recursivePrune(rootId)
+        self.prune()
         
     def copy(self): 
         """
         Copies parameter values only 
         """
-        newLearner = DecisionTreeLearner(self.criterion, self.maxDepth, self.minSplit, self.type, self.pruneType, self.alphaThreshold, self.folds)
+        newLearner = DecisionTreeLearner(self.criterion, self.maxDepth, self.minSplit, self.type, self.pruneType, self.gamma, self.folds)
         return newLearner 
         
     def getMetricMethod(self): 
         if self.type == "reg": 
-            return Evaluator.rootMeanSqError
+            #return Evaluator.rootMeanSqError
+            return Evaluator.meanAbsError
+            #return Evaluator.meanSqError
         else:
             return Evaluator.binaryError      
             
     def getAlphaThreshold(self): 
-        return self.alphaThreshold
-    
-    def setAlphaThreshold(self, alphaThreshold): 
-        Parameter.checkFloat(alphaThreshold, -float("inf"), float("inf"))
-        self.alphaThreshold = alphaThreshold
+        #return self.maxAlpha - (self.maxAlpha - self.minAlpha)*self.gamma
+        #A more natural way of defining gamma 
+        return self.alphas[numpy.round((1-self.gamma)*(self.alphas.shape[0]-1))]        
+        
+    def setGamma(self, gamma): 
+        """
+        Gamma is an upper bound on the number of nodes in the tree. 
+        """
+        Parameter.checkInt(gamma, 1, float("inf"))
+        self.gamma = gamma
+        
+    def getGamma(self): 
+        return self.gamma 
+        
+    def setPruneCV(self, folds): 
+        Parameter.checkInt(folds, 1, float("inf"))
+        self.folds = folds
+        
+    def getPruneCV(self): 
+        return self.folds
         
     def getLeftChildId(self, nodeId): 
         leftChildId = list(nodeId)
@@ -265,3 +422,66 @@ class DecisionTreeLearner(AbstractPredictor):
    
     def getTree(self): 
         return self.tree 
+        
+    def complexity(self): 
+        return self.tree.size
+        
+    def getBestLearner(self, meanErrors, paramDict, X, y, idx=None): 
+        """
+        Given a grid of errors, paramDict and examples, labels, find the 
+        best learner and train it. In this case we set gamma to the real 
+        size of the tree as learnt using CV. If idx == None then we simply 
+        use the gamma corresponding to the lowest error. 
+        """
+        if idx == None: 
+            return super(DecisionTreeLearner, self).getBestLearner(meanErrors, paramDict, X, y, idx)
+        
+        bestInds = numpy.unravel_index(numpy.argmin(meanErrors), meanErrors.shape)
+        currentInd = 0    
+        learner = self.copy()         
+    
+        for key, val in paramDict.items():
+            method = getattr(learner, key)
+            method(val[bestInds[currentInd]])
+            currentInd += 1 
+         
+        treeSizes = []
+        for trainInds, testInds in idx: 
+            validX = X[trainInds, :]
+            validY = y[trainInds]
+            learner.learnModel(validX, validY)
+            
+            treeSizes.append(learner.tree.getNumVertices())
+        
+        bestGamma = int(numpy.round(numpy.array(treeSizes).mean()))
+        
+        learner.setGamma(bestGamma)
+        learner.learnModel(X, y)            
+        return learner 
+        
+    def getUnprunedTreeSize(self): 
+        """
+        Return the size of the tree before pruning was performed. 
+        """
+        return self.unprunedTreeSize
+
+    def parallelPen(self, X, y, idx, paramDict, Cvs):
+        """
+        Perform parallel penalisation using any learner. 
+        Using the best set of parameters train using the whole dataset. In this 
+        case if gamma > max(treeSize) the penalty is infinite. 
+
+        :param X: The examples as rows
+        :type X: :class:`numpy.ndarray`
+
+        :param y: The binary -1/+1 labels 
+        :type y: :class:`numpy.ndarray`
+
+        :param idx: A list of train/test splits
+
+        :param paramDict: A dictionary index by the method name and with value as an array of values
+        :type X: :class:`dict`
+
+        """
+        return super(DecisionTreeLearner, self).parallelPen(X, y, idx, paramDict, Cvs, computeVFPenTree)
+        

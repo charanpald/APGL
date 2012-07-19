@@ -74,9 +74,9 @@ class RandomForest(AbstractWeightedPredictor):
             self.worstResponse = classes[classes!=self.bestResponse][0]
         
         if self.type == "class": 
-            self.learner = ensemble.RandomForestClassifier(n_estimators=self.numTrees, max_features=self.maxFeatures, criterion=self.criterion, max_depth=self.maxDepth, min_split=self.minSplit, random_state=21)
+            self.learner = ensemble.RandomForestClassifier(n_estimators=self.numTrees, max_features=self.maxFeatures, criterion=self.criterion, max_depth=self.maxDepth, min_samples_split=self.minSplit, random_state=21)
         else: 
-            self.learner = ensemble.RandomForestRegressor(n_estimators=self.numTrees, max_features=self.maxFeatures, criterion=self.criterion, max_depth=self.maxDepth, min_split=self.minSplit, random_state=21)          
+            self.learner = ensemble.RandomForestRegressor(n_estimators=self.numTrees, max_features=self.maxFeatures, criterion=self.criterion, max_depth=self.maxDepth, min_samples_split=self.minSplit, random_state=21)          
             
         self.learner = self.learner.fit(X, y)
 

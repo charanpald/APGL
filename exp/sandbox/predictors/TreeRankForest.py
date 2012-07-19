@@ -4,23 +4,22 @@ A Python implementation of ranking forests using TreeRank.
 """
 import numpy
 import logging
-import scikits.learn.cross_val as cross_val
-from exp.metabolomics.AbstractTreeRank import AbstractTreeRank
-from exp.metabolomics.TreeRank import TreeRank
+from exp.sandbox.predictors.AbstractTreeRank import AbstractTreeRank
+from exp.sandbox.predictors.TreeRank import TreeRank
 from apgl.util.Parameter import Parameter
 from apgl.util.Util import Util
 from apgl.util.Evaluator import Evaluator
 
 class TreeRankForest(AbstractTreeRank):
-    def __init__(self, generateLeafRank):
+    def __init__(self, leafRanklearner):
         """
         Create a new TreeRankForest object and initialise with a function that
         generates leaf rank objects, for example LinearSVM or DecisionTree. The
         left node is more positive than the right for each split.
 
-        :param generateLeafRank: A method to create leaf rank classifiers. 
+        :param leafRanklearner: A method to create leaf rank classifiers. 
         """
-        super(TreeRankForest, self).__init__(generateLeafRank)
+        super(TreeRankForest, self).__init__(leafRanklearner)
         self.numTrees = 5
         self.sampleSize = 0.5
         self.sampleReplace = True
@@ -68,8 +67,12 @@ class TreeRankForest(AbstractTreeRank):
         Parameter.checkClass(y, numpy.ndarray)
         Parameter.checkArray(X)
         Parameter.checkArray(y)
-        if numpy.unique(y).shape[0] != 2:
+        
+        labels = numpy.unique(y)
+        if labels.shape[0] != 2:
             raise ValueError("Can only accept binary labelled data")
+        if (labels != numpy.array([-1, 1])).any(): 
+            raise ValueError("Labels must be -1/+1: " + str(labels))
 
         forestList = []
         numSampledExamples = numpy.round(self.sampleSize*X.shape[0])
@@ -81,7 +84,7 @@ class TreeRankForest(AbstractTreeRank):
             else:
                 inds = numpy.random.permutation(X.shape[0])[0:numSampledExamples]
 
-            treeRank = TreeRank(self.generateLeafRank)
+            treeRank = TreeRank(self.leafRanklearner)
             treeRank.setMaxDepth(self.maxDepth)
             treeRank.setMinSplit(self.minSplit)
             treeRank.setFeatureSize(self.featureSize)
@@ -132,11 +135,11 @@ class TreeRankForest(AbstractTreeRank):
         Parameter.checkInt(numTrees, 1, float('inf'))
         self.numTrees = numTrees
 
-    def setGenerateLeafRank(self, generateLeafRank):
+    def setleafRanklearner(self, leafRanklearner):
         """
         :param numTrees: The function that generates leaf rank objects. 
         """
-        self.generateLeafRank = generateLeafRank
+        self.leafRanklearner = leafRanklearner
 
     def __str__(self):
         outputStr = "TreeRankForest:" + " numTrees=" + str(self.numTrees)

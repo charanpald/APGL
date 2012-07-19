@@ -1,6 +1,7 @@
 import numpy 
 from apgl.graph.DictTree import DictTree 
 from apgl.util.Util import Util 
+from apgl.util.Evaluator import Evaluator 
 from apgl.util.Parameter import Parameter 
 from exp.sandbox.predictors.DecisionNode import DecisionNode
 from exp.sandbox.predictors.TreeCriterionPy import findBestSplit2, findBestSplitRisk
@@ -93,14 +94,22 @@ class PenaltyDecisionTree(AbstractPredictor):
         bestError = float("inf")
         bestTree = self.tree 
         
+        #First grow a selection of trees
+        
         while len(idStack) != 0:
             #Prune the current node away and grow from that node 
             nodeId = idStack.pop()
             
-            for i in range(self.sampleSize):   
+            for i in range(self.sampleSize):
                 self.tree = bestTree.deepCopy()
-                node = self.tree.getVertex(nodeId)
-                self.tree.pruneVertex(nodeId)            
+                try: 
+                    node = self.tree.getVertex(nodeId)
+                except ValueError:
+                    print(nodeId)
+                    print(self.tree)
+                    raise 
+                        
+                self.tree.pruneVertex(nodeId)
                 self.growTree(X, y, argsortX, nodeId)
                 self.prune(X, y)
                 error = self.treeObjective(X, y)
@@ -109,8 +118,8 @@ class PenaltyDecisionTree(AbstractPredictor):
                     bestError = error
                     bestTree = self.tree.deepCopy()
             
-            children = bestTree.children(nodeId)            
-            idStack.extend(children)               
+            children = bestTree.children(nodeId)
+            idStack.extend(children)
             
         self.tree = bestTree 
 
@@ -251,3 +260,16 @@ class PenaltyDecisionTree(AbstractPredictor):
             currentNode.alpha /= n
             currentNode.alpha += self.gamma * numpy.sqrt(T)
             currentNode.alpha -= self.gamma * numpy.sqrt(T2)
+
+    def copy(self): 
+        """
+        Create a new tree with the same parameters. 
+        """
+        newLearner = PenaltyDecisionTree(criterion=self.criterion, maxDepth=self.maxDepth, minSplit=self.minSplit, learnType=self.learnType, pruning=self.pruning, gamma=self.gamma, sampleSize=self.sampleSize)
+        return newLearner 
+        
+    def getMetricMethod(self):
+        """ 
+        Returns a way to measure the performance of the classifier.
+        """
+        return Evaluator.binaryError

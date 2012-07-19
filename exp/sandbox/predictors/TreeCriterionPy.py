@@ -1,4 +1,5 @@
 import numpy 
+from apgl.util.Util import Util 
 
 def findBestSplit2(minSplit, X, y, nodeInds, argsortX): 
     """
@@ -165,6 +166,7 @@ def findBestSplitRisk(minSplit, X, y, nodeInds, argsortX):
     #nodeInds = numpy.sort(nodeInds)        
     accuracies = numpy.zeros(X.shape[1])
     thresholds = numpy.zeros(X.shape[1])
+    minY = numpy.min(y)
     
     for featureInd in range(X.shape[1]): 
         accuracies[featureInd] = 0 
@@ -186,7 +188,7 @@ def findBestSplitRisk(minSplit, X, y, nodeInds, argsortX):
         vals = (vals[1:]+vals[0:-1])/2.0
         
         insertInds = numpy.searchsorted(tempX, vals)
-        parentAccuracy = numpy.max(numpy.bincount(tempY))
+        parentAccuracy = numpy.max(numpy.bincount(tempY - minY))
         
         for i in range(vals.shape[0]): 
             val = vals[i]
@@ -198,9 +200,9 @@ def findBestSplitRisk(minSplit, X, y, nodeInds, argsortX):
                 continue 
 
             if insertInd!=1 and insertInd!=nodeInds.shape[0]: 
-                accuracy1 = numpy.max(numpy.bincount(tempY[tempX<val]))
-                accuracy2 = numpy.max(numpy.bincount(tempY[tempX>=val]))
-                                
+                accuracy1 = numpy.max(numpy.bincount(tempY[tempX<val] - minY))
+                accuracy2 = numpy.max(numpy.bincount(tempY[tempX>=val] - minY))
+ 
                 totalAccuracy = (accuracy1 + accuracy2 - parentAccuracy)/float(tempY.shape[0])
                 if totalAccuracy >= accuracies[featureInd] and totalAccuracy > 0: 
                     accuracies[featureInd] = totalAccuracy 

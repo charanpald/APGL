@@ -6,6 +6,7 @@ import numpy
 import os 
 import sys 
 import tempfile
+from apgl.graph import SparseGraph, VertexList
 from apgl.util.PathDefaults import PathDefaults
 from apgl.util.Parameter import Parameter
 from apgl.util.Util import Util
@@ -34,6 +35,18 @@ class GraphMatch(object):
         :return permutation: A vector of indices representing the matching of elements of graph1 to graph2 
         :return distance: The graph distance list [graphDistance, fDistance, fDistanceExact] 
         """
+        #Deal with case where at least one graph is emty 
+        if graph1.size == 0 and graph2.size == 0: 
+            permutation = numpy.array([], numpy.int)
+            distanceVector = [0, 0, 0]  
+            time = 0 
+            return permutation, distanceVector, time 
+        elif graph1.size == 0 or graph2.size == 0: 
+            if graph1.size == 0: 
+                graph1 = SparseGraph(VertexList(graph2.size, graph2.getVertexList().getNumFeatures()))
+            else: 
+                graph2 = SparseGraph(VertexList(graph1.size, graph1.getVertexList().getNumFeatures()))        
+        
         numTempFiles = 5
         tempFileNameList = []         
         
@@ -132,11 +145,25 @@ class GraphMatch(object):
         return permutation, distanceVector, time 
         
     def vertexSimilarities(self, graph1, graph2): 
-        V1 = graph1.getVertexList().getVertices()
-        V2 = graph2.getVertexList().getVertices()
+        """
+        Each vertex array is normalised to have norm 1 and we then compute the 
+        similarity as 2 - dist(v1, v2). 
+        """        
+        
+        if graph1.size == 0 and graph2.size == 0: 
+            return numpy.zeros((graph1.size, graph2.size)) 
+        
+        V1 = graph1.vlist.getVertices()
+        V2 = graph2.vlist.getVertices()
         
         V1 = Standardiser().normaliseArray(V1.T).T
         V2 = Standardiser().normaliseArray(V2.T).T
+         
+        #Extend arrays with zeros to make them the same size
+        if V1.shape[0] < V2.shape[0]: 
+            V1 = Util.extendArray(V1, (V2.shape[0], V2.shape[1]))
+        elif V2.shape[0] < V1.shape[0]: 
+            V2 = Util.extendArray(V2, (V1.shape[0], V1.shape[1]))
           
         #Let's compute C as the distance between vertices 
         #Distance is bounded by 2 
@@ -178,11 +205,7 @@ class GraphMatch(object):
         
         #Now compute the vertex similarities trace         
         C = self.vertexSimilarities(graph1, graph2)
-        
-        if C.shape[0] != C.shape[1]: 
-            n = max(C.shape[0], C.shape[1])
-            C = Util.extendArray(C, (n,n))
-        
+
         dist2 = numpy.trace(C.T.dot(P))
         
         if normalised: 
@@ -198,7 +221,10 @@ class GraphMatch(object):
         #If nonNeg = True then we add a term to the distance to ensure it is 
         #always positive. The numerator is an upper bound on tr(C.T P)
         if nonNeg and normalised:
-            return dist + self.alpha*2*n/numpy.linalg.norm(C)  
+            normC = numpy.linalg.norm(C) 
+            if normC != 0: 
+                return dist + self.alpha*2*n/numpy.linalg.norm(C)  
+            else: return dist 
         else: 
             return dist 
         

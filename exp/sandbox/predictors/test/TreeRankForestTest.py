@@ -1,10 +1,12 @@
 
 import numpy
 import unittest
-
-from exp.metabolomics.TreeRankForest import TreeRankForest
-from exp.metabolomics.leafrank.LinearSVM import LinearSVM
-from exp.metabolomics.leafrank.DecisionTree import DecisionTree
+import logging 
+import sys 
+from exp.sandbox.predictors.TreeRankForest import TreeRankForest
+from exp.sandbox.predictors.RankNode import RankNode
+from exp.sandbox.predictors.leafrank.SVMLeafRank import SVMLeafRank
+from exp.sandbox.predictors.leafrank.DecisionTree import DecisionTree
 from apgl.util.PathDefaults import PathDefaults
 from apgl.util.Evaluator import Evaluator
 from apgl.data.Standardiser import Standardiser
@@ -14,21 +16,27 @@ class TreeRankForestTest(unittest.TestCase):
         numpy.random.seed(21)
         numpy.seterr(all="raise")
 
-        C = 10.0
-        self.generateleafRank = LinearSVM.generate(C)
+        self.folds = 5 
+        self.paramDict = {} 
+        self.paramDict["setC"] = 2**numpy.arange(-10, 10, dtype=numpy.float)  
+        #self.paramDict["setC"] = numpy.array([10], dtype=numpy.float)  
+        self.leafRanklearner = SVMLeafRank(self.paramDict, self.folds)
 
         numExamples = 500
         numFeatures = 10
 
         self.X = numpy.random.rand(numExamples, numFeatures)
         self.y = numpy.array(numpy.sign(numpy.random.rand(numExamples)-0.5), numpy.int)
+        
+        logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
     def testInit(self):
-        treeRank = TreeRankForest(self.generateleafRank)
+        treeRank = TreeRankForest(self.leafRanklearner)
 
+    #@unittest.skip("")
     def testLearnModel(self):
         maxDepth = 2
-        treeRankForest = TreeRankForest(self.generateleafRank)
+        treeRankForest = TreeRankForest(self.leafRanklearner)
         treeRankForest.setMaxDepth(maxDepth)
         treeRankForest.learnModel(self.X, self.y)
 
@@ -40,9 +48,10 @@ class TreeRankForestTest(unittest.TestCase):
             tree = treeRank.getTree()
             self.assertTrue(tree.depth() <= maxDepth)
 
+    #@unittest.skip("")
     def testPredict(self):
         maxDepth = 2
-        treeRankForest = TreeRankForest(self.generateleafRank)
+        treeRankForest = TreeRankForest(self.leafRanklearner)
         treeRankForest.setMaxDepth(maxDepth)
         treeRankForest.learnModel(self.X, self.y)
 
@@ -65,11 +74,15 @@ class TreeRankForestTest(unittest.TestCase):
         XY = numpy.loadtxt(fileName, skiprows=1, usecols=(1,2,3), delimiter=",")
         X = XY[:, 0:2]
         y = XY[:, 2]
+        
+        y = y*2 - 1 
 
         fileName = dataDir + "Gauss2D_test.csv"
         testXY = numpy.loadtxt(fileName, skiprows=1, usecols=(1,2,3), delimiter=",")
         testX = testXY[:, 0:2]
         testY = testXY[:, 2]
+        
+        testY = testY*2-1
 
         X = Standardiser().standardiseArray(X)
         testX = Standardiser().standardiseArray(testX)
@@ -84,7 +97,7 @@ class TreeRankForestTest(unittest.TestCase):
         
         #The results are approximately the same, but not exactly 
         for maxDepth in maxDepths:
-            treeRankForest = TreeRankForest(self.generateleafRank)
+            treeRankForest = TreeRankForest(self.leafRanklearner)
             treeRankForest.setMaxDepth(maxDepth)
             treeRankForest.setMinSplit(minSplit)
             treeRankForest.setNumTrees(numTrees)
@@ -92,15 +105,16 @@ class TreeRankForestTest(unittest.TestCase):
             trainScores = treeRankForest.predict(X)
             testScores = treeRankForest.predict(testX)
 
-            #print(Evaluator.auc(trainScores, y), Evaluator.auc(testScores, testY))
+            print(Evaluator.auc(trainScores, y), Evaluator.auc(testScores, testY))
 
             self.assertAlmostEquals(Evaluator.auc(trainScores, y), trainAucs[i], 1)
             self.assertAlmostEquals(Evaluator.auc(testScores, testY), testAucs[i], 1)
             i+=1
 
+    #@unittest.skip("")
     def testEvaluateCvOuter(self):
         maxDepth = 10
-        treeRankForest = TreeRankForest(self.generateleafRank)
+        treeRankForest = TreeRankForest(self.leafRanklearner)
         treeRankForest.setMaxDepth(maxDepth)
 
         folds = 3
@@ -109,7 +123,7 @@ class TreeRankForestTest(unittest.TestCase):
         #print(allMetrics)
 
     def testStr(self):
-        treeRankForest = TreeRankForest(self.generateleafRank)
+        treeRankForest = TreeRankForest(self.leafRanklearner)
 
 if __name__ == '__main__':
     unittest.main()

@@ -124,3 +124,36 @@ class Sampling(object):
             testInds = inds[trainSize:]
             idx.append((trainInds, testInds))
         return idx 
+        
+    @staticmethod
+    def repCrossValidation(folds, numExamples, repetitions, seed=21):
+        """
+        Returns a list of tuples (trainIndices, testIndices) using k-fold cross
+        validation repeated m times. 
+
+        :param folds: The number of cross validation folds.
+        :type folds: :class:`int`
+
+        :param numExamples: The number of examples.
+        :type numExamples: :class:`int`
+        
+        :param repetitions: The number of repetitions.
+        :type repetitions: :class:`int`
+        """
+        Parameter.checkInt(folds, 1, numExamples)
+        Parameter.checkInt(numExamples, 2, float('inf'))
+        Parameter.checkInt(repetitions, 1, float('inf'))
+
+        foldSize = float(numExamples)/folds
+        indexList = []
+        numpy.random.seed(seed)
+        
+        for j in range(repetitions): 
+            permInds = numpy.random.permutation(numExamples)
+            
+            for i in range(folds):
+                testIndices = numpy.arange(int(foldSize*i), int(foldSize*(i+1)))
+                trainIndices = numpy.setdiff1d(numpy.arange(0, numExamples), numpy.array(testIndices))
+                indexList.append((permInds[trainIndices], permInds[testIndices]))
+
+        return indexList 

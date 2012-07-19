@@ -15,8 +15,8 @@ numpy.random.seed(24)
 class HIVEpidemicModelProfile():
     def __init__(self):
         #Total number of people in population
-        M = 10000
-        numInitialInfected = 50
+        M = 5000
+        numInitialInfected = 200
 
         #The graph is one in which edges represent a contact
         undirected = True
@@ -25,11 +25,13 @@ class HIVEpidemicModelProfile():
         for i in range(M):
             if i < numInitialInfected:
                 self.graph.getVertexList().setInfected(i, 0.0)
+                
+        assert False, "Must run with -O flag"
 
 
     def profileSimulate(self):
         #End time
-        T = 500.0
+        T = 2000.0
 
         alpha = 2
         zeroVal = 0.9
@@ -38,9 +40,10 @@ class HIVEpidemicModelProfile():
 
         rates = HIVRates(self.graph, hiddenDegSeq)
         model = HIVEpidemicModel(self.graph, rates)
+        model.setPrintStep(500)
         model.setT(T)
 
         ProfileUtils.profile('model.simulate()', globals(), locals())
 
 profiler = HIVEpidemicModelProfile()
-profiler.profileSimulate()
+profiler.profileSimulate() #67.7

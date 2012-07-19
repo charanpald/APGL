@@ -316,7 +316,7 @@ class Util(object):
         file = open(filename, 'rb')
         obj = pickle.load(file)
         file.close()
-        logging.debug("Loaded " + filename + " with object " + str(type(obj)))
+        #logging.debug("Loaded " + filename + " with object " + str(type(obj)))
 
         return obj
 
@@ -328,7 +328,7 @@ class Util(object):
         file = open(filename, 'wb')
         pickle.dump(obj, file)
         file.close()
-        logging.debug("Saved file " + filename + " containing object of type " + str(type(obj)))
+        #logging.debug("Saved file " + filename + " containing object of type " + str(type(obj)))
 
     @staticmethod
     def incompleteCholesky(X, k):
@@ -614,3 +614,18 @@ class Util(object):
         D **= 0.5         
         
         return D 
+
+    @staticmethod
+    def cumMin(v): 
+        """
+        Find the minimum element of a 1d array v for each subarray, starting 
+        with the 1st elemnt. 
+        """
+        u = numpy.zeros(v.shape[0])
+        
+        for i in range(v.shape[0]):
+            u[i] = numpy.min(v[0:i+1])
+            
+        return u 
+        
+        

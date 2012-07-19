@@ -59,6 +59,9 @@ class ModelSelectUtils(object):
         trainY = numpy.loadtxt(trainLabelsName, delimiter=None)
         testX = numpy.loadtxt(testDatasetName, delimiter=None)
         testY = numpy.loadtxt(testLabelsName, delimiter=None)
+        
+        trainY = numpy.array(trainY, numpy.int)
+        testY = numpy.array(testY, numpy.int)
 
         return trainX, trainY, testX, testY 
 
@@ -82,17 +85,19 @@ class ModelSelectUtils(object):
 
     @staticmethod
     def getRegressionDatasets(withRealisations=False):
+        numRealisations = 100        
+        
         datasetNames = []
-        datasetNames.append(("abalone", 100))
-        datasetNames.append(("add10", 100))
-        datasetNames.append(("comp-activ", 100))
-        datasetNames.append(("concrete", 100))
-        datasetNames.append(("parkinsons-motor", 100))
-        datasetNames.append(("parkinsons-total", 100))
-        datasetNames.append(("pumadyn-32nh", 100))
-        datasetNames.append(("slice-loc", 100))
-        datasetNames.append(("winequality-red", 100))
-        datasetNames.append(("winequality-white", 100))
+        datasetNames.append(("abalone", numRealisations))
+        datasetNames.append(("add10", numRealisations))
+        datasetNames.append(("comp-activ", numRealisations))
+        datasetNames.append(("concrete", numRealisations))
+        datasetNames.append(("parkinsons-motor", numRealisations))
+        datasetNames.append(("parkinsons-total", numRealisations))
+        datasetNames.append(("pumadyn-32nh", numRealisations))
+        datasetNames.append(("slice-loc", numRealisations))
+        datasetNames.append(("winequality-red", numRealisations))
+        datasetNames.append(("winequality-white", numRealisations))
 
         if withRealisations == True:
             return datasetNames

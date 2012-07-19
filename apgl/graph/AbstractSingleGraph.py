@@ -264,3 +264,6 @@ class AbstractSingleGraph(AbstractGraph):
         else:
             output += ", directed"
         return output
+        
+    
+    

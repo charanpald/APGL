@@ -64,6 +64,38 @@ class GraphMatchTest(unittest.TestCase):
         permutation, distance, time = GraphMatch(algorithm="U", alpha=alpha).match(self.graph1, self.graph2)
         distance2 = GraphMatch(alpha=alpha).distance(self.graph1, self.graph2, permutation, True)
         self.assertAlmostEquals(distance[1], distance2, 5)
+        
+        #Test empty graph
+        alpha = 0.0
+        graph1 = SparseGraph(VertexList(0, 0))
+        graph2 = SparseGraph(VertexList(0, 0))
+        
+        permutation, distance, time = GraphMatch(algorithm="U", alpha=alpha).match(graph1, graph2)
+        
+        nptst.assert_array_equal(permutation, numpy.array([], numpy.int))
+        self.assertEquals(distance, [0, 0, 0])
+        
+        #Test where 1 graph is empty 
+        permutation, distance, time = GraphMatch(algorithm="U", alpha=alpha).match(graph1, self.graph1)
+        self.assertEquals(numpy.linalg.norm(self.graph1.getWeightMatrix())**2, distance[0])
+        self.assertEquals(distance[1], 1)
+        self.assertEquals(distance[2], 1)
+        
+        permutation, distance, time = GraphMatch(algorithm="U", alpha=alpha).match(self.graph1, graph1)
+        self.assertEquals(numpy.linalg.norm(self.graph1.getWeightMatrix())**2, distance[0])
+        self.assertEquals(distance[1], 1)
+        self.assertEquals(distance[2], 1)
+        
+        alpha = 1.0
+        permutation, distance, time = GraphMatch(algorithm="U", alpha=alpha).match(graph1, self.graph1)
+        self.assertEquals(numpy.linalg.norm(self.graph1.getWeightMatrix())**2, distance[0])
+        self.assertEquals(distance[1], -1)
+        self.assertEquals(distance[2], -1)
+        
+        permutation, distance, time = GraphMatch(algorithm="U", alpha=alpha).match(self.graph1, graph1)
+        self.assertEquals(numpy.linalg.norm(self.graph1.getWeightMatrix())**2, distance[0])
+        self.assertEquals(distance[1], -1)
+        self.assertEquals(distance[2], -1)
             
     def testDistance(self): 
         permutation = numpy.arange(self.numVertices)
@@ -107,6 +139,41 @@ class GraphMatchTest(unittest.TestCase):
         permutation = numpy.arange(self.numVertices)
         distance = GraphMatch(alpha=alpha).distance(self.graph1, self.graph1, permutation, True, True)
         self.assertEquals(distance, 0)
+        
+        #Check case where both graphs are empty 
+        graph1 = SparseGraph(VertexList(0, 0))
+        graph2 = SparseGraph(VertexList(0, 0))
+        
+        permutation = numpy.array([], numpy.int)
+        distance = GraphMatch(alpha=alpha).distance(graph1, graph1, permutation, True, True)
+        self.assertEquals(distance, 0)
+        
+        #Now, just one graph is empty 
+        alpha = 0.0
+        permutation = numpy.arange(10, dtype=numpy.int)
+        distance = GraphMatch(alpha=alpha).distance(self.graph1, graph1, permutation, True, True)
+        self.assertEquals(distance, 1.0)
+        
+        permutation = numpy.arange(10, dtype=numpy.int)
+        distance = GraphMatch(alpha=alpha).distance(self.graph2, graph1, permutation, True, True)
+        self.assertEquals(distance, 1.0)
+        
+        distance = GraphMatch(alpha=alpha).distance(self.graph1, graph1, permutation, False, False)
+        self.assertEquals(distance, numpy.linalg.norm(self.graph1.getWeightMatrix())**2)
+        
+        alpha = 1.0
+        permutation = numpy.arange(10, dtype=numpy.int)
+        distance = GraphMatch(alpha=alpha).distance(self.graph1, graph1, permutation, True, True)
+        self.assertEquals(distance, 1.0)
+        
+        permutation = numpy.arange(10, dtype=numpy.int)
+        distance = GraphMatch(alpha=alpha).distance(self.graph2, graph1, permutation, True, True)
+        self.assertEquals(distance, 1.0)
+        
+        alpha = 0.5
+        permutation = numpy.arange(10, dtype=numpy.int)
+        distance = GraphMatch(alpha=alpha).distance(self.graph2, graph1, permutation, True, True)
+        self.assertEquals(distance, 1.0)
         
     def testDistance2(self): 
         permutation = numpy.arange(self.numVertices)

@@ -9,7 +9,8 @@ import logging
 import numpy
 import apgl
 import sys 
-from apgl.predictors.LibSVM import LibSVM, computeTestError, computePenalisedError, computePenalty, computeIdealPenalty, computeBootstrapError
+from apgl.predictors.LibSVM import LibSVM 
+from apgl.predictors.AbstractPredictor import computeTestError, computeIdealPenalty, computeBootstrapError
 from apgl.data.ExamplesGenerator import ExamplesGenerator 
 from apgl.util.Evaluator import Evaluator
 from apgl.util.Sampling import Sampling
@@ -150,7 +151,7 @@ class LibSVMTest(unittest.TestCase):
         #logging.debug(b)
         
 
-    @unittest.skip("")
+    @apgl.skip("")
     def testGetWeights(self):
         try:
             import sklearn
@@ -251,7 +252,7 @@ class LibSVMTest(unittest.TestCase):
 
         self.assertTrue(0 <= Evaluator.binaryError(y2, yp2)  <= 1)
 
-    @unittest.skip("")
+    @apgl.skip("")
     def testSaveParams(self):
         try:
             import sklearn
@@ -421,7 +422,7 @@ class LibSVMTest(unittest.TestCase):
                         svm.setEpsilon(epsilon)
                         svm.learnModel(trainX, trainY)
                         predY = svm.predict(testX)
-                        error += Evaluator.rootMeanSqError(predY, testY)
+                        error += svm.getMetricMethod()(predY, testY)
 
                     meanErrors2[j, k, i] = error/len(idx)
 
@@ -514,12 +515,12 @@ class LibSVMTest(unittest.TestCase):
                         svm.learnModel(trainX, trainY)
                         predY = svm.predict(self.X)
                         predTrainY = svm.predict(trainX)
-                        penalty += Evaluator.rootMeanSqError(predY, self.y) - Evaluator.rootMeanSqError(predTrainY, trainY)
+                        penalty += svm.getMetricMethod()(predY, self.y) - svm.getMetricMethod()(predTrainY, trainY)
 
                     penalty = penalty*Cv[0]/len(idx)
                     svm.learnModel(self.X, self.y)
                     predY = svm.predict(self.X)
-                    meanErrors2[j, k, i] = Evaluator.rootMeanSqError(predY, self.y) + penalty
+                    meanErrors2[j, k, i] = svm.getMetricMethod()(predY, self.y) + penalty
 
                     if meanErrors2[j, k, i] < bestError:
                         bestC = C
@@ -581,29 +582,6 @@ class LibSVMTest(unittest.TestCase):
         error = computeBootstrapError(args)
 
 
-    def testComputePenalisedError(self):
-        C = 10.0
-        gamma = 0.5
-        Cv = 4
-        folds = 5
-
-        idx = Sampling.crossValidation(folds, self.y.shape[0])
-        svm = LibSVM('gaussian', gamma, C)
-
-        args = (self.X, self.y, idx, svm, Cv)
-        error = computePenalisedError(args)
-
-    def testComputePenalty(self):
-        C = 10.0
-        gamma = 0.5
-        Cv = 4
-        folds = 5
-
-        idx = Sampling.crossValidation(folds, self.y.shape[0])
-        svm = LibSVM("gaussian", gamma, C)
-
-        args = (self.X, self.y, idx, svm, Cv)
-        error = computePenalty(args)
 
     def testComputeIdealPenalty(self):
         C = 10.0
@@ -667,7 +645,7 @@ class LibSVMTest(unittest.TestCase):
                     svm.learnModel(trainX, trainY)
                     predY = svm.predict(self.X)
                     predTrainY = svm.predict(trainX)
-                    penalty = Evaluator.rootMeanSqError(predY, self.y) - Evaluator.rootMeanSqError(predTrainY, trainY)
+                    penalty = svm.getMetricMethod()(predY, self.y) - svm.getMetricMethod()(predTrainY, trainY)
 
                     idealPenalties2[j, k, i] = penalty
 
@@ -690,6 +668,7 @@ class LibSVMTest(unittest.TestCase):
         tol = 10**-6 
         bestError = 1
         meanErrors2 = numpy.zeros((svm.Cs.shape[0], svm.gammas.shape[0])) 
+        print("Computing real grid")
 
         for i in range(svm.Cs.shape[0]):
             C = svm.Cs[i]
@@ -714,7 +693,7 @@ class LibSVMTest(unittest.TestCase):
                     bestC = C
                     bestGamma = gamma
                     bestError = error
-                    
+            
         self.assertEquals(bestC, bestSVM.getC())
         self.assertEquals(bestGamma, bestSVM.getGamma())
         self.assertTrue(numpy.linalg.norm(meanErrors2.T - meanErrors) < tol)
@@ -751,7 +730,7 @@ class LibSVMTest(unittest.TestCase):
                     svm.learnModel(trainX, trainY)
                     predY = svm.predict(self.X)
                     predTrainY = svm.predict(trainX)
-                    penalty = Evaluator.rootMeanSqError(predY, self.y) - Evaluator.rootMeanSqError(predTrainY, trainY)
+                    penalty = svm.getMetricMethod()(predY, self.y) - svm.getMetricMethod()(predTrainY, trainY)
 
                     idealPenalties2[j, k, i] = penalty
 
@@ -848,6 +827,47 @@ class LibSVMTest(unittest.TestCase):
         tol = 10**-6 
         self.assertTrue(numpy.linalg.norm(idealPenalties2.T - idealPenalties) < tol)
 
+    def testGetBestLearner(self): 
+        svm = self.svm
+        paramDict = {} 
+        paramDict["setC"] = svm.getCs()
+        paramDict["setGamma"] = svm.getGammas()      
+
+        errors = numpy.random.rand(svm.getCs().shape[0], svm.getGammas().shape[0])
+
+        folds = 5 
+        idx = Sampling.crossValidation(folds, self.X.shape[0])
+
+        svm.normModelSelect = True 
+        svm.setKernel("gaussian")
+        learner = svm.getBestLearner(errors, paramDict, self.X, self.y, idx)
+        
+        bestC = learner.getC()
+        
+        #Find the best norm 
+        bestInds = numpy.unravel_index(numpy.argmin(errors), errors.shape)
+        learner.setC(svm.getCs()[bestInds[0]])
+        learner.setGamma(svm.getGammas()[bestInds[1]])              
+        
+        norms = []
+        for trainInds, testInds in idx: 
+            validX = self.X[trainInds, :]
+            validY = self.y[trainInds]
+            learner.learnModel(validX, validY)
+            
+            norms.append(learner.weightNorm())  
+        
+        bestNorm = numpy.array(norms).mean()
+        
+        norms = numpy.zeros(paramDict["setC"].shape[0]) 
+        for i, C in enumerate(paramDict["setC"]): 
+            learner.setC(C)
+            learner.learnModel(self.X, self.y)
+            norms[i] = learner.weightNorm()            
+            
+        bestC2 = paramDict["setC"][numpy.abs(norms-bestNorm).argmin()]
+        
+        self.assertEquals(bestC, bestC2)
         
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

@@ -1,8 +1,7 @@
 """
 A script to estimate the HIV epidemic model parameters using ABC.
 """
-from apgl.graph.SparseGraph import SparseGraph
-from apgl.graph.GraphStatistics import GraphStatistics
+
 from apgl.util import *
 from exp.viroscopy.model.HIVGraph import HIVGraph
 from exp.viroscopy.model.HIVABCParameters import HIVABCParameters
@@ -11,13 +10,11 @@ from exp.viroscopy.model.HIVRates import HIVRates
 from exp.viroscopy.model.HIVModelUtils import HIVModelUtils
 from exp.viroscopy.model.HIVGraphMetrics import HIVGraphMetrics2
 from apgl.predictors.ABCSMC import ABCSMC
-from apgl.util.ProfileUtils import ProfileUtils 
 
 import logging
 import sys
 import numpy
 import multiprocessing
-import scipy.stats 
 
 FORMAT = "%(levelname)s:root:%(process)d:%(message)s"
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format=FORMAT)
@@ -66,7 +63,7 @@ if len(sys.argv) > 1:
 else: 
     numProcesses = multiprocessing.cpu_count()
 
-posteriorSampleSize = 2
+posteriorSampleSize = 20
 thetaLen = 10
 
 logging.debug("Posterior sample size " + str(posteriorSampleSize))
@@ -74,30 +71,9 @@ logging.debug("Posterior sample size " + str(posteriorSampleSize))
 meanTheta = HIVModelUtils.defaultTheta()
 abcParams = HIVABCParameters(meanTheta, 0.5, 0.2)
 
-#Create shared variables 
-thetaQueue = multiprocessing.Queue()
-distQueue = multiprocessing.Queue()
-summaryQueue = multiprocessing.Queue()
-args = (thetaQueue, distQueue, summaryQueue)
-abcList = []
-
-for i in range(numProcesses):
-    abcList.append(ABCSMC(args, epsilonArray, realSummary, createModel, abcParams, graphMetrics))
-    abcList[i].setPosteriorSampleSize(posteriorSampleSize)
-    abcList[i].start()
-
-logging.debug("All processes started")
-
-for i in range(numProcesses):
-    abcList[i].join()
-
-logging.debug("Queue size = " + str(thetaQueue.qsize()))
-
-
-thetasArray = numpy.zeros((thetaQueue.qsize(), thetaLen))
-
-for i in range(thetaQueue.qsize()):
-    thetasArray[i, :] = numpy.array(thetaQueue.get())
+abcSMC = ABCSMC(epsilonArray, realSummary, createModel, abcParams, graphMetrics)
+abcSMC.setPosteriorSampleSize(posteriorSampleSize)
+thetasArray = abcSMC.run()
 
 meanTheta = numpy.mean(thetasArray, 0)
 stdTheta = numpy.std(thetasArray, 0)

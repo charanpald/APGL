@@ -2,26 +2,25 @@
 A Python implementation of TreeRank. 
 """
 import numpy
-import scikits.learn.cross_val as cross_val
+import sklearn.cross_validation as cross_val
 from apgl.graph.DictTree import DictTree
 from apgl.util.Parameter import Parameter
 from apgl.util.Util import Util
-from exp.metabolomics.RankNode import RankNode
-from exp.metabolomics.AbstractTreeRank import AbstractTreeRank
-from exp.metabolomics.leafrank.MajorityPredictor import MajorityPredictor
+from exp.sandbox.predictors.RankNode import RankNode
+from exp.sandbox.predictors.AbstractTreeRank import AbstractTreeRank
+from exp.sandbox.predictors.leafrank.MajorityPredictor import MajorityPredictor
 from apgl.util.Evaluator import Evaluator 
 
 class TreeRank(AbstractTreeRank):
-    def __init__(self, generateLeafRank):
+    def __init__(self, leafRanklearner):
         """
         Create a new TreeRank object and initialise with a function that
         generates leaf rank objects, for example LinearSVM or DecisionTree. The
         left node is more positive than the right for each split.
 
-        :param generateLeafRank: A function which generates leafranks
-        :type generateLeafRank: :class:`function`
+        :param leafRanklearner: A learning algorithm with a generateLearner method
         """
-        super(TreeRank, self).__init__(generateLeafRank)
+        super(TreeRank, self).__init__(leafRanklearner)
         
 
     def getTree(self):
@@ -66,8 +65,8 @@ class TreeRank(AbstractTreeRank):
 
         #We have the following condition if we need to do cross validation within the node
         if Util.histogram(Y[inds])[0].min() > self.minLabelCount:
-            leafRank = self.generateLeafRank()
-            leafRank.setWeight(1-alpha)
+            self.leafRanklearner.setWeight(1-alpha)
+            leafRank = self.leafRanklearner.generateLearner(X, Y)
         else:
             leafRank = MajorityPredictor()
 
@@ -114,8 +113,11 @@ class TreeRank(AbstractTreeRank):
         Parameter.checkClass(Y, numpy.ndarray)
         Parameter.checkArray(X)
         Parameter.checkArray(Y)
-        if numpy.unique(Y).shape[0] != 2:
+        labels = numpy.unique(Y)
+        if labels.shape[0] != 2:
             raise ValueError("Can only accept binary labelled data")
+        if (labels != numpy.array([-1, 1])).any(): 
+            raise ValueError("Labels must be -1/+1: " + str(labels))
 
         tree = DictTree()
         trainInds = numpy.arange(Y.shape[0])
