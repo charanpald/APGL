@@ -457,7 +457,7 @@ class AbstractPredictor(object):
             #If Cv is an array then each value is learning rate beta for the corresponding params 
             if type(Cv) == numpy.ndarray:            
                 tempCv = ((folds-1)**Cv/(folds**(Cv-1)))
-                logging.debug("Computing learning rate penalisation with Cv=" + str(tempCv))
+                logging.debug("Computing learning rate penalisation with Cv.shape=" + str(tempCv.shape))
                 currentPenalties = penalties*tempCv
             else:
                 if Cv >= 0: 
