@@ -281,9 +281,27 @@ def plotResults(datasetName, sampleSizes, foldsSet, cvScalings, sampleMethods, f
             plt.legend(tuple(labels))
     plt.show()
 
-showCART = True 
+showCART = False  
+showSVR = True 
 
-#outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/SVR/"
+if showSVR: 
+    outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/SVR/"
+    
+    sampleSizes = numpy.array([50, 100, 200])
+    sampleMethods = ["CV"]
+    cvScalings = numpy.arange(0.6, 1.61, 0.2)
+    foldsSet = numpy.arange(2, 13, 2)
+    datasetNames = ModelSelectUtils.getRegressionDatasets()
+    fileNameSuffix = 'Results'
+    summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
+    
+    sampleSizes = numpy.array([25, 50, 100])
+    sampleMethods = ["CV"]
+    cvScalings = numpy.arange(0.6, 1.61, 0.2)
+    foldsSet = numpy.arange(10, 51, 10)
+    datasetNames = ModelSelectUtils.getRegressionDatasets()
+    fileNameSuffix = "ResultsExt"
+    summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix, "GridResultsExt")
 
 if showCART: 
     outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/CART/"
