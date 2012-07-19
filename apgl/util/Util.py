@@ -557,20 +557,16 @@ class Util(object):
         Compute the matrix power of A using the exponent n. The computation simply
         evaluated the eigendecomposition of A and then powers the eigenvector
         matrix accordingly.
+        
+        Warning: if at least one eigen-value is negative, n should be an integer.
         """
         Parameter.checkClass(A, numpy.ndarray)
         tol = 10**-10
 
-        if n > 0: 
-            lmbda, V = scipy.linalg.eig(A)
-            lmbdaN = (lmbda**n)*numpy.array(numpy.abs(lmbda) > tol, numpy.int)
-            return V.dot(numpy.diag(lmbdaN)).dot(numpy.linalg.inv(V))
-        else:
-            A = scipy.linalg.pinv(A)
-            n = numpy.abs(n)
-            lmbda, V = scipy.linalg.eig(A)
-            lmbdaN = (lmbda**n)*numpy.array(numpy.abs(lmbda) > tol, numpy.int)
-            return V.dot(numpy.diag(lmbdaN)).dot(numpy.linalg.inv(V))
+        lmbda, V = scipy.linalg.eig(A)
+        lmbda[numpy.abs(lmbda) < tol] = 0
+        lmbda[numpy.abs(lmbda) > tol] = lmbda[numpy.abs(lmbda) > tol]**n
+        return (V*lmbda).dot(numpy.linalg.inv(V)) # = V.dot(numpy.diag(lmbda)).dot(numpy.linalg.inv(V))
 
     @staticmethod 
     def matrixPowerh(A, n):
@@ -580,29 +576,16 @@ class Util(object):
         matrix accordingly.
         
         This version guess that A is hermitian.
+        Warning: if at least one eigen-value is negative, n should be an integer.
         """
         Parameter.checkClass(A, numpy.ndarray)
         tol = 10**-10
 
         lmbda, V = scipy.linalg.eigh(A)
-        lmbdaN = (lmbda**n)*numpy.array(numpy.abs(lmbda) > tol, numpy.int)
-        return (V*lmbdaN).dot(numpy.linalg.inv(V)) # = V.dot(numpy.diag(lmbdaN)).dot(numpy.linalg.inv(V))
-
-    @staticmethod 
-    def matrixPowerpsd(A, n):
-        """
-        Compute the matrix power of A using the exponent n. The computation simply
-        evaluated the eigendecomposition of A and then powers the eigenvector
-        matrix accordingly.
-        
-        This version guess that A is hermitian positive semi-definite.
-        """
-        Parameter.checkClass(A, numpy.ndarray)
-        tol = 10**-10
-
-        lmbda, V = scipy.linalg.eigh(A)
-        lmbdaN = (lmbda**n)*numpy.array(numpy.abs(lmbda) > tol, numpy.int)
-        return (V*lmbdaN).dot(V.T) # = V.dot(numpy.diag(lmbdaN)).dot(V.T)
+        lmbda[numpy.abs(lmbda) < tol] = 0
+        lmbda[numpy.abs(lmbda) > tol] = lmbda[numpy.abs(lmbda) > tol]**n
+        # next line uses the fact that eigh claims returning an orthonormal basis (even if one sub-space is of dimension >=2) (to be precise, it claims using dsyevd which claims returning an orthonormal matrix)
+        return (V*lmbda).dot(V.T) # = V.dot(numpy.diag(lmbda)).dot(numpy.linalg.inv(V))
 
     @staticmethod 
     def extendArray(A, newShape): 

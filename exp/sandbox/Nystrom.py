@@ -33,7 +33,7 @@ class Nystrom(object):
         A = X[inds, :][:, inds]
         B = X[inds, :][:, invInds]
 
-        Am12 = Util.matrixPower(A, -0.5)
+        Am12 = Util.matrixPowerh(A, -0.5)
         S = A + Am12.dot(B).dot(B.T).dot(Am12)
 
         lmbda, U = numpy.linalg.eig(S)
@@ -71,8 +71,9 @@ class Nystrom(object):
             lmbda, V = numpy.linalg.eigh(X)
             return lmbda, V
 
-        A = X[inds, :][:, inds]
-        B = X[inds, :][:, invInds]
+        tmp = X[inds, :] 
+        A = tmp[:, inds]
+        B = tmp[:, invInds]
 
         if scipy.sparse.issparse(X): 
             A = numpy.array(A.todense())
@@ -80,16 +81,21 @@ class Nystrom(object):
         else:
             BB = B.dot(B.T)
 
-        Am12 = Util.matrixPower(A, -0.5)
+        Am12 = Util.matrixPowerh(A, -0.5)
         S = A + Am12.dot(BB).dot(Am12)
 
         #tol = 10**-8
-        #A12 = Util.matrixPower(A, 0.5)
+        #A12 = Util.matrixPowerh(A, 0.5)
         #AA = A.dot(A)
         #assert numpy.linalg.norm(A12.dot(S).dot(A12) - AA - BB) < tol
 
-        lmbda, U = numpy.linalg.eig(S)
-        V = X[:, inds].dot(Am12).dot(U).dot(numpy.diag(lmbda**-0.5))
+        lmbda, U = numpy.linalg.eigh(S)
+#        V = X[:, inds].dot(Am12).dot(U).dot(numpy.diag(lmbda**-0.5))
+        tol = 10**-10
+		lmbdaN = lambda
+        lmbdaN[numpy.abs(lmbda) < tol] = 0
+        lmbdaN[numpy.abs(lmbda) > tol] = lmbdaN[numpy.abs(lmbda) > tol]**-0.5
+        V = X[:, inds].dot(Am12.dot(U)*lmbdaN)
 
         return lmbda, V
 
