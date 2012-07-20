@@ -38,6 +38,7 @@ learner.setGamma(gamma)
 epsilonInd = 0 
 epsilon = epsilons[epsilonInd]
 learner.setEpsilon(epsilon)
+learner.normModelSelect = True
 
 paramDict = {} 
 paramDict["setC"] = Cs 
@@ -72,8 +73,12 @@ for datasetName, numRealisations in datasets:
     meanAllErrors = numpy.zeros(numParams) 
     meanTrainError = numpy.zeros(numParams)
     meanErrors = numpy.zeros(numMethods)
+    
     meanNorms = numpy.zeros(numParams)
     testMeanNorms = numpy.zeros(numParams)
+    
+    meanSVs = numpy.zeros(numParams)
+    testMeanSVs = numpy.zeros(numParams)
 
     for j in range(numRealisations):
         print("")
@@ -84,6 +89,8 @@ for datasetName, numRealisations in datasets:
         trainInds = numpy.random.permutation(trainX.shape[0])[0:sampleSize]
         trainX = trainX[trainInds,:]
         trainY = trainY[trainInds]
+        
+        print(trainX.shape)
         
         #logging.debug("Training set size: " + str(trainX.shape))
         methodInd = 0 
@@ -146,6 +153,7 @@ for datasetName, numRealisations in datasets:
     
         #Compute norms 
         tempMeanNorms = numpy.zeros(numParams)
+        tempMeanSVs = numpy.zeros(numParams)
         for s, C in enumerate(Cs): 
             for trainInds, testInds in idx: 
                 validX = trainX[trainInds, :]
@@ -154,12 +162,17 @@ for datasetName, numRealisations in datasets:
                 learner.setC(C)
                 learner.learnModel(validX, validY)
                 tempMeanNorms[s] += learner.weightNorm()
+                tempMeanSVs[s] += learner.model.support_.shape[0]
             
             learner.learnModel(trainX, trainY)
-            testMeanNorms[s] += learner.weightNorm()     
+            testMeanNorms[s] = learner.weightNorm()  
+            testMeanSVs[s] += learner.model.support_.shape[0]
             
         tempMeanNorms /= float(folds)
         meanNorms += tempMeanNorms 
+        
+        tempMeanSVs /= float(folds)
+        meanSVs+= tempMeanSVs 
             
     numRealisations = float(numRealisations)
         
@@ -178,16 +191,20 @@ for datasetName, numRealisations in datasets:
     print("\n")
     print("meanErrors=" + str(meanErrors))  
     print(meanIdealPenalities)
-
     
+    #x = numpy.log(Cs)
+    #testx = numpy.log(Cs)  
     x = numpy.log(meanNorms)
+    testx = numpy.log(testMeanNorms)  
+    #x = numpy.log(meanSVs)
+    #testx = numpy.log(testMeanSVs)         
     
     plt.figure(figInd)
     plt.plot(x, meanCvGrid[0, :], label="CV")
     plt.plot(x, meanCvGrid[1, :], label="Pen")
     plt.plot(x, meanCvGrid[2, :], label="Corrected Pen")
     plt.plot(x, meanCvGrid[3, :], label="Beta Pen")
-    plt.plot(numpy.log(testMeanNorms), meanCvGrid[4, :], label="Test")
+    plt.plot(testx, meanCvGrid[4, :], label="Test")
     plt.plot(x, meanCvGrid[5, :], label="Train Error")
     plt.xlabel("log(||w||)")
     plt.ylabel("Error/Penalty")
@@ -203,7 +220,7 @@ for datasetName, numRealisations in datasets:
     plt.plot(x, meanPenalties, label="Penalty")
     plt.plot(x, meanCorrectedPenalties, label="Corrected Penalty")
     plt.plot(x, meanBetaPenalties, label="Beta Penalty")
-    plt.plot(numpy.log(testMeanNorms), meanIdealPenalities, label="Ideal Penalty")
+    plt.plot(testx, meanIdealPenalities, label="Ideal Penalty")
     plt.plot(x, meanTrainError, label="Valid Error")
     plt.plot(x, meanAllErrors, label="Train Error")
     plt.xlabel("log(||w||)")
