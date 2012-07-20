@@ -282,8 +282,8 @@ class LibSVM(AbstractPredictor):
         svm = LibSVM(kernel=self.kernel, kernelParam=self.kernelParam, C=self.C, cost=self.errorCost, type=self.type, processes=self.processes, epsilon=self.epsilon)
         svm.metricMethod = self.metricMethod
         svm.chunkSize = self.chunkSize
-        svm.timeout = self.chunkSize
-        svm.normModelSelect = svm.chunkSize 
+        svm.timeout = self.timeout
+        svm.normModelSelect = svm.normModelSelect 
         return svm 
 
 
