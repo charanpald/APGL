@@ -33,6 +33,7 @@ def getSetup(learnerName, dataDir, outputDir, numProcesses):
         paramDict["setGamma"] = learner.getGammas()  
     elif learnerName=="SVR":
         learner = LibSVM(kernel='gaussian', type="Epsilon_SVR", processes=numProcesses) 
+        learner.normModelSelect = True
         loadMethod = ModelSelectUtils.loadRegressDataset
         dataDir += "regression/"
         outputDir += "regression/" + learnerName + "/"
@@ -41,24 +42,6 @@ def getSetup(learnerName, dataDir, outputDir, numProcesses):
         paramDict["setC"] = 2.0**numpy.arange(-10, 14, 2, dtype=numpy.float)
         paramDict["setGamma"] = 2.0**numpy.arange(-10, 4, 2, dtype=numpy.float)
         paramDict["setEpsilon"] = learner.getEpsilons()
-    elif learnerName=="DTC": 
-        learner = DecisionTree()
-        loadMethod = ModelSelectUtils.loadRatschDataset
-        dataDir += "benchmark/"
-        outputDir += "classification/" + learnerName + "/"
-
-        paramDict = {} 
-        paramDict["setMaxDepth"] = numpy.arange(1, 31, 2)
-        paramDict["setMinSplit"] = 2**numpy.arange(1, 7, dtype=numpy.int) 
-    elif learnerName=="RFR": 
-        learner = RandomForest(criterion="mse", type="reg")
-        loadMethod = ModelSelectUtils.loadRegressDataset
-        dataDir += "regression/"
-        outputDir += "regression/" + learnerName + "/"
-
-        paramDict = {} 
-        paramDict["setNumTrees"] = 2**numpy.arange(3, 9, 2, dtype=numpy.int) 
-        paramDict["setMinSplit"] = 2**numpy.arange(2, 6, dtype=numpy.int) 
     elif learnerName=="CART": 
         learner = DecisionTreeLearner(criterion="mse", maxDepth=30, minSplit=1, pruneType="CART", processes=numProcesses)
         learner.setChunkSize(2)
@@ -349,8 +332,8 @@ regressiondatasetNames = ModelSelectUtils.getRegressionDatasets(True)
 logging.debug("Using " + str(numProcesses) + " processes")
 logging.debug("Process id: " + str(os.getpid()))
 
-runSVR = False 
-runCART = True 
+runSVR = True 
+runCART = False 
 
 if runSVR: 
     learnerName = "SVR"
