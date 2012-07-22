@@ -1,5 +1,5 @@
 """
-Get some results and compare on a real dataset using Decision Trees. 
+Get some results and compare on a real dataset using SVMs. 
 """
 import logging 
 import numpy 
@@ -31,7 +31,7 @@ Cs = 2.0**numpy.arange(-10, 14, 2, dtype=numpy.float)
 gammas = 2.0**numpy.arange(-10, 4, 2, dtype=numpy.float)
 epsilons = learner.getEpsilons()
 
-gammaInd = 5 
+gammaInd = 3 
 gamma = gammas[gammaInd]
 learner.setGamma(gamma)
 
