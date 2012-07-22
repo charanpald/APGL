@@ -210,6 +210,7 @@ def plotGrids(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fi
                     grid1 = meanIdealErrorGrids[sampleSizeInd, :].flatten()
                     grid2 = meanApproxGrids[sampleSizeInd, foldsInd, methodInd, :].flatten()
                     
+                    """
                     inds = numpy.where(meanApproxGrids[sampleSizeInd, foldsInd, methodInd, :] < 0.05) 
                     
                     for s, t in zip(inds[0], inds[1]): 
@@ -222,6 +223,7 @@ def plotGrids(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fi
                     plt.plot(numpy.log(Cs), meanApproxGrids[sampleSizeInd, foldsInd, methodInd, 0, 0, :], label="approx")
                     plt.legend()
                     plt.show()
+                    """
                     
                     plt.subplot(3, 2, j)
                     plt.scatter(grid1, grid2)
