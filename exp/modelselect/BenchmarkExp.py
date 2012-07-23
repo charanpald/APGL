@@ -334,13 +334,12 @@ logging.debug("Using " + str(numProcesses) + " processes")
 logging.debug("Process id: " + str(os.getpid()))
 logging.debug("Running on host " + socket.gethostname())
 
-runSVR = True 
-runCART = False 
+runSVR = False 
+runCART = True 
 
 if runSVR: 
     learnerName = "SVR"
 
-    cvScalings = numpy.arange(0.6, 1.61, 0.2)
     sampleMethods = [("CV", Sampling.crossValidation)]
     sampleSizes = numpy.array([50, 100, 200])
     foldsSet = numpy.arange(2, 13, 2)      
@@ -369,7 +368,7 @@ if runCART:
     runBenchmarkExp(regressiondatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, numProcesses, fileNameSuffix, learnerName, betaNameSuffix)
     
     extSampleMethods = [("CV", Sampling.crossValidation)]
-    extSampleSizes = numpy.array([500, 1000])
+    extSampleSizes = numpy.array([500])
     extFoldsSet = numpy.arange(2, 13, 2)
     
     computeLearningRates(regressiondatasetNames, numProcesses, betaNameExtSuffix, learnerName, extSampleSizes, betaFoldsSet)
