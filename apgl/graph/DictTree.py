@@ -335,4 +335,40 @@ class DictTree(DictGraph):
             vertexStack.extend(children)
         
         return True 
-            
+
+    def __touchVertex(self, vertexId):
+        """
+        If the vertex exists, do nothing. Otherwise add it to vertices and
+        adjacencies. 
+        """
+        if vertexId not in self.vertices:
+            self.vertices[vertexId] = None
+        if vertexId not in self.adjacencies:
+            self.adjacencies[vertexId] = {}
+         
+    def subtreeAt(self, vertexId):
+        """
+        Compute the subtree starting from a particular vertex id 
+        """
+
+        subtree = DictTree()
+        vertexIds = self.subtreeIds(vertexId)
+        vertexIds = set(vertexIds)
+
+        for vertexId in vertexIds:
+            if vertexId in self.adjacencies.keys():
+                subtree.__touchVertex(vertexId)
+                subtree.adjacencies[vertexId] = self.adjacencies[vertexId].copy()
+
+        deleteIdList = []
+
+        #Now remove the elements in the adjacencies:
+        for vertex1 in subtree.adjacencies.keys():
+            for vertex2 in subtree.adjacencies[vertex1].keys():
+                if vertex2 not in vertexIds:
+                    deleteIdList.append((vertex1, vertex2))
+
+        for vertex1, vertex2 in deleteIdList:         
+            del subtree.adjacencies[vertex1][vertex2]
+           
+        return subtree 

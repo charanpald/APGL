@@ -272,8 +272,24 @@ class DictGraphTest(unittest.TestCase):
         a.y = numpy.array([1,2,3])
         nptst.assert_array_equal(newTree.getVertex("a").y, numpy.array([1, 2])) 
         nptst.assert_array_equal(self.dictTree.getVertex("a").y, numpy.array([1, 2, 3]))
+
+    def testSubtree(self): 
+        newTree = DictTree()
+        newTree.addEdge("a", "b")
+        newTree.addEdge("a", "c")     
         
+        subtree = newTree.subtreeAt("b")
+        self.assertEquals(subtree.getAllVertexIds(), ["b"])        
         
+
+        subtree = newTree.subtreeAt("c")
+        self.assertEquals(subtree.getAllVertexIds(), ["c"])    
+        
+        subtree = newTree.subtreeAt("a")
+        self.assertEquals(subtree.getAllVertexIds(), ["a", "c", "b"])
+        
+   
+     
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
