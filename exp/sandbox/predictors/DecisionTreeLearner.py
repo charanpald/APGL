@@ -246,11 +246,9 @@ class DecisionTreeLearner(AbstractPredictor):
             for leaf in subtreeLeaves: 
                 testErrorSum += self.tree.getVertex(leaf).getTestError()
             
-            subtreeSize = len(self.tree.subtreeIds(vertexId))            
-            
             #Alpha is reduction in error per leaf - larger alphas are better 
-            if currentNode.getTestInds().shape[0] != 0 and subtreeSize != 1: 
-                currentNode.alpha = (currentNode.getTestError() - testErrorSum)/float(X.shape[0]*(subtreeSize-1))
+            if currentNode.getTestInds().shape[0] != 0 and subtreeLeaves != 1: 
+                currentNode.alpha = (currentNode.getTestError() - testErrorSum)/float(X.shape[0]*(subtreeLeaves-1))
                 #Flip alpha so that pruning works 
                 currentNode.alpha = -currentNode.alpha
                 
