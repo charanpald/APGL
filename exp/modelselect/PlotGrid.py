@@ -207,7 +207,7 @@ def plotGrids(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fi
                     foldsInd = k
                     
                     plt.figure(m+figInd)
-                    grid1 = meanIdealErrorGrids[sampleSizeInd, :].flatten()
+                    grid1 = meanIdealPenGrids[sampleSizeInd, :].flatten()
                     grid2 = meanApproxGrids[sampleSizeInd, foldsInd, methodInd, :].flatten()
                     
                     """
