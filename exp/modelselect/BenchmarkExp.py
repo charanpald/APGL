@@ -1,5 +1,6 @@
 import multiprocessing
 import sys
+import socket 
 from apgl.predictors.LibSVM import LibSVM
 from apgl.predictors.DecisionTree import DecisionTree
 from apgl.predictors.RandomForest import RandomForest
@@ -331,6 +332,7 @@ regressiondatasetNames = ModelSelectUtils.getRegressionDatasets(True)
 
 logging.debug("Using " + str(numProcesses) + " processes")
 logging.debug("Process id: " + str(os.getpid()))
+logging.debug("Running on host " + socket.gethostname())
 
 runSVR = True 
 runCART = False 
@@ -338,6 +340,7 @@ runCART = False
 if runSVR: 
     learnerName = "SVR"
 
+    cvScalings = numpy.arange(0.6, 1.61, 0.2)
     sampleMethods = [("CV", Sampling.crossValidation)]
     sampleSizes = numpy.array([50, 100, 200])
     foldsSet = numpy.arange(2, 13, 2)      
