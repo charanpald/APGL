@@ -163,18 +163,20 @@ def summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, file
                 #print("Mean error is: " + str(numpy.mean(meanErrors)) + "\n")
                 
                 #This is a table with V=10, alpha=1 and CV sampling 
-                """
-                print(meanErrors[0, 4, 0])
+                
+                print(meanErrors[0, 1, 0])
                 table1Error = numpy.zeros(len(sampleSizes)*2)
                 table1Std = numpy.zeros(len(sampleSizes)*2)
                 for  k in range(len(sampleSizes)):
                     table1Error[k*2] = meanErrors[k, 4, 0]
-                    table1Error[k*2+1] = meanErrors[k, 4, 3]
+                    table1Error[k*2+1] = meanErrors[k, 4, 4]
+                    
                     table1Std[k*2] = stdErrors[k, 4, 0]
-                    table1Std[k*2+1] = stdErrors[k, 4, 3]
+                    table1Std[k*2+1] = stdErrors[k, 4, 4]
                     
                 if j == 0: 
                     table1 += datasetNames[i] + " & " + Latex.array2DToRows(numpy.array([table1Error]), numpy.array([table1Std])) + "\n"
+                
                 
                 tenFoldIndex = 4            
                 
@@ -188,6 +190,7 @@ def summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, file
                     if j == 0: 
                         table2 += datasetNames[i] + " $m=" + str(sampleSizes[s]) + "$ & " + Latex.array2DToRows(numpy.array([table2Error]), numpy.array([table2Std])) + "\n"
     
+                """
                 #See how each sample method effects CV and pen alpha=1
                 fourFoldIndex = 4  
                 hundredMIndex = 1            
@@ -282,7 +285,7 @@ def plotResults(datasetName, sampleSizes, foldsSet, cvScalings, sampleMethods, f
     plt.show()
 
 showCART = False  
-showSVR = True 
+showSVR = True  
 
 if showSVR: 
     outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/SVR/"
@@ -317,7 +320,7 @@ if showCART:
     
     #plotResults("add10", sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
     #Now run some extended results
-    sampleSizes = numpy.array([500, 1000])
+    sampleSizes = numpy.array([500])
     sampleMethods = ["CV"]
     cvScalings = numpy.arange(0.6, 1.61, 0.2)
     foldsSet = numpy.arange(2, 13, 2)
