@@ -51,7 +51,7 @@ for datasetName, numRealisations in datasets:
     sampleMethod = Sampling.crossValidation
     
     alpha = 1.0
-    folds = 6
+    folds = 10
     numRealisations = 5
     numMethods = 3
     sampleSizes = [50, 100, 200]
@@ -105,6 +105,16 @@ for datasetName, numRealisations in datasets:
     meanIdealPenalities /= numRealisations
 
     print("\n")
+
+    highPens = meanIdealPenalities > 0.6
+    inds = numpy.nonzero(highPens)
+    print(inds)
+    for ind in range(inds[0].shape[0]):
+        a = inds[0][ind]
+        b = inds[1][ind]
+        c = inds[2][ind]
+        print(gammas[a], epsilons[b], Cs[c])
+    
 
     approxPenalties = meanPenalties.flatten()    
     betaPenalties = meanBetaPenalties.flatten() 
