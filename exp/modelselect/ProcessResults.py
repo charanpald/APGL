@@ -35,6 +35,7 @@ def getIdealWins(errors, testErrors, p=0.1):
                 elif s1Mean < s2Mean:
                     stdWins[i, j, 0] = 1
             else: 
+                print("Test draw samplesize:" + str(sampleSizes[i]) + " folds " + str(foldsSet[j]))
                 stdWins[i, j, 1] = 1 
                     
     return stdWins
@@ -63,8 +64,12 @@ def getWins(errors, p = 0.1):
                 t, prob = scipy.stats.ttest_ind(s1, s2)
                 if prob < p: 
                     if s1Mean > s2Mean: 
+                        if k==1: 
+                            print("win \\alpha=1.0, samplesize:" + str(sampleSizes[i]) + " folds " + str(foldsSet[j]))
                         stdWins[i, j, k, 2] = 1 
                     elif s1Mean < s2Mean:
+                        if k==1: 
+                            print("loss \\alpha=1.0, samplesize:" + str(sampleSizes[i]) + " folds " + str(foldsSet[j]))
                         stdWins[i, j, k, 0] = 1
                 else: 
                     stdWins[i, j, k, 1] = 1 
@@ -284,8 +289,74 @@ def plotResults(datasetName, sampleSizes, foldsSet, cvScalings, sampleMethods, f
             plt.legend(tuple(labels))
     plt.show()
 
-showCART = False  
-showSVR = True  
+
+def plotAlphas(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix): 
+    """
+    Plot the variation in the error with alpha for penalisation. 
+    """
+    for i, datasetName in enumerate(datasetNames): 
+        plt.figure(i)        
+        
+        for k in range(len(sampleMethods)):
+            outfileName = outputDir + datasetName + sampleMethods[k] + fileNameSuffix + ".npz"
+            data = numpy.load(outfileName)
+    
+            errors = data["arr_0"]
+            meanMeasures = numpy.mean(errors, 0)
+            
+            foldInd = 4 
+    
+            for i in range(sampleSizes.shape[0]):
+                plt.plot(cvScalings, meanMeasures[i, foldInd, 2:8], label=datasetName+" m="+str(sampleSizes[i]))
+                    
+            plt.xlabel("Alpha")
+            plt.ylabel('Error')
+            xmin, xmax = cvScalings[0], cvScalings[-1]
+            plt.xlim((xmin,xmax))
+
+        
+            plt.legend()
+    plt.show()
+    
+    
+def plotPenalty(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix): 
+    """
+    Plot the approximated versus ideal penalty. 
+    """
+    gammas = numpy.array(numpy.round(2**numpy.arange(1, 7.5, 0.5)-1), dtype=numpy.int)  
+    
+    for i, datasetName in enumerate(datasetNames): 
+        plt.figure(i)        
+        
+        outfileName = outputDir + datasetNames[i] + "GridResults.npz"
+        data = numpy.load(outfileName)
+        meanIdealPenGrids = data["arr_4"]
+        
+        for k in range(len(sampleMethods)):
+            outfileName = outputDir + datasetNames[i] + sampleMethods[k] + "Results.npz"
+            data = numpy.load(outfileName)
+            meanApproxGrids = data["arr_4"]
+            
+            foldInd = 0 
+            methodInd1 = 1
+            methodInd2 = 4
+    
+            for i in range(sampleSizes.shape[0]-1):
+                idealGrid = meanIdealPenGrids[i, :]
+                approxGrid1 = meanApproxGrids[i, foldInd, methodInd1, :]
+                approxGrid2 = meanApproxGrids[i, foldInd, methodInd2, :]
+                plt.plot(numpy.log2(gammas), idealGrid, label="Ideal "  +" m="+str(sampleSizes[i]))
+                plt.plot(numpy.log2(gammas), approxGrid1, label="PenVF+ "  +" m="+str(sampleSizes[i]))
+                plt.plot(numpy.log2(gammas), approxGrid2, label="PenVF "  +" m="+str(sampleSizes[i]))
+                    
+            plt.xlabel("log(gamma)")
+            plt.ylabel('Penalty')
+            plt.legend(loc="upper left")
+    plt.show()    
+    
+
+showCART = True  
+showSVR = False  
 
 if showSVR: 
     outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/SVR/"
@@ -298,6 +369,9 @@ if showSVR:
     fileNameSuffix = 'Results'
     summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
     
+    plotDatasetNames = [datasetNames[0], datasetNames[7]]
+    plotAlphas(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)    
+    
     sampleSizes = numpy.array([25, 50, 100])
     sampleMethods = ["CV"]
     cvScalings = numpy.arange(0.6, 1.61, 0.2)
@@ -305,6 +379,8 @@ if showSVR:
     datasetNames = ModelSelectUtils.getRegressionDatasets()
     fileNameSuffix = "ResultsExt"
     summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix, "GridResultsExt")
+    
+    
 
 if showCART: 
     outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/CART/"
@@ -317,6 +393,11 @@ if showCART:
     datasetNames = ModelSelectUtils.getRegressionDatasets()
     fileNameSuffix = 'Results'
     summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
+    
+    #plotDatasetNames = [datasetNames[7], datasetNames[9]]
+    #plotAlphas(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)    
+    plotDatasetNames = [datasetNames[0]]    
+    plotPenalty(plotDatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)  
     
     #plotResults("add10", sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
     #Now run some extended results
