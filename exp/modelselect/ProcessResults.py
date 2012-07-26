@@ -379,9 +379,12 @@ def plotErrorGrids(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethod
     
             for i in range(sampleSizes.shape[0]-2):
                 idealGrid = meanIdealErrorGrids[i, :]
-                print(gammas[numpy.argmin(idealGrid)])
-                print(gammas[numpy.argmin(meanErrorGrids[i, foldInd, methodInd1, :])])
-                print(gammas[numpy.argmin(meanErrorGrids[i, foldInd, methodInd3, :])])
+                print()
+                print("min ideal = " + str(gammas[numpy.argmin(idealGrid)]))
+                print("min VFCV = " + str(gammas[numpy.argmin(meanErrorGrids[i, foldInd, methodInd1, :])])) 
+                print("min PenVF+ = " + str(gammas[numpy.argmin(meanErrorGrids[i, foldInd, methodInd2, :])])) 
+                print("min PenVF = " + str(gammas[numpy.argmin(meanErrorGrids[i, foldInd, methodInd3, :])])) 
+
                 approxGrid1 = meanErrorGrids[i, foldInd, methodInd1, :]
                 approxGrid2 = meanErrorGrids[i, foldInd, methodInd2, :]
                 approxGrid3 = meanErrorGrids[i, foldInd, methodInd3, :]
@@ -440,7 +443,7 @@ if showCART:
     #plotDatasetNames = [datasetNames[0]]    
     #plotPenalty(plotDatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)  
     #plotDatasetNames = [datasetNames[0]]    
-    #plotErrorGrids(plotDatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
+    plotErrorGrids(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
     
     #plotResults("add10", sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
     #Now run some extended results
