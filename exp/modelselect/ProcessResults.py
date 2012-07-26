@@ -354,6 +354,47 @@ def plotPenalty(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, 
             plt.legend(loc="upper left")
     plt.show()    
     
+def plotErrorGrids(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix): 
+    """
+    Plot the ideal, CV, PenVF errors. 
+    """
+    gammas = numpy.array(numpy.round(2**numpy.arange(1, 7.5, 0.5)-1), dtype=numpy.int)  
+    
+    for i, datasetName in enumerate(datasetNames): 
+        plt.figure(i)        
+        
+        outfileName = outputDir + datasetNames[i] + "GridResults.npz"
+        data = numpy.load(outfileName)
+        meanIdealErrorGrids = data["arr_2"]
+        
+        for k in range(len(sampleMethods)):
+            outfileName = outputDir + datasetNames[i] + sampleMethods[k] + "Results.npz"
+            data = numpy.load(outfileName)
+            meanErrorGrids = data["arr_2"]
+            
+            foldInd = 0 
+            methodInd1 = 0
+            methodInd2 = 1
+            methodInd3 = 4
+    
+            for i in range(sampleSizes.shape[0]-2):
+                idealGrid = meanIdealErrorGrids[i, :]
+                print(gammas[numpy.argmin(idealGrid)])
+                print(gammas[numpy.argmin(meanErrorGrids[i, foldInd, methodInd1, :])])
+                print(gammas[numpy.argmin(meanErrorGrids[i, foldInd, methodInd3, :])])
+                approxGrid1 = meanErrorGrids[i, foldInd, methodInd1, :]
+                approxGrid2 = meanErrorGrids[i, foldInd, methodInd2, :]
+                approxGrid3 = meanErrorGrids[i, foldInd, methodInd3, :]
+                plt.plot(numpy.log2(gammas), idealGrid, label="Ideal "  +" m="+str(sampleSizes[i]))
+                plt.plot(numpy.log2(gammas), approxGrid1, label="CV "  +" m="+str(sampleSizes[i]))
+                plt.plot(numpy.log2(gammas), approxGrid2, label="PenVF+ "  +" m="+str(sampleSizes[i]))
+                plt.plot(numpy.log2(gammas), approxGrid3, label="PenVF "  +" m="+str(sampleSizes[i]))
+                    
+            plt.xlabel("log(gamma)")
+            plt.ylabel('Error')
+            plt.legend(loc="lower left")
+    plt.show()  
+
 
 showCART = True  
 showSVR = False  
@@ -369,8 +410,8 @@ if showSVR:
     fileNameSuffix = 'Results'
     summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
     
-    plotDatasetNames = [datasetNames[0], datasetNames[7]]
-    plotAlphas(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)    
+    #plotDatasetNames = [datasetNames[0], datasetNames[7]]
+    #plotAlphas(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)    
     
     sampleSizes = numpy.array([25, 50, 100])
     sampleMethods = ["CV"]
@@ -396,8 +437,10 @@ if showCART:
     
     #plotDatasetNames = [datasetNames[7], datasetNames[9]]
     #plotAlphas(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)    
-    plotDatasetNames = [datasetNames[0]]    
-    plotPenalty(plotDatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)  
+    #plotDatasetNames = [datasetNames[0]]    
+    #plotPenalty(plotDatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)  
+    #plotDatasetNames = [datasetNames[0]]    
+    #plotErrorGrids(plotDatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
     
     #plotResults("add10", sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
     #Now run some extended results
