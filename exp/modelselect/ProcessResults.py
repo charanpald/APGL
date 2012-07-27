@@ -64,11 +64,11 @@ def getWins(errors, p = 0.1):
                 t, prob = scipy.stats.ttest_ind(s1, s2)
                 if prob < p: 
                     if s1Mean > s2Mean: 
-                        if k==1: 
+                        if k==4: 
                             print("win \\alpha=1.0, samplesize:" + str(sampleSizes[i]) + " folds " + str(foldsSet[j]))
                         stdWins[i, j, k, 2] = 1 
                     elif s1Mean < s2Mean:
-                        if k==1: 
+                        if k==4: 
                             print("loss \\alpha=1.0, samplesize:" + str(sampleSizes[i]) + " folds " + str(foldsSet[j]))
                         stdWins[i, j, k, 0] = 1
                 else: 
@@ -169,28 +169,30 @@ def summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, file
                 
                 #This is a table with V=10, alpha=1 and CV sampling 
                 
+                sliceFoldIndex = 0  
+                
                 print(meanErrors[0, 1, 0])
                 table1Error = numpy.zeros(len(sampleSizes)*2)
                 table1Std = numpy.zeros(len(sampleSizes)*2)
                 for  k in range(len(sampleSizes)):
-                    table1Error[k*2] = meanErrors[k, 4, 0]
-                    table1Error[k*2+1] = meanErrors[k, 4, 4]
+                    table1Error[k*2] = meanErrors[k, sliceFoldIndex, 0]
+                    table1Error[k*2+1] = meanErrors[k, sliceFoldIndex, 4]
                     
-                    table1Std[k*2] = stdErrors[k, 4, 0]
-                    table1Std[k*2+1] = stdErrors[k, 4, 4]
+                    table1Std[k*2] = stdErrors[k, sliceFoldIndex, 0]
+                    table1Std[k*2+1] = stdErrors[k, sliceFoldIndex, 4]
                     
                 if j == 0: 
                     table1 += datasetNames[i] + " & " + Latex.array2DToRows(numpy.array([table1Error]), numpy.array([table1Std])) + "\n"
                 
                 
-                tenFoldIndex = 4            
+                          
                 
                 #See how alpha varies with V=10, CV sampling 
                 table2Error = numpy.zeros(range(numMethods-2))
                 table2Std = numpy.zeros(range(numMethods-2))
                 for s in range(len(sampleSizes)): 
-                    table2Error = meanErrors[s, tenFoldIndex, 2:]
-                    table2Std = stdErrors[s, tenFoldIndex, 2:]
+                    table2Error = meanErrors[s, sliceFoldIndex, 2:]
+                    table2Std = stdErrors[s, sliceFoldIndex, 2:]
                 
                     if j == 0: 
                         table2 += datasetNames[i] + " $m=" + str(sampleSizes[s]) + "$ & " + Latex.array2DToRows(numpy.array([table2Error]), numpy.array([table2Std])) + "\n"
@@ -295,7 +297,8 @@ def plotAlphas(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, f
     Plot the variation in the error with alpha for penalisation. 
     """
     for i, datasetName in enumerate(datasetNames): 
-        plt.figure(i)        
+        #plt.figure(i)    
+        
         
         for k in range(len(sampleMethods)):
             outfileName = outputDir + datasetName + sampleMethods[k] + fileNameSuffix + ".npz"
@@ -307,7 +310,7 @@ def plotAlphas(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, f
             foldInd = 4 
     
             for i in range(sampleSizes.shape[0]):
-                plt.plot(cvScalings, meanMeasures[i, foldInd, 2:8], label=datasetName+" m="+str(sampleSizes[i]))
+                plt.plot(cvScalings, meanMeasures[i, foldInd, 2:8], next(linecycler), label=datasetName+" m="+str(sampleSizes[i]))
                     
             plt.xlabel("Alpha")
             plt.ylabel('Error')
@@ -315,7 +318,7 @@ def plotAlphas(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, f
             plt.xlim((xmin,xmax))
 
         
-            plt.legend()
+            #plt.legend()
     plt.show()
     
     
@@ -326,7 +329,7 @@ def plotPenalty(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, 
     gammas = numpy.array(numpy.round(2**numpy.arange(1, 7.5, 0.5)-1), dtype=numpy.int)  
     
     for i, datasetName in enumerate(datasetNames): 
-        plt.figure(i)        
+               
         
         outfileName = outputDir + datasetNames[i] + "GridResults.npz"
         data = numpy.load(outfileName)
@@ -342,16 +345,18 @@ def plotPenalty(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, 
             methodInd2 = 4
     
             for i in range(sampleSizes.shape[0]-1):
+                plt.figure(i) 
+                linecycler = cycle(lines)
                 idealGrid = meanIdealPenGrids[i, :]
                 approxGrid1 = meanApproxGrids[i, foldInd, methodInd1, :]
                 approxGrid2 = meanApproxGrids[i, foldInd, methodInd2, :]
-                plt.plot(numpy.log2(gammas), idealGrid, label="Ideal "  +" m="+str(sampleSizes[i]))
-                plt.plot(numpy.log2(gammas), approxGrid1, label="PenVF+ "  +" m="+str(sampleSizes[i]))
-                plt.plot(numpy.log2(gammas), approxGrid2, label="PenVF "  +" m="+str(sampleSizes[i]))
+                plt.plot(numpy.log2(gammas), idealGrid, next(linecycler), label="Ideal "  )
+                plt.plot(numpy.log2(gammas), approxGrid1, next(linecycler), label="PenVF+ " )
+                plt.plot(numpy.log2(gammas), approxGrid2, next(linecycler), label="PenVF " )
                     
-            plt.xlabel("log(gamma)")
-            plt.ylabel('Penalty')
-            plt.legend(loc="upper left")
+                plt.xlabel("log(gamma)")
+                plt.ylabel('Penalty')
+                plt.legend(loc="upper left")
     plt.show()    
     
 def plotErrorGrids(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix): 
@@ -388,10 +393,10 @@ def plotErrorGrids(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethod
                 approxGrid1 = meanErrorGrids[i, foldInd, methodInd1, :]
                 approxGrid2 = meanErrorGrids[i, foldInd, methodInd2, :]
                 approxGrid3 = meanErrorGrids[i, foldInd, methodInd3, :]
-                plt.plot(numpy.log2(gammas), idealGrid, label="Ideal "  +" m="+str(sampleSizes[i]))
-                plt.plot(numpy.log2(gammas), approxGrid1, label="CV "  +" m="+str(sampleSizes[i]))
-                plt.plot(numpy.log2(gammas), approxGrid2, label="PenVF+ "  +" m="+str(sampleSizes[i]))
-                plt.plot(numpy.log2(gammas), approxGrid3, label="PenVF "  +" m="+str(sampleSizes[i]))
+                plt.plot(numpy.log2(gammas), idealGrid, next(linecycler), label="Ideal ")
+                plt.plot(numpy.log2(gammas), approxGrid1, next(linecycler), label="CV "  )
+                plt.plot(numpy.log2(gammas), approxGrid2, next(linecycler), label="PenVF+ " )
+                plt.plot(numpy.log2(gammas), approxGrid3, next(linecycler), label="PenVF " )
                     
             plt.xlabel("log(gamma)")
             plt.ylabel('Error')
@@ -399,8 +404,13 @@ def plotErrorGrids(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethod
     plt.show()  
 
 
-showCART = True  
-showSVR = False  
+showCART = False  
+showSVR = True  
+
+from itertools import cycle
+lines = ["k-","k--","k-.","k:","k-x", "k-+"]
+linecycler = cycle(lines)
+
 
 if showSVR: 
     outputDir = PathDefaults.getOutputDir() + "modelPenalisation/regression/SVR/"
@@ -413,8 +423,8 @@ if showSVR:
     fileNameSuffix = 'Results'
     summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
     
-    #plotDatasetNames = [datasetNames[0], datasetNames[7]]
-    #plotAlphas(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)    
+    plotDatasetNames = [datasetNames[0], datasetNames[7]]
+    plotAlphas(plotDatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)    
     
     sampleSizes = numpy.array([25, 50, 100])
     sampleMethods = ["CV"]
@@ -439,11 +449,11 @@ if showCART:
     summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
     
     #plotDatasetNames = [datasetNames[7], datasetNames[9]]
-    #plotAlphas(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)    
+    #plotAlphas(plotDatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)    
     #plotDatasetNames = [datasetNames[0]]    
     #plotPenalty(plotDatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)  
-    #plotDatasetNames = [datasetNames[0]]    
-    plotErrorGrids(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
+    plotDatasetNames = [datasetNames[0]]    
+    plotErrorGrids(plotDatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
     
     #plotResults("add10", sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
     #Now run some extended results
