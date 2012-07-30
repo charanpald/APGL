@@ -194,6 +194,30 @@ class VertexList(AbstractVertexList):
 
         return vList
 
+    def __getitem__(self, ind):
+        """
+        This is called when using numpy square bracket notation and returns the value
+        of the specified vertex, e.g. vList[i, :] returns the ith vertex.
+
+        :param ind: a vertex index
+        :type ind: :class:`int`
+
+        :returns: The value of the vertex.
+        """
+        return self.V[ind]
+
+    def __setitem__(self, ind, value):
+        """
+        This is called when using square bracket notation and sets the value
+        of the specified vertex, e.g. vList[i, :] = v.
+
+        :param vertexIndex: a vertex index
+        :type vertexIndex: :class:`int`
+
+        :param value: the value of the vertex
+        """
+        self.V[ind] =  value
+
     V = None
     ext = ".nvl"
     
