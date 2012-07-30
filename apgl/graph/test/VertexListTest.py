@@ -5,6 +5,7 @@ from apgl.graph.VertexList import VertexList
 import unittest
 import numpy
 import logging
+import numpy.testing as nptst 
 
 class VertexListTest(unittest.TestCase, AbstractVertexListTest):
     def setUp(self):
@@ -36,6 +37,19 @@ class VertexListTest(unittest.TestCase, AbstractVertexListTest):
             logging.warn(e)
             pass 
 
+    def testGetItem2(self): 
+        V = numpy.random.rand(self.numVertices, self.numFeatures)
+        self.vList.setVertices(V)
+        
+        for i in range(self.numVertices): 
+            nptst.assert_array_equal(self.vList[i, :], V[i, :])
+            
+    def testSetItem2(self):         
+        V = numpy.random.rand(self.numVertices, self.numFeatures)        
+        
+        for i in range(self.numVertices): 
+            self.vList[i, :] = V[i, :]
+            nptst.assert_array_equal(self.vList[i, :], V[i, :])
 
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(VertexListTest)
