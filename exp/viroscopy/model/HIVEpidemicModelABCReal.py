@@ -37,13 +37,17 @@ startDate = CsvConverters.dateConv("01/01/1984")
 endDate = CsvConverters.dateConv("31/12/2004")
 
 times = numpy.linspace(startDate, endDate, numTimeSteps)
-graphMetrics = HIVGraphMetrics2(times)
 
-realSummary = graphMetrics.summary(targetGraph)
-epsilonArray = numpy.array([0.8, 0.6, 0.5])*numTimeSteps
 
-def breakFunc(graph, currentTime): 
-    return graphMetrics.shouldBreak(realSummary, graph, epsilonArray[0], currentTime)
+epsilonArray = numpy.array([0.6, 0.3, 0.2])
+
+def generateBreakFunc(t): 
+    """
+    Generate a break function for particle index t. 
+    """
+    def breakFunc(graph): 
+        return graphMetrics.shouldBreak(realSummary, graph, epsilonArray[t])
+    return breakFunc 
 
 def createModel(t):
     """
@@ -57,12 +61,13 @@ def createModel(t):
     zeroVal = 0.9
     p = Util.powerLawProbs(alpha, zeroVal)
     hiddenDegSeq = Util.randomChoice(p, graph.getNumVertices())
+    
+    graphMetrics = HIVGraphMetrics2(targetGraph, epsilonArray[t])
 
     rates = HIVRates(graph, hiddenDegSeq)
-    model = HIVEpidemicModel(graph, rates, T=float(endDate), T0=float(startDate))
+    model = HIVEpidemicModel(graph, rates, T=float(endDate), T0=float(startDate), metrics=graphMetrics)
     model.setRecordStep(recordStep)
     model.setPrintStep(printStep)
-    model.setBreakFunction(breakFunc) 
 
     return model
 
@@ -79,7 +84,7 @@ logging.debug("Posterior sample size " + str(posteriorSampleSize))
 meanTheta = HIVModelUtils.defaultTheta()
 abcParams = HIVABCParameters(meanTheta, 0.5, 0.2)
 
-abcSMC = ABCSMC(epsilonArray, realSummary, createModel, abcParams, graphMetrics)
+abcSMC = ABCSMC(epsilonArray, createModel, abcParams)
 abcSMC.setPosteriorSampleSize(posteriorSampleSize)
 thetasArray = abcSMC.run()
 

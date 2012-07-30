@@ -6,7 +6,7 @@ from exp.viroscopy.model.HIVGraph import HIVGraph
 from exp.viroscopy.model.HIVVertices import HIVVertices
 
 class HIVEpidemicModel():
-    def __init__(self, graph, rates, T=100.0, T0=0.0):
+    def __init__(self, graph, rates, T=100.0, T0=0.0, metrics=None):
         """
         This class models an epidemic occuring via sexual contact. We create an 
         epidemic model with a HIVGraph and a class which models the rate of 
@@ -17,6 +17,8 @@ class HIVEpidemicModel():
         :param rates: A class modelling the event rates in the model 
         
         :param T0: This is the starting time of the simulation 
+        
+        :param metrics: A graph metrics object 
         """
         Parameter.checkClass(graph, HIVGraph)
 
@@ -28,13 +30,7 @@ class HIVEpidemicModel():
         self.breakFunc = None
         self.standardiseResults = True
         self.T0 = T0
-
-    def setBreakFunction(self, breakFunc):
-        """
-        Set up a function to break out of the simulation early. Function is called
-        on the HIV graph. 
-        """
-        self.breakFunc = breakFunc
+        self.metrics = metrics 
 
     def setT(self, T):
         """
@@ -202,9 +198,12 @@ class HIVEpidemicModel():
                 times.append(t)
                 nextStep += self.recordStep
 
-                if self.breakFunc!=None and self.breakFunc(self.graph, t):
-                    logging.debug("Breaking as distance has become too large")
-                    break 
+                if self.metrics != None: 
+                    self.metrics.addGraph(self.graph)
+                
+                    if self.metrics.shouldBreak(): 
+                        logging.debug("Breaking as distance has become too large")
+                        break 
 
             if t>= nextPrintStep or len(infectedSet) == 0:
                 logging.debug("t=" + str(t) + " S=" + str(len(susceptibleSet)) + " I=" + str(len(infectedSet)) + " R=" + str(len(removedSet)) + " C=" + str(numContacts) + " E=" + str(self.graph.getNumEdges()))
@@ -237,3 +236,7 @@ class HIVEpidemicModel():
             newRemovedIndices.append(removedIndices[idx])
 
         return idealTimes, newInfectedIndices, newRemovedIndices
+        
+    def meanDistance(self): 
+        logging.debug("Mean distance is " + str(self.metrics.meanDistance()))
+        return self.metrics.meanDistance() 
