@@ -11,18 +11,16 @@ from apgl.util.Util import Util
 from apgl.util.Parameter import Parameter 
 
 def runModel(args):
-    theta, createModel, metrics, Sprime, t = args 
+    theta, createModel, t = args 
     model = createModel(t)
     model.setParams(theta)
-    D = model.simulate()
+    model.simulate()
+    dist = model.meanDistance() 
     del model 
-    S = metrics.summary(D)
-    del D
-    dist = metrics.distance(S, Sprime) 
-    return dist      
+    return dist
 
 class ABCSMC(object):
-    def __init__(self, epsilonArray, Sprime, createModel, paramsObj, metrics):
+    def __init__(self, epsilonArray, createModel, paramsObj):
         """
         Create a multiprocessing SMCABC object with the given arguments. The aim
         is to estimate a posterior pi(theta| x) propto f(x|theta) pi(theta) without
@@ -44,10 +42,9 @@ class ABCSMC(object):
         dt = datetime.now()
         numpy.random.seed(dt.microsecond)
         self.epsilonArray = epsilonArray
-        self.Sprime = Sprime
         self.createModel = createModel
         self.abcParams = paramsObj 
-        self.metrics = metrics
+
 
         #Number of particles
         self.T = epsilonArray.shape[0]
@@ -78,17 +75,18 @@ class ABCSMC(object):
             for i in range(self.numProcesses):             
                 if t == 0:
                     tempTheta = self.abcParams.sampleParams()
-                    thetaList.append((tempTheta.copy(), self.createModel, self.metrics, self.Sprime, t))
+                    thetaList.append((tempTheta.copy(), self.createModel, t))
                 else:  
                     while True: 
                         tempTheta = lastTheta[Util.randomChoice(lastWeights)]
                         tempTheta = self.abcParams.purtubationKernel(tempTheta)
                         if self.abcParams.priorDensity(tempTheta) != 0: 
                             break 
-                    thetaList.append((tempTheta.copy(), self.createModel, self.metrics, self.Sprime, t))
+                    thetaList.append((tempTheta.copy(), self.createModel, t))
 
             pool = multiprocessing.Pool(processes=self.numProcesses)               
             resultIterator = pool.map(runModel, thetaList)     
+            #resultIterator = map(runModel, thetaList)     
     
             i = 0 
             for dist in resultIterator: 
