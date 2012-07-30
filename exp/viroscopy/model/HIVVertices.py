@@ -47,6 +47,15 @@ class HIVVertices(VertexList):
         self.V[vertexInd, HIVVertices.detectionTimeIndex] = time
         self.V[vertexInd, HIVVertices.detectionTypeIndex] = detectionType
 
+
+    def copy(self):
+        """
+        Returns a copy of this object. 
+        """
+        vList = HIVVertices(self.V.shape[0])
+        vList.setVertices(numpy.copy(self.V))
+        return vList
+
     #Some static variables
     dobIndex = 0
     genderIndex = 1
