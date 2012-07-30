@@ -64,12 +64,16 @@ def getWins(errors, p = 0.1):
                 t, prob = scipy.stats.ttest_ind(s1, s2)
                 if prob < p: 
                     if s1Mean > s2Mean: 
-                        if k==4: 
-                            print("win \\alpha=1.0, samplesize:" + str(sampleSizes[i]) + " folds " + str(foldsSet[j]))
+                        if k==4 and j==0: 
+                            print("PenVF win \\alpha=1.0, samplesize:" + str(sampleSizes[i]) + " folds " + str(foldsSet[j]))
+                        if k==1 and j==0: 
+                            print("PenVF+ win samplesize:" + str(sampleSizes[i]) + " folds " + str(foldsSet[j]))
                         stdWins[i, j, k, 2] = 1 
                     elif s1Mean < s2Mean:
-                        if k==4: 
-                            print("loss \\alpha=1.0, samplesize:" + str(sampleSizes[i]) + " folds " + str(foldsSet[j]))
+                        if k==4 and j==0: 
+                            print("PenVF loss \\alpha=1.0, samplesize:" + str(sampleSizes[i]) + " folds " + str(foldsSet[j]))
+                        if k==1 and j==0: 
+                            print("PenVF+ loss samplesize:" + str(sampleSizes[i]) + " folds " + str(foldsSet[j]))
                         stdWins[i, j, k, 0] = 1
                 else: 
                     stdWins[i, j, k, 1] = 1 
@@ -172,14 +176,17 @@ def summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, file
                 sliceFoldIndex = 0  
                 
                 print(meanErrors[0, 1, 0])
-                table1Error = numpy.zeros(len(sampleSizes)*2)
-                table1Std = numpy.zeros(len(sampleSizes)*2)
+                numSliceMethods = 3
+                table1Error = numpy.zeros(len(sampleSizes)*numSliceMethods)
+                table1Std = numpy.zeros(len(sampleSizes)*numSliceMethods)
                 for  k in range(len(sampleSizes)):
-                    table1Error[k*2] = meanErrors[k, sliceFoldIndex, 0]
-                    table1Error[k*2+1] = meanErrors[k, sliceFoldIndex, 4]
-                    
-                    table1Std[k*2] = stdErrors[k, sliceFoldIndex, 0]
-                    table1Std[k*2+1] = stdErrors[k, sliceFoldIndex, 4]
+                    table1Error[k*numSliceMethods] = meanErrors[k, sliceFoldIndex, 0]
+                    table1Error[k*numSliceMethods+1] = meanErrors[k, sliceFoldIndex, 1]
+                    table1Error[k*numSliceMethods+2] = meanErrors[k, sliceFoldIndex, 4]
+
+                    table1Std[k*numSliceMethods] = stdErrors[k, sliceFoldIndex, 0]
+                    table1Std[k*numSliceMethods+1] = stdErrors[k, sliceFoldIndex, 1]
+                    table1Std[k*numSliceMethods+2] = stdErrors[k, sliceFoldIndex, 4]
                     
                 if j == 0: 
                     table1 += datasetNames[i] + " & " + Latex.array2DToRows(numpy.array([table1Error]), numpy.array([table1Std])) + "\n"
@@ -404,8 +411,8 @@ def plotErrorGrids(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethod
     plt.show()  
 
 
-showCART = False  
-showSVR = True  
+showCART = True  
+showSVR = False  
 
 from itertools import cycle
 lines = ["k-","k--","k-.","k:","k-x", "k-+"]
