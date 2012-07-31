@@ -7,9 +7,11 @@ from exp.viroscopy.model.HIVGraph import HIVGraph
 from exp.viroscopy.model.HIVABCParameters import HIVABCParameters
 from exp.viroscopy.model.HIVEpidemicModel import HIVEpidemicModel
 from exp.viroscopy.model.HIVRates import HIVRates
+from exp.viroscopy.model.HIVVertices import HIVVertices
 from exp.viroscopy.model.HIVModelUtils import HIVModelUtils
 from exp.viroscopy.model.HIVGraphMetrics2 import HIVGraphMetrics2
 from exp.viroscopy.HIVGraphReader import HIVGraphReader, CsvConverters
+from exp.sandbox.GraphMatch import GraphMatch
 from apgl.predictors.ABCSMC import ABCSMC
 
 import logging
@@ -37,17 +39,7 @@ startDate = CsvConverters.dateConv("01/01/1984")
 endDate = CsvConverters.dateConv("31/12/2004")
 
 times = numpy.linspace(startDate, endDate, numTimeSteps)
-
-
 epsilonArray = numpy.array([0.6, 0.3, 0.2])
-
-def generateBreakFunc(t): 
-    """
-    Generate a break function for particle index t. 
-    """
-    def breakFunc(graph): 
-        return graphMetrics.shouldBreak(realSummary, graph, epsilonArray[t])
-    return breakFunc 
 
 def createModel(t):
     """
@@ -62,7 +54,12 @@ def createModel(t):
     p = Util.powerLawProbs(alpha, zeroVal)
     hiddenDegSeq = Util.randomChoice(p, graph.getNumVertices())
     
-    graphMetrics = HIVGraphMetrics2(targetGraph, epsilonArray[t])
+    featureInds= numpy.ones(graph.vlist.getNumFeatures(), numpy.bool)
+    featureInds[HIVVertices.infectionTimeIndex] = False 
+    featureInds[HIVVertices.hiddenDegreeIndex] = False 
+    featureInds = numpy.arange(featureInds.shape[0])[featureInds]
+    matcher = GraphMatch("U", featureInds=featureInds)
+    graphMetrics = HIVGraphMetrics2(targetGraph, epsilonArray[t], matcher)
 
     rates = HIVRates(graph, hiddenDegSeq)
     model = HIVEpidemicModel(graph, rates, T=float(endDate), T0=float(startDate), metrics=graphMetrics)
