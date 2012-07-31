@@ -8,7 +8,9 @@ from exp.viroscopy.model.HIVABCParameters import HIVABCParameters
 from exp.viroscopy.model.HIVEpidemicModel import HIVEpidemicModel
 from exp.viroscopy.model.HIVRates import HIVRates
 from exp.viroscopy.model.HIVModelUtils import HIVModelUtils
-from exp.viroscopy.model.HIVGraphMetrics import HIVGraphMetrics2
+from exp.viroscopy.model.HIVGraphMetrics2 import HIVGraphMetrics2
+from exp.viroscopy.model.HIVVertices import HIVVertices
+from exp.sandbox.GraphMatch import GraphMatch
 from apgl.predictors.ABCSMC import ABCSMC
 
 import logging
@@ -16,45 +18,48 @@ import sys
 import numpy
 import multiprocessing
 
+assert False, "Must run with -O flag"
+
 FORMAT = "%(levelname)s:root:%(process)d:%(message)s"
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format=FORMAT)
 numpy.set_printoptions(suppress=True, precision=4, linewidth=100)
 numpy.seterr(invalid='raise')
 
-#First try the experiment on some toy data 
 resultsDir = PathDefaults.getOutputDir() + "viroscopy/toy/" 
 graphFile = resultsDir + "ToyEpidemicGraph0"
 targetGraph = HIVGraph.load(graphFile)
 
 numTimeSteps = 10 
 T, recordStep, printStep, M = HIVModelUtils.defaultSimulationParams()
+startDate = 0
+endDate = T
+
 times = numpy.linspace(0, T, numTimeSteps)
-graphMetrics = HIVGraphMetrics2(times)
-
-realSummary = graphMetrics.summary(targetGraph)
-epsilonArray = numpy.array([0.8, 0.6, 0.5])*numTimeSteps
-
-def breakFunc(graph, currentTime): 
-    return graphMetrics.shouldBreak(realSummary, graph, epsilonArray[0], currentTime)
+epsilonArray = numpy.array([0.6, 0.5, 0.3])
 
 def createModel(t):
     """
     The parameter t is the particle index. 
     """
     undirected = True
-    T, recordStep, printStep, M = HIVModelUtils.defaultSimulationParams()
     graph = HIVGraph(M, undirected)
     
     alpha = 2
     zeroVal = 0.9
     p = Util.powerLawProbs(alpha, zeroVal)
     hiddenDegSeq = Util.randomChoice(p, graph.getNumVertices())
+    
+    featureInds= numpy.ones(graph.vlist.getNumFeatures(), numpy.bool)
+    featureInds[HIVVertices.infectionTimeIndex] = False 
+    featureInds[HIVVertices.hiddenDegreeIndex] = False 
+    featureInds = numpy.arange(featureInds.shape[0])[featureInds]
+    matcher = GraphMatch("U", featureInds=featureInds)
+    graphMetrics = HIVGraphMetrics2(targetGraph, epsilonArray[t], matcher)
 
     rates = HIVRates(graph, hiddenDegSeq)
-    model = HIVEpidemicModel(graph, rates, T)
+    model = HIVEpidemicModel(graph, rates, T=float(endDate), T0=float(startDate), metrics=graphMetrics)
     model.setRecordStep(recordStep)
     model.setPrintStep(printStep)
-    model.setBreakFunction(breakFunc) 
 
     return model
 
@@ -71,7 +76,7 @@ logging.debug("Posterior sample size " + str(posteriorSampleSize))
 meanTheta = HIVModelUtils.defaultTheta()
 abcParams = HIVABCParameters(meanTheta, 0.5, 0.2)
 
-abcSMC = ABCSMC(epsilonArray, realSummary, createModel, abcParams, graphMetrics)
+abcSMC = ABCSMC(epsilonArray, createModel, abcParams)
 abcSMC.setPosteriorSampleSize(posteriorSampleSize)
 thetasArray = abcSMC.run()
 
