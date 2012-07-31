@@ -15,13 +15,20 @@ from apgl.kernel.LinearKernel import LinearKernel
 from apgl.kernel.KernelUtils import KernelUtils
 
 class GraphMatch(object): 
-    def __init__(self, algorithm="PATH", alpha=0.5):
+    def __init__(self, algorithm="PATH", alpha=0.5, featureInds=None):
+        """
+        Intialise the matching object with a given algorithm name, alpha 
+        which is a trade of between matching adjacency matrices and vertex labels, 
+        and featureInds which is an option array of indices to use for label 
+        matching. 
+        """
         Parameter.checkFloat(alpha, 0.0, 1.0)
         Parameter.checkClass(algorithm, str)
         
         self.algorithm = algorithm 
         self.alpha = alpha 
         self.maxInt = 10**9 
+        self.featureInds = featureInds 
         
     def match(self, graph1, graph2): 
         """
@@ -153,8 +160,12 @@ class GraphMatch(object):
         if graph1.size == 0 and graph2.size == 0: 
             return numpy.zeros((graph1.size, graph2.size)) 
         
-        V1 = graph1.vlist.getVertices()
-        V2 = graph2.vlist.getVertices()
+        if self.featureInds == None: 
+            V1 = graph1.vlist.getVertices()
+            V2 = graph2.vlist.getVertices()
+        else: 
+            V1 = graph1.vlist.getVertices()[:, self.featureInds]
+            V2 = graph2.vlist.getVertices()[:, self.featureInds]
         
         V1 = Standardiser().normaliseArray(V1.T).T
         V2 = Standardiser().normaliseArray(V2.T).T

@@ -222,13 +222,30 @@ class GraphMatchTest(unittest.TestCase):
         matcher = GraphMatch(alpha=0.0)
         C = matcher.vertexSimilarities(self.graph1, self.graph1) 
         
-        C = matcher.vertexSimilarities(self.graph2, self.graph2) 
-        
         Cdiag = numpy.diag(C)
         nptst.assert_array_almost_equal(Cdiag, 2*numpy.ones(Cdiag.shape[0]))
         
         #Now compute trace(C)/||C||
         #print(numpy.trace(C)/numpy.linalg.norm(C))
+        
+        #Test use of feature inds 
+        matcher = GraphMatch(alpha=0.0, featureInds=numpy.array([0]))
+        
+        C = matcher.vertexSimilarities(self.graph1, self.graph2) 
+        
+        #Now, let's vary the non-used feature 
+        self.graph1.vlist[:, 1] = 0
+        C2 = matcher.vertexSimilarities(self.graph1, self.graph2) 
+        nptst.assert_array_equal(C, C2)
+        
+        self.graph2.vlist[:, 1] = 0
+        C2 = matcher.vertexSimilarities(self.graph1, self.graph2) 
+        nptst.assert_array_equal(C, C2)
+        
+        #Vary used feature 
+        self.graph1.vlist[:, 0] = 0
+        C2 = matcher.vertexSimilarities(self.graph1, self.graph2) 
+        self.assertTrue((C != C2).any())
         
 if __name__ == '__main__':
     unittest.main()
