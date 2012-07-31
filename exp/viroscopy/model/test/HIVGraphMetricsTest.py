@@ -6,7 +6,7 @@ import numpy.testing as nptst
 
 from exp.viroscopy.model.HIVGraph import HIVGraph
 from exp.viroscopy.model.HIVVertices import HIVVertices
-from exp.viroscopy.model.HIVGraphMetrics import HIVGraphMetrics, HIVGraphMetrics2
+from exp.viroscopy.model.HIVGraphMetrics import HIVGraphMetrics
 from exp.sandbox.GraphMatch import GraphMatch
 
 class  HIVGraphMetricsTest(unittest.TestCase):

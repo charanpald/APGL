@@ -8,7 +8,7 @@ from exp.viroscopy.model.HIVABCParameters import HIVABCParameters
 from exp.viroscopy.model.HIVEpidemicModel import HIVEpidemicModel
 from exp.viroscopy.model.HIVRates import HIVRates
 from exp.viroscopy.model.HIVModelUtils import HIVModelUtils
-from exp.viroscopy.model.HIVGraphMetrics import HIVGraphMetrics2
+from exp.viroscopy.model.HIVGraphMetrics2 import HIVGraphMetrics2
 from exp.viroscopy.HIVGraphReader import HIVGraphReader, CsvConverters
 from apgl.predictors.ABCSMC import ABCSMC
 
