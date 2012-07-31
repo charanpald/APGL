@@ -1,7 +1,6 @@
 import numpy
 import os
 import zipfile
-import pickle
 import logging
 from apgl.graph.PySparseGraph import PySparseGraph
 from exp.viroscopy.model.HIVVertices import HIVVertices
@@ -79,18 +78,18 @@ class HIVGraph(PySparseGraph):
 
             #Deal with legacy files
             try:
-                W = cls.loadMatrix(cls.wFilename)
-                metaDict = Util.loadPickle(cls.metaFilename)
+                W = cls.loadMatrix(cls._wFilename)
+                metaDict = Util.loadPickle(cls._metaFilename)
                 if vListType == None:
-                    vList = globals()[metaDict["vListType"]].load(cls.verticesFilename)
+                    vList = globals()[metaDict["vListType"]].load(cls._verticesFilename)
                 else:
-                    vList = vListType.load(cls.verticesFilename)
+                    vList = vListType.load(cls._verticesFilename)
                 undirected = metaDict["undirected"]
 
             except IOError:
-                W = cls.loadMatrix(filename + cls.matExt)
+                W = cls.loadMatrix(filename + cls._matExt)
                 vList = VertexList.load(filename)
-                undirected = Util.loadPickle(filename + cls.boolExt)
+                undirected = Util.loadPickle(filename + cls._boolExt)
 
             graph = cls(vList.getNumVertices(), undirected)
             graph.W = W
