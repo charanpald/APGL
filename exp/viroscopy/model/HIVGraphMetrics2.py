@@ -35,13 +35,17 @@ class HIVGraphMetrics2(object):
         permutation, distance, time = self.matcher.match(subgraph, subRealGraph)
         lastDist = self.matcher.distance(subgraph, subRealGraph, permutation, True, True) 
         
-        logging.debug("Evaluating distance at time " + str(t) + " : " + str(lastDist) + " with graph sizes " + str(subgraph.size) + " " + str(subRealGraph.size))        
+        logging.debug("Distance at time " + str(t) + " is " + str(lastDist) + " with simulated size " + str(subgraph.size) + " and real size " + str(subRealGraph.size))        
         
         self.dists.append(lastDist)
-        
+    
+    
     def meanDistance(self):
         dists = numpy.array(self.dists)
-        return dists.mean()
+        if dists.shape[0]!=0: 
+            return dists.mean()
+        else: 
+            return 1
         
     def shouldBreak(self): 
         return self.meanDistance() > self.epsilon 
