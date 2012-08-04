@@ -12,6 +12,8 @@ from apgl.util.Parameter import Parameter
 
 def runModel(args):
     theta, createModel, t = args 
+    
+    logging.debug("Using theta value : " + str(theta)) 
     model = createModel(t)
     model.setParams(theta)
     model.simulate()
@@ -20,7 +22,7 @@ def runModel(args):
     return dist
 
 class ABCSMC(object):
-    def __init__(self, epsilonArray, createModel, paramsObj):
+    def __init__(self, epsilonArray, createModel, paramsObj, thetaDir):
         """
         Create a multiprocessing SMCABC object with the given arguments. The aim
         is to estimate a posterior pi(theta| x) propto f(x|theta) pi(theta) without
@@ -44,7 +46,7 @@ class ABCSMC(object):
         self.epsilonArray = epsilonArray
         self.createModel = createModel
         self.abcParams = paramsObj 
-
+        self.thetaDir = thetaDir 
 
         #Number of particles
         self.T = epsilonArray.shape[0]
@@ -61,7 +63,20 @@ class ABCSMC(object):
         """
         Parameter.checkInt(posteriorSampleSize, 0, numpy.float('inf'))
         self.N = posteriorSampleSize
-        
+
+    def loadThetas(self, t): 
+        """
+        Load all thetas saved for particle t. 
+        """
+        currentThetas = [] 
+            
+        for i in range(self.N): 
+            fileName = self.thetaDir + "theta_t="+str(t)+"_"+str(i)+".npy"
+            if os.path.exists(fileName): 
+                currentThetas.append(numpy.load(fileName))
+                
+        return currentThetas 
+
     def findThetas(self, lastTheta, lastWeights, t): 
         """
         Find a theta to accept. 
@@ -92,7 +107,10 @@ class ABCSMC(object):
             for dist in resultIterator: 
                 if dist <= self.epsilonArray[t] and len(currentTheta) !=self.N:
                     logging.debug("Accepting particle " + str(len(currentTheta)) + " at population " + str(t) + " " + "theta=" + str(thetaList[i][0])  + " dist=" + str(dist))
+                    currentTheta = self.loadThetas(t)                    
                     currentTheta.append(thetaList[i][0])
+                    fileName = self.thetaDir + "theta_t="+str(t)+"_"+str(len(currentTheta))
+                    numpy.save(fileName, currentTheta)
                 i += 1 
             pool.terminate()
             
