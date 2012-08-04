@@ -1,6 +1,6 @@
 import numpy
 from pysparse import spmatrix
-from sparray.dyn_array import dyn_array
+from sparray import csarray
 from exp.viroscopy.model.HIVVertices import HIVVertices
 from apgl.util.Util import *
 
@@ -185,7 +185,7 @@ class HIVRates():
             return numpy.array([])
 
         #contactRates = spmatrix.ll_mat(len(infectedList), self.graph.getNumVertices())
-        contactRates = dyn_array((len(infectedList), self.graph.getNumVertices()))
+        contactRates = csarray((len(infectedList), self.graph.getNumVertices()))
 
         infectedV = self.V[infectedList, :]
         maleInfectInds = infectedV[:, HIVVertices.genderIndex]==HIVVertices.male
