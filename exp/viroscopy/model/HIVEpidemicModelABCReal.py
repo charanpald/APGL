@@ -36,7 +36,8 @@ printStep = 100
 #This needs to be from 1986 to 2004 
 M = targetGraph.size * 2
 startDate = CsvConverters.dateConv("01/01/1984")
-endDate = CsvConverters.dateConv("31/12/2004")
+endDate = CsvConverters.dateConv("01/01/1987")
+#endDate = CsvConverters.dateConv("31/12/2004")
 
 times = numpy.linspace(startDate, endDate, numTimeSteps)
 epsilonArray = numpy.array([0.6, 0.3, 0.2])
@@ -55,6 +56,7 @@ def createModel(t):
     hiddenDegSeq = Util.randomChoice(p, graph.getNumVertices())
     
     featureInds= numpy.ones(graph.vlist.getNumFeatures(), numpy.bool)
+    featureInds[HIVVertices.dobIndex] = False 
     featureInds[HIVVertices.infectionTimeIndex] = False 
     featureInds[HIVVertices.hiddenDegreeIndex] = False 
     featureInds = numpy.arange(featureInds.shape[0])[featureInds]
@@ -80,8 +82,9 @@ logging.debug("Posterior sample size " + str(posteriorSampleSize))
 
 meanTheta = HIVModelUtils.defaultTheta()
 abcParams = HIVABCParameters(meanTheta, 0.5, 0.2)
+thetaDir = resultsDir + "theta/"
 
-abcSMC = ABCSMC(epsilonArray, createModel, abcParams)
+abcSMC = ABCSMC(epsilonArray, createModel, abcParams, thetaDir)
 abcSMC.setPosteriorSampleSize(posteriorSampleSize)
 thetasArray = abcSMC.run()
 
