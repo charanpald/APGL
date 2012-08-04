@@ -13,7 +13,8 @@ class HIVVertices(VertexList):
         self.V[:, self.dobIndex] = numpy.random.rand(numVertices)
         self.V[:, self.genderIndex] = Util.randomChoice(numpy.array([1, 1]), numVertices)
         #Note in reality females cannot be recorded as bisexual but we model the real scenario
-        self.V[:, self.orientationIndex] = Util.randomChoice(numpy.array([4, 1]), numVertices)
+        #We assume that 2% of the population is gay or bisexual 
+        self.V[:, self.orientationIndex] = Util.randomChoice(numpy.array([50, 1]), numVertices)
 
         self.V[:, self.stateIndex] = numpy.zeros(numVertices)
         self.V[:, self.infectionTimeIndex] = numpy.ones(numVertices)*-1
