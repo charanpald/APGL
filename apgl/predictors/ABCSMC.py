@@ -110,7 +110,7 @@ class ABCSMC(object):
                     currentTheta = self.loadThetas(t)                    
                     currentTheta.append(thetaList[i][0])
                     fileName = self.thetaDir + "theta_t="+str(t)+"_"+str(len(currentTheta))
-                    numpy.save(fileName, currentTheta)
+                    numpy.save(fileName, thetaList[i][0])
                 i += 1 
             pool.terminate()
             
