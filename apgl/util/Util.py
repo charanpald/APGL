@@ -611,7 +611,16 @@ class Util(object):
         normV = numpy.sum(V**2, 1)
                 
         D = numpy.outer(normU, numpy.ones(V.shape[0])) - 2*U.dot(V.T) + numpy.outer(numpy.ones(U.shape[0]), normV) 
-        D **= 0.5         
+        #Fix for slightly negative numbers 
+        D[D<0] = 0
+        
+        try: 
+            D **= 0.5
+        except FloatingPointError: 
+            numpy.set_printoptions(suppress=True, linewidth=200, threshold=2000)
+            print(D.shape)
+            print(D)
+            raise 
         
         return D 
 
