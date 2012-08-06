@@ -54,7 +54,7 @@ def createModel(t):
     featureInds[HIVVertices.hiddenDegreeIndex] = False 
     featureInds = numpy.arange(featureInds.shape[0])[featureInds]
     matcher = GraphMatch("U", featureInds=featureInds)
-    graphMetrics = HIVGraphMetrics2(targetGraph, epsilonArray[t], matcher)
+    graphMetrics = HIVGraphMetrics2(targetGraph, epsilonArray[t], matcher, numTimeSteps)
 
     rates = HIVRates(graph, hiddenDegSeq)
     model = HIVEpidemicModel(graph, rates, T=float(endDate), T0=float(startDate), metrics=graphMetrics)
@@ -75,8 +75,9 @@ logging.debug("Posterior sample size " + str(posteriorSampleSize))
 
 meanTheta = HIVModelUtils.defaultTheta()
 abcParams = HIVABCParameters(meanTheta, 0.5, 0.2)
+thetaDir = resultsDir + "theta/"
 
-abcSMC = ABCSMC(epsilonArray, createModel, abcParams)
+abcSMC = ABCSMC(epsilonArray, createModel, abcParams, thetaDir)
 abcSMC.setPosteriorSampleSize(posteriorSampleSize)
 thetasArray = abcSMC.run()
 

@@ -237,6 +237,6 @@ class HIVEpidemicModel():
 
         return idealTimes, newInfectedIndices, newRemovedIndices
         
-    def meanDistance(self): 
-        logging.debug("Mean distance is " + str(self.metrics.meanDistance()))
-        return self.metrics.meanDistance() 
+    def distance(self): 
+        logging.debug("Distance is " + str(self.metrics.distance()))
+        return self.metrics.distance() 

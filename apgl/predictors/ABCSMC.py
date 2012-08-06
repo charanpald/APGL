@@ -17,7 +17,7 @@ def runModel(args):
     model = createModel(t)
     model.setParams(theta)
     model.simulate()
-    dist = model.meanDistance() 
+    dist = model.distance() 
     del model 
     return dist
 

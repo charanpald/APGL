@@ -6,7 +6,7 @@ from exp.viroscopy.model.HIVGraph import HIVGraph
 from exp.sandbox.GraphMatch import GraphMatch 
 
 class HIVGraphMetrics2(object): 
-    def __init__(self, realGraph, epsilon, matcher=None):
+    def __init__(self, realGraph, epsilon, matcher=None, numTimeSteps=10):
         """
         A class to model metrics about and between HIVGraphs such as summary 
         statistics and distances. In this case we perform graph matching 
@@ -18,6 +18,7 @@ class HIVGraphMetrics2(object):
         self.dists = [] 
         self.realGraph = realGraph
         self.epsilon = epsilon 
+        self.numTimeSteps = numTimeSteps 
         
         if matcher == None: 
             self.matcher = GraphMatch("U")
@@ -39,8 +40,20 @@ class HIVGraphMetrics2(object):
         
         self.dists.append(lastDist)
     
-    
+    def distance(self): 
+        """
+        If we have the required number of time steps, return the mean distance 
+        otherwise return a distance of 1 (the max distance).
+        """
+        if self.numTimeSteps == len(self.dists): 
+            return self.meanDistance()
+        else: 
+            return 1 
+        
     def meanDistance(self):
+        """
+        This is the mean distance of the graph matches so far. 
+        """
         dists = numpy.array(self.dists)
         if dists.shape[0]!=0: 
             return dists.mean()
