@@ -206,7 +206,7 @@ class HIVEpidemicModel():
                         break 
 
             if t>= nextPrintStep or len(infectedSet) == 0:
-                logging.debug("t=" + str(t) + " S=" + str(len(susceptibleSet)) + " I=" + str(len(infectedSet)) + " R=" + str(len(removedSet)) + " C=" + str(numContacts) + " E=" + str(self.graph.getNumEdges()))
+                logging.debug("t-T0=" + str(t-self.T0) + " S=" + str(len(susceptibleSet)) + " I=" + str(len(infectedSet)) + " R=" + str(len(removedSet)) + " C=" + str(numContacts) + " E=" + str(self.graph.getNumEdges()))
                 nextPrintStep += self.printStep
 
         logging.debug("Finished simulation at time " + str(t) + " for a total time of " + str(t-self.T0))
