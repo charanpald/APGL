@@ -40,7 +40,7 @@ endDate = CsvConverters.dateConv("01/01/1987")
 #endDate = CsvConverters.dateConv("31/12/2004")
 
 times = numpy.linspace(startDate, endDate, numTimeSteps)
-epsilonArray = numpy.array([0.6, 0.3, 0.2])
+epsilonArray = numpy.array([0.9, 0.5, 0.3])
 
 def createModel(t):
     """
