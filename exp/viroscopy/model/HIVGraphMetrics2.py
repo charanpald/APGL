@@ -25,7 +25,7 @@ class HIVGraphMetrics2(object):
         self.realGraph = realGraph
         self.epsilon = epsilon 
         self.T = T 
-        self.lastTime = 0
+        self.times = []
         
         if matcher == None: 
             self.matcher = GraphMatch("U")
@@ -46,14 +46,14 @@ class HIVGraphMetrics2(object):
         logging.debug("Distance at time " + str(t) + " is " + str(lastDist) + " with simulated size " + str(subgraph.size) + " and real size " + str(subRealGraph.size))        
         
         self.dists.append(lastDist)
-        self.lastTime = t 
+        self.times.append(t) 
     
     def distance(self): 
         """
         If we have the required number of time steps, return the mean distance 
         otherwise return a distance of 1 (the max distance).
         """
-        if self.lastTime >= self.T: 
+        if self.times[-1] >= self.T: 
             return self.meanDistance()
         else: 
             return 1 
