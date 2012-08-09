@@ -83,7 +83,7 @@ class ABCSMC(object):
         Find a theta to accept. 
         """
         tempTheta = self.abcParams.sampleParams()
-        currentTheta = []
+        currentTheta = self.loadThetas(t)
         
         while len(currentTheta) < self.N:
             thetaList = []   
