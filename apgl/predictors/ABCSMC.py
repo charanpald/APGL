@@ -53,6 +53,7 @@ class ABCSMC(object):
         #Size of population
         self.N = 10
         self.numProcesses = multiprocessing.cpu_count() 
+        self.batchSize = self.numProcesses*2
 
     def setPosteriorSampleSize(self, posteriorSampleSize):
         """
@@ -87,7 +88,7 @@ class ABCSMC(object):
         while len(currentTheta) != self.N:
             thetaList = []   
             
-            for i in range(self.numProcesses):             
+            for i in range(self.batchSize):             
                 if t == 0:
                     tempTheta = self.abcParams.sampleParams()
                     thetaList.append((tempTheta.copy(), self.createModel, t))
@@ -107,10 +108,10 @@ class ABCSMC(object):
             for dist in resultIterator: 
                 if dist <= self.epsilonArray[t] and len(currentTheta) !=self.N:
                     logging.debug("Accepting particle " + str(len(currentTheta)) + " at population " + str(t) + " " + "theta=" + str(thetaList[i][0])  + " dist=" + str(dist))
-                    currentTheta = self.loadThetas(t)                    
-                    currentTheta.append(thetaList[i][0])
+                    currentTheta = self.loadThetas(t)                                        
                     fileName = self.thetaDir + "theta_t="+str(t)+"_"+str(len(currentTheta))
                     numpy.save(fileName, thetaList[i][0])
+                    currentTheta.append(thetaList[i][0])
                 i += 1 
             pool.terminate()
             
