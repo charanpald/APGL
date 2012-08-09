@@ -29,12 +29,10 @@ resultsDir = PathDefaults.getOutputDir() + "viroscopy/toy/"
 graphFile = resultsDir + "ToyEpidemicGraph0"
 targetGraph = HIVGraph.load(graphFile)
 
-numTimeSteps = 10 
 T, recordStep, printStep, M = HIVModelUtils.defaultSimulationParams()
 startDate = 0
 endDate = T
 
-times = numpy.linspace(0, T, numTimeSteps)
 epsilonArray = numpy.array([0.6, 0.5, 0.3])
 
 def createModel(t):
@@ -54,7 +52,7 @@ def createModel(t):
     featureInds[HIVVertices.hiddenDegreeIndex] = False 
     featureInds = numpy.arange(featureInds.shape[0])[featureInds]
     matcher = GraphMatch("U", featureInds=featureInds)
-    graphMetrics = HIVGraphMetrics2(targetGraph, epsilonArray[t], matcher, numTimeSteps)
+    graphMetrics = HIVGraphMetrics2(targetGraph, epsilonArray[t], matcher, T)
 
     rates = HIVRates(graph, hiddenDegSeq)
     model = HIVEpidemicModel(graph, rates, T=float(endDate), T0=float(startDate), metrics=graphMetrics)

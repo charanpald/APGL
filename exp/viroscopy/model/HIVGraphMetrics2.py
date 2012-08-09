@@ -6,19 +6,26 @@ from exp.viroscopy.model.HIVGraph import HIVGraph
 from exp.sandbox.GraphMatch import GraphMatch 
 
 class HIVGraphMetrics2(object): 
-    def __init__(self, realGraph, epsilon, matcher=None, numTimeSteps=10):
+    def __init__(self, realGraph, epsilon, matcher=None, T=1000):
         """
         A class to model metrics about and between HIVGraphs such as summary 
         statistics and distances. In this case we perform graph matching 
         using the PATH algorithm and other graph matching methods. 
         
-        :param times: An array of time points to compute statistics from 
+        :param realGraph: The target epidemic graph 
+        
+        :param epsilon: The max mean distance before we break the simulation
+        
+        :param matcher: The graph matcher object to compute graph distances. 
+        
+        :param T: The end time of the simulation. If the simulation quits before T, then distance = 1.
         """
         
         self.dists = [] 
         self.realGraph = realGraph
         self.epsilon = epsilon 
-        self.numTimeSteps = numTimeSteps 
+        self.T = T 
+        self.lastTime = 0
         
         if matcher == None: 
             self.matcher = GraphMatch("U")
@@ -39,13 +46,14 @@ class HIVGraphMetrics2(object):
         logging.debug("Distance at time " + str(t) + " is " + str(lastDist) + " with simulated size " + str(subgraph.size) + " and real size " + str(subRealGraph.size))        
         
         self.dists.append(lastDist)
+        self.lastTime = t 
     
     def distance(self): 
         """
         If we have the required number of time steps, return the mean distance 
         otherwise return a distance of 1 (the max distance).
         """
-        if self.numTimeSteps == len(self.dists): 
+        if self.lastTime >= self.T: 
             return self.meanDistance()
         else: 
             return 1 

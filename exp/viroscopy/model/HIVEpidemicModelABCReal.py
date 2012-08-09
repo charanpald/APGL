@@ -30,7 +30,6 @@ resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/"
 hivReader = HIVGraphReader()
 targetGraph = hivReader.readSimulationHIVGraph()
 
-numTimeSteps = 20 
 recordStep = 100 
 printStep = 100 
 #This needs to be from 1986 to 2004 
@@ -39,8 +38,8 @@ startDate = CsvConverters.dateConv("01/01/1984")
 endDate = CsvConverters.dateConv("01/01/1987")
 #endDate = CsvConverters.dateConv("31/12/2004")
 
-times = numpy.linspace(startDate, endDate, numTimeSteps)
-epsilonArray = numpy.array([0.9, 0.5, 0.3])
+logging.debug("Total time of simulation is " + str(endDate-startDate))
+epsilonArray = numpy.array([0.9, 0.6, 0.4])
 
 def createModel(t):
     """
@@ -61,7 +60,7 @@ def createModel(t):
     featureInds[HIVVertices.hiddenDegreeIndex] = False 
     featureInds = numpy.arange(featureInds.shape[0])[featureInds]
     matcher = GraphMatch("U", featureInds=featureInds)
-    graphMetrics = HIVGraphMetrics2(targetGraph, epsilonArray[t], matcher, numTimeSteps)
+    graphMetrics = HIVGraphMetrics2(targetGraph, epsilonArray[t], matcher, float(endDate))
 
     rates = HIVRates(graph, hiddenDegSeq)
     model = HIVEpidemicModel(graph, rates, T=float(endDate), T0=float(startDate), metrics=graphMetrics)
