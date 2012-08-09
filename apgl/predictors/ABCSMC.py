@@ -128,6 +128,7 @@ class ABCSMC(object):
         currentWeights = numpy.zeros(self.N)
 
         for t in range(self.T):
+            logging.debug("Particle number : " + str(t))
             lastTheta = currentTheta
             lastWeights = currentWeights
             currentWeights = numpy.zeros(self.N)
