@@ -85,7 +85,7 @@ class ABCSMC(object):
         tempTheta = self.abcParams.sampleParams()
         currentTheta = []
         
-        while len(currentTheta) != self.N:
+        while len(currentTheta) < self.N:
             thetaList = []   
             
             for i in range(self.batchSize):             
@@ -106,9 +106,10 @@ class ABCSMC(object):
     
             i = 0 
             for dist in resultIterator: 
+                currentTheta = self.loadThetas(t)                 
+                
                 if dist <= self.epsilonArray[t] and len(currentTheta) !=self.N:
                     logging.debug("Accepting particle " + str(len(currentTheta)) + " at population " + str(t) + " " + "theta=" + str(thetaList[i][0])  + " dist=" + str(dist))
-                    currentTheta = self.loadThetas(t)                                        
                     fileName = self.thetaDir + "theta_t="+str(t)+"_"+str(len(currentTheta))
                     numpy.save(fileName, thetaList[i][0])
                     currentTheta.append(thetaList[i][0])
