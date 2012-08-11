@@ -35,7 +35,7 @@ printStep = 100
 #This needs to be from 1986 to 2004 
 M = targetGraph.size * 2
 startDate = CsvConverters.dateConv("01/01/1984")
-endDate = CsvConverters.dateConv("01/01/1987")
+endDate = CsvConverters.dateConv("01/01/1989")
 #endDate = CsvConverters.dateConv("31/12/2004")
 
 logging.debug("Total time of simulation is " + str(endDate-startDate))
