@@ -185,7 +185,7 @@ class GraphMatch(object):
         """
         Compute the graph distance metric between two graphs given a permutation 
         vector. This is given by F(P) = (1-alpha)/(||W1||^2_F + ||W2||^2_F)(||W1 - P W2 P.T||^2_F)
-        - alpha 1/||C||_F tr C.T P in the normalised case. If we want an unnormalised 
+        - alpha 1/||C||_F tr(C.T P) in the normalised case. If we want an unnormalised 
         solution it is computed as (1-alpha)/(||W1 - P W2 P.T||^2_F) - alpha tr C.T P 
         and finally there is a standardised case in which the distance is between 
         0 and 1, where ||C||_1 is used to normalise the vertex similarities and 
@@ -200,6 +200,9 @@ class GraphMatch(object):
         
         :param normalised: Specify whether to normalise the objective function 
         :type normalised: `bool`
+        
+        :param nonNeg: Specify whether we want a non-negative solution.  
+        :type nonNeg: `bool`
         """
         W1 = graph1.getWeightMatrix()
         W2 = graph2.getWeightMatrix()
@@ -226,6 +229,7 @@ class GraphMatch(object):
                 dist1 = dist1/norm1
             if norm2!= 0:
                 dist2 = dist2/norm2 
+                
         
         dist = (1-self.alpha)*dist1 - self.alpha*dist2
         
@@ -234,8 +238,9 @@ class GraphMatch(object):
         if nonNeg and normalised:
             normC = numpy.linalg.norm(C) 
             if normC != 0: 
-                return dist + self.alpha*2*n/numpy.linalg.norm(C)  
-            else: return dist 
+                return dist + self.alpha*2*n/normC 
+            else: 
+                return dist 
         else: 
             return dist 
         
@@ -243,7 +248,7 @@ class GraphMatch(object):
         """
         Compute a graph distance metric between two graphs give a permutation 
         vector. This is given by F(P) = (1-alpha)/(||W1||^2_F + ||W2||^2_F)
-        (||W1 - P W2 P.T||^2_F) - alpha 1/(||V1||_F + ||V2||_F^2) ||V1 - P.T V2||^2_F 
+        (||W1 - P W2 P.T||^2_F) - alpha 1/(||V1||_F^2 + ||V2||_F^2) ||V1 - P.T V2||^2_F 
         and is bounded between 0 and 1. 
         
         :param graph1: A graph object 
