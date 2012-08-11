@@ -40,20 +40,25 @@ class HIVGraphMetrics2(object):
         t = graph.endTime()
         subgraph = graph.subgraph(graph.removedIndsAt(t))  
         subRealGraph = self.realGraph.subgraph(self.realGraph.removedIndsAt(t))  
-        permutation, distance, time = self.matcher.match(subgraph, subRealGraph)
-        lastDist = self.matcher.distance(subgraph, subRealGraph, permutation, True, True) 
         
-        logging.debug("Distance at time " + str(t) + " is " + str(lastDist) + " with simulated size " + str(subgraph.size) + " and real size " + str(subRealGraph.size))        
-        
-        self.dists.append(lastDist)
-        self.times.append(t) 
+        #Only add distance if the real graph has nonzero size
+        if subRealGraph.size != 0: 
+            permutation, distance, time = self.matcher.match(subgraph, subRealGraph)
+            lastDist = self.matcher.distance(subgraph, subRealGraph, permutation, True, True) 
+            
+            logging.debug("Distance at time " + str(t) + " is " + str(lastDist) + " with simulated size " + str(subgraph.size) + " and real size " + str(subRealGraph.size))        
+            
+            self.dists.append(lastDist)
+            self.times.append(t) 
+        else: 
+            logging.debug("Not adding distance at time " + str(t) + " with simulated size " + str(subgraph.size) + " and real size " + str(subRealGraph.size))
     
     def distance(self): 
         """
         If we have the required number of time steps, return the mean distance 
         otherwise return a distance of 1 (the max distance).
         """
-        if self.times[-1] >= self.T: 
+        if len(self.times) != 0 and self.times[-1] >= self.T: 
             return self.meanDistance()
         else: 
             return 1 
@@ -66,7 +71,8 @@ class HIVGraphMetrics2(object):
         if dists.shape[0]!=0: 
             return dists.mean()
         else: 
-            return 1
+            return 0
         
     def shouldBreak(self): 
         return self.meanDistance() > self.epsilon 
+        

@@ -4,6 +4,7 @@ import unittest
 import numpy.testing as nptst 
 
 from exp.viroscopy.model.HIVGraph import HIVGraph
+from exp.viroscopy.model.HIVVertices import HIVVertices
 from exp.viroscopy.model.HIVGraphMetrics2 import HIVGraphMetrics2
 from exp.sandbox.GraphMatch import GraphMatch
 
@@ -74,6 +75,19 @@ class  HIVGraphMetrics2Test(unittest.TestCase):
         lastDist = matcher.distance(subgraph1, subgraph2, permutation, True, True) 
         self.assertEquals(metrics.dists[-1], lastDist) 
         self.assertFalse(metrics.shouldBreak())
+        
+        #Test case where one graph has zero size 
+        graph1 = HIVGraph(10)
+        graph2 = HIVGraph(10)
+        
+        graph1.vlist[:, HIVVertices.stateIndex] = HIVVertices.removed
+        metrics = HIVGraphMetrics2(graph2, epsilon)
+        metrics.addGraph(graph1)
+        
+        #Problem is that distance is 1 when one graph is zero
+        self.assertEquals(len(metrics.dists), 0) 
+
+        
         
         
 
