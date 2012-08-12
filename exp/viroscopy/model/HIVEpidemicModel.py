@@ -216,6 +216,9 @@ class HIVEpidemicModel():
 
         logging.debug("Finished simulation at time " + str(t) + " for a total time of " + str(t-self.T0))
 
+        if self.metrics != None: 
+            self.metrics.addGraph(self.graph)
+
         if self.standardiseResults:
             times, infectedIndices, removedIndices = self.findStandardResults(times, infectedIndices, removedIndices)
             #logging.debug("times=" + str(times))
@@ -243,5 +246,5 @@ class HIVEpidemicModel():
         return idealTimes, newInfectedIndices, newRemovedIndices
         
     def distance(self): 
-        logging.debug("Distance is " + str(self.metrics.distance()) + ",  and final event on graph occured at time " + str(self.graph.endTime() - self.T0))
+        logging.debug("Distance is " + str(self.metrics.distance()) + ", and final event on graph occured at time " + str(self.graph.endTime() - self.T0))
         return self.metrics.distance() 
