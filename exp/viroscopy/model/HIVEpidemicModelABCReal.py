@@ -34,8 +34,8 @@ recordStep = 100
 printStep = 100 
 #This needs to be from 1986 to 2004 
 M = targetGraph.size * 2
-startDate = CsvConverters.dateConv("01/01/1984")
-endDate = CsvConverters.dateConv("01/01/1989")
+startDate = CsvConverters.dateConv("01/01/1986")
+endDate = CsvConverters.dateConv("01/01/1991")
 #endDate = CsvConverters.dateConv("31/12/2004")
 
 logging.debug("Total time of simulation is " + str(endDate-startDate))
@@ -86,6 +86,7 @@ thetaDir = resultsDir + "theta/"
 
 abcSMC = ABCSMC(epsilonArray, createModel, abcParams, thetaDir)
 abcSMC.setPosteriorSampleSize(posteriorSampleSize)
+abcSMC.batchSize = 30
 thetasArray = abcSMC.run()
 
 meanTheta = numpy.mean(thetasArray, 0)
