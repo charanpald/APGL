@@ -39,7 +39,7 @@ endDate = CsvConverters.dateConv("01/01/1991")
 #endDate = CsvConverters.dateConv("31/12/2004")
 
 logging.debug("Total time of simulation is " + str(endDate-startDate))
-epsilonArray = numpy.array([0.9, 0.6, 0.4])
+epsilonArray = numpy.array([0.9, 0.75, 0.6, 0.45])
 
 def createModel(t):
     """

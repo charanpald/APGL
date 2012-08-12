@@ -33,7 +33,7 @@ T, recordStep, printStep, M = HIVModelUtils.defaultSimulationParams()
 startDate = 0
 endDate = T
 
-epsilonArray = numpy.array([0.6, 0.5, 0.3])
+epsilonArray = numpy.array([0.6, 0.5, 0.4, 0.2])
 
 def createModel(t):
     """
@@ -78,6 +78,7 @@ thetaDir = resultsDir + "theta/"
 
 abcSMC = ABCSMC(epsilonArray, createModel, abcParams, thetaDir)
 abcSMC.setPosteriorSampleSize(posteriorSampleSize)
+abcSMC.batchSize = 30
 thetasArray = abcSMC.run()
 
 meanTheta = numpy.mean(thetasArray, 0)
