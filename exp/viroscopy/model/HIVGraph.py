@@ -20,6 +20,8 @@ class HIVGraph(PySparseGraph):
         """
         vList = HIVVertices(numVertices)
         super(HIVGraph, self).__init__(vList, undirected, sizeHint=10000)
+        
+        self.endEventTime = None 
 
     def getSusceptibleSet(self):
         V = self.vList.getVertices(list(range(self.getNumVertices())))
@@ -135,10 +137,11 @@ class HIVGraph(PySparseGraph):
         """
         Return the time of the last infection or detection event. 
         """
-        vertexArray = self.getVertexList().getVertices()
-        imin = numpy.max(vertexArray[:, HIVVertices.infectionTimeIndex])
-        rmin = numpy.max(vertexArray[:, HIVVertices.detectionTimeIndex]) 
+        #vertexArray = self.getVertexList().getVertices()
+        #imin = numpy.max(vertexArray[:, HIVVertices.infectionTimeIndex])
+        #rmin = numpy.max(vertexArray[:, HIVVertices.detectionTimeIndex]) 
         
-        return numpy.max(numpy.array([imin, rmin]))
+        #return numpy.max(numpy.array([imin, rmin]))
+        return self.endEventTime
         
         
