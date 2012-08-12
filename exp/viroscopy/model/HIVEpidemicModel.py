@@ -170,6 +170,8 @@ class HIVEpidemicModel():
                     vList.setInfected(contactIndex, t)
                     infectedSet.add(contactIndex)
                     susceptibleSet.remove(contactIndex)
+                    
+                self.graph.endEventTime = t 
             elif p >= contactProb and p < contactProb+detectionRandom:
                 eventInd = Util.randomChoice(randomDetectRates)
                 newDetectedIndex = infectedList[eventInd]
@@ -177,6 +179,7 @@ class HIVEpidemicModel():
                 removedSet.add(newDetectedIndex)
                 infectedSet.remove(newDetectedIndex)
                 contactSet.remove(newDetectedIndex)
+                self.graph.endEventTime = t
             elif p >= contactProb+detectionRandom and p < contactProb+detectionRandom+detectionContact:
                 eventInd = Util.randomChoice(contactTracingRates)
                 newDetectedIndex = infectedList[eventInd]
@@ -184,6 +187,7 @@ class HIVEpidemicModel():
                 removedSet.add(newDetectedIndex)
                 infectedSet.remove(newDetectedIndex)
                 contactSet.remove(newDetectedIndex)
+                self.graph.endEventTime = t
 
             assert infectedSet.union(removedSet).union(susceptibleSet) == set(range(self.graph.getNumVertices()))
             assert contactSet == infectedSet.union(susceptibleSet)
@@ -210,9 +214,6 @@ class HIVEpidemicModel():
                 nextPrintStep += self.printStep
 
         logging.debug("Finished simulation at time " + str(t) + " for a total time of " + str(t-self.T0))
-
-        if self.metrics != None: 
-            self.metrics.addGraph(self.graph)
 
         if self.standardiseResults:
             times, infectedIndices, removedIndices = self.findStandardResults(times, infectedIndices, removedIndices)
@@ -241,5 +242,5 @@ class HIVEpidemicModel():
         return idealTimes, newInfectedIndices, newRemovedIndices
         
     def distance(self): 
-        logging.debug("Distance is " + str(self.metrics.distance()))
+        logging.debug("Distance is " + str(self.metrics.distance()) + ",  and final event on graph occured at time " + str(self.graph.endTime() - self.T0))
         return self.metrics.distance() 
