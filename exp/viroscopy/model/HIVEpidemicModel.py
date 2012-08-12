@@ -23,6 +23,7 @@ class HIVEpidemicModel():
         Parameter.checkClass(graph, HIVGraph)
 
         self.graph = graph
+        self.graph.endEventTime = T0
         self.rates = rates
         self.setT(T)
         self.setRecordStep(10)
