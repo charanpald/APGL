@@ -19,6 +19,14 @@ class HIVModelUtils(object):
         pass 
     
     @staticmethod
+    def estimatedRealTheta():
+        """
+        This is taken from simulated runs using the real data 
+        """
+        theta = numpy.array([ 175.25,  0.8338, 0.4083, 0.0016, 0.0064, 0.0279, 0.0312, 0.0446, 0.0758, 0.4285])
+        return theta 
+    
+    @staticmethod
     def toyTheta(): 
         theta = numpy.array([50, 1.0, 0.5, 1.0/800, 0.01, 0.05, 0.1, 38.0/1000, 30.0/1000, 170.0/1000])
         return theta 
@@ -45,7 +53,8 @@ class HIVModelUtils(object):
         
         recordStep = 100 
         printStep = 100
-        M = targetGraph.size * 2
+        #Note that 2% of the population is bi 
+        M = targetGraph.size * 4
         #This needs to be from 1986 to 2004 
         startDate = CsvConverters.dateConv("01/01/1986")
         endDate = CsvConverters.dateConv("01/01/1989")
