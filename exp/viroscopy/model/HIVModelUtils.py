@@ -6,33 +6,55 @@ Keep some default parameters for the epidemic model.
 import numpy 
 import logging 
 from apgl.util import Util 
+from apgl.util import PathDefaults 
 from apgl.graph.GraphStatistics import GraphStatistics
 from exp.viroscopy.model.HIVGraph import HIVGraph
 from exp.viroscopy.model.HIVEpidemicModel import HIVEpidemicModel
 from exp.viroscopy.model.HIVRates import HIVRates
 from exp.viroscopy.model.HIVVertices import HIVVertices
+from exp.viroscopy.HIVGraphReader import HIVGraphReader, CsvConverters
 
 class HIVModelUtils(object):
     def __init__(self): 
         pass 
     
     @staticmethod
-    def defaultTheta(): 
+    def toyTheta(): 
         theta = numpy.array([50, 1.0, 0.5, 1.0/800, 0.01, 0.05, 0.1, 38.0/1000, 30.0/1000, 170.0/1000])
         return theta 
         
     @staticmethod 
-    def defaultSimulationParams(): 
-        T = 1000.0
+    def toySimulationParams(): 
+
+        resultsDir = PathDefaults.getOutputDir() + "viroscopy/toy/" 
+        graphFile = resultsDir + "ToyEpidemicGraph0"
+        targetGraph = HIVGraph.load(graphFile)        
+        
+        startDate = 0.0        
+        endDate = 1000.0
         recordStep = 90
         printStep = 500
         M = 2000
         
-        return T, recordStep, printStep, M 
+        return startDate, endDate, recordStep, printStep, M, targetGraph
+        
+    @staticmethod 
+    def realSimulationParams(): 
+        hivReader = HIVGraphReader()
+        targetGraph = hivReader.readSimulationHIVGraph()
+        
+        recordStep = 100 
+        printStep = 100
+        M = targetGraph.size * 2
+        #This needs to be from 1986 to 2004 
+        startDate = CsvConverters.dateConv("01/01/1986")
+        endDate = CsvConverters.dateConv("01/01/1989")
+        #endDate = CsvConverters.dateConv("31/12/2004")
+        
+        return float(startDate), float(endDate), recordStep, printStep, M, targetGraph
     
     @staticmethod     
-    def defaultSimulate(theta): 
-        T, recordStep, printStep, M = HIVModelUtils.defaultSimulationParams()
+    def simulate(theta, startDate, endDate, recordStep, printStep, M): 
         undirected = True
         graph = HIVGraph(M, undirected)
         logging.debug("Created graph: " + str(graph))
@@ -44,7 +66,8 @@ class HIVModelUtils(object):
     
         rates = HIVRates(graph, hiddenDegSeq)
         model = HIVEpidemicModel(graph, rates)
-        model.setT(T)
+        model.setT0(startDate)
+        model.setT(endDate)
         model.setRecordStep(recordStep)
         model.setPrintStep(printStep)
         model.setParams(theta)
@@ -54,32 +77,29 @@ class HIVModelUtils(object):
         return model.simulate(True)
         
     @staticmethod 
-    def generateStatistics(theta): 
+    def generateStatistics(graph, startDate, endDate, recordStep): 
         """
         For a given theta, simulate the epidemic, and then return a number of 
         relevant statistics. 
         """
-        T, recordStep, printStep, M = HIVModelUtils.defaultSimulationParams()
+        times = [] 
+        removedIndices = []
+        
+        for t in numpy.arange(startDate, endDate, recordStep): 
+            times.append(t)
+            removedIndices.append(graph.removedIndsAt(t))
 
-        times, infectedIndices, removedIndices, graph = HIVModelUtils.defaultSimulate(theta)
         V = graph.getVertexList().getVertices()
         
-        infectedArray = numpy.array([len(x) for x in infectedIndices])
         removedArray  = numpy.array([len(x) for x in removedIndices])
         maleArray  = numpy.array([numpy.sum(V[x, HIVVertices.genderIndex]==HIVVertices.male) for x in removedIndices])
         femaleArray = numpy.array([numpy.sum(V[x, HIVVertices.genderIndex]==HIVVertices.female) for x in removedIndices])
         heteroArray = numpy.array([numpy.sum(V[x, HIVVertices.orientationIndex]==HIVVertices.hetero) for x in removedIndices])
         biArray = numpy.array([numpy.sum(V[x, HIVVertices.orientationIndex]==HIVVertices.bi) for x in removedIndices])
         
-        vertexArray = numpy.c_[infectedArray, removedArray, maleArray, femaleArray, heteroArray, biArray]
+        vertexArray = numpy.c_[removedArray, maleArray, femaleArray, heteroArray, biArray]
         
         graphStats = GraphStatistics()
-        infectedGraphStats = graphStats.sequenceScalarStats(graph, infectedIndices, slowStats=False)
         removedGraphStats = graphStats.sequenceScalarStats(graph, removedIndices, slowStats=False)
         
-        return times, vertexArray, infectedGraphStats, removedGraphStats
-
-        
-            
-    
-            
+        return times, vertexArray, removedGraphStats

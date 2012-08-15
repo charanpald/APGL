@@ -26,14 +26,9 @@ numpy.set_printoptions(suppress=True, precision=4, linewidth=100)
 numpy.seterr(invalid='raise')
 
 resultsDir = PathDefaults.getOutputDir() + "viroscopy/toy/" 
-graphFile = resultsDir + "ToyEpidemicGraph0"
-targetGraph = HIVGraph.load(graphFile)
-
-T, recordStep, printStep, M = HIVModelUtils.defaultSimulationParams()
-startDate = 0
-endDate = T
-
+startDate, endDate, recordStep, printStep, M, targetGraph = HIVModelUtils.toySimulationParams()
 epsilonArray = numpy.array([0.6, 0.5, 0.4, 0.2])
+logging.debug("Total time of simulation is " + str(endDate-startDate))
 
 def createModel(t):
     """
@@ -52,7 +47,7 @@ def createModel(t):
     featureInds[HIVVertices.hiddenDegreeIndex] = False 
     featureInds = numpy.arange(featureInds.shape[0])[featureInds]
     matcher = GraphMatch("U", featureInds=featureInds)
-    graphMetrics = HIVGraphMetrics2(targetGraph, epsilonArray[t], matcher, T)
+    graphMetrics = HIVGraphMetrics2(targetGraph, epsilonArray[t], matcher, endDate)
 
     rates = HIVRates(graph, hiddenDegSeq)
     model = HIVEpidemicModel(graph, rates, T=float(endDate), T0=float(startDate), metrics=graphMetrics)
@@ -72,7 +67,7 @@ thetaLen = 10
 logging.debug("Posterior sample size " + str(posteriorSampleSize))
 
 sigmaScale = 0.5 
-meanTheta = HIVModelUtils.defaultTheta()
+meanTheta = HIVModelUtils.toyTheta()
 abcParams = HIVABCParameters(meanTheta, sigmaScale, 0.2)
 thetaDir = resultsDir + "theta/"
 
@@ -88,5 +83,4 @@ logging.debug("meanTheta=" + str(meanTheta))
 logging.debug("stdTheta=" + str(stdTheta))
 logging.debug("realTheta=" + str(HIVModelUtils.defaultTheta()))
 
-thetaFileName =  resultsDir + "ThetaDistSimulated.pkl"
-Util.savePickle(thetasArray, thetaFileName)
+logging.debug("All done!")
