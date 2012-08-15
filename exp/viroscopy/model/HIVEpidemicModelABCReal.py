@@ -25,7 +25,7 @@ numpy.set_printoptions(suppress=True, precision=4, linewidth=100)
 numpy.seterr(invalid='raise')
 
 resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/" 
-startDate, endDate, recordStep, printStep, M, targetGraph = HIVModelUtils.toySimulationParams()
+startDate, endDate, recordStep, printStep, M, targetGraph = HIVModelUtils.realSimulationParams()
 epsilonArray = numpy.array([0.9, 0.75, 0.6, 0.45])
 logging.debug("Total time of simulation is " + str(endDate-startDate))
 
@@ -66,9 +66,9 @@ thetaLen = 10
 
 logging.debug("Posterior sample size " + str(posteriorSampleSize))
 
-sigmaScale = 2.0 
+sigmaScale = 1.0 
 purtScale = 0.2 
-meanTheta = HIVModelUtils.toyTheta()
+meanTheta = HIVModelUtils.estimatedRealTheta()
 abcParams = HIVABCParameters(meanTheta, sigmaScale, purtScale)
 thetaDir = resultsDir + "theta/"
 
