@@ -39,6 +39,13 @@ class HIVEpidemicModel():
         """
         Parameter.checkFloat(T, 0.0, float('inf'))
         self.T = T
+        
+    def setT0(self, T0):
+        """
+        Set the start time of the simulation. 
+        """
+        Parameter.checkFloat(T0, 0.0, float('inf'))
+        self.T0 = T0
 
     def setRecordStep(self, recordStep):
         """
