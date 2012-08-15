@@ -69,14 +69,21 @@ class ABCSMC(object):
         """
         Load all thetas saved for particle t. 
         """
+        return ABCSMC.loadThetaArray(self.N, self.thetaDir, t).tolist()
+        
+    @staticmethod 
+    def loadThetaArray(N, thetaDir, t): 
+        """
+        Load the thetas from a particular directory. 
+        """
         currentThetas = [] 
             
-        for i in range(self.N): 
-            fileName = self.thetaDir + "theta_t="+str(t)+"_"+str(i)+".npy"
+        for i in range(N): 
+            fileName = thetaDir + "theta_t="+str(t)+"_"+str(i)+".npy"
             if os.path.exists(fileName): 
                 currentThetas.append(numpy.load(fileName))
                 
-        return currentThetas 
+        return numpy.array(currentThetas) 
 
     def findThetas(self, lastTheta, lastWeights, t): 
         """
