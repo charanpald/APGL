@@ -24,6 +24,7 @@ class HIVGraphMetrics2(object):
         self.dists = [] 
         self.realGraph = realGraph
         self.epsilon = epsilon 
+        self.breakDist = 0.95 
         self.T = T 
         self.times = []
         
@@ -74,5 +75,5 @@ class HIVGraphMetrics2(object):
             return 0
         
     def shouldBreak(self): 
-        return self.meanDistance() > self.epsilon 
+        return self.meanDistance() > self.breakDist 
         
