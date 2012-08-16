@@ -153,10 +153,9 @@ class GraphMatch(object):
         
     def vertexSimilarities(self, graph1, graph2): 
         """
-        Each vertex array is normalised to have norm 1 and we then compute the 
-        similarity as 2 - dist(v1, v2). 
+        Compute a vertex similarity matrix C, such that the ijth entry is the matching 
+        score between V1_i and V2_j, where larger is a better match. 
         """        
-        
         if graph1.size == 0 and graph2.size == 0: 
             return numpy.zeros((graph1.size, graph2.size)) 
         
@@ -167,20 +166,39 @@ class GraphMatch(object):
             V1 = graph1.vlist.getVertices()[:, self.featureInds]
             V2 = graph2.vlist.getVertices()[:, self.featureInds]
         
-        V1 = Standardiser().normaliseArray(V1.T).T
-        V2 = Standardiser().normaliseArray(V2.T).T
+        return self.matrixSimilarity(V1, V2)
+     
+    def matrixSimilarity(self, V1, V2): 
+        """
+        Compute a vertex similarity matrix C, such that the ijth entry is the matching 
+        score between V1_i and V2_j, where larger is a better match. 
+        """  
+        X = numpy.r_[V1, V2]
+        standardiser = Standardiser()
+        X = standardiser.normaliseArray(X)
+        
+        V1 = X[0:V1.shape[0], :]
+        V2 = X[V1.shape[0]:, :]
+        
+        #print(X)
          
         #Extend arrays with zeros to make them the same size
         if V1.shape[0] < V2.shape[0]: 
-            V1 = Util.extendArray(V1, (V2.shape[0], V2.shape[1]))
+            V1 = Util.extendArray(V1, V2.shape, X.mean(0))
         elif V2.shape[0] < V1.shape[0]: 
-            V2 = Util.extendArray(V2, (V1.shape[0], V1.shape[1]))
+            V2 = Util.extendArray(V2, V1.shape, X.mean(0))
           
         #Let's compute C as the distance between vertices 
-        #Distance is bounded by 2 
-        C = 2 - Util.distanceMatrix(V1, V2)
+        #Distance is bounded by 1
+        D = Util.distanceMatrix(V1, V2)
+        maxD = numpy.max(D)
+        if maxD != 0: 
+            C = (maxD - D)/maxD
+        else: 
+            C = numpy.ones((V1.shape[0], V2.shape[0])) 
+            
         return C
-        
+     
     def distance(self, graph1, graph2, permutation, normalised=False, nonNeg=False):
         """
         Compute the graph distance metric between two graphs given a permutation 
@@ -188,7 +206,7 @@ class GraphMatch(object):
         - alpha 1/||C||_F tr(C.T P) in the normalised case. If we want an unnormalised 
         solution it is computed as (1-alpha)/(||W1 - P W2 P.T||^2_F) - alpha tr C.T P 
         and finally there is a standardised case in which the distance is between 
-        0 and 1, where ||C||_1 is used to normalise the vertex similarities and 
+        0 and 1, where ||C||_F is used to normalise the vertex similarities and 
         we assume 0 <= C_ij <= 1. 
         
         :param graph1: A graph object 
@@ -204,6 +222,14 @@ class GraphMatch(object):
         :param nonNeg: Specify whether we want a non-negative solution.  
         :type nonNeg: `bool`
         """
+        if graph1.size == 0 and graph2.size == 0:        
+            return 0.0        
+        elif graph1.size == 0 or graph2.size == 0: 
+            if normalised: 
+                return 1.0
+            else: 
+                raise ValueError("Unsupported case")
+        
         W1 = graph1.getWeightMatrix()
         W2 = graph2.getWeightMatrix()
         
@@ -224,21 +250,20 @@ class GraphMatch(object):
         
         if normalised: 
             norm1 = ((W1**2).sum() + (W2**2).sum())
-            norm2 = numpy.sqrt(((C**2).sum()))
+            norm2 = numpy.linalg.norm(C) 
             if norm1!= 0: 
                 dist1 = dist1/norm1
             if norm2!= 0:
                 dist2 = dist2/norm2 
-                
         
         dist = (1-self.alpha)*dist1 - self.alpha*dist2
         
         #If nonNeg = True then we add a term to the distance to ensure it is 
         #always positive. The numerator is an upper bound on tr(C.T P)
         if nonNeg and normalised:
-            normC = numpy.linalg.norm(C) 
+            normC = norm2
             if normC != 0: 
-                return dist + self.alpha*2*n/normC 
+                return dist + self.alpha*n/normC 
             else: 
                 return dist 
         else: 

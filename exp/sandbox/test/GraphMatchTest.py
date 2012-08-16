@@ -89,13 +89,19 @@ class GraphMatchTest(unittest.TestCase):
         alpha = 1.0
         permutation, distance, time = GraphMatch(algorithm="U", alpha=alpha).match(graph1, self.graph1)
         self.assertEquals(numpy.linalg.norm(self.graph1.getWeightMatrix())**2, distance[0])
-        self.assertEquals(distance[1], -1)
-        self.assertEquals(distance[2], -1)
+        
+        V2 = self.graph1.vlist.getVertices()
+        V1 = numpy.zeros(V2.shape)
+        C = GraphMatch(algorithm="U", alpha=alpha).matrixSimilarity(V1, V2)
+        dist = numpy.trace(C)/numpy.linalg.norm(C)
+        
+        self.assertAlmostEquals(distance[1], -dist, 4)
+        self.assertAlmostEquals(distance[2], -dist, 4)
         
         permutation, distance, time = GraphMatch(algorithm="U", alpha=alpha).match(self.graph1, graph1)
         self.assertEquals(numpy.linalg.norm(self.graph1.getWeightMatrix())**2, distance[0])
-        self.assertEquals(distance[1], -1)
-        self.assertEquals(distance[2], -1)
+        self.assertAlmostEquals(distance[1], -dist, 4)
+        self.assertAlmostEquals(distance[2], -dist, 4)
             
     def testDistance(self): 
         permutation = numpy.arange(self.numVertices)
@@ -159,8 +165,8 @@ class GraphMatchTest(unittest.TestCase):
         distance = GraphMatch(alpha=alpha).distance(self.graph2, graph1, permutation, True, True)
         self.assertEquals(distance, 1.0)
         
-        distance = GraphMatch(alpha=alpha).distance(self.graph1, graph1, permutation, False, False)
-        self.assertEquals(distance, numpy.linalg.norm(self.graph1.getWeightMatrix())**2)
+        #distance = GraphMatch(alpha=alpha).distance(self.graph1, graph1, permutation, False, False)
+        #self.assertEquals(distance, numpy.linalg.norm(self.graph1.getWeightMatrix())**2)
         
         alpha = 0.9 
         matcher = GraphMatch("U", alpha=alpha)
@@ -230,7 +236,7 @@ class GraphMatchTest(unittest.TestCase):
         C = matcher.vertexSimilarities(self.graph1, self.graph1) 
         
         Cdiag = numpy.diag(C)
-        nptst.assert_array_almost_equal(Cdiag, 2*numpy.ones(Cdiag.shape[0]))
+        nptst.assert_array_almost_equal(Cdiag, numpy.ones(Cdiag.shape[0]))
         
         #Now compute trace(C)/||C||
         #print(numpy.trace(C)/numpy.linalg.norm(C))
@@ -253,6 +259,34 @@ class GraphMatchTest(unittest.TestCase):
         self.graph1.vlist[:, 0] = 0
         C2 = matcher.vertexSimilarities(self.graph1, self.graph2) 
         self.assertTrue((C != C2).any())
+  
+    def testMatrixSimilarity(self):
+        numExamples = 5 
+        numFeatures = 3 
+        V1 = numpy.random.rand(numExamples, numFeatures)
+          
+        matcher = GraphMatch(alpha=0.0)
+        C = matcher.matrixSimilarity(V1, V1)
+        Cdiag = numpy.diag(C)
+        nptst.assert_array_almost_equal(Cdiag, numpy.ones(Cdiag.shape[0]))
         
+        V1[:, 2] *= 10 
+        C2 = matcher.matrixSimilarity(V1, V1)
+        Cdiag = numpy.diag(C2)
+        nptst.assert_array_almost_equal(Cdiag, numpy.ones(Cdiag.shape[0]))      
+        nptst.assert_array_almost_equal(C, C2)
+        
+        #print("Running match")
+        J = numpy.ones((numExamples, numFeatures))
+        Z = numpy.zeros((numExamples, numFeatures))
+        C2 = matcher.matrixSimilarity(J, Z)
+        #This should be 0 ideally 
+        
+        nptst.assert_array_almost_equal(C2, numpy.zeros(C2.shape))  
+        
+        C2 = matcher.matrixSimilarity(J, J)
+        nptst.assert_array_almost_equal(C2, numpy.ones(C2.shape))  
+        
+      
 if __name__ == '__main__':
     unittest.main()
