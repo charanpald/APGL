@@ -26,7 +26,7 @@ numpy.seterr(invalid='raise')
 
 resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/" 
 startDate, endDate, recordStep, printStep, M, targetGraph = HIVModelUtils.realSimulationParams()
-epsilonArray = numpy.array([0.9, 0.75, 0.6, 0.45])
+epsilonArray = numpy.array([0.9, 0.8, 0.7, 0.6, 0.5, 0.4])
 logging.debug("Total time of simulation is " + str(endDate-startDate))
 
 def createModel(t):
@@ -63,12 +63,12 @@ if len(sys.argv) > 1:
 else: 
     numProcesses = multiprocessing.cpu_count()
 
-posteriorSampleSize = 20
+posteriorSampleSize = 30
 thetaLen = 10
 
 logging.debug("Posterior sample size " + str(posteriorSampleSize))
 
-sigmaScale = 1.0 
+sigmaScale = 5.0 
 purtScale = 0.2 
 meanTheta = HIVModelUtils.estimatedRealTheta()
 abcParams = HIVABCParameters(meanTheta, sigmaScale, purtScale)
