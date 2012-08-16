@@ -68,7 +68,7 @@ thetaLen = 10
 
 logging.debug("Posterior sample size " + str(posteriorSampleSize))
 
-sigmaScale = 5.0 
+sigmaScale = 1.0 
 purtScale = 0.2 
 meanTheta = HIVModelUtils.estimatedRealTheta()
 abcParams = HIVABCParameters(meanTheta, sigmaScale, purtScale)
