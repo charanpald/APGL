@@ -331,5 +331,26 @@ class UtilTest(unittest.TestCase):
         u = Util.cumMin(v)
         nptst.assert_array_equal(u, numpy.ones(3))    
     
+    
+    def testExtendArray(self): 
+        X = numpy.random.rand(5, 5)
+        X2 = Util.extendArray(X, (10, 5))
+        
+        nptst.assert_array_equal(X, X2[0:5, :])
+        nptst.assert_array_equal(0, X2[5:, :])          
+        
+        X2 = Util.extendArray(X, (10, 5), 1.23)
+        
+        nptst.assert_array_equal(X, X2[0:5, :])
+        nptst.assert_array_equal(1.23, X2[5:, :])  
+        
+        #Now try extending using an array 
+        X2 = Util.extendArray(X, (10, 5), numpy.array([1, 2, 3, 4, 5]))
+        nptst.assert_array_equal(X, X2[0:5, :])
+        
+        for i in range(5, 10): 
+            nptst.assert_array_equal(numpy.array([1, 2, 3, 4, 5]), X2[i, :])          
+        
+    
 if __name__ == "__main__":
     unittest.main()
