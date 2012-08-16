@@ -9,6 +9,8 @@ from exp.viroscopy.model.HIVEpidemicModel import HIVEpidemicModel
 from exp.viroscopy.model.HIVRates import HIVRates
 from exp.viroscopy.model.HIVABCParameters import HIVABCParameters
 from exp.viroscopy.model.HIVVertices import HIVVertices
+from exp.viroscopy.model.HIVModelUtils import HIVModelUtils
+from exp.viroscopy.model.HIVGraphMetrics2 import HIVGraphMetrics2
 
 """
 This is the epidemic model for the HIV spread in cuba. We repeat the simulation a number
