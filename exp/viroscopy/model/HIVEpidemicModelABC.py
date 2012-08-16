@@ -43,8 +43,10 @@ def createModel(t):
     hiddenDegSeq = Util.randomChoice(p, graph.getNumVertices())
     
     featureInds= numpy.ones(graph.vlist.getNumFeatures(), numpy.bool)
+    featureInds[HIVVertices.dobIndex] = False 
     featureInds[HIVVertices.infectionTimeIndex] = False 
     featureInds[HIVVertices.hiddenDegreeIndex] = False 
+    featureInds[HIVVertices.stateIndex] = False
     featureInds = numpy.arange(featureInds.shape[0])[featureInds]
     matcher = GraphMatch("U", featureInds=featureInds)
     graphMetrics = HIVGraphMetrics2(targetGraph, epsilonArray[t], matcher, endDate)

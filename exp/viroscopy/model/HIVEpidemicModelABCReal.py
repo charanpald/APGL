@@ -45,6 +45,7 @@ def createModel(t):
     featureInds[HIVVertices.dobIndex] = False 
     featureInds[HIVVertices.infectionTimeIndex] = False 
     featureInds[HIVVertices.hiddenDegreeIndex] = False 
+    featureInds[HIVVertices.stateIndex] = False
     featureInds = numpy.arange(featureInds.shape[0])[featureInds]
     matcher = GraphMatch("U", featureInds=featureInds)
     graphMetrics = HIVGraphMetrics2(targetGraph, epsilonArray[t], matcher, float(endDate))
