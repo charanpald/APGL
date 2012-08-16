@@ -588,13 +588,15 @@ class Util(object):
         return (V*lmbda).dot(V.T) # = V.dot(numpy.diag(lmbda)).dot(numpy.linalg.inv(V))
 
     @staticmethod 
-    def extendArray(A, newShape): 
+    def extendArray(A, newShape, val=0): 
         """
         Take a 2D matrix A and extend the shape to newShape adding zeros to the 
-        right and bottom of it. 
+        right and bottom of it. One can optionally pass in scalar or array val 
+        and this will be broadcast into the new array. 
         """
         
         tempA = numpy.zeros(newShape)
+        tempA[:, :] = val
         tempA[0:A.shape[0], 0:A.shape[1]] = A 
         return tempA 
         
