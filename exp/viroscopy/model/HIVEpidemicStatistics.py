@@ -7,6 +7,9 @@ from apgl.util.PathDefaults import PathDefaults
 from apgl.util.Util import Util 
 from apgl.predictors.ABCSMC import ABCSMC 
 from exp.viroscopy.model.HIVModelUtils import HIVModelUtils
+from exp.viroscopy.model.HIVVertices import HIVVertices
+from exp.sandbox.GraphMatch import GraphMatch
+from exp.viroscopy.model.HIVGraphMetrics2 import HIVGraphMetrics2
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 numpy.set_printoptions(suppress=True, precision=4, linewidth=150)
@@ -17,7 +20,7 @@ outputDir = PathDefaults.getOutputDir() + "viroscopy/"
 #resultsDir = PathDefaults.getOutputDir() + "viroscopy/toy/"
 resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/"
 thetaDir = resultsDir + "theta/" 
-saveResults = False
+saveResults = True
 graphStats = GraphStatistics()
 
 N = 20 
@@ -35,11 +38,29 @@ if saveResults:
     startDate, endDate, recordStep, printStep, M, targetGraph = HIVModelUtils.realSimulationParams()
     
     for i in range(thetaArray.shape[0]): 
-        times, infectedIndices, removedIndices, graph = HIVModelUtils.simulate(thetaArray[i], startDate, endDate, recordStep, printStep, M)
+        #Compute distances 
+        featureInds= numpy.ones(targetGraph.vlist.getNumFeatures(), numpy.bool)
+        featureInds[HIVVertices.dobIndex] = False 
+        featureInds[HIVVertices.infectionTimeIndex] = False 
+        featureInds[HIVVertices.hiddenDegreeIndex] = False 
+        featureInds[HIVVertices.stateIndex] = False 
+        featureInds = numpy.arange(featureInds.shape[0])[featureInds]        
+        
+        matcher = GraphMatch("U", 0.5, featureInds=featureInds)
+        graphMetrics = HIVGraphMetrics2(targetGraph, 1.0, matcher, float(endDate))        
+        
+        times, infectedIndices, removedIndices, graph = HIVModelUtils.simulate(thetaArray[i], startDate, endDate, recordStep, printStep, M, graphMetrics)
         stats = HIVModelUtils.generateStatistics(graph, startDate, endDate, recordStep)
+    
+        print(graphMetrics.dists)
+        print(graphMetrics.times)
+        break 
     
         resultsFileName = outputDir + "SimStats" + str(i) + ".pkl"
         Util.savePickle(stats, resultsFileName)
+        
+
+        
         
     #Now save the statistics on the target graph 
     stats = HIVModelUtils.generateStatistics(targetGraph, startDate, endDate, recordStep)
