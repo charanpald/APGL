@@ -6,6 +6,7 @@ import logging
 import sys 
 import numpy.testing as nptst 
 
+from apgl.generator import SmallWorldGenerator 
 from apgl.graph.SparseGraph import SparseGraph 
 from apgl.graph.VertexList import VertexList 
 from exp.sandbox.GraphMatch import GraphMatch 
@@ -102,6 +103,24 @@ class GraphMatchTest(unittest.TestCase):
         self.assertEquals(numpy.linalg.norm(self.graph1.getWeightMatrix())**2, distance[0])
         self.assertAlmostEquals(distance[1], -dist, 4)
         self.assertAlmostEquals(distance[2], -dist, 4)
+        
+        #Test one graph which is a subgraph of another 
+        p = 0.2 
+        k = 10 
+        numVertices = 20
+        generator = SmallWorldGenerator(p, k)
+        graph = SparseGraph(VertexList(numVertices, 2))
+        graph = generator.generate(graph)
+        
+        subgraphInds = numpy.random.permutation(numVertices)[0:10]
+        subgraph = graph.subgraph(subgraphInds)
+        
+        matcher = GraphMatch(algorithm="U", alpha=0.0)
+        permutation, distance, time = matcher.match(graph, subgraph)
+        distance = matcher.distance(graph, subgraph, permutation, True, True)
+        
+        self.assertTrue(distance < 1)
+        
             
     def testDistance(self): 
         permutation = numpy.arange(self.numVertices)
