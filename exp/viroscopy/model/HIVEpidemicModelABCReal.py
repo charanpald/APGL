@@ -47,7 +47,7 @@ def createModel(t):
     featureInds[HIVVertices.hiddenDegreeIndex] = False 
     featureInds[HIVVertices.stateIndex] = False
     featureInds = numpy.arange(featureInds.shape[0])[featureInds]
-    matcher = GraphMatch("U", alpha=0.0, featureInds=featureInds)
+    matcher = GraphMatch("U", alpha=0.5, featureInds=featureInds)
     graphMetrics = HIVGraphMetrics2(targetGraph, epsilonArray[t], matcher, float(endDate))
     graphMetrics.breakDist = 0.95 
 
