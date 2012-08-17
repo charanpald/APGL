@@ -16,7 +16,7 @@ from apgl.kernel.LinearKernel import LinearKernel
 from apgl.kernel.KernelUtils import KernelUtils
 
 class GraphMatch(object): 
-    def __init__(self, algorithm="PATH", alpha=0.5, featureInds=None):
+    def __init__(self, algorithm="PATH", alpha=0.5, featureInds=None, useWeightM=True):
         """
         Intialise the matching object with a given algorithm name, alpha 
         which is a trade of between matching adjacency matrices and vertex labels, 
@@ -30,6 +30,7 @@ class GraphMatch(object):
         self.alpha = alpha 
         self.maxInt = 10**9 
         self.featureInds = featureInds 
+        self.useWeightM = useWeightM 
         
     def match(self, graph1, graph2): 
         """
@@ -68,11 +69,15 @@ class GraphMatch(object):
         graph2FileName = tempFileNameList[2]
         similaritiesFileName = tempFileNameList[3]
         outputFileName = tempFileNameList[4]
+
+        if self.useWeightM:         
+            W1 = graph1.getWeightMatrix()
+            W2 = graph2.getWeightMatrix()
+        else: 
+            W1 = graph1.adjacencyMatrix()
+            W2 = graph2.adjacencyMatrix()
         
-        W1 = graph1.getWeightMatrix()
         numpy.savetxt(graph1FileName, W1, fmt='%.5f')
-        
-        W2 = graph2.getWeightMatrix()
         numpy.savetxt(graph2FileName, W2, fmt='%.5f')
         
         #Compute matrix similarities 
@@ -231,8 +236,12 @@ class GraphMatch(object):
             else: 
                 raise ValueError("Unsupported case")
         
-        W1 = graph1.getWeightMatrix()
-        W2 = graph2.getWeightMatrix()
+        if self.useWeightM:         
+            W1 = graph1.getWeightMatrix()
+            W2 = graph2.getWeightMatrix()
+        else: 
+            W1 = graph1.adjacencyMatrix()
+            W2 = graph2.adjacencyMatrix()
         
         if W1.shape[0] < W2.shape[0]: 
             W1 = Util.extendArray(W1, W2.shape)
@@ -264,7 +273,7 @@ class GraphMatch(object):
         if nonNeg and normalised:
             normC = norm2
     
-            logging.debug("Graph distance: " + str(dist1) + " label distance: " + str(dist2) + " distance offset: " + str(n/normC))            
+            logging.debug("Graph distance: " + str(dist1) + " label distance: " + str(dist2) + " distance offset: " + str(n/normC) + " graph sizes: " + str((graph1.size, graph2.size)))           
             
             if normC != 0: 
                 return dist + self.alpha*n/normC 
@@ -288,8 +297,12 @@ class GraphMatch(object):
         :type permutation: `numpy.ndarray`
         
         """
-        W1 = graph1.getWeightMatrix()
-        W2 = graph2.getWeightMatrix()
+        if self.useWeightM:         
+            W1 = graph1.getWeightMatrix()
+            W2 = graph2.getWeightMatrix()
+        else: 
+            W1 = graph1.adjacencyMatrix()
+            W2 = graph2.adjacencyMatrix()
         
         if W1.shape[0] < W2.shape[0]: 
             W1 = Util.extendArray(W1, W2.shape)
