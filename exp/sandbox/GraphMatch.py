@@ -6,6 +6,7 @@ import numpy
 import os 
 import sys 
 import tempfile
+import logging 
 from apgl.graph import SparseGraph, VertexList
 from apgl.util.PathDefaults import PathDefaults
 from apgl.util.Parameter import Parameter
@@ -262,6 +263,9 @@ class GraphMatch(object):
         #always positive. The numerator is an upper bound on tr(C.T P)
         if nonNeg and normalised:
             normC = norm2
+    
+            logging.debug("Graph distance: " + str(dist1) + " label distance: " + str(dist2) + " distance offset: " + str(n/normC))            
+            
             if normC != 0: 
                 return dist + self.alpha*n/normC 
             else: 
