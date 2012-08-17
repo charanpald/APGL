@@ -10,7 +10,7 @@ from apgl.util.Util import Util
 from exp.viroscopy.model.HIVVertices import HIVVertices
 
 class HIVABCParameters(object):
-    def __init__(self, meanTheta, sigmaScale=0.5, purtScale=0.2, upperInfected=200):
+    def __init__(self, meanTheta, sigmaTheta, purtScale=0.2, upperInfected=300):
         """
         Initialised this object with a mean value of theta 
         """
@@ -21,77 +21,77 @@ class HIVABCParameters(object):
         self.purtubationKernelDensities = []
         
         self.meanTheta = meanTheta
-        self.sigmaScale = sigmaScale 
+        self.sigmaTheta = sigmaTheta 
         self.purtScale = purtScale 
         self.upperInfected = upperInfected
 
         #Now set up all the parameters
         ind = 0 
         mu = meanTheta[ind]
-        sigma = mu*sigmaScale
+        sigma = sigmaTheta[ind]
         priorDist, priorDensity = self.createDiscTruncNormParam(float(sigma), float(mu), upperInfected)
         purtubationKernel, purtubationKernelDensity = self.__createNormalDiscPurt(sigma, purtScale)
         self.__addParameter(("graph", "setRandomInfected"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
 
         ind += 1
         mu = meanTheta[ind]
-        sigma = mu*sigmaScale
+        sigma = sigmaTheta[ind]
         priorDist, priorDensity = self.createGammaParam(sigma, mu)
         purtubationKernel, purtubationKernelDensity = self.__createNormalPurt(sigma, purtScale)
         self.__addParameter(("rates", "setAlpha"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
 
         ind += 1
         mu = meanTheta[ind]
-        sigma = mu*sigmaScale
+        sigma = sigmaTheta[ind]
         priorDist, priorDensity = self.createGammaParam(sigma, mu)
         purtubationKernel, purtubationKernelDensity = self.__createNormalPurt(sigma, purtScale)
         self.__addParameter(("rates", "setNewContactChance"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
 
         ind += 1
         mu = meanTheta[ind]
-        sigma = mu*sigmaScale
+        sigma = sigmaTheta[ind]
         priorDist, priorDensity = self.createGammaParam(sigma, mu)
         purtubationKernel, purtubationKernelDensity = self.__createNormalPurt(sigma, purtScale)
         self.__addParameter(("rates", "setRandDetectRate"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
 
         ind += 1
         mu = meanTheta[ind]
-        sigma = mu*sigmaScale
+        sigma = sigmaTheta[ind]
         priorDist, priorDensity = self.createGammaParam(sigma, mu)
         purtubationKernel, purtubationKernelDensity = self.__createNormalPurt(sigma, purtScale)
         self.__addParameter(("rates", "setCtRatePerPerson"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
 
         ind += 1
         mu = meanTheta[ind]
-        sigma = mu*sigmaScale
+        sigma = sigmaTheta[ind]
         priorDist, priorDensity = self.createGammaParam(sigma, mu)
         purtubationKernel, purtubationKernelDensity = self.__createNormalPurt(sigma, purtScale)
         self.__addParameter(("rates", "setHeteroContactRate"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
 
         ind += 1
         mu = meanTheta[ind]
-        sigma = mu*sigmaScale
+        sigma = sigmaTheta[ind]
         priorDist, priorDensity = self.createGammaParam(sigma, mu)
         purtubationKernel, purtubationKernelDensity = self.__createNormalPurt(sigma, purtScale)
         self.__addParameter(("rates", "setBiContactRate"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
 
         ind += 1
         mu = meanTheta[ind]
-        sigma = mu*sigmaScale
+        sigma = sigmaTheta[ind]
         priorDist, priorDensity = self.createTruncNormParam(sigma, mu)
         purtubationKernel, purtubationKernelDensity = self.__createNormalPurt(sigma, purtScale)
         self.__addParameter(("rates", "setWomanManInfectProb"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
 
         ind += 1
         mu = meanTheta[ind]
-        sigma = mu*sigmaScale
+        sigma = sigmaTheta[ind]
         priorDist, priorDensity = self.createTruncNormParam(sigma, mu)
         purtubationKernel, purtubationKernelDensity = self.__createNormalPurt(sigma, purtScale)
         self.__addParameter(("rates", "setManWomanInfectProb"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
 
         ind += 1
         mu = meanTheta[ind]
-        sigma = mu*sigmaScale
+        sigma = sigmaTheta[ind]
         priorDist, priorDensity = self.createTruncNormParam(sigma, mu)
         purtubationKernel, purtubationKernelDensity = self.__createNormalPurt(sigma, purtScale)
         self.__addParameter(("rates", "setManBiInfectProb"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
