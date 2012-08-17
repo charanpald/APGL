@@ -75,5 +75,8 @@ class HIVGraphMetrics2(object):
             return 0
         
     def shouldBreak(self): 
-        return self.meanDistance() > self.breakDist 
+        if len(self.dists) < 3: 
+            return False 
+        else:
+            return self.meanDistance() > self.breakDist 
         
