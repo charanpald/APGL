@@ -26,7 +26,7 @@ numpy.seterr(invalid='raise')
 
 resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/" 
 startDate, endDate, recordStep, printStep, M, targetGraph = HIVModelUtils.realSimulationParams()
-epsilonArray = numpy.array([0.9, 0.8, 0.7, 0.6, 0.5, 0.4])
+epsilonArray = numpy.array([0.95, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4])
 logging.debug("Total time of simulation is " + str(endDate-startDate))
 
 def createModel(t):
@@ -47,7 +47,7 @@ def createModel(t):
     featureInds[HIVVertices.hiddenDegreeIndex] = False 
     featureInds[HIVVertices.stateIndex] = False
     featureInds = numpy.arange(featureInds.shape[0])[featureInds]
-    matcher = GraphMatch("PATH", alpha=0.0, featureInds=featureInds, useWeightM=False)
+    matcher = GraphMatch("PATH", alpha=0.5, featureInds=featureInds, useWeightM=False)
     graphMetrics = HIVGraphMetrics2(targetGraph, epsilonArray[t], matcher, float(endDate))
     graphMetrics.breakDist = 0.95 
 
