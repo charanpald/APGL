@@ -1,6 +1,7 @@
 import numpy
 import logging
 import sys 
+import multiprocessing 
 import matplotlib.pyplot as plt 
 from apgl.graph.GraphStatistics import GraphStatistics 
 from apgl.util.PathDefaults import PathDefaults
@@ -20,14 +21,35 @@ outputDir = PathDefaults.getOutputDir() + "viroscopy/"
 #resultsDir = PathDefaults.getOutputDir() + "viroscopy/toy/"
 resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/"
 thetaDir = resultsDir + "theta/" 
-saveResults = True
+saveResults = False
 graphStats = GraphStatistics()
 
-N = 20 
-t = 2
+N = 10 
+t = 4
 
 #We plot some stats for the ideal simulated epidemic 
 #and those epidemics found using ABC. 
+
+def saveStats(args):
+    i, theta = args 
+    
+    featureInds= numpy.ones(targetGraph.vlist.getNumFeatures(), numpy.bool)
+    featureInds[HIVVertices.dobIndex] = False 
+    featureInds[HIVVertices.infectionTimeIndex] = False 
+    featureInds[HIVVertices.hiddenDegreeIndex] = False 
+    featureInds[HIVVertices.stateIndex] = False 
+    featureInds = numpy.arange(featureInds.shape[0])[featureInds]        
+    
+    matcher = GraphMatch("PATH", alpha=0.5, featureInds=featureInds, useWeightM=False)
+    graphMetrics = HIVGraphMetrics2(targetGraph, 1.0, matcher, float(endDate))        
+    
+    times, infectedIndices, removedIndices, graph = HIVModelUtils.simulate(thetaArray[i], startDate, endDate, recordStep, printStep, M, graphMetrics)
+    times, vertexArray, removedGraphStats = HIVModelUtils.generateStatistics(graph, startDate, endDate, recordStep)
+
+    stats = times, vertexArray, removedGraphStats, graphMetrics.dists
+    
+    resultsFileName = outputDir + "SimStats" + str(i) + ".pkl"
+    Util.savePickle(stats, resultsFileName)
 
 if saveResults:
 
@@ -36,32 +58,14 @@ if saveResults:
     
     #startDate, endDate, recordStep, printStep, M, targetGraph = HIVModelUtils.toySimulationParams()
     startDate, endDate, recordStep, printStep, M, targetGraph = HIVModelUtils.realSimulationParams()
+    paramList = []
     
     for i in range(thetaArray.shape[0]): 
-        #Compute distances 
-        featureInds= numpy.ones(targetGraph.vlist.getNumFeatures(), numpy.bool)
-        featureInds[HIVVertices.dobIndex] = False 
-        featureInds[HIVVertices.infectionTimeIndex] = False 
-        featureInds[HIVVertices.hiddenDegreeIndex] = False 
-        featureInds[HIVVertices.stateIndex] = False 
-        featureInds = numpy.arange(featureInds.shape[0])[featureInds]        
-        
-        matcher = GraphMatch("U", 0.5, featureInds=featureInds)
-        graphMetrics = HIVGraphMetrics2(targetGraph, 1.0, matcher, float(endDate))        
-        
-        times, infectedIndices, removedIndices, graph = HIVModelUtils.simulate(thetaArray[i], startDate, endDate, recordStep, printStep, M, graphMetrics)
-        stats = HIVModelUtils.generateStatistics(graph, startDate, endDate, recordStep)
-    
-        print(graphMetrics.dists)
-        print(graphMetrics.times)
-        break 
-    
-        resultsFileName = outputDir + "SimStats" + str(i) + ".pkl"
-        Util.savePickle(stats, resultsFileName)
-        
+        paramList.append((i, thetaArray[i, :]))
 
-        
-        
+    pool = multiprocessing.Pool(multiprocessing.cpu_count())               
+    resultIterator = pool.map(saveStats, paramList)  
+
     #Now save the statistics on the target graph 
     stats = HIVModelUtils.generateStatistics(targetGraph, startDate, endDate, recordStep)
     resultsFileName = outputDir + "IdealStats.pkl"
@@ -121,12 +125,18 @@ else:
     plt.ylabel("Number of components")
     plotInd += 1
 
+    plt.figure(plotInd)
+    plt.title("Graph distance")
+    plt.xlabel("Time (days)")
+    plt.ylabel("Distance")
+    plotInd += 1
+
     for i in range(thetaArray.shape[0]): 
         plotInd = 0
         resultsFileName = outputDir + "SimStats" + str(i) + ".pkl"
         stats = Util.loadPickle(resultsFileName)
         
-        times, vertexArray, removedGraphStats = stats 
+        times, vertexArray, removedGraphStats, dists = stats 
 
         plt.figure(plotInd)
         plt.plot(times, vertexArray[:, 0], plotStyles[0])
@@ -152,5 +162,8 @@ else:
         plt.plot(times, removedGraphStats[:, graphStats.numComponentsIndex], plotStyles[0])
         plotInd += 1
 
+        plt.figure(plotInd)
+        plt.plot(numpy.arange(len(dists)), dists, plotStyles[0])
+        plotInd += 1
     
     plt.show()
