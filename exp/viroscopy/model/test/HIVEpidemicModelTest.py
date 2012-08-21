@@ -10,13 +10,15 @@ from exp.viroscopy.model.HIVEpidemicModel import HIVEpidemicModel
 from exp.viroscopy.model.HIVRates import HIVRates
 from exp.viroscopy.model.HIVGraph import HIVGraph
 from exp.viroscopy.model.HIVVertices import HIVVertices
+from exp.viroscopy.model.HIVModelUtils import HIVModelUtils
 from apgl.graph import * 
+from apgl.util import Util 
 
 @apgl.skipIf(not apgl.checkImport('pysparse'), 'No module pysparse')
 class  HIVEpidemicModelTest(unittest.TestCase):
     def setUp(self):
         numpy.random.seed(21)
-        logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+        logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
         M = 100
         undirected = True
@@ -49,10 +51,12 @@ class  HIVEpidemicModelTest(unittest.TestCase):
         graph = HIVGraph(M, undirected)
         graph.setRandomInfected(10)
 
+        self.graph.removeAllEdges()
+
         T = 21.0
         hiddenDegSeq = self.gen.rvs(size=self.graph.getNumVertices())
         rates = HIVRates(self.graph, hiddenDegSeq)
-        model = HIVEpidemicModel(graph, rates)
+        model = HIVEpidemicModel(self.graph, rates)
         model.setRecordStep(10)
         model.setT(T)
 
@@ -61,9 +65,49 @@ class  HIVEpidemicModelTest(unittest.TestCase):
         self.assertEquals(len(infectedIndices), 3)
         self.assertEquals(len(removedIndices), 3)
 
-
-        #TODO: Much better testing 
-
+        #TODO: Much better testing
+        
+    def testSimulate2(self): 
+        #Test on the real data 
+        startDate, endDate, recordStep, printStep, M, targetGraph = HIVModelUtils.realSimulationParams()
+        M = 1000 
+        meanTheta, sigmaTheta = HIVModelUtils.estimatedRealTheta()
+        
+        undirected = True
+        graph = HIVGraph(M, undirected)
+        logging.info("Created graph: " + str(graph))
+        
+        alpha = 2
+        zeroVal = 0.9
+        p = Util.powerLawProbs(alpha, zeroVal)
+        hiddenDegSeq = Util.randomChoice(p, graph.getNumVertices())
+        
+        rates = HIVRates(graph, hiddenDegSeq)
+        model = HIVEpidemicModel(graph, rates)
+        model.setT0(startDate)
+        model.setT(endDate)
+        model.setRecordStep(recordStep)
+        model.setPrintStep(printStep)
+        model.setParams(meanTheta)
+        
+        initialInfected = graph.getInfectedSet()
+        
+        logging.debug("MeanTheta=" + str(meanTheta))
+        
+        times, infectedIndices, removedIndices, graph = model.simulate(True)
+        
+        #Now test the final graph 
+        edges = graph.getAllEdges()
+        
+        for i, j in edges:
+            if graph.vlist.V[i, HIVVertices.genderIndex] == graph.vlist.V[j, HIVVertices.genderIndex] and (graph.vlist.V[i, HIVVertices.orientationIndex] != HIVVertices.bi or graph.vlist.V[j, HIVVertices.orientationIndex] != HIVVertices.bi): 
+                self.fail()
+                      
+        finalInfected = graph.getInfectedSet()
+        finalRemoved = graph.getRemovedSet()
+        
+        self.assertEquals(numpy.intersect1d(initialInfected, finalRemoved).shape[0], len(initialInfected))
+    
     def testFindStandardResults(self):
         times = [3, 12, 22, 25, 40, 50]
         infectedIndices = [[1], [1, 2], [1, 2], [1, 2], [1, 2], [1, 2]]
