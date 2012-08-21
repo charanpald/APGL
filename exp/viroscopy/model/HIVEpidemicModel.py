@@ -84,7 +84,7 @@ class HIVEpidemicModel():
         self.rates.setManWomanInfectProb(theta[8])
         self.rates.setManBiInfectProb(theta[9])
         
-
+    #@profile
     def simulate(self, verboseOut=False):
         """
         Simulate epidemic propogation until there are no more infectives or
@@ -103,7 +103,6 @@ class HIVEpidemicModel():
         removedList = list(removedSet)
         contactList = list(contactSet)
 
-        vList = self.graph.getVertexList()
         t = self.T0
         times = [t]
         #A list of lists of infected indices 
@@ -117,15 +116,14 @@ class HIVEpidemicModel():
 
         #Now, start the simulation
         while t < self.T and len(infectedSet) != 0:
-            contactRates = self.rates.contactRates(infectedList, contactList, t)
+            contactInds, contactRates = self.rates.contactRates(infectedList, contactList, t)
             contactTracingRates = self.rates.contactTracingRates(infectedList, removedSet, t)
             randomDetectRates = self.rates.randomDetectionRates(infectedList, t)
 
-            assert contactRates.shape == (len(infectedList), len(contactList))
+            #assert contactRates.shape == (len(infectedList), len(contactList))
             assert (contactTracingRates == numpy.abs(contactTracingRates)).all()
             assert (randomDetectRates == numpy.abs(randomDetectRates)).all()
 
-            #sigmat = PySparseUtils.sum(contactRates)
             sigmat = contactRates.sum()
             muRSt = numpy.sum(randomDetectRates)
             muCTt = numpy.sum(contactTracingRates)
@@ -159,15 +157,9 @@ class HIVEpidemicModel():
             p = numpy.random.rand()
 
             if p < contactProb:
-                #(rows, cols) = PySparseUtils.nonzero(contactRates)
-                #nzContactRates = numpy.zeros(len(rows))
-                #contactRates.take(nzContactRates, rows, cols)
-                (rows, cols) = contactRates.nonzero()
-                nzContactRates = contactRates[rows, cols]
-
-                eventInd = Util.randomChoice(nzContactRates)[0]
-                infectedIndex = infectedList[rows[eventInd]]
-                contactIndex = contactList[cols[eventInd]]
+                eventInd = Util.randomChoice(contactRates)[0]
+                infectedIndex = infectedList[eventInd]
+                contactIndex = contactInds[eventInd]
                 #Note that each time a sexual contact occurs we weight the edge with the time 
                 self.rates.contactEvent(infectedIndex, contactIndex, t)
                 numContacts += 1 
@@ -175,7 +167,7 @@ class HIVEpidemicModel():
                 #Check if the contact results in an infection
                 q = numpy.random.rand()
                 if q < self.rates.infectionProbability(infectedIndex, contactIndex, t):
-                    vList.setInfected(contactIndex, t)
+                    self.graph.vlist.setInfected(contactIndex, t)
                     infectedSet.add(contactIndex)
                     susceptibleSet.remove(contactIndex)
                     
