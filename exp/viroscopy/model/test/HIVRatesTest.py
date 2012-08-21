@@ -74,27 +74,23 @@ class  HIVRateFuncsTestCase(unittest.TestCase):
 
         hiddenDegSeq = self.gen.rvs(size=graph.getNumVertices())
         rates = HIVRates(graph, hiddenDegSeq)
-        contactRates = rates.contactRates([0, 5, 7], contactList, t)
+        contactRateInds, contactRates = rates.contactRates([0, 5, 7], contactList, t)
         self.assertEquals(contactRates.shape[0], 3)
-        self.assertEquals(contactRates.shape[1], 10)
 
         #Now we have that 0 had contact with another
         rates.contactEvent(0, 3, 0.2)
-        rates.contactEvent(0, 9, 0.1)
-
-        contactRates = rates.contactRates(range(numVertices), contactList, t)
-       
-        #inds = list(contactRates.keys())
-        inds = contactRates.nonzero()
+        rates.contactEvent(1, 9, 0.1)
+        
+        infectedInds = numpy.arange(numVertices)
+        contactRateInds, contactRates = rates.contactRates(infectedInds, contactList, t)
 
         #Note that in some cases an infected has no contacted as the persons do not match 
-        for i in range(inds[0].shape[0]):
-            ind = (inds[0][i], inds[1][i])  
-            
-            if graph.getVertex(ind[0])[HIVVertices.genderIndex]==graph.getVertex(ind[1])[HIVVertices.genderIndex]:
-                self.assertEquals(contactRates[ind],rates.heteroContactRate)
-            elif graph.getVertex(ind[0])[HIVVertices.genderIndex]!=graph.getVertex(ind[1])[HIVVertices.genderIndex] and graph.getVertex(ind[0])[HIVVertices.orientationIndex]==HIVVertices.bi and graph.getVertex(ind[1])[HIVVertices.orientationIndex]==HIVVertices.bi:
-                self.assertEquals(contactRates[ind],rates.biContactRate)
+        for i in range(infectedInds.shape[0]): 
+            if contactRateInds[i] != -1: 
+                if graph.getVertex(infectedInds[i])[HIVVertices.genderIndex]==graph.getVertex(contactRateInds[i])[HIVVertices.genderIndex]:
+                    self.assertEquals(contactRates[i], rates.heteroContactRate)
+                elif graph.getVertex(infectedInds[i])[HIVVertices.genderIndex]!=graph.getVertex(contactRateInds[1])[HIVVertices.genderIndex] and graph.getVertex(infectedInds[i])[HIVVertices.orientationIndex]==HIVVertices.bi and graph.getVertex(contactRateInds[i])[HIVVertices.orientationIndex]==HIVVertices.bi:
+                    self.assertEquals(contactRates[i],rates.biContactRate)
 
     def testContactRates2(self):
         undirected = True
@@ -119,7 +115,7 @@ class  HIVRateFuncsTestCase(unittest.TestCase):
         rates = HIVRates(graph, hiddenDegSeq)
         t = 0.2
         logging.debug("Rates with no existing contacts")
-        contactRates = rates.contactRates(range(numVertices), contactList, t)
+        contactRateInds, contactRates = rates.contactRates(range(numVertices), contactList, t)
 
         #When there are no contacts the choice is easy and some random new contacts
         #are chosen.
@@ -129,20 +125,22 @@ class  HIVRateFuncsTestCase(unittest.TestCase):
             rates.contactEvent(i, i+5, t)
 
         logging.debug("Rates with default C=" + str(rates.newContactChance))
-        contactRates = rates.contactRates(range(numVertices), contactList, 0.4)
+        contactRateInds, contactRates = rates.contactRates(range(numVertices), contactList, 0.4)
 
         for i in range(5):
-            self.assertTrue(contactRates[i, i+5] == rates.heteroContactRate)
+            self.assertTrue(contactRates[i] == rates.heteroContactRate)
+            self.assertTrue(contactRateInds[i] == i+5)
 
         #Now try changing C
         logging.debug("Rates with C=0.1")
         rates.setNewContactChance(0.1)
-        contactRates = rates.contactRates(range(numVertices), contactList, 0.4)
+        contactRateInds, contactRates = rates.contactRates(range(numVertices), contactList, 0.4)
         #Observed probabilities change as expected
+
 
         #Now increase time and observe probabilities
         logging.debug("Rates with t=20")
-        contactRates = rates.contactRates(range(numVertices), contactList, 20)
+        contactRateInds, contactRates = rates.contactRates(range(numVertices), contactList, 20)
 
 
         #Test we don't pick from removed
@@ -164,7 +162,11 @@ class  HIVRateFuncsTestCase(unittest.TestCase):
         removedList = list(removedSet)
         contactList = list(contactSet)
 
-
+        contactRateInds, contactRates = rates.contactRates(infectedList, contactList, 20)
+        
+        #Contacts cannot be in removed set 
+        self.assertTrue(numpy.intersect1d(contactRateInds, numpy.array(removedList)).shape[0]==0)        
+            
 
     def testContactTracingRate(self):
         undirected = True
@@ -312,7 +314,11 @@ class  HIVRateFuncsTestCase(unittest.TestCase):
         graph.getVertexList().setInfected(8, t)
         rates.removeEvent(4, HIVVertices.randomDetect, t)
         rates.removeEvent(7, HIVVertices.randomDetect, t)
-
+        
+        removedInds= list(graph.getRemovedSet())    
+        
+        hiddenDegSeq[removedInds] = 0 
+        
         #Check the new degree sequences are correct 
         self.assertEquals(rates.expandedDegSeqFemales.shape[0], hiddenDegSeq[femaleInds].sum()*rates.p)
         self.assertEquals(rates.expandedDegSeqMales.shape[0], hiddenDegSeq[maleInds].sum()*rates.p)
