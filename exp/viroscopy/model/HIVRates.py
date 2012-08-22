@@ -90,10 +90,18 @@ class HIVRates():
 
     def setAlpha(self, alpha):
         Parameter.checkFloat(alpha, 0.0, float('inf'))
+        
+        if alpha == 0: 
+            raise ValueError("Alpha must be greater than zero")
+        
         self.alpha = alpha
 
     def setNewContactChance(self, newContactChance):
         Parameter.checkFloat(newContactChance, 0.0, float('inf'))
+    
+        if newContactChance == 0: 
+            raise ValueError("newContactChance must be greater than zero")        
+        
         self.newContactChance = newContactChance
 
     def setHeteroContactRate(self, heteroContactRate):
