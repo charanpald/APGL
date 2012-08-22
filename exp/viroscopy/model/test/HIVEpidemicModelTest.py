@@ -67,9 +67,11 @@ class  HIVEpidemicModelTest(unittest.TestCase):
 
         #TODO: Much better testing
         
-    def testSimulate2(self): 
-        #Test on the real data 
-        startDate, endDate, recordStep, printStep, M, targetGraph = HIVModelUtils.realSimulationParams()
+    def testSimulate2(self):         
+        startDate = 0.0 
+        endDate = 100.0 
+        recordStep = 10 
+        printStep = 10 
         M = 1000 
         meanTheta, sigmaTheta = HIVModelUtils.estimatedRealTheta()
         
@@ -83,9 +85,7 @@ class  HIVEpidemicModelTest(unittest.TestCase):
         hiddenDegSeq = Util.randomChoice(p, graph.getNumVertices())
         
         rates = HIVRates(graph, hiddenDegSeq)
-        model = HIVEpidemicModel(graph, rates)
-        model.setT0(startDate)
-        model.setT(endDate)
+        model = HIVEpidemicModel(graph, rates, endDate, startDate)
         model.setRecordStep(recordStep)
         model.setPrintStep(printStep)
         model.setParams(meanTheta)
@@ -107,6 +107,36 @@ class  HIVEpidemicModelTest(unittest.TestCase):
         finalRemoved = graph.getRemovedSet()
         
         self.assertEquals(numpy.intersect1d(initialInfected, finalRemoved).shape[0], len(initialInfected))
+        
+        #Test case where there is no contact  
+        meanTheta = numpy.array([100, 1, 1, 0, 0, 0, 0, 0, 0, 0], numpy.float)
+        graph = HIVGraph(M, undirected)
+        rates = HIVRates(graph, hiddenDegSeq)
+        model = HIVEpidemicModel(graph, rates, endDate, startDate)
+        model.setParams(meanTheta)
+        
+        times, infectedIndices, removedIndices, graph = model.simulate(True)
+        self.assertEquals(len(graph.getInfectedSet()), 100)
+        self.assertEquals(len(graph.getRemovedSet()), 0)
+        self.assertEquals(graph.getNumEdges(), 0)
+        
+        meanTheta = numpy.array([100, 1, 1, 0, 0, 0.1, 0, 0, 0, 0], numpy.float)
+        graph = HIVGraph(M, undirected)
+        rates = HIVRates(graph, hiddenDegSeq)
+        model = HIVEpidemicModel(graph, rates, endDate, startDate)
+        model.setPrintStep(printStep)
+        model.setParams(meanTheta)
+        
+        times, infectedIndices, removedIndices, graph = model.simulate(True)
+        self.assertEquals(len(graph.getInfectedSet()), 100)
+        self.assertEquals(len(graph.getRemovedSet()), 0)
+        
+        
+        edges = graph.getAllEdges()
+        
+        for i, j in edges:
+            if graph.vlist.V[i, HIVVertices.genderIndex] == graph.vlist.V[j, HIVVertices.genderIndex]: 
+                self.fail()
     
     def testFindStandardResults(self):
         times = [3, 12, 22, 25, 40, 50]
