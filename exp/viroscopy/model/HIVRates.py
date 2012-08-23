@@ -25,6 +25,7 @@ class HIVRates():
         self.maleInds = self.graph.vlist.V[:, HIVVertices.genderIndex]==HIVVertices.male
         self.biMaleInds = numpy.logical_and(self.maleInds, self.graph.vlist.V[:, HIVVertices.orientationIndex]==HIVVertices.bi)
         self.heteroMaleInds = numpy.logical_and(self.maleInds, self.graph.vlist.V[:, HIVVertices.orientationIndex]==HIVVertices.hetero)
+        self.biFemaleInds = numpy.logical_and(self.femaleInds, self.graph.vlist.V[:, HIVVertices.orientationIndex]==HIVVertices.bi)
 
         #We need to store degree sequences for 3 types
         self.expandedDegSeqFemales = Util.expandIntArray(graph.outDegreeSequence()[self.femaleInds]*(self.q-self.p))
@@ -38,6 +39,10 @@ class HIVRates():
         self.expandedDegSeqBiMales = Util.expandIntArray(graph.outDegreeSequence()[self.biMaleInds]*(self.q-self.p))
         self.expandedDegSeqBiMales = numpy.append(self.expandedDegSeqBiMales, Util.expandIntArray(hiddenDegSeq[self.biMaleInds]*self.p))
         self.expandedDegSeqBiMales = numpy.arange(graph.size)[self.biMaleInds][self.expandedDegSeqBiMales]   
+        
+        self.expandedDegSeqBiFemales = Util.expandIntArray(graph.outDegreeSequence()[self.biFemaleInds]*(self.q-self.p))
+        self.expandedDegSeqBiFemales = numpy.append(self.expandedDegSeqBiFemales, Util.expandIntArray(hiddenDegSeq[self.biFemaleInds]*self.p))
+        self.expandedDegSeqBiFemales = numpy.arange(graph.size)[self.biFemaleInds][self.expandedDegSeqBiFemales]   
 
         #Check degree sequence         
         if __debug__: 
@@ -53,6 +58,11 @@ class HIVRates():
                 binShape = numpy.bincount(self.expandedDegSeqBiMales).shape[0]                
                 assert (numpy.bincount(self.expandedDegSeqBiMales)[self.biMaleInds[0:binShape]] == 
                     (graph.outDegreeSequence()*(self.q-self.p)+hiddenDegSeq*self.p)[self.biMaleInds[0:binShape]]).all()
+                    
+            if self.expandedDegSeqBiFemales.shape[0]!=0:
+                binShape = numpy.bincount(self.expandedDegSeqBiFemales).shape[0]                
+                assert (numpy.bincount(self.expandedDegSeqBiFemales)[self.biFemaleInds[0:binShape]] == 
+                    (graph.outDegreeSequence()*(self.q-self.p)+hiddenDegSeq*self.p)[self.biFemaleInds[0:binShape]]).all()
 
         self.hiddenDegSeq = hiddenDegSeq
         self.degSequence = graph.outDegreeSequence() 
@@ -149,7 +159,23 @@ class HIVRates():
                         self.expandedDegSeqBiMales = numpy.append(self.expandedDegSeqBiMales, numpy.repeat(numpy.array([i]), self.q-self.p))
                 else:
                     self.expandedDegSeqFemales = numpy.append(self.expandedDegSeqFemales, numpy.repeat(numpy.array([i]), self.q-self.p))
+                    
+                    if self.graph.vlist.V[i, HIVVertices.orientationIndex]==HIVVertices.bi:
+                        self.expandedDegSeqBiFemales = numpy.append(self.expandedDegSeqBiFemales, numpy.repeat(numpy.array([i]), self.q-self.p))
+           
+        if __debug__: 
+            inds = numpy.unique(self.expandedDegSeqMales)
+            assert (self.graph.vlist.V[inds, HIVVertices.genderIndex] == HIVVertices.male).all()
             
+            inds = numpy.unique(self.expandedDegSeqFemales)
+            assert (self.graph.vlist.V[inds, HIVVertices.genderIndex] == HIVVertices.female).all()
+            
+            inds = numpy.unique(self.expandedDegSeqBiMales)
+            assert (numpy.logical_and(self.graph.vlist.V[inds, HIVVertices.genderIndex] == HIVVertices.male, self.graph.vlist.V[inds, HIVVertices.orientationIndex] == HIVVertices.bi)).all()
+            
+            inds = numpy.unique(self.expandedDegSeqBiFemales)
+            assert (numpy.logical_and(self.graph.vlist.V[inds, HIVVertices.genderIndex] == HIVVertices.female, self.graph.vlist.V[inds, HIVVertices.orientationIndex] == HIVVertices.bi)).all()
+           
         self.graph.addEdge(vertexInd1, vertexInd2, t)
         self.neighboursList[vertexInd1] = self.graph.neighbours(vertexInd1)
         self.neighboursList[vertexInd2] = self.graph.neighbours(vertexInd2)
@@ -171,10 +197,14 @@ class HIVRates():
         #Therefore this is the degree sequence minus removed vertices 
         if self.graph.vlist.V[vertexInd, HIVVertices.genderIndex] == HIVVertices.male:
             self.expandedDegSeqMales = self.expandedDegSeqMales[self.expandedDegSeqMales!=vertexInd]
+            
             if self.graph.vlist.V[vertexInd, HIVVertices.orientationIndex]==HIVVertices.bi:
                 self.expandedDegSeqBiMales = self.expandedDegSeqBiMales[self.expandedDegSeqBiMales!=vertexInd]    
         else: 
             self.expandedDegSeqFemales = self.expandedDegSeqFemales[self.expandedDegSeqFemales!=vertexInd]
+            
+            if self.graph.vlist.V[vertexInd, HIVVertices.orientationIndex]==HIVVertices.bi:
+                self.expandedDegSeqBiFemales = self.expandedDegSeqBiFemales[self.expandedDegSeqBiFemales!=vertexInd]    
         
 
         #Update set of detected neighbours
@@ -223,12 +253,15 @@ class HIVRates():
             return numpy.array([])
 
         infectedV = self.graph.vlist.V[infectedList, :]
+        
         maleInfectInds = infectedV[:, HIVVertices.genderIndex]==HIVVertices.male
         femaleInfectInds = numpy.logical_not(maleInfectInds)
         biInfectInds = infectedV[:, HIVVertices.orientationIndex]==HIVVertices.bi
         heteroInfectInds = numpy.logical_not(biInfectInds)
-        maleHeteroInds = numpy.logical_and(maleInfectInds, heteroInfectInds)
-        maleBiInds = numpy.logical_and(maleInfectInds, biInfectInds)
+        maleHeteroInfectInds = numpy.logical_and(maleInfectInds, heteroInfectInds)
+        maleBiInfectInds = numpy.logical_and(maleInfectInds, biInfectInds)
+        femaleHeteroInfectInds = numpy.logical_and(femaleInfectInds, heteroInfectInds)
+        femaleBiInfectInds = numpy.logical_and(femaleInfectInds, biInfectInds)
 
         #possibleContacts has as its first column the previous contacts.
         #A set of new contacts based on the degree sequence
@@ -244,10 +277,10 @@ class HIVRates():
         #    "totalDegSequence.sum()=%d, expanded=%d" % (totalDegSequence.sum(), self.expandedDegSeqFemales.shape[0] + self.expandedDegSeqMales.shape[0])
 
         #Note that we may get duplicates for possible contacts since we don't check for it
-        edsInds = numpy.random.randint(0, self.expandedDegSeqFemales.shape[0], maleHeteroInds.sum())
+        edsInds = numpy.random.randint(0, self.expandedDegSeqFemales.shape[0], maleHeteroInfectInds.sum())
         contactInds = self.expandedDegSeqFemales[edsInds]
-        possibleContacts[maleHeteroInds, 1] = contactInds
-        possibleContactWeights[maleHeteroInds, 1] = totalDegSequence[contactInds]/self.expandedDegSeqFemales.shape[0]
+        possibleContacts[maleHeteroInfectInds, 1] = contactInds
+        possibleContactWeights[maleHeteroInfectInds, 1] = totalDegSequence[contactInds]/self.expandedDegSeqFemales.shape[0]
 
         edsInds = numpy.random.randint(0, self.expandedDegSeqMales.shape[0], femaleInfectInds.sum())
         contactInds = self.expandedDegSeqMales[edsInds]
@@ -255,12 +288,16 @@ class HIVRates():
         possibleContactWeights[femaleInfectInds, 1] = totalDegSequence[contactInds]/self.expandedDegSeqMales.shape[0]
 
         if self.expandedDegSeqBiMales.shape[0] != 0:
-            edsInds = numpy.random.randint(0, self.expandedDegSeqBiMales.shape[0], maleBiInds.sum())
+            edsInds = numpy.random.randint(0, self.expandedDegSeqBiMales.shape[0], maleBiInfectInds.sum())
             contactInds = self.expandedDegSeqBiMales[edsInds]
-            possibleContacts[maleBiInds, 1] = contactInds
-            possibleContactWeights[maleBiInds, 1] = totalDegSequence[contactInds]/self.expandedDegSeqBiMales.shape[0]
-        else:
-            edsInds = numpy.array([], numpy.int)
+            possibleContacts[maleBiInfectInds, 1] = contactInds
+            possibleContactWeights[maleBiInfectInds, 1] = totalDegSequence[contactInds]/self.expandedDegSeqBiMales.shape[0]
+
+        if self.expandedDegSeqBiFemales.shape[0] != 0:
+            edsInds = numpy.random.randint(0, self.expandedDegSeqBiFemales.shape[0], femaleBiInfectInds.sum())
+            contactInds = self.expandedDegSeqBiFemales[edsInds]
+            possibleContacts[femaleBiInfectInds, 1] = contactInds
+            possibleContactWeights[femaleBiInfectInds, 1] = totalDegSequence[contactInds]/self.expandedDegSeqBiFemales.shape[0]
 
         #Now compute weights for all
         
