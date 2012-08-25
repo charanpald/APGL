@@ -53,7 +53,6 @@ class  HIVEpidemicModelTest(unittest.TestCase):
         rates = HIVRates(self.graph, hiddenDegSeq)
         self.model = HIVEpidemicModel(self.graph, rates)
      
-    @unittest.skip("")
     def testSimulate(self):
         T = 1.0
 
@@ -92,7 +91,6 @@ class  HIVEpidemicModelTest(unittest.TestCase):
 
         #TODO: Much better testing
         
-    @unittest.skip("")
     def testSimulate2(self):    
         startDate = 0.0 
         endDate = 100.0 
@@ -107,6 +105,8 @@ class  HIVEpidemicModelTest(unittest.TestCase):
         p = Util.powerLawProbs(alpha, zeroVal)
         hiddenDegSeq = Util.randomChoice(p, graph.getNumVertices())
         
+        recordStep = 10 
+        printStep = 10
         rates = HIVRates(graph, hiddenDegSeq)
         model = HIVEpidemicModel(graph, rates, endDate, startDate)
         model.setRecordStep(recordStep)
@@ -162,7 +162,6 @@ class  HIVEpidemicModelTest(unittest.TestCase):
         numHetero = (graph.vlist.V[list(infectedSet), HIVVertices.orientationIndex] == HIVVertices.hetero).sum()
         self.assertAlmostEqual(numHetero*endDate*heteroContactRate/100, model.getNumContacts()/100.0, 0)      
         
-    @unittest.skip("")
     def testSimulateBis(self): 
         #Play with bi rate 
         biContactRate = 0.1
@@ -208,7 +207,6 @@ class  HIVEpidemicModelTest(unittest.TestCase):
         self.assertTrue((graph.vlist.V[newInfects, HIVVertices.genderIndex] == HIVVertices.male).all())
 
 
-    @unittest.skip("")
     def testSimulateInfects(self): 
         #Test varying infection probabilities 
         
@@ -273,6 +271,14 @@ class  HIVEpidemicModelTest(unittest.TestCase):
     
         self.assertTrue(abs(len(detectedSet) - len(detectedSet2)*10)<10)   
         
+        removedGraph = graph.subgraph(list(graph.getRemovedSet())) 
+        edges = removedGraph.getAllEdges()        
+        
+        for edge in edges: 
+            i, j = edge
+            self.assertEquals(removedGraph.vlist.V[i, HIVVertices.detectionTimeIndex]. HIVVertices.randomDetect)
+            self.assertEquals(removedGraph.vlist.V[j, HIVVertices.detectionTimeIndex]. HIVVertices.randomDetect)
+               
         #Test contact tracing 
         randDetectRate = 0
         setCtRatePerPerson = 0.1
@@ -282,11 +288,18 @@ class  HIVEpidemicModelTest(unittest.TestCase):
         self.assertEquals(len(detectedSet), 0)
         
         randDetectRate = 0.001
-        setCtRatePerPerson = 0.5
+        setCtRatePerPerson = 0.1
         meanTheta = numpy.array([100, 1, 1, randDetectRate, setCtRatePerPerson, heteroContactRate, 0, 0, 0, 0], numpy.float)
-        times, infectedIndices, removedIndices, graph, model = runModel(meanTheta)
+        times, infectedIndices, removedIndices, graph, model = runModel(meanTheta, endDate=500.0)
         detectedSet = graph.getRemovedSet()   
-        self.assertTrue(len(detectedSet) > len(detectedSet2))
+              
+        removedGraph = graph.subgraph(list(graph.getRemovedSet())) 
+        edges = removedGraph.getAllEdges()
+        
+        for i in removedGraph.getAllVertexIds(): 
+            if removedGraph.vlist.V[i, HIVVertices.detectionTypeIndex] == HIVVertices.contactTrace: 
+                self.assertTrue(removedGraph.vlist.V[i, HIVVertices.detectionTimeIndex] >= 180)
+
         
     
     @unittest.skip("")
