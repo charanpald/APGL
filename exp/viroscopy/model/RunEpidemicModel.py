@@ -13,9 +13,11 @@ from exp.viroscopy.model.HIVModelUtils import HIVModelUtils
 from exp.viroscopy.model.HIVGraphMetrics2 import HIVGraphMetrics2
 
 """
-This is the epidemic model for the HIV spread in cuba. We repeat the simulation a number
-of times and average the results. 
+This is the epidemic model for the HIV spread in cuba. We try to get more bisexual 
+contacts  
 """
+
+assert False, "Must run with -O flag"
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 numpy.seterr(all='raise')
@@ -24,7 +26,7 @@ numpy.set_printoptions(suppress=True, precision=4, linewidth=100)
 
 startDate, endDate, recordStep, printStep, M, targetGraph = HIVModelUtils.realSimulationParams()
 meanTheta, sigmaTheta = HIVModelUtils.estimatedRealTheta()
-meanTheta = numpy.array([337,        1.4319,    0.211,     0.0048,    0.0032,    0.5229,    0.042,     0.0281,    0.0076,    0.0293])
+meanTheta = numpy.array([184,        1.4089,    1.0577,    0.0005,    0.1346,    0.00,    0.3765,    0.0229,    0.0116,    0.0237])
 outputDir = PathDefaults.getOutputDir() + "viroscopy/"
 
 undirected = True
@@ -49,3 +51,11 @@ logging.debug("MeanTheta=" + str(meanTheta))
 times, infectedIndices, removedIndices, graph = model.simulate(True)
 
 
+
+removedInds = list(graph.getRemovedSet())
+removedGraph = graph.subgraph(removedInds)
+
+print((removedGraph.vlist.V[:, HIVVertices.orientationIndex]==HIVVertices.bi).sum())
+print((removedGraph.vlist.V[:, HIVVertices.orientationIndex]==HIVVertices.hetero).sum())
+
+#Vary initial infects 
