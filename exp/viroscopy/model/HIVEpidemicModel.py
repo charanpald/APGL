@@ -70,19 +70,19 @@ class HIVEpidemicModel():
         :param theta: An array containing parameter values 
         :type theta: `numpy.ndarray`
         """
-        if theta.shape[0] != 10: 
-            raise ValueError("Theta should be of length 10")
+        if theta.shape[0] != 11: 
+            raise ValueError("Theta should be of length 11")
         
-        self.graph.setRandomInfected(int(theta[0]))
-        self.rates.setAlpha(theta[1])
-        self.rates.setNewContactChance(theta[2])
-        self.rates.setRandDetectRate(theta[3])
-        self.rates.setCtRatePerPerson(theta[4])
-        self.rates.setHeteroContactRate(theta[5])
-        self.rates.setBiContactRate(theta[6])
-        self.rates.setWomanManInfectProb(theta[7])
-        self.rates.setManWomanInfectProb(theta[8])
-        self.rates.setManBiInfectProb(theta[9])
+        self.graph.setRandomInfected(int(theta[0]), theta[1])
+        self.rates.setAlpha(theta[2])
+        self.rates.setNewContactChance(theta[3])
+        self.rates.setRandDetectRate(theta[4])
+        self.rates.setCtRatePerPerson(theta[5])
+        self.rates.setHeteroContactRate(theta[6])
+        self.rates.setBiContactRate(theta[7])
+        self.rates.setWomanManInfectProb(theta[8])
+        self.rates.setManWomanInfectProb(theta[9])
+        self.rates.setManBiInfectProb(theta[10])
         
     #@profile
     def simulate(self, verboseOut=False):

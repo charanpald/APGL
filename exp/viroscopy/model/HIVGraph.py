@@ -38,18 +38,37 @@ class HIVGraph(PySparseGraph):
         removedSet = numpy.nonzero(V[:, HIVVertices.stateIndex] == HIVVertices.removed)[0]
         return set(removedSet.tolist())
 
-    def setRandomInfected(self, numInitialInfected, t=0.0):
-        Parameter.checkInt(numInitialInfected, 0, self.getNumVertices())
-        inds = numpy.random.permutation(numInitialInfected)
+    def setRandomInfected(self, numInitialInfected, proportionHetero, t=0.0):
+        """
+        Pick a number of people randomly to be infected at time t. Of that set 
+        proportionHetero are selected to be heterosexual and min((1-proportionHetero), totalBi)
+        are bisexual. 
+        """
+        Parameter.checkInt(numInitialInfected, 0, self.size)
+        Parameter.checkFloat(proportionHetero, 0.0, 1.0)
+        
+        heteroInds = numpy.arange(self.size)[self.vlist.V[:, HIVVertices.orientationIndex] == HIVVertices.hetero]
+        biInds = numpy.arange(self.size)[self.vlist.V[:, HIVVertices.orientationIndex] == HIVVertices.bi]
+        
+        numHetero = int(numInitialInfected*proportionHetero) 
+        numBi = numInitialInfected-numHetero
 
-        for i in inds[0:numInitialInfected]:
-            self.getVertexList().setInfected(i, t)
+        heteroInfectInds = numpy.random.permutation(heteroInds.shape[0])[0:numHetero]
+        biInfectInds = numpy.random.permutation(biInds.shape[0])[0:numBi]
+
+        for i in heteroInfectInds:
+            j = heteroInds[i]
+            self.vlist.setInfected(j, t)
+            
+        for i in biInfectInds:
+            j = biInds[i]
+            self.vlist.setInfected(j, t)
 
     def detectedNeighbours(self, vertexInd):
         """
         Return an array of the detected neighbours.
         """
-        V = self.vList.getVertices(list(range(self.getNumVertices())))
+        V = self.vList.getVertices(range(self.size))
         neighbours = self.neighbours(vertexInd)
         return neighbours[V[neighbours, HIVVertices.stateIndex] == HIVVertices.removed]
 
