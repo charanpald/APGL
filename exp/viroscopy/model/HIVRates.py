@@ -94,7 +94,7 @@ class HIVRates():
         self.neighboursList = []
         self.detectedNeighboursList = [] 
 
-        for i in range(graph.getNumVertices()):
+        for i in range(graph.size):
             self.neighboursList.append(graph.neighbours(i))
             self.detectedNeighboursList.append(numpy.array([], numpy.int))
 
@@ -380,7 +380,7 @@ class HIVRates():
         infectedArray = infectedArray[infectedArrInds]
 
         removeIndices = numpy.array(list(removedSet), numpy.int)
-        underCT = numpy.zeros(self.graph.getNumVertices(), numpy.bool)
+        underCT = numpy.zeros(self.graph.size, numpy.bool)
         underCT[removeIndices] = numpy.logical_and(self.graph.vlist.V[removeIndices, HIVVertices.detectionTimeIndex] >= cdEndDate, self.graph.vlist.V[removeIndices, HIVVertices.detectionTimeIndex] <= ctStartDate)
 
         if len(infectedList) < len(removedSet):
