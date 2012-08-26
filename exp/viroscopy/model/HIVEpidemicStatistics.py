@@ -40,7 +40,7 @@ def saveStats(args):
     featureInds[HIVVertices.stateIndex] = False 
     featureInds = numpy.arange(featureInds.shape[0])[featureInds]        
     
-    matcher = GraphMatch("PATH", alpha=0.5, featureInds=featureInds, useWeightM=False)
+    matcher = GraphMatch("PATH", alpha=0.7, featureInds=featureInds, useWeightM=False)
     graphMetrics = HIVGraphMetrics2(targetGraph, 1.0, matcher, float(endDate))        
     
     times, infectedIndices, removedIndices, graph = HIVModelUtils.simulate(thetaArray[i], startDate, endDate, recordStep, printStep, M, graphMetrics)
@@ -71,7 +71,10 @@ if saveResults:
     resultsFileName = outputDir + "IdealStats.pkl"
     Util.savePickle(stats, resultsFileName)
 else:
-    thetaArray = ABCSMC.loadThetaArray(N, thetaDir, t)
+    for i in range(t+1): 
+        thetaArray = ABCSMC.loadThetaArray(N, thetaDir, i)
+        logging.debug(thetaArray.mean(0))
+        #logging.debug(thetaArray.std(0))
     
     resultsFileName = outputDir + "IdealStats.pkl"
     stats = Util.loadPickle(resultsFileName)  
@@ -79,7 +82,6 @@ else:
     
     graphStats = GraphStatistics()
     
-    logging.debug(thetaArray.shape)
     #First plot graphs for ideal theta 
     plotInd = 0 
     
