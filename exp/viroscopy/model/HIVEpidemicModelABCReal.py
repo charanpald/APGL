@@ -47,7 +47,7 @@ def createModel(t):
     featureInds[HIVVertices.hiddenDegreeIndex] = False 
     featureInds[HIVVertices.stateIndex] = False
     featureInds = numpy.arange(featureInds.shape[0])[featureInds]
-    matcher = GraphMatch("PATH", alpha=0.8, featureInds=featureInds, useWeightM=False)
+    matcher = GraphMatch("PATH", alpha=0.7, featureInds=featureInds, useWeightM=False)
     graphMetrics = HIVGraphMetrics2(targetGraph, epsilonArray[t], matcher, float(endDate))
     graphMetrics.breakDist = 0.95 
 
@@ -63,19 +63,18 @@ if len(sys.argv) > 1:
 else: 
     numProcesses = multiprocessing.cpu_count()
 
-posteriorSampleSize = 10
-thetaLen = 10
+posteriorSampleSize = 20
 
 logging.debug("Posterior sample size " + str(posteriorSampleSize))
 
-purtScale = 0.2 
+purtScale = 0.1 
 meanTheta, sigmaTheta = HIVModelUtils.estimatedRealTheta()
 abcParams = HIVABCParameters(meanTheta, sigmaTheta, purtScale)
 thetaDir = resultsDir + "theta/"
 
 abcSMC = ABCSMC(epsilonArray, createModel, abcParams, thetaDir)
 abcSMC.setPosteriorSampleSize(posteriorSampleSize)
-abcSMC.batchSize = 30
+abcSMC.batchSize = 50
 thetasArray = abcSMC.run()
 
 meanTheta = numpy.mean(thetasArray, 0)

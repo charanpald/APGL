@@ -23,8 +23,8 @@ class HIVModelUtils(object):
         """
         This is taken from simulated runs using the real data 
         """
-        theta = numpy.array([ 150,  0.5, 1, 1, 0.2, 0.2, 0.2, 0.2, 0.0038, 0.003, 0.017])
-        sigmaTheta = numpy.array([100, 0.3, 1, 1, 0.2, 0.2, 0.2, 0.2, 0.02, 0.02, 0.02])
+        theta = numpy.array([ 150,  0.5, 0.4, 0.3, 0.001, 0.05, 0.2, 0.02, 0.0038, 0.003, 0.017])
+        sigmaTheta = numpy.array([100, 0.3, 0.1, 0.1, 0.001, 0.1, 0.1, 0.02, 0.02, 0.02, 0.02])
         return theta, sigmaTheta 
     
     @staticmethod
@@ -55,7 +55,7 @@ class HIVModelUtils(object):
         
         recordStep = 100 
         printStep = 100
-        #Note that 2% of the population is bi 
+        #Note that 5% of the population is bi 
         M = targetGraph.size * 4
         #This needs to be from 1986 to 2004 
         startDate = CsvConverters.dateConv("01/01/1986")
