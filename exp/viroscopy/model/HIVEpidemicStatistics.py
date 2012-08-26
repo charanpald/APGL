@@ -121,6 +121,20 @@ else:
     plotInd += 1
     
     plt.figure(plotInd)
+    plt.title("Random detection")
+    plt.plot(times, vertexArray[:, 5], "r")
+    plt.xlabel("Time (days)")
+    plt.ylabel("Individuals")
+    plotInd += 1
+    
+    plt.figure(plotInd)
+    plt.title("Contact Tracing")
+    plt.plot(times, vertexArray[:, 6], "r")
+    plt.xlabel("Time (days)")
+    plt.ylabel("Individuals")
+    plotInd += 1
+    
+    plt.figure(plotInd)
     plt.title("Components")
     plt.plot(times, removedGraphStats[:, graphStats.numComponentsIndex], "r")
     plt.xlabel("Time (days)")
@@ -158,6 +172,14 @@ else:
         
         plt.figure(plotInd)
         plt.plot(times, vertexArray[:, 4], plotStyles[0])
+        plotInd += 1
+        
+        plt.figure(plotInd)
+        plt.plot(times, vertexArray[:, 5], plotStyles[0])
+        plotInd += 1
+        
+        plt.figure(plotInd)
+        plt.plot(times, vertexArray[:, 6], plotStyles[0])
         plotInd += 1
     
         plt.figure(plotInd)

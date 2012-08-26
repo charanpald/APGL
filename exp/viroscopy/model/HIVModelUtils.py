@@ -105,8 +105,10 @@ class HIVModelUtils(object):
         femaleArray = numpy.array([numpy.sum(V[x, HIVVertices.genderIndex]==HIVVertices.female) for x in removedIndices])
         heteroArray = numpy.array([numpy.sum(V[x, HIVVertices.orientationIndex]==HIVVertices.hetero) for x in removedIndices])
         biArray = numpy.array([numpy.sum(V[x, HIVVertices.orientationIndex]==HIVVertices.bi) for x in removedIndices])
+        randDetectArray = numpy.array([numpy.sum(V[x, HIVVertices.detectionTypeIndex]==HIVVertices.randomDetect) for x in removedIndices])
+        conDetectArray = numpy.array([numpy.sum(V[x, HIVVertices.detectionTypeIndex]==HIVVertices.contactTrace) for x in removedIndices])
         
-        vertexArray = numpy.c_[removedArray, maleArray, femaleArray, heteroArray, biArray]
+        vertexArray = numpy.c_[removedArray, maleArray, femaleArray, heteroArray, biArray, randDetectArray, conDetectArray]
         
         graphStats = GraphStatistics()
         removedGraphStats = graphStats.sequenceScalarStats(graph, removedIndices, slowStats=False)
