@@ -105,6 +105,8 @@ class  HIVEpidemicModelTest(unittest.TestCase):
         p = Util.powerLawProbs(alpha, zeroVal)
         hiddenDegSeq = Util.randomChoice(p, graph.getNumVertices())
         
+        meanTheta[4] = 0.1        
+        
         recordStep = 10 
         printStep = 10
         rates = HIVRates(graph, hiddenDegSeq)
@@ -271,7 +273,7 @@ class  HIVEpidemicModelTest(unittest.TestCase):
         detectedSet2 = graph.getRemovedSet()
     
         print(len(detectedSet), len(detectedSet2))
-        self.assertTrue(abs(len(detectedSet) - len(detectedSet2)*10)<15)   
+        self.assertTrue(abs(len(detectedSet)*2 - len(detectedSet2))<15)   
         
         removedGraph = graph.subgraph(list(graph.getRemovedSet())) 
         edges = removedGraph.getAllEdges()        
