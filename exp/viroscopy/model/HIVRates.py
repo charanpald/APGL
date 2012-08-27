@@ -1,6 +1,5 @@
 import numpy
 from pysparse import spmatrix
-from sparray import csarray
 from exp.viroscopy.model.HIVVertices import HIVVertices
 from apgl.util.Util import *
 import numpy.testing as nptst
