@@ -64,13 +64,10 @@ else:
     numProcesses = multiprocessing.cpu_count()
 
 posteriorSampleSize = 20
-thetaLen = 10
-
 logging.debug("Posterior sample size " + str(posteriorSampleSize))
 
-sigmaScale = 0.5 
-meanTheta = HIVModelUtils.toyTheta()
-abcParams = HIVABCParameters(meanTheta, sigmaScale, 0.2)
+meanTheta, sigmaTheta = HIVModelUtils.toyTheta()
+abcParams = HIVABCParameters(meanTheta, sigmaTheta, 0.2)
 thetaDir = resultsDir + "theta/"
 
 abcSMC = ABCSMC(epsilonArray, createModel, abcParams, thetaDir)

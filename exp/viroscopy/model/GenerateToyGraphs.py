@@ -10,7 +10,6 @@ from exp.viroscopy.model.HIVRates import HIVRates
 from exp.viroscopy.model.HIVABCParameters import HIVABCParameters
 from exp.viroscopy.model.HIVVertices import HIVVertices
 from exp.viroscopy.model.HIVModelUtils import HIVModelUtils
-from exp.viroscopy.model.HIVGraphMetrics import HIVGraphMetrics2
 from exp.sandbox.GraphMatch import GraphMatch 
 
 """
@@ -24,12 +23,12 @@ numpy.seterr(all='raise')
 numpy.random.seed(24)
 numpy.set_printoptions(suppress=True, precision=4, linewidth=100)
 
-T, recordStep, printStep, M = HIVModelUtils.defaultSimulationParams()
+startDate, endDate, recordStep, printStep, M, targetGraph = HIVModelUtils.toySimulationParams()
 
 numRepetitions = 2
 undirected = True
 outputDir = PathDefaults.getOutputDir() + "viroscopy/toy/"
-theta = HIVModelUtils.defaultTheta() 
+theta, sigmaTheta = HIVModelUtils.toyTheta() 
 
 
 graphList = []
@@ -45,7 +44,7 @@ for j in range(numRepetitions):
 
     rates = HIVRates(graph, hiddenDegSeq)
     model = HIVEpidemicModel(graph, rates)
-    model.setT(T)
+    model.setT(endDate)
     model.setRecordStep(recordStep)
     model.setPrintStep(printStep)
     model.setParams(theta)
