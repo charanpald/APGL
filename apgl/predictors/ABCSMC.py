@@ -116,7 +116,7 @@ class ABCSMC(object):
                 currentTheta = self.loadThetas(t)                 
                 
                 if dist <= self.epsilonArray[t] and len(currentTheta) !=self.N:
-                    logging.debug("Accepting particle " + str(len(currentTheta)) + " at population " + str(t) + " " + "theta=" + str(thetaList[i][0])  + " dist=" + str(dist))
+                    logging.debug("Accepting " + str(len(currentTheta)) + ", population " + str(t) + " " + "theta=" + str(thetaList[i][0])  + " dist=" + str(dist))
                     fileName = self.thetaDir + "theta_t="+str(t)+"_"+str(len(currentTheta))
                     numpy.save(fileName, thetaList[i][0])
                     currentTheta.append(thetaList[i][0])
