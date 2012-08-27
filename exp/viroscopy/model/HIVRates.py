@@ -324,8 +324,10 @@ class HIVRates():
         hInds = numpy.nonzero(numpy.logical_not(equalGender))[0]
         contactRateInds[hInds] = contacts[hInds]
         contactRates[hInds] = self.heteroContactRate
-
-        bInds = numpy.nonzero(numpy.logical_and(numpy.logical_and(equalGender, contactsV[:, HIVVertices.orientationIndex]==HIVVertices.bi), biInfectInds))[0]
+        
+        #We only simulate contact between male homosexuals (woman-women contact is not interesting)
+        bothMale = numpy.logical_and(equalGender, infectedV[:, HIVVertices.genderIndex]==HIVVertices.male)
+        bInds = numpy.nonzero(numpy.logical_and(numpy.logical_and(bothMale, contactsV[:, HIVVertices.orientationIndex]==HIVVertices.bi), biInfectInds))[0]
         contactRateInds[bInds] = contacts[bInds]
         contactRates[bInds] = self.biContactRate
 
