@@ -1,5 +1,4 @@
 import numpy
-from pysparse import spmatrix
 from exp.viroscopy.model.HIVVertices import HIVVertices
 from apgl.util.Util import *
 import numpy.testing as nptst
@@ -80,6 +79,7 @@ class HIVRates():
 
         #Random detection
         self.randDetectRate = 1/720.0
+        self.maxRandDetects = 100
 
         #Contact tracing parameters 
         self.ctRatePerPerson = 0.3
@@ -232,7 +232,9 @@ class HIVRates():
         An upper bound on the detection rates indepedent of time.This is just the
         random detection rate plus the ctRate per person for each detected neighbour. 
         """
-        detectionRates = numpy.ones(len(infectedList))*self.randDetectRate
+        detectionRates = numpy.zeros(len(infectedList))
+        detectionRates[numpy.random.permutation(len(infectedList))[0:self.maxRandDetects]] = 1
+        detectionRates *= self.randDetectRate
 
         for i in range(len(infectedList)):
             ind = infectedList[i]
@@ -360,7 +362,9 @@ class HIVRates():
     Compute the detection rate of an infected which depends on the entire population.
     """
     def randomDetectionRates(self, infectedList, t):
-        detectionRates = numpy.ones(len(infectedList))*self.randDetectRate
+        detectionRates = numpy.zeros(len(infectedList))
+        detectionRates[numpy.random.permutation(len(infectedList))[0:self.maxRandDetects]] = 1
+        detectionRates *= self.randDetectRate
 
         return detectionRates
 
