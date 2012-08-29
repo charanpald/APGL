@@ -7,10 +7,9 @@ from apgl.util import *
 from exp.viroscopy.model.HIVGraph import HIVGraph
 from exp.viroscopy.model.HIVEpidemicModel import HIVEpidemicModel
 from exp.viroscopy.model.HIVRates import HIVRates
-from exp.viroscopy.model.HIVABCParameters import HIVABCParameters
 from exp.viroscopy.model.HIVVertices import HIVVertices
 from exp.viroscopy.model.HIVModelUtils import HIVModelUtils
-from exp.viroscopy.model.HIVGraphMetrics2 import HIVGraphMetrics2
+import matplotlib.pyplot as plt 
 
 """
 This is the epidemic model for the HIV spread in cuba. We try to get more bisexual 
@@ -25,8 +24,9 @@ numpy.random.seed(24)
 numpy.set_printoptions(suppress=True, precision=4, linewidth=100)
 
 startDate, endDate, recordStep, printStep, M, targetGraph = HIVModelUtils.realSimulationParams()
+endDate = startDate + 10000
 meanTheta, sigmaTheta = HIVModelUtils.estimatedRealTheta()
-meanTheta = numpy.array([143,        0.5185,    0.4358,    0.0919,    0.0013,   0.0942,   0.2381,    0.0189,    0.0189,    0.0187,    0.0192])
+meanTheta = numpy.array([198.3,       0.652,     0.365,     0.2244,    0.0001,    0.005,    0.1445,    0.0099,    0.0139,    0.0049,    0.0131])
 outputDir = PathDefaults.getOutputDir() + "viroscopy/"
 
 undirected = True
@@ -50,12 +50,20 @@ logging.debug("MeanTheta=" + str(meanTheta))
 
 times, infectedIndices, removedIndices, graph = model.simulate(True)
 
+times, vertexArray, removedGraphStats = HIVModelUtils.generateStatistics(graph, startDate, endDate, recordStep)
 
+plt.figure(0)
+plt.plot(times, vertexArray[:, 0])
+plt.xlabel("Time")
+plt.ylabel("Removed")
 
-removedInds = list(graph.getRemovedSet())
-removedGraph = graph.subgraph(removedInds)
+plt.figure(1)
+plt.plot(times, vertexArray[:, 5])
+plt.xlabel("Time")
+plt.ylabel("Rand Detect")
 
-print((removedGraph.vlist.V[:, HIVVertices.orientationIndex]==HIVVertices.bi).sum())
-print((removedGraph.vlist.V[:, HIVVertices.orientationIndex]==HIVVertices.hetero).sum())
-
-#Vary initial infects 
+plt.figure(2)
+plt.plot(times, vertexArray[:, 6])
+plt.xlabel("Time")
+plt.ylabel("Contact Trace")
+plt.show()
