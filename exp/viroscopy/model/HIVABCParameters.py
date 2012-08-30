@@ -24,6 +24,7 @@ class HIVABCParameters(object):
         self.sigmaTheta = sigmaTheta 
         self.purtScale = purtScale 
         self.upperInfected = upperInfected
+        self.upperMaxDetects = 1000
 
         #Now set up all the parameters
         ind = 0 
@@ -67,6 +68,13 @@ class HIVABCParameters(object):
         priorDist, priorDensity = self.createGammaParam(sigma, mu)
         purtubationKernel, purtubationKernelDensity = self.__createNormalPurt(sigma, purtScale)
         self.__addParameter(("rates", "setCtRatePerPerson"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
+
+        ind += 1
+        mu = meanTheta[ind]
+        sigma = sigmaTheta[ind]
+        priorDist, priorDensity = self.createDiscTruncNormParam(float(sigma), float(mu), self.upperMaxDetects)
+        purtubationKernel, purtubationKernelDensity = self.__createNormalDiscPurt(sigma, purtScale)
+        self.__addParameter(("rates", "setMaxDetects"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
 
         ind += 1
         mu = meanTheta[ind]

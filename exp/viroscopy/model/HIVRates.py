@@ -79,7 +79,9 @@ class HIVRates():
 
         #Random detection
         self.randDetectRate = 1/720.0
-        self.maxRandDetects = 100
+        
+        #The max number of people who are being simultaneously detected 
+        self.maxDetects = 10
 
         #Contact tracing parameters 
         self.ctRatePerPerson = 0.3
@@ -140,6 +142,10 @@ class HIVRates():
     def setManBiInfectProb(self, manBiInfectProb):
         Parameter.checkFloat(manBiInfectProb, 0.0, 1.0)
         self.manBiInfectProb = manBiInfectProb
+        
+    def setMaxDetects(self, maxDetects): 
+        Parameter.checkInt(maxDetects, 1, float("inf"))
+        self.maxDetects = maxDetects 
 
     #@profile
     def contactEvent(self, vertexInd1, vertexInd2, t):
@@ -227,18 +233,23 @@ class HIVRates():
 
         return numpy.sum(contactRates)
         
-    def upperDetectionRates(self, infectedList):
+    def upperDetectionRates(self, infectedList, seed=21):
         """
         An upper bound on the detection rates indepedent of time.This is just the
         random detection rate plus the ctRate per person for each detected neighbour. 
         """
-        detectionRates = numpy.zeros(len(infectedList))
-        detectionRates[numpy.random.permutation(len(infectedList))[0:self.maxRandDetects]] = 1
-        detectionRates *= self.randDetectRate
+        detectionRates = numpy.ones(len(infectedList))*self.randDetectRate
 
-        for i in range(len(infectedList)):
-            ind = infectedList[i]
-            detectionRates[i] += self.detectedNeighboursList[ind].shape[0]*self.ctRatePerPerson
+        for i, j in enumerate(infectedList):
+            detectionRates[i] += self.detectedNeighboursList[j].shape[0]*self.ctRatePerPerson
+            
+        state = numpy.random.get_state()
+        numpy.random.seed(seed)
+        inds = numpy.random.permutation(len(infectedList))[self.maxDetects:]
+        detectionRates[inds] = 0 
+        numpy.random.set_state(state)
+        
+        assert (detectionRates!=0).sum() <= self.maxDetects 
 
         return numpy.sum(detectionRates)
 
@@ -361,14 +372,16 @@ class HIVRates():
     """
     Compute the detection rate of an infected which depends on the entire population.
     """
-    def randomDetectionRates(self, infectedList, t):
+    def randomDetectionRates(self, infectedList, t, seed=21):
         detectionRates = numpy.zeros(len(infectedList))
-        detectionRates[numpy.random.permutation(len(infectedList))[0:self.maxRandDetects]] = 1
-        detectionRates *= self.randDetectRate
-
+        state = numpy.random.get_state()
+        numpy.random.seed(seed)
+        inds = numpy.random.permutation(len(infectedList))[0:self.maxDetects]
+        detectionRates[inds] = self.randDetectRate
+        numpy.random.set_state(state)
         return detectionRates
 
-    def contactTracingRates(self, infectedList, removedSet, t):
+    def contactTracingRates(self, infectedList, removedSet, t, seed=21):
         """
         Compute the contact tracing detection rate of a list of infected individuals.
         """
@@ -410,5 +423,12 @@ class HIVRates():
                             ctRates[infectedArrInds[i]] += self.ctRatePerPerson
 
         assert (ctRates >= numpy.zeros(len(infectedList))).all()
+
+        #Only maxDetects can be tested at once 
+        state = numpy.random.get_state()
+        numpy.random.seed(seed)
+        inds = numpy.random.permutation(len(infectedList))[self.maxDetects:]
+        ctRates[inds] = 0
+        numpy.random.set_state(state)
 
         return ctRates

@@ -70,19 +70,20 @@ class HIVEpidemicModel():
         :param theta: An array containing parameter values 
         :type theta: `numpy.ndarray`
         """
-        if theta.shape[0] != 11: 
-            raise ValueError("Theta should be of length 11")
+        if theta.shape[0] != 12: 
+            raise ValueError("Theta should be of length 12")
         
         self.graph.setRandomInfected(int(theta[0]), theta[1])
         self.rates.setAlpha(theta[2])
         self.rates.setNewContactChance(theta[3])
         self.rates.setRandDetectRate(theta[4])
         self.rates.setCtRatePerPerson(theta[5])
-        self.rates.setHeteroContactRate(theta[6])
-        self.rates.setBiContactRate(theta[7])
-        self.rates.setWomanManInfectProb(theta[8])
-        self.rates.setManWomanInfectProb(theta[9])
-        self.rates.setManBiInfectProb(theta[10])
+        self.rates.setMaxDetects(int(theta[6]))
+        self.rates.setHeteroContactRate(theta[7])
+        self.rates.setBiContactRate(theta[8])
+        self.rates.setWomanManInfectProb(theta[9])
+        self.rates.setManWomanInfectProb(theta[10])
+        self.rates.setManBiInfectProb(theta[11])
         
     #@profile
     def simulate(self, verboseOut=False):
@@ -123,11 +124,16 @@ class HIVEpidemicModel():
             #assert contactRates.shape == (len(infectedList), len(contactList))
             assert (contactTracingRates == numpy.abs(contactTracingRates)).all()
             assert (randomDetectRates == numpy.abs(randomDetectRates)).all()
+            
+            assert (contactTracingRates!=0).sum() <= self.rates.maxDetects 
+            assert (randomDetectRates!=0).sum() <= self.rates.maxDetects 
 
             sigmat = contactRates.sum()
             muRSt = numpy.sum(randomDetectRates)
             muCTt = numpy.sum(contactTracingRates)
             #rhot = sigmat + muRSt + muCTt
+            
+            #print(randomDetectRates)
 
             assert sigmat >= 0
             assert muRSt >= 0
@@ -136,6 +142,8 @@ class HIVEpidemicModel():
             sigmaHat = self.rates.upperContactRates(infectedList)
             muHat = self.rates.upperDetectionRates(infectedList)
             rhoHat = sigmaHat + muHat
+            
+            #print(muHat)
 
             assert rhoHat >= 0
 
@@ -172,7 +180,7 @@ class HIVEpidemicModel():
                     susceptibleSet.remove(contactIndex)
                     
                 self.graph.endEventTime = t 
-            elif p >= contactProb and p < contactProb+detectionRandom:
+            elif p >= contactProb and p < contactProb+detectionRandom:             
                 eventInd = Util.randomChoice(randomDetectRates)
                 newDetectedIndex = infectedList[eventInd]
                 self.rates.removeEvent(newDetectedIndex, HIVVertices.randomDetect, t)
