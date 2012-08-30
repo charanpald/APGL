@@ -7,7 +7,6 @@ from apgl.util import *
 from exp.viroscopy.model.HIVGraph import HIVGraph
 from exp.viroscopy.model.HIVEpidemicModel import HIVEpidemicModel
 from exp.viroscopy.model.HIVRates import HIVRates
-from exp.viroscopy.model.HIVVertices import HIVVertices
 from exp.viroscopy.model.HIVModelUtils import HIVModelUtils
 import matplotlib.pyplot as plt 
 
@@ -26,7 +25,7 @@ numpy.set_printoptions(suppress=True, precision=4, linewidth=100)
 startDate, endDate, recordStep, printStep, M, targetGraph = HIVModelUtils.realSimulationParams()
 endDate = startDate + 10000
 meanTheta, sigmaTheta = HIVModelUtils.estimatedRealTheta()
-meanTheta = numpy.array([198.3,       0.652,     0.365,     0.2244,    0.0001,    0.005,    0.1445,    0.0099,    0.0139,    0.0049,    0.0131])
+meanTheta = numpy.array([ 162,        0.7452,    0.4685,    0.1743,    0.0006,    0.3047,  312,        0.2544,    0.0407,    0.0011,    0.0178,    0.0466])
 outputDir = PathDefaults.getOutputDir() + "viroscopy/"
 
 undirected = True
