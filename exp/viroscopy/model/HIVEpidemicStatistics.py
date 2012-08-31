@@ -17,14 +17,12 @@ numpy.set_printoptions(suppress=True, precision=4, linewidth=150)
 
 plotStyles = ['k-', 'kx-', 'k+-', 'k.-', 'k*-']
 
-outputDir = PathDefaults.getOutputDir() + "viroscopy/"
-#resultsDir = PathDefaults.getOutputDir() + "viroscopy/toy/"
 resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/"
 thetaDir = resultsDir + "theta/" 
 saveResults = False 
 graphStats = GraphStatistics()
 
-N = 10 
+N = 20 
 t = 4
 
 #We plot some stats for the ideal simulated epidemic 
@@ -48,7 +46,7 @@ def saveStats(args):
 
     stats = times, vertexArray, removedGraphStats, graphMetrics.dists
     
-    resultsFileName = outputDir + "SimStats" + str(i) + ".pkl"
+    resultsFileName = resultsDir + "SimStats" + str(i) + ".pkl"
     Util.savePickle(stats, resultsFileName)
 
 if saveResults:
@@ -68,7 +66,7 @@ if saveResults:
 
     #Now save the statistics on the target graph 
     stats = HIVModelUtils.generateStatistics(targetGraph, startDate, endDate, recordStep)
-    resultsFileName = outputDir + "IdealStats.pkl"
+    resultsFileName = resultsDir + "IdealStats.pkl"
     Util.savePickle(stats, resultsFileName)
 else:
     for i in range(t+1): 
