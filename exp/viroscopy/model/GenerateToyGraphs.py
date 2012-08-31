@@ -7,10 +7,7 @@ from apgl.util import *
 from exp.viroscopy.model.HIVGraph import HIVGraph
 from exp.viroscopy.model.HIVEpidemicModel import HIVEpidemicModel
 from exp.viroscopy.model.HIVRates import HIVRates
-from exp.viroscopy.model.HIVABCParameters import HIVABCParameters
-from exp.viroscopy.model.HIVVertices import HIVVertices
 from exp.viroscopy.model.HIVModelUtils import HIVModelUtils
-from exp.sandbox.GraphMatch import GraphMatch 
 
 """
 This is the epidemic model for the HIV spread in cuba. We repeat the simulation a number
@@ -23,9 +20,9 @@ numpy.seterr(all='raise')
 numpy.random.seed(24)
 numpy.set_printoptions(suppress=True, precision=4, linewidth=100)
 
-startDate, endDate, recordStep, printStep, M, targetGraph = HIVModelUtils.toySimulationParams()
+startDate, endDate, recordStep, printStep, M = HIVModelUtils.toySimulationParams(False)
 
-numRepetitions = 2
+numRepetitions = 1
 undirected = True
 outputDir = PathDefaults.getOutputDir() + "viroscopy/toy/"
 theta, sigmaTheta = HIVModelUtils.toyTheta() 

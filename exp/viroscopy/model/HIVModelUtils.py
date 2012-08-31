@@ -29,24 +29,28 @@ class HIVModelUtils(object):
     
     @staticmethod
     def toyTheta(): 
-        theta = numpy.array([50, 0.5, 1.0, 0.5, 1.0/800, 0.01, 200, 0.05, 0.1, 38.0/1000, 30.0/1000, 170.0/1000])
+        theta = numpy.array([300, 0.5, 1.0, 0.5, 1.0/800, 0.01, 200, 0.1, 0.2, 38.0/1000, 30.0/1000, 170.0/1000])
         sigmaTheta = theta/2
         return theta, sigmaTheta 
         
     @staticmethod 
-    def toySimulationParams(): 
-
-        resultsDir = PathDefaults.getOutputDir() + "viroscopy/toy/" 
-        graphFile = resultsDir + "ToyEpidemicGraph0"
-        targetGraph = HIVGraph.load(graphFile)        
+    def toySimulationParams(loadTarget=True): 
+        
+        if loadTarget: 
+            resultsDir = PathDefaults.getOutputDir() + "viroscopy/toy/" 
+            graphFile = resultsDir + "ToyEpidemicGraph0"
+            targetGraph = HIVGraph.load(graphFile)        
         
         startDate = 0.0        
-        endDate = 1000.0
-        recordStep = 90
+        endDate = 2000.0
+        recordStep = 100
         printStep = 500
-        M = 2000
+        M = 5000
         
-        return startDate, endDate, recordStep, printStep, M, targetGraph
+        if loadTarget: 
+            return startDate, endDate, recordStep, printStep, M, targetGraph
+        else: 
+            return startDate, endDate, recordStep, printStep, M
         
     @staticmethod 
     def realSimulationParams(): 
