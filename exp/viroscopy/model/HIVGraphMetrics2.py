@@ -2,7 +2,6 @@ import numpy
 import logging 
 
 from apgl.util.Parameter import Parameter
-from exp.viroscopy.model.HIVGraph import HIVGraph 
 from exp.sandbox.GraphMatch import GraphMatch 
 
 class HIVGraphMetrics2(object): 
@@ -25,6 +24,7 @@ class HIVGraphMetrics2(object):
         self.realGraph = realGraph
         self.epsilon = epsilon 
         self.breakDist = 1.1 
+        self.breakIgnore = 4 
         self.T = T 
         self.times = []
         
@@ -75,7 +75,7 @@ class HIVGraphMetrics2(object):
             return 0
         
     def shouldBreak(self): 
-        if len(self.dists) < 3: 
+        if len(self.dists) < self.breakIgnore: 
             return False 
         else:
             return self.meanDistance() > self.breakDist 
