@@ -10,7 +10,7 @@ from apgl.util.Util import Util
 from exp.viroscopy.model.HIVVertices import HIVVertices
 
 class HIVABCParameters(object):
-    def __init__(self, meanTheta, sigmaTheta, purtScale=0.2, upperInfected=400):
+    def __init__(self, meanTheta, sigmaTheta, purtScale=0.2, upperInfected=1000):
         """
         Initialised this object with a mean value of theta 
         """

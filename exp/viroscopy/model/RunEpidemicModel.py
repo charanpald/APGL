@@ -25,7 +25,7 @@ numpy.set_printoptions(suppress=True, precision=4, linewidth=100)
 startDate, endDate, recordStep, printStep, M, targetGraph = HIVModelUtils.realSimulationParams()
 endDate = startDate + 10000
 meanTheta, sigmaTheta = HIVModelUtils.estimatedRealTheta()
-meanTheta = numpy.array([ 162,        0.7452,    0.4685,    0.1743,    0.0006,    0.3047,  312,        0.2544,    0.0407,    0.0011,    0.0178,    0.0466])
+meanTheta = numpy.array([ 279,        0.5131,    0.3242,    0.3087,    0.0006,    0.1937,  325,        0.34,      0.001,     0.031,     0.0054,    0.0003])
 outputDir = PathDefaults.getOutputDir() + "viroscopy/"
 
 undirected = True
@@ -57,11 +57,16 @@ plt.xlabel("Time")
 plt.ylabel("Removed")
 
 plt.figure(1)
+plt.plot(times, vertexArray[:, 4])
+plt.xlabel("Time")
+plt.ylabel("Bi Detect")
+
+plt.figure(2)
 plt.plot(times, vertexArray[:, 5])
 plt.xlabel("Time")
 plt.ylabel("Rand Detect")
 
-plt.figure(2)
+plt.figure(3)
 plt.plot(times, vertexArray[:, 6])
 plt.xlabel("Time")
 plt.ylabel("Contact Trace")

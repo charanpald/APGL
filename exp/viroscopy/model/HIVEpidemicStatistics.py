@@ -21,7 +21,7 @@ outputDir = PathDefaults.getOutputDir() + "viroscopy/"
 #resultsDir = PathDefaults.getOutputDir() + "viroscopy/toy/"
 resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/"
 thetaDir = resultsDir + "theta/" 
-saveResults = False
+saveResults = False 
 graphStats = GraphStatistics()
 
 N = 10 
