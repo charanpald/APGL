@@ -10,17 +10,39 @@ from datetime import datetime
 from apgl.util.Util import Util 
 from apgl.util.Parameter import Parameter 
 
-def runModel(args):
-    theta, createModel, t = args 
-    
-    logging.debug("Using theta value : " + str(theta)) 
-    model = createModel(t)
-    model.setParams(theta)
-    model.simulate()
-    dist = model.distance() 
-    del model 
-    return dist
+def loadThetaArray(N, thetaDir, t): 
+    """
+    Load the thetas from a particular directory. 
+    """
+    currentThetas = [] 
+        
+    for i in range(N): 
+        fileName = thetaDir + "theta_t="+str(t)+"_"+str(i)+".npy"
+        if os.path.exists(fileName): 
+            currentThetas.append(numpy.load(fileName))
+            
+    return numpy.array(currentThetas) 
 
+def runModel(args):
+    theta, createModel, t, epsilon, N, thetaDir = args     
+    currentTheta = loadThetaArray(N, thetaDir, t).tolist()
+    
+    if len(currentTheta) < N:     
+        logging.debug("Using theta value : " + str(theta)) 
+        model = createModel(t)
+        model.setParams(theta)
+        model.simulate()
+        dist = model.distance() 
+        del model 
+        
+        currentTheta = loadThetaArray(N, thetaDir, t).tolist()                
+        
+        if dist <= epsilon and len(currentTheta) < N:    
+            logging.debug("Accepting " + str(len(currentTheta)) + ", population: " + str(t) + " " + str(theta)  + " dist=" + str(dist))
+            fileName = thetaDir + "theta_t="+str(t)+"_"+str(len(currentTheta))
+            numpy.save(fileName, theta)
+            currentTheta.append(theta)
+            
 class ABCSMC(object):
     def __init__(self, epsilonArray, createModel, paramsObj, thetaDir):
         """
@@ -32,14 +54,12 @@ class ABCSMC(object):
         
         :param epsilonArray: an array of successively smaller minimum distances
         :type epsilonArray: `numpy.ndarray` 
-        
-        :param Sprime: the summary statistics on real data
    
-        :param createModel: A function to create a new stochastic model
+        :param createModel: A function to create a new stochastic model. The model must have a distance function with returns the distance to the target theta. 
 
         :param paramsObj: An object which stores information about the parameters of the model 
         
-        :param metrics: An object to compute summary statistics and distances 
+        :param thetaDir: The directory to store theta values 
         """
         dt = datetime.now()
         numpy.random.seed(dt.microsecond)
@@ -69,22 +89,8 @@ class ABCSMC(object):
         """
         Load all thetas saved for particle t. 
         """
-        return ABCSMC.loadThetaArray(self.N, self.thetaDir, t).tolist()
+        return loadThetaArray(self.N, self.thetaDir, t)
         
-    @staticmethod 
-    def loadThetaArray(N, thetaDir, t): 
-        """
-        Load the thetas from a particular directory. 
-        """
-        currentThetas = [] 
-            
-        for i in range(N): 
-            fileName = thetaDir + "theta_t="+str(t)+"_"+str(i)+".npy"
-            if os.path.exists(fileName): 
-                currentThetas.append(numpy.load(fileName))
-                
-        return numpy.array(currentThetas) 
-
     def findThetas(self, lastTheta, lastWeights, t): 
         """
         Find a theta to accept. 
@@ -93,34 +99,24 @@ class ABCSMC(object):
         currentTheta = self.loadThetas(t)
         
         while len(currentTheta) < self.N:
-            thetaList = []   
+            paramList = []   
             
             for i in range(self.batchSize):             
                 if t == 0:
                     tempTheta = self.abcParams.sampleParams()
-                    thetaList.append((tempTheta.copy(), self.createModel, t))
+                    paramList.append((tempTheta.copy(), self.createModel, t, self.epsilonArray[t], self.N, self.thetaDir))
                 else:  
                     while True: 
-                        tempTheta = lastTheta[Util.randomChoice(lastWeights)]
+                        tempTheta = lastTheta[Util.randomChoice(lastWeights)[0], :]
                         tempTheta = self.abcParams.purtubationKernel(tempTheta)
                         if self.abcParams.priorDensity(tempTheta) != 0: 
                             break 
-                    thetaList.append((tempTheta.copy(), self.createModel, t))
+                    paramList.append((tempTheta.copy(), self.createModel, t, self.epsilonArray[t], self.N, self.thetaDir))
 
             pool = multiprocessing.Pool(processes=self.numProcesses)               
-            resultIterator = pool.map(runModel, thetaList)     
-            #resultIterator = map(runModel, thetaList)     
-    
-            i = 0 
-            for dist in resultIterator: 
-                currentTheta = self.loadThetas(t)                 
-                
-                if dist <= self.epsilonArray[t] and len(currentTheta) !=self.N:
-                    logging.debug("Accepting " + str(len(currentTheta)) + ", population " + str(t) + " " + "theta=" + str(thetaList[i][0])  + " dist=" + str(dist))
-                    fileName = self.thetaDir + "theta_t="+str(t)+"_"+str(len(currentTheta))
-                    numpy.save(fileName, thetaList[i][0])
-                    currentTheta.append(thetaList[i][0])
-                i += 1 
+            #pool.map(runModel, paramList)     
+            map(runModel, paramList)     
+            currentTheta = self.loadThetas(t)                 
             pool.terminate()
             
         return currentTheta
