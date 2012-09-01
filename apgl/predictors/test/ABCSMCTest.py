@@ -5,11 +5,13 @@ import numpy
 import unittest
 import scipy.stats 
 from apgl.predictors.ABCSMC import ABCSMC
+from apgl.util.PathDefaults import PathDefaults 
 
 class NormalModel(object):
-    def __init__(self):
+    def __init__(self, metrics):
         self.mu = 1
         self.sigma = 1
+        self.metrics = metrics 
 
     def setMu(self, mu):
         self.mu = mu
@@ -18,16 +20,27 @@ class NormalModel(object):
         self.sigma = sigma
 
     def simulate(self):
-        return numpy.random.randn(100)*self.sigma + self.mu
+        self.value = numpy.random.randn(100)*self.sigma + self.mu
+        return self.value 
         
     def setParams(self, paramsArray): 
         self.mu = paramsArray[0]
         self.sigma = paramsArray[1]
+        
+    def distance(self): 
+        return self.metrics.distance(self.value)
 
 
-class ABCMetrics(object): 
-    def distance(self, x, y):
-        return numpy.linalg.norm(x-y)
+class ABCMetrics(object):
+    def __init__(self, targetValue): 
+        self.targetValue = targetValue
+
+    
+    def distance(self, val):
+        Sx = self.summary(self.targetValue)      
+        Sy = self.summary(val)
+        
+        return numpy.linalg.norm(Sx-Sy)
 
     def summary(self, D):
         return numpy.array([D.mean(), D.std()])
@@ -72,9 +85,7 @@ class ABCParameters(object):
         return p
 
 
-def createNormalModel(t):
-    model = NormalModel()
-    return model
+
 
 class ABCSMCTest(unittest.TestCase):
     def setUp(self):
@@ -84,22 +95,29 @@ class ABCSMCTest(unittest.TestCase):
     def testEstimate(self):
         #Lets set up a simple model based on normal dist
         abcParams = ABCParameters()
-        createModelFunc = createNormalModel
+        
         epsilonArray = numpy.array([0.5, 0.2, 0.1])
         posteriorSampleSize = 20
 
         #Lets get an empirical estimate of Sprime
-        theta = [0.7, 0.5]
-        model = NormalModel()
+        theta = numpy.array([0.7, 0.5])
+
+
+        abcMetrics = ABCMetrics(theta)
+        model = NormalModel(abcMetrics)
         model.setMu(theta[0])
         model.setSigma(theta[1])
-
-        abcMetrics = ABCMetrics()
         
         Sprime = abcMetrics.summary(model.simulate()) 
         logging.debug(("Real summary statistic: " + str(Sprime)))
 
-        abcSMC = ABCSMC(epsilonArray, Sprime, createModelFunc, abcParams, abcMetrics)
+        thetaDir = PathDefaults.getTempDir()
+        
+        def createNormalModel(t):
+            model = NormalModel(abcMetrics)
+            return model
+
+        abcSMC = ABCSMC(epsilonArray, createNormalModel, abcParams, thetaDir)
         abcSMC.setPosteriorSampleSize(posteriorSampleSize)
         thetasArray = abcSMC.run()
         
