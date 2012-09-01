@@ -42,9 +42,9 @@ class HIVModelUtils(object):
             targetGraph = HIVGraph.load(graphFile)        
         
         startDate = 0.0        
-        endDate = 2000.0
+        endDate = 1000.0
         recordStep = 100
-        printStep = 500
+        printStep = 100
         M = 5000
         
         if loadTarget: 
