@@ -206,6 +206,14 @@ class GraphMatchTest(unittest.TestCase):
         permutation = numpy.arange(10, dtype=numpy.int)
         distance = GraphMatch(alpha=alpha).distance(self.graph2, graph1, permutation, True, True)
         self.assertEquals(distance, 1.0)
+           
+        #Test on unequal graphs and compare against distance from graphm 
+        alpha = 0.5 
+        matcher = GraphMatch(alpha=alpha)
+        permutation, distanceVector, time = matcher.match(self.graph1, self.graph2)
+        distance = matcher.distance(self.graph1, self.graph2, permutation, True, False)
+        
+        self.assertAlmostEquals(distanceVector[1], distance, 3)
         
     def testDistance2(self): 
         permutation = numpy.arange(self.numVertices)
