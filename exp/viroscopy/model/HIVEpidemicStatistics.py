@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from apgl.graph.GraphStatistics import GraphStatistics 
 from apgl.util.PathDefaults import PathDefaults
 from apgl.util.Util import Util 
-from apgl.predictors.ABCSMC import ABCSMC 
+from apgl.predictors.ABCSMC import ABCSMC, loadThetaArray 
 from exp.viroscopy.model.HIVModelUtils import HIVModelUtils
 from exp.viroscopy.model.HIVVertices import HIVVertices
 from exp.sandbox.GraphMatch import GraphMatch
@@ -17,13 +17,13 @@ numpy.set_printoptions(suppress=True, precision=4, linewidth=150)
 
 plotStyles = ['k-', 'kx-', 'k+-', 'k.-', 'k*-']
 
-resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/"
+resultsDir = PathDefaults.getOutputDir() + "viroscopy/toy/"
 thetaDir = resultsDir + "theta/" 
 saveResults = False 
 graphStats = GraphStatistics()
 
-N = 20 
-t = 4
+N = 10 
+t = 3
 
 #We plot some stats for the ideal simulated epidemic 
 #and those epidemics found using ABC. 
@@ -38,7 +38,7 @@ def saveStats(args):
     featureInds[HIVVertices.stateIndex] = False 
     featureInds = numpy.arange(featureInds.shape[0])[featureInds]        
     
-    matcher = GraphMatch("PATH", alpha=0.7, featureInds=featureInds, useWeightM=False)
+    matcher = GraphMatch("PATH", alpha=0.5, featureInds=featureInds, useWeightM=False)
     graphMetrics = HIVGraphMetrics2(targetGraph, 1.0, matcher, float(endDate))        
     
     times, infectedIndices, removedIndices, graph = HIVModelUtils.simulate(thetaArray[i], startDate, endDate, recordStep, printStep, M, graphMetrics)
@@ -51,11 +51,11 @@ def saveStats(args):
 
 if saveResults:
 
-    thetaArray = ABCSMC.loadThetaArray(N, thetaDir, t)
+    thetaArray = loadThetaArray(N, thetaDir, t)
     logging.debug(thetaArray)
     
-    #startDate, endDate, recordStep, printStep, M, targetGraph = HIVModelUtils.toySimulationParams()
-    startDate, endDate, recordStep, printStep, M, targetGraph = HIVModelUtils.realSimulationParams()
+    startDate, endDate, recordStep, printStep, M, targetGraph = HIVModelUtils.toySimulationParams()
+    #startDate, endDate, recordStep, printStep, M, targetGraph = HIVModelUtils.realSimulationParams()
     paramList = []
     
     for i in range(thetaArray.shape[0]): 
@@ -70,11 +70,11 @@ if saveResults:
     Util.savePickle(stats, resultsFileName)
 else:
     for i in range(t+1): 
-        thetaArray = ABCSMC.loadThetaArray(N, thetaDir, i)
+        thetaArray = loadThetaArray(N, thetaDir, i)
         logging.debug(thetaArray.mean(0))
         #logging.debug(thetaArray.std(0))
     
-    resultsFileName = outputDir + "IdealStats.pkl"
+    resultsFileName = resultsDir + "IdealStats.pkl"
     stats = Util.loadPickle(resultsFileName)  
     times, vertexArray, removedGraphStats = stats 
     
@@ -147,7 +147,7 @@ else:
 
     for i in range(thetaArray.shape[0]): 
         plotInd = 0
-        resultsFileName = outputDir + "SimStats" + str(i) + ".pkl"
+        resultsFileName = resultsDir + "SimStats" + str(i) + ".pkl"
         stats = Util.loadPickle(resultsFileName)
         
         times, vertexArray, removedGraphStats, dists = stats 
