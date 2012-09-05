@@ -23,8 +23,8 @@ class HIVGraphMetrics2(object):
         self.dists = [] 
         self.realGraph = realGraph
         self.epsilon = epsilon 
-        self.breakDist = 1.1 
-        self.breakIgnore = 4 
+        self.breakDist = 0.1 
+        self.breakIgnore = 5 
         self.T = T 
         self.times = []
         
