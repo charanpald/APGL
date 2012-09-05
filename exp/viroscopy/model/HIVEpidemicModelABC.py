@@ -81,6 +81,6 @@ stdTheta = numpy.std(thetasArray, 0)
 logging.debug(thetasArray)
 logging.debug("meanTheta=" + str(meanTheta))
 logging.debug("stdTheta=" + str(stdTheta))
-logging.debug("realTheta=" + str(HIVModelUtils.defaultTheta()))
+logging.debug("realTheta=" + str(HIVModelUtils.toyTheta()[0]))
 
 logging.debug("All done!")
