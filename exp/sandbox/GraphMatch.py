@@ -283,6 +283,7 @@ class GraphMatch(object):
             else: 
                 return dist 
         else: 
+            logging.debug("Graph distance: " + str(dist1) + " label distance: " + str(dist2) + " graph sizes: " + str((graph1.size, graph2.size)))   
             return dist 
         
     def distance2(self, graph1, graph2, permutation):
