@@ -34,6 +34,7 @@ reps = 10
 graphDists = [] 
 
 for i in range(reps): 
+    print("i=" + str(i))
     undirected = True
     graph = HIVGraph(M, undirected)
     
@@ -74,6 +75,6 @@ print(graphDistsStd)
 
 plt.plot(times, graphDistsMean)
 plt.xlabel("Time")
-plt.ylabel("Distance")
+plt.ylabel("Objective")
 plt.show()
     
