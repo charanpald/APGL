@@ -12,7 +12,6 @@ from apgl.util.PathDefaults import PathDefaults
 from apgl.util.Parameter import Parameter
 from apgl.util.Util import Util
 from apgl.data.Standardiser import Standardiser 
-from apgl.kernel.LinearKernel import LinearKernel
 from apgl.kernel.KernelUtils import KernelUtils
 
 class GraphMatch(object): 
@@ -154,7 +153,6 @@ class GraphMatch(object):
         os.remove(outputFileName)
 
         distanceVector = [graphDistance, fDistance, fDistanceExact]         
-         
         return permutation, distanceVector, time 
         
     def vertexSimilarities(self, graph1, graph2): 
@@ -273,8 +271,8 @@ class GraphMatch(object):
         if nonNeg and normalised:
             normC = norm2
     
-            logging.debug("Graph distance: " + str(dist1) + " label distance: " + str(dist2) + " distance offset: " + str(n/normC) + " graph sizes: " + str((graph1.size, graph2.size)))           
-            
+            logging.debug("Graph distance: " + str(dist1) + " label distance: " + str(dist2) + " distance offset: " + str(self.alpha*n/normC) + " graph sizes: " + str((graph1.size, graph2.size)))           
+
             if normC != 0: 
                 return dist + self.alpha*n/normC 
             else: 
