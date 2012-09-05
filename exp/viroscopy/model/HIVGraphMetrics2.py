@@ -45,7 +45,7 @@ class HIVGraphMetrics2(object):
         #Only add distance if the real graph has nonzero size
         if subRealGraph.size != 0: 
             permutation, distance, time = self.matcher.match(subgraph, subRealGraph)
-            lastDist = self.matcher.distance(subgraph, subRealGraph, permutation, True, True) 
+            lastDist = self.matcher.distance(subgraph, subRealGraph, permutation, True, False) 
             
             logging.debug("Distance at time " + str(t) + " is " + str(lastDist) + " with simulated size " + str(subgraph.size) + " and real size " + str(subRealGraph.size))        
             
