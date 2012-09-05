@@ -30,6 +30,8 @@ class GraphMatch(object):
         self.maxInt = 10**9 
         self.featureInds = featureInds 
         self.useWeightM = useWeightM 
+        #Gamma is the same as dummy_nodes_c_coef for costing added vertex labels         
+        self.gamma = 0.0
         
     def match(self, graph1, graph2): 
         """
@@ -152,7 +154,7 @@ class GraphMatch(object):
         os.remove(configFileName)
         os.remove(outputFileName)
 
-        distanceVector = [graphDistance, fDistance, fDistanceExact]         
+        distanceVector = [graphDistance, fDistance, fDistanceExact]     
         return permutation, distanceVector, time 
         
     def vertexSimilarities(self, graph1, graph2): 
@@ -187,10 +189,10 @@ class GraphMatch(object):
         #print(X)
          
         #Extend arrays with zeros to make them the same size
-        if V1.shape[0] < V2.shape[0]: 
-            V1 = Util.extendArray(V1, V2.shape, X.mean(0))
-        elif V2.shape[0] < V1.shape[0]: 
-            V2 = Util.extendArray(V2, V1.shape, X.mean(0))
+        #if V1.shape[0] < V2.shape[0]: 
+        #    V1 = Util.extendArray(V1, V2.shape, numpy.min(V1))
+        #elif V2.shape[0] < V1.shape[0]: 
+        #    V2 = Util.extendArray(V2, V1.shape, numpy.min(V2))
           
         #Let's compute C as the distance between vertices 
         #Distance is bounded by 1
@@ -253,6 +255,9 @@ class GraphMatch(object):
         
         #Now compute the vertex similarities trace         
         C = self.vertexSimilarities(graph1, graph2)
+        minC = numpy.min(C)
+        maxC = numpy.max(C)
+        C = Util.extendArray(C, (n, n), minC + self.gamma*(maxC-minC))
 
         dist2 = numpy.trace(C.T.dot(P))
         
@@ -262,7 +267,7 @@ class GraphMatch(object):
             if norm1!= 0: 
                 dist1 = dist1/norm1
             if norm2!= 0:
-                dist2 = dist2/norm2 
+                dist2 = dist2/norm2
         
         dist = (1-self.alpha)*dist1 - self.alpha*dist2
         
