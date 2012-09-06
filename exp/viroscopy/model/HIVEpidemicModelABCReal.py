@@ -26,7 +26,7 @@ numpy.seterr(invalid='raise')
 
 resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/" 
 startDate, endDate, recordStep, printStep, M, targetGraph = HIVModelUtils.realSimulationParams()
-epsilonArray = numpy.array([0.0, -0.2, -0.4, -0.6])
+epsilonArray = numpy.array([0.0, -0.2, -0.3, -0.4])
 logging.debug("Total time of simulation is " + str(endDate-startDate))
 
 def createModel(t):
