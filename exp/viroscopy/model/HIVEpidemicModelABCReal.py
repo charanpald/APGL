@@ -25,7 +25,7 @@ numpy.set_printoptions(suppress=True, precision=4, linewidth=150)
 numpy.seterr(invalid='raise')
 
 resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/" 
-startDate, endDate, recordStep, printStep, M, targetGraph = HIVModelUtils.realSimulationParams()
+startDate, endDate, recordStep, M, targetGraph = HIVModelUtils.realSimulationParams()
 epsilonArray = numpy.array([0.0, -0.2, -0.3, -0.4])
 logging.debug("Total time of simulation is " + str(endDate-startDate))
 
@@ -54,7 +54,6 @@ def createModel(t):
     rates = HIVRates(graph, hiddenDegSeq)
     model = HIVEpidemicModel(graph, rates, T=float(endDate), T0=float(startDate), metrics=graphMetrics)
     model.setRecordStep(recordStep)
-    model.setPrintStep(printStep)
 
     return model
 
@@ -74,6 +73,7 @@ thetaDir = resultsDir + "theta/"
 
 abcSMC = ABCSMC(epsilonArray, createModel, abcParams, thetaDir)
 abcSMC.setPosteriorSampleSize(posteriorSampleSize)
+abcSMC.setNumProcesses(numProcesses)
 abcSMC.batchSize = 50
 thetasArray = abcSMC.run()
 
