@@ -20,7 +20,7 @@ numpy.seterr(all='raise')
 numpy.random.seed(24)
 numpy.set_printoptions(suppress=True, precision=4, linewidth=100)
 
-startDate, endDate, recordStep, printStep, M = HIVModelUtils.toySimulationParams(False)
+startDate, endDate, recordStep, M = HIVModelUtils.toySimulationParams(False)
 
 numRepetitions = 1
 undirected = True
@@ -43,12 +43,12 @@ for j in range(numRepetitions):
     model = HIVEpidemicModel(graph, rates)
     model.setT(endDate)
     model.setRecordStep(recordStep)
-    model.setPrintStep(printStep)
     model.setParams(theta)
     
     logging.debug("Theta = " + str(theta))
     
     times, infectedIndices, removedIndices, graph = model.simulate(True)
+    print(times)
     graphFileName = outputDir + "ToyEpidemicGraph" + str(j)
     graph.save(graphFileName)
     

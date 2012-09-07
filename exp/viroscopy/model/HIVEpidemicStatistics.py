@@ -18,9 +18,9 @@ numpy.set_printoptions(suppress=True, precision=4, linewidth=150)
 plotStyles = ['k-', 'kx-', 'k+-', 'k.-', 'k*-']
 
 #resultsDir = PathDefaults.getOutputDir() + "viroscopy/toy/"
-#startDate, endDate, recordStep, printStep, M, targetGraph = HIVModelUtils.toySimulationParams()
+#startDate, endDate, recordStep, M, targetGraph = HIVModelUtils.toySimulationParams()
 resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/"
-startDate, endDate, recordStep, printStep, M, targetGraph = HIVModelUtils.realSimulationParams()
+startDate, endDate, recordStep, M, targetGraph = HIVModelUtils.realSimulationParams()
 
 thetaDir = resultsDir + "theta/" 
 saveResults = True 

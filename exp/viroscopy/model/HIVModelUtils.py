@@ -44,13 +44,12 @@ class HIVModelUtils(object):
         startDate = 0.0        
         endDate = 1000.0
         recordStep = 100
-        printStep = 100
         M = 5000
         
         if loadTarget: 
-            return startDate, endDate, recordStep, printStep, M, targetGraph
+            return startDate, endDate, recordStep, M, targetGraph
         else: 
-            return startDate, endDate, recordStep, printStep, M
+            return startDate, endDate, recordStep, M
         
     @staticmethod 
     def realSimulationParams(): 
@@ -58,7 +57,6 @@ class HIVModelUtils(object):
         targetGraph = hivReader.readSimulationHIVGraph()
         
         recordStep = 150 
-        printStep = 150
         #Note that 5% of the population is bi 
         M = targetGraph.size * 4
         #This needs to be from 1986 to 2004 
@@ -66,7 +64,7 @@ class HIVModelUtils(object):
         endDate = CsvConverters.dateConv("01/01/1991")
         #endDate = CsvConverters.dateConv("31/12/2004")
         
-        return float(startDate), float(endDate), recordStep, printStep, M, targetGraph
+        return float(startDate), float(endDate), recordStep, M, targetGraph
     
     @staticmethod     
     def simulate(theta, startDate, endDate, recordStep, printStep, M, graphMetrics=None): 

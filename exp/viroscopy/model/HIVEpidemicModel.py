@@ -26,8 +26,7 @@ class HIVEpidemicModel():
         self.graph.endEventTime = T0
         self.rates = rates
         self.setT(T)
-        self.setRecordStep(10)
-        self.setPrintStep(10000)
+        self.setRecordStep(100)
         self.breakFunc = None
         self.standardiseResults = True
         self.T0 = T0
@@ -54,13 +53,6 @@ class HIVEpidemicModel():
         Parameter.checkInt(recordStep, 0, float('inf'))
         self.recordStep = recordStep 
 
-    def setPrintStep(self, printStep):
-        """
-        Set the time interval to print the progress of the model. 
-        """
-        Parameter.checkInt(printStep, 0, float('inf'))
-        self.printStep = printStep
-        
         
     def setParams(self, theta): 
         """
@@ -110,7 +102,6 @@ class HIVEpidemicModel():
         infectedIndices = [infectedList]
         removedIndices = [removedList]
         nextStep = t + self.recordStep
-        nextPrintStep = t
         numContacts = 0 
 
         logging.debug("Starting simulation at time " + str(t) + " with graph of size " + str(self.graph.size))
@@ -204,7 +195,9 @@ class HIVEpidemicModel():
             removedList = list(removedSet)
             contactList = list(contactSet)
 
-            if t >= nextStep and t <= self.T:
+            if t >= nextStep:
+                logging.debug("t-T0=" + str(t-self.T0) + " S=" + str(len(susceptibleSet)) + " I=" + str(len(infectedSet)) + " R=" + str(len(removedSet)) + " C=" + str(numContacts) + " E=" + str(self.graph.getNumEdges()))
+                
                 infectedIndices.append(infectedList)
                 removedIndices.append(removedList)
                 times.append(t)
@@ -217,43 +210,15 @@ class HIVEpidemicModel():
                         logging.debug("Breaking as distance has become too large")
                         break 
 
-            if t>= nextPrintStep or len(infectedSet) == 0:
-                logging.debug("t-T0=" + str(t-self.T0) + " S=" + str(len(susceptibleSet)) + " I=" + str(len(infectedSet)) + " R=" + str(len(removedSet)) + " C=" + str(numContacts) + " E=" + str(self.graph.getNumEdges()))
-                nextPrintStep += self.printStep
-
         logging.debug("Finished simulation at time " + str(t) + " for a total time of " + str(t-self.T0))
         
         self.numContacts = numContacts 
-
-        if self.metrics != None: 
-            self.metrics.addGraph(self.graph)
-
-        if self.standardiseResults:
-            times, infectedIndices, removedIndices = self.findStandardResults(times, infectedIndices, removedIndices)
-            #logging.debug("times=" + str(times))
             
         if verboseOut: 
             return times, infectedIndices, removedIndices, self.graph
         else: 
             return self.graph
 
-    def findStandardResults(self, times, infectedIndices, removedIndices):
-        """
-        Make sure that the results for the simulations are recorded for all times
-        """
-        idealTimes = range(int(self.T0), int(self.T), self.recordStep)
-
-        newInfectedIndices = []
-        newRemovedIndices = []
-        times = numpy.array(times)
-        
-        for i in range(len(idealTimes)):
-            idx = (numpy.abs(times-idealTimes[i])).argmin()
-            newInfectedIndices.append(infectedIndices[idx])
-            newRemovedIndices.append(removedIndices[idx])
-
-        return idealTimes, newInfectedIndices, newRemovedIndices
-        
     def distance(self): 
         logging.debug("Distance is " + str(self.metrics.distance()) + ", and final event on graph occured at time " + str(self.graph.endTime() - self.T0))
         return self.metrics.distance() 
