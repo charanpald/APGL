@@ -155,3 +155,6 @@ class ABCSMC(object):
         logging.debug("Finished ABC procedure") 
         
         return currentTheta 
+        
+    def setNumProcesses(self, numProcesses): 
+        self.numProcesses = numProcesses 
