@@ -25,13 +25,17 @@ numpy.seterr(all='raise')
 numpy.random.seed(24)
 numpy.set_printoptions(suppress=True, precision=4, linewidth=100)
 
-startDate, endDate, recordStep, printStep, M, targetGraph = HIVModelUtils.toySimulationParams()
+startDate, endDate, recordStep, M, targetGraph = HIVModelUtils.toySimulationParams()
 meanTheta, sigmaTheta = HIVModelUtils.toyTheta()
 
 epsilon = 5.0
 reps = 10
 
 graphDists = [] 
+removedArray = [] 
+biArray = [] 
+maleArray = [] 
+femaleArray = []
 
 for i in range(reps): 
     print("i=" + str(i))
@@ -56,25 +60,47 @@ for i in range(reps):
     rates = HIVRates(graph, hiddenDegSeq)
     model = HIVEpidemicModel(graph, rates, T=float(endDate), T0=float(startDate), metrics=graphMetrics)
     model.setRecordStep(recordStep)
-    model.setPrintStep(printStep)
     model.setParams(meanTheta)
     
     numpy.random.seed(i)
     times, infectedIndices, removedIndices, graph = model.simulate(True)
+    print(times)
+    times2, vertexArray, removedGraphStats = HIVModelUtils.generateStatistics(graph, startDate, endDate, recordStep)
     
     print(graphMetrics.dists)
     graphDists.append(graphMetrics.dists)
+    removedArray.append(vertexArray[:, 0])
+    maleArray.append(vertexArray[:, 1])
+    femaleArray.append(vertexArray[:, 2])
+    biArray.append(vertexArray[:, 4])
 
 graphDists = numpy.array(graphDists)
-print(graphDists)
+removedArray = numpy.array(removedArray)
+maleArray = numpy.array(maleArray)
+femaleArray = numpy.array(femaleArray)
+biArray = numpy.array(biArray)
+
 graphDistsMean = graphDists.mean(0)
 graphDistsStd = graphDists.std(0)
 
+print(graphDists)
 print(graphDistsMean)
 print(graphDistsStd)
 
-plt.plot(times, graphDistsMean)
+times = range(startDate, endDate, recordStep)
+
+plt.figure(0)
+plt.errorbar(times[1:], graphDistsMean, yerr=graphDistsStd)
 plt.xlabel("Time")
 plt.ylabel("Objective")
+
+plt.figure(1)
+plt.errorbar(times[1:], removedArray.mean(0), label="total")
+plt.errorbar(times[1:], maleArray.mean(0), label="male")
+plt.errorbar(times[1:], femaleArray.mean(0), label="female")
+plt.errorbar(times[1:], biArray.mean(0), label="bisexual")
+plt.xlabel("Time")
+plt.ylabel("No. Detected")
+plt.legend(loc='upper left')
 plt.show()
     
