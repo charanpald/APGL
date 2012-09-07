@@ -87,7 +87,7 @@ print(graphDists)
 print(graphDistsMean)
 print(graphDistsStd)
 
-times = range(startDate, endDate, recordStep)
+times = range(int(startDate), int(endDate), recordStep)
 
 plt.figure(0)
 plt.errorbar(times[1:], graphDistsMean, yerr=graphDistsStd)
