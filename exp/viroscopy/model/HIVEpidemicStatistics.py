@@ -17,17 +17,17 @@ numpy.set_printoptions(suppress=True, precision=4, linewidth=150)
 
 plotStyles = ['k-', 'kx-', 'k+-', 'k.-', 'k*-']
 
-#resultsDir = PathDefaults.getOutputDir() + "viroscopy/toy/"
-#startDate, endDate, recordStep, M, targetGraph = HIVModelUtils.toySimulationParams()
-resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/"
-startDate, endDate, recordStep, M, targetGraph = HIVModelUtils.realSimulationParams()
+resultsDir = PathDefaults.getOutputDir() + "viroscopy/toy/"
+startDate, endDate, recordStep, M, targetGraph = HIVModelUtils.toySimulationParams()
+#resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/"
+#startDate, endDate, recordStep, M, targetGraph = HIVModelUtils.realSimulationParams()
 
 thetaDir = resultsDir + "theta/" 
 saveResults = True 
 graphStats = GraphStatistics()
 
 N = 10 
-t = 1
+t = 4
 
 #We plot some stats for the ideal simulated epidemic 
 #and those epidemics found using ABC. 
