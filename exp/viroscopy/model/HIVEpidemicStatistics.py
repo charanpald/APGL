@@ -45,7 +45,7 @@ def saveStats(args):
     matcher = GraphMatch("PATH", alpha=0.5, featureInds=featureInds, useWeightM=False)
     graphMetrics = HIVGraphMetrics2(targetGraph, 1.0, matcher, float(endDate))        
     
-    times, infectedIndices, removedIndices, graph = HIVModelUtils.simulate(thetaArray[i], startDate, endDate, recordStep, printStep, M, graphMetrics)
+    times, infectedIndices, removedIndices, graph = HIVModelUtils.simulate(thetaArray[i], startDate, endDate, recordStep, M, graphMetrics)
     times, vertexArray, removedGraphStats = HIVModelUtils.generateStatistics(graph, startDate, endDate, recordStep)
 
     stats = times, vertexArray, removedGraphStats, graphMetrics.dists
