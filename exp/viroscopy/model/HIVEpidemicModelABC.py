@@ -55,7 +55,6 @@ def createModel(t):
     rates = HIVRates(graph, hiddenDegSeq)
     model = HIVEpidemicModel(graph, rates, T=float(endDate), T0=float(startDate), metrics=graphMetrics)
     model.setRecordStep(recordStep)
-    model.setPrintStep(printStep)
 
     return model
 
