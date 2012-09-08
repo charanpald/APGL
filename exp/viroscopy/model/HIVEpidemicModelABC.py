@@ -27,7 +27,7 @@ numpy.seterr(invalid='raise')
 
 resultsDir = PathDefaults.getOutputDir() + "viroscopy/toy/" 
 startDate, endDate, recordStep, M, targetGraph = HIVModelUtils.toySimulationParams()
-epsilonArray = numpy.array([0.0, -0.2, -0.4, -0.6])
+epsilonArray = numpy.array([-0.2, -0.3, -0.4, -0.5, -0.6])
 logging.debug("Total time of simulation is " + str(endDate-startDate))
 
 def createModel(t):
