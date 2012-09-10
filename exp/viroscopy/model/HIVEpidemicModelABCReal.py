@@ -25,37 +25,9 @@ numpy.set_printoptions(suppress=True, precision=4, linewidth=150)
 numpy.seterr(invalid='raise')
 
 resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/" 
-startDate, endDate, recordStep, M, targetGraph = HIVModelUtils.realSimulationParams()
+startDate, endDates, recordStep, M, targetGraph = HIVModelUtils.realSimulationParams()
 epsilonArray = numpy.array([0.0, -0.2, -0.3, -0.4])
-logging.debug("Total time of simulation is " + str(endDate-startDate))
 
-def createModel(t):
-    """
-    The parameter t is the particle index. 
-    """
-    undirected = True
-    graph = HIVGraph(M, undirected)
-    
-    alpha = 2
-    zeroVal = 0.9
-    p = Util.powerLawProbs(alpha, zeroVal)
-    hiddenDegSeq = Util.randomChoice(p, graph.getNumVertices())
-    
-    featureInds= numpy.ones(graph.vlist.getNumFeatures(), numpy.bool)
-    featureInds[HIVVertices.dobIndex] = False 
-    featureInds[HIVVertices.infectionTimeIndex] = False 
-    featureInds[HIVVertices.hiddenDegreeIndex] = False 
-    featureInds[HIVVertices.stateIndex] = False
-    featureInds = numpy.arange(featureInds.shape[0])[featureInds]
-    matcher = GraphMatch("PATH", alpha=0.5, featureInds=featureInds, useWeightM=False)
-    graphMetrics = HIVGraphMetrics2(targetGraph, epsilonArray[t], matcher, float(endDate))
-    graphMetrics.breakDist = 0.0 
-
-    rates = HIVRates(graph, hiddenDegSeq)
-    model = HIVEpidemicModel(graph, rates, T=float(endDate), T0=float(startDate), metrics=graphMetrics)
-    model.setRecordStep(recordStep)
-
-    return model
 
 if len(sys.argv) > 1:
     numProcesses = int(sys.argv[1])
@@ -63,23 +35,56 @@ else:
     numProcesses = multiprocessing.cpu_count()
 
 posteriorSampleSize = 20
-
 logging.debug("Posterior sample size " + str(posteriorSampleSize))
 
-purtScale = 0.1 
-meanTheta, sigmaTheta = HIVModelUtils.estimatedRealTheta()
-abcParams = HIVABCParameters(meanTheta, sigmaTheta, purtScale)
-thetaDir = resultsDir + "theta/"
+for i, endDate in enumerate(endDates): 
+    logging.debug("Total time of simulation is " + str(endDate-startDate))    
+    
+    def createModel(t):
+        """
+        The parameter t is the particle index. 
+        """
+        undirected = True
+        graph = HIVGraph(M, undirected)
+        
+        alpha = 2
+        zeroVal = 0.9
+        p = Util.powerLawProbs(alpha, zeroVal)
+        hiddenDegSeq = Util.randomChoice(p, graph.getNumVertices())
+        
+        featureInds= numpy.ones(graph.vlist.getNumFeatures(), numpy.bool)
+        featureInds[HIVVertices.dobIndex] = False 
+        featureInds[HIVVertices.infectionTimeIndex] = False 
+        featureInds[HIVVertices.hiddenDegreeIndex] = False 
+        featureInds[HIVVertices.stateIndex] = False
+        featureInds = numpy.arange(featureInds.shape[0])[featureInds]
+        matcher = GraphMatch("PATH", alpha=0.5, featureInds=featureInds, useWeightM=False)
+        graphMetrics = HIVGraphMetrics2(targetGraph, epsilonArray[t], matcher, float(endDate))
+        graphMetrics.breakDist = 0.0 
+    
+        rates = HIVRates(graph, hiddenDegSeq)
+        model = HIVEpidemicModel(graph, rates, T=float(endDate), T0=float(startDate), metrics=graphMetrics)
+        model.setRecordStep(recordStep)
+    
+        return model
 
-abcSMC = ABCSMC(epsilonArray, createModel, abcParams, thetaDir)
-abcSMC.setPosteriorSampleSize(posteriorSampleSize)
-abcSMC.setNumProcesses(numProcesses)
-abcSMC.batchSize = 50
-thetasArray = abcSMC.run()
 
-meanTheta = numpy.mean(thetasArray, 0)
-stdTheta = numpy.std(thetasArray, 0)
-logging.debug(thetasArray)
-logging.debug("meanTheta=" + str(meanTheta))
-logging.debug("stdTheta=" + str(stdTheta))
+    purtScale = 0.1 
+    meanTheta, sigmaTheta = HIVModelUtils.estimatedRealTheta()
+    abcParams = HIVABCParameters(meanTheta, sigmaTheta, purtScale)
+    thetaDir = resultsDir + "theta" + str(i) + "/"
+    
+    abcSMC = ABCSMC(epsilonArray, createModel, abcParams, thetaDir)
+    abcSMC.setPosteriorSampleSize(posteriorSampleSize)
+    abcSMC.setNumProcesses(numProcesses)
+    abcSMC.batchSize = 50
+    thetasArray = abcSMC.run()
+    
+    meanTheta = numpy.mean(thetasArray, 0)
+    stdTheta = numpy.std(thetasArray, 0)
+    logging.debug(thetasArray)
+    logging.debug("meanTheta=" + str(meanTheta))
+    logging.debug("stdTheta=" + str(stdTheta))
+
+
 logging.debug("All done!")
