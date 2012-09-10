@@ -198,8 +198,9 @@ class GraphMatch(object):
         #Distance is bounded by 1
         D = Util.distanceMatrix(V1, V2)
         maxD = numpy.max(D)
+        minD = numpy.min(D)
         if maxD != 0: 
-            C = (maxD - D)/maxD
+            C = (maxD - D)/(maxD-minD)
         else: 
             C = numpy.ones((V1.shape[0], V2.shape[0])) 
             
