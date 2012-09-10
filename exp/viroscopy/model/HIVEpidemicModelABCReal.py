@@ -25,7 +25,7 @@ numpy.set_printoptions(suppress=True, precision=4, linewidth=150)
 numpy.seterr(invalid='raise')
 
 resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/" 
-startDate, endDates, recordStep, M, targetGraph = HIVModelUtils.realSimulationParams()
+startDate, endDates, numRecordSteps, M, targetGraph = HIVModelUtils.realSimulationParams()
 epsilonArray = numpy.array([0.0, -0.2, -0.3, -0.4])
 
 
@@ -61,7 +61,8 @@ for i, endDate in enumerate(endDates):
         matcher = GraphMatch("PATH", alpha=0.5, featureInds=featureInds, useWeightM=False)
         graphMetrics = HIVGraphMetrics2(targetGraph, epsilonArray[t], matcher, float(endDate))
         graphMetrics.breakDist = 0.0 
-    
+        
+        recordStep = (endDate-startDate)/float(numRecordSteps)
         rates = HIVRates(graph, hiddenDegSeq)
         model = HIVEpidemicModel(graph, rates, T=float(endDate), T0=float(startDate), metrics=graphMetrics)
         model.setRecordStep(recordStep)

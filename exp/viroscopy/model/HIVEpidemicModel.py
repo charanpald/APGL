@@ -26,10 +26,10 @@ class HIVEpidemicModel():
         self.graph.endEventTime = T0
         self.rates = rates
         self.setT(T)
-        self.setRecordStep(100)
         self.breakFunc = None
         self.standardiseResults = True
         self.T0 = T0
+        self.setRecordStep((self.T-self.T0)/10.0)
         self.metrics = metrics 
 
     def setT(self, T):
@@ -50,7 +50,8 @@ class HIVEpidemicModel():
         """
         Set thetime interval in order to record statistics over the model. 
         """
-        Parameter.checkInt(recordStep, 0, float('inf'))
+        if (self.T-self.T0) % recordStep != 0: 
+            raise ValueError("Record Step must divide exactly into T-T0")
         self.recordStep = recordStep 
 
         
