@@ -23,7 +23,7 @@ startDate, endDate, recordStep, M, targetGraph = HIVModelUtils.toySimulationPara
 #startDate, endDate, recordStep, M, targetGraph = HIVModelUtils.realSimulationParams()
 
 thetaDir = resultsDir + "theta/" 
-saveResults = True 
+saveResults = False 
 graphStats = GraphStatistics()
 
 N = 10 
@@ -65,7 +65,8 @@ if saveResults:
         paramList.append((i, thetaArray[i, :]))
 
     pool = multiprocessing.Pool(multiprocessing.cpu_count())               
-    resultIterator = pool.map(saveStats, paramList)  
+    #resultIterator = pool.map(saveStats, paramList)  
+    resultIterator = map(saveStats, paramList)  
 
     #Now save the statistics on the target graph 
     stats = HIVModelUtils.generateStatistics(targetGraph, startDate, endDate, recordStep)
@@ -188,7 +189,7 @@ else:
         plotInd += 1
 
         plt.figure(plotInd)
-        plt.plot(numpy.arange(len(dists)), dists, plotStyles[0])
+        plt.plot(times, dists, plotStyles[0])
         plotInd += 1
     
     plt.show()
