@@ -67,7 +67,7 @@ class HIVModelUtils(object):
         return float(startDate), float(endDate), recordStep, M, targetGraph
     
     @staticmethod     
-    def simulate(theta, startDate, endDate, recordStep, printStep, M, graphMetrics=None): 
+    def simulate(theta, startDate, endDate, recordStep, M, graphMetrics=None): 
         undirected = True
         graph = HIVGraph(M, undirected)
         logging.debug("Created graph: " + str(graph))
@@ -80,7 +80,6 @@ class HIVModelUtils(object):
         rates = HIVRates(graph, hiddenDegSeq)
         model = HIVEpidemicModel(graph, rates, endDate, startDate, metrics=graphMetrics)
         model.setRecordStep(recordStep)
-        model.setPrintStep(printStep)
         model.setParams(theta)
         
         logging.debug("Theta = " + str(theta))
