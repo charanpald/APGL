@@ -27,7 +27,7 @@ numpy.seterr(invalid='raise')
 
 resultsDir = PathDefaults.getOutputDir() + "viroscopy/toy/" 
 startDate, endDate, recordStep, M, targetGraph = HIVModelUtils.toySimulationParams()
-epsilonArray = numpy.array([-0.2, -0.3, -0.4, -0.5, -0.6])
+epsilonArray = numpy.array([-0.2, -0.3, -0.4, -0.5, -0.6, -0.65])
 logging.debug("Total time of simulation is " + str(endDate-startDate))
 
 def createModel(t):
@@ -66,8 +66,9 @@ else:
 posteriorSampleSize = 10
 logging.debug("Posterior sample size " + str(posteriorSampleSize))
 
+purtScale = 0.1 
 meanTheta, sigmaTheta = HIVModelUtils.toyTheta()
-abcParams = HIVABCParameters(meanTheta, sigmaTheta, 0.2)
+abcParams = HIVABCParameters(meanTheta, sigmaTheta, purtScale)
 thetaDir = resultsDir + "theta/"
 
 abcSMC = ABCSMC(epsilonArray, createModel, abcParams, thetaDir)
