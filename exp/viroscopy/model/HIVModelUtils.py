@@ -61,10 +61,10 @@ class HIVModelUtils(object):
         M = targetGraph.size * 4
         #This needs to be from 1986 to 2004 
         startDate = CsvConverters.dateConv("01/01/1986")
-        endDate = CsvConverters.dateConv("01/01/1991")
-        #endDate = CsvConverters.dateConv("31/12/2004")
+        endDates = [CsvConverters.dateConv("01/01/1987"), CsvConverters.dateConv("01/01/1990"), CsvConverters.dateConv("01/01/1993"), CsvConverters.dateConv("01/01/1996"), CsvConverters.dateConv("01/01/1999")]
+        endDates = [float(i) for i in endDates]
         
-        return float(startDate), float(endDate), recordStep, M, targetGraph
+        return float(startDate), endDates, recordStep, M, targetGraph
     
     @staticmethod     
     def simulate(theta, startDate, endDate, recordStep, M, graphMetrics=None): 
@@ -95,7 +95,7 @@ class HIVModelUtils(object):
         times = [] 
         removedIndices = []
         
-        for t in numpy.arange(startDate, endDate, recordStep): 
+        for t in numpy.arange(startDate, endDate+1, recordStep): 
             times.append(t)
             removedIndices.append(graph.removedIndsAt(t))
 
@@ -115,3 +115,6 @@ class HIVModelUtils(object):
         removedGraphStats = graphStats.sequenceScalarStats(graph, removedIndices, slowStats=False)
         
         return times, vertexArray, removedGraphStats
+    
+    toyTestPeriod = 500 
+    realTestPeriod = 730
