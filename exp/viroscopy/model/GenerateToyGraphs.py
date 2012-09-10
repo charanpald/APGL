@@ -21,6 +21,7 @@ numpy.random.seed(24)
 numpy.set_printoptions(suppress=True, precision=4, linewidth=100)
 
 startDate, endDate, recordStep, M = HIVModelUtils.toySimulationParams(False)
+endDate += HIVModelUtils.toyTestPeriod
 
 numRepetitions = 1
 undirected = True
