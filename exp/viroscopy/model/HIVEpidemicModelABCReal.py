@@ -26,16 +26,18 @@ numpy.seterr(invalid='raise')
 
 resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/" 
 startDate, endDates, numRecordSteps, M, targetGraph = HIVModelUtils.realSimulationParams()
-epsilonArray = numpy.array([0.0, -0.2, -0.3, -0.4])
-
+#epsilonArray = numpy.array([0.2, 0.0, -0.2, -0.3, -0.4])
+epsilonArray = numpy.array([0.2, 0.0, -0.1, -0.2, -0.25, -0.3, 0.35])
 
 if len(sys.argv) > 1:
     numProcesses = int(sys.argv[1])
 else: 
     numProcesses = multiprocessing.cpu_count()
 
-posteriorSampleSize = 20
+posteriorSampleSize = 5
 logging.debug("Posterior sample size " + str(posteriorSampleSize))
+
+endDates = [endDates[0]]
 
 for i, endDate in enumerate(endDates): 
     logging.debug("Total time of simulation is " + str(endDate-startDate))    
@@ -69,8 +71,7 @@ for i, endDate in enumerate(endDates):
     
         return model
 
-
-    purtScale = 0.1 
+    purtScale = 0.1
     meanTheta, sigmaTheta = HIVModelUtils.estimatedRealTheta()
     abcParams = HIVABCParameters(meanTheta, sigmaTheta, purtScale)
     thetaDir = resultsDir + "theta" + str(i) + "/"
@@ -86,6 +87,8 @@ for i, endDate in enumerate(endDates):
     logging.debug(thetasArray)
     logging.debug("meanTheta=" + str(meanTheta))
     logging.debug("stdTheta=" + str(stdTheta))
+    
+    logging.debug("Number of ABC runs: " + str(abcSMC.numRuns))
 
 
 logging.debug("All done!")
