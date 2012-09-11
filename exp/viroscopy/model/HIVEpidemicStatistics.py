@@ -20,21 +20,21 @@ numpy.set_printoptions(suppress=True, precision=4, linewidth=150)
 
 plotStyles = ['k-', 'kx-', 'k+-', 'k.-', 'k*-']
 
-resultsDir = PathDefaults.getOutputDir() + "viroscopy/toy/"
-startDate, endDate, recordStep, M, targetGraph = HIVModelUtils.toySimulationParams()
-endDate += HIVModelUtils.toyTestPeriod
+#resultsDir = PathDefaults.getOutputDir() + "viroscopy/toy/theta"
+#startDate, endDate, recordStep, M, targetGraph = HIVModelUtils.toySimulationParams()
+#endDate += HIVModelUtils.toyTestPeriod
 
-#resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/"
-#startDate, endDate, recordStep, M, targetGraph = HIVModelUtils.realSimulationParams()
-#endDate += HIVModelUtils.realTestPeriod
+resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/theta0/"
+startDate, endDates, numRecordSteps, M, targetGraph = HIVModelUtils.realSimulationParams()
+endDate = endDates[0]
+endDate += HIVModelUtils.realTestPeriod
+recordStep = (endDate-startDate)/float(numRecordSteps)
 
-
-thetaDir = resultsDir + "theta/" 
 saveResults = False 
 graphStats = GraphStatistics()
 
 N = 10 
-t = 4
+t = 2
 
 #We plot some stats for the ideal simulated epidemic 
 #and those epidemics found using ABC. 
@@ -62,7 +62,7 @@ def saveStats(args):
 
 if saveResults:
 
-    thetaArray = loadThetaArray(N, thetaDir, t)
+    thetaArray = loadThetaArray(N, resultsDir, t)
     logging.debug(thetaArray)
     
 
@@ -82,7 +82,7 @@ if saveResults:
     Util.savePickle(stats, resultsFileName)
 else:
     realTheta, sigmaTheta = HIVModelUtils.toyTheta()
-    thetaArray = loadThetaArray(N, thetaDir, t)
+    thetaArray = loadThetaArray(N, resultsDir, t)
     print(realTheta)
     print(thetaArray)    
     
@@ -99,7 +99,7 @@ else:
     stats = Util.loadPickle(resultsFileName)  
     times, vertexArray, removedGraphStats = stats 
     
-    times2 = range(int(startDate), int(endDate)+1, recordStep)  
+    times2 = numpy.arange(startDate, endDate+1, recordStep)  
     times2 = times2[1:]
     
     graphStats = GraphStatistics()
