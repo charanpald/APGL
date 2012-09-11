@@ -42,9 +42,12 @@ def runModel(args):
             fileName = thetaDir + "theta_t="+str(t)+"_"+str(len(currentTheta))
             numpy.save(fileName, theta)
             currentTheta.append(theta)
+        
+        return 1  
+    return 0 
             
 class ABCSMC(object):
-    def __init__(self, epsilonArray, createModel, paramsObj, thetaDir):
+    def __init__(self, epsilonArray, createModel, paramsObj, thetaDir, autoEpsilon=False):
         """
         Create a multiprocessing SMCABC object with the given arguments. The aim
         is to estimate a posterior pi(theta| x) propto f(x|theta) pi(theta) without
@@ -60,6 +63,8 @@ class ABCSMC(object):
         :param paramsObj: An object which stores information about the parameters of the model 
         
         :param thetaDir: The directory to store theta values 
+        
+        :param autoEpsilon: If autoEpsilon is true then the first value in epsilonArray is used as epsilon, and epsilonArray[t+1] is computed as the min dist for particles at t   
         """
         dt = datetime.now()
         numpy.random.seed(dt.microsecond)
@@ -67,6 +72,7 @@ class ABCSMC(object):
         self.createModel = createModel
         self.abcParams = paramsObj 
         self.thetaDir = thetaDir 
+        self.autoEpsilon = autoEpsilon
 
         #Number of particles
         self.T = epsilonArray.shape[0]
@@ -74,6 +80,7 @@ class ABCSMC(object):
         self.N = 10
         self.numProcesses = multiprocessing.cpu_count() 
         self.batchSize = self.numProcesses*2
+        self.numRuns = numpy.zeros(self.T) 
 
     def setPosteriorSampleSize(self, posteriorSampleSize):
         """
@@ -114,8 +121,12 @@ class ABCSMC(object):
                     paramList.append((tempTheta.copy(), self.createModel, t, self.epsilonArray[t], self.N, self.thetaDir))
 
             pool = multiprocessing.Pool(processes=self.numProcesses)               
-            pool.map(runModel, paramList)     
-            #map(runModel, paramList)     
+            resultsIterator = pool.map(runModel, paramList)     
+            #resultsIterator = map(runModel, paramList)     
+        
+            for result in resultsIterator: 
+                self.numRuns[t] += result
+            
             currentTheta = self.loadThetas(t)                 
             pool.terminate()
             
@@ -147,9 +158,9 @@ class ABCSMC(object):
                     normalisation = 0
                     for j in range(self.N):
                         normalisation += lastWeights[j]*self.abcParams.purtubationKernelDensity(lastTheta[j], theta)
-
+                        
                     currentWeights[i] = self.abcParams.priorDensity(theta)/normalisation
-
+            
             currentWeights = currentWeights/numpy.sum(currentWeights)
         
         logging.debug("Finished ABC procedure") 
