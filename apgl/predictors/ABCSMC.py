@@ -15,17 +15,20 @@ def loadThetaArray(N, thetaDir, t):
     Load the thetas from a particular directory. 
     """
     currentThetas = [] 
+    dists = []
         
     for i in range(N): 
-        fileName = thetaDir + "theta_t="+str(t)+"_"+str(i)+".npy"
+        fileName = thetaDir + "theta_t="+str(t)+"_"+str(i)+".npz"
         if os.path.exists(fileName): 
-            currentThetas.append(numpy.load(fileName))
+            data = numpy.load(fileName)
+            currentThetas.append(data["arr_0"])
+            dists.append(data["arr_1"])
             
-    return numpy.array(currentThetas) 
+    return numpy.array(currentThetas), numpy.array(dists)
 
 def runModel(args):
     theta, createModel, t, epsilon, N, thetaDir = args     
-    currentTheta = loadThetaArray(N, thetaDir, t).tolist()
+    currentTheta = loadThetaArray(N, thetaDir, t)[0].tolist()
     
     if len(currentTheta) < N:     
         logging.debug("Using theta value : " + str(theta)) 
@@ -35,15 +38,17 @@ def runModel(args):
         dist = model.distance() 
         del model 
         
-        currentTheta = loadThetaArray(N, thetaDir, t).tolist()                
+        currentTheta = loadThetaArray(N, thetaDir, t)[0].tolist()                
         
         if dist <= epsilon and len(currentTheta) < N:    
             logging.debug("Accepting " + str(len(currentTheta)) + ", population: " + str(t) + " " + str(theta)  + " dist=" + str(dist))
             fileName = thetaDir + "theta_t="+str(t)+"_"+str(len(currentTheta))
-            numpy.save(fileName, theta)
+            
+            distArray = numpy.array([dist])            
+            numpy.savez(fileName, theta, distArray)
             currentTheta.append(theta)
-        
-        return 1  
+            
+        return 1 
     return 0 
             
 class ABCSMC(object):
@@ -81,6 +86,7 @@ class ABCSMC(object):
         self.numProcesses = multiprocessing.cpu_count() 
         self.batchSize = self.numProcesses*2
         self.numRuns = numpy.zeros(self.T) 
+        self.maxRuns = 100
 
     def setPosteriorSampleSize(self, posteriorSampleSize):
         """
@@ -123,13 +129,21 @@ class ABCSMC(object):
             pool = multiprocessing.Pool(processes=self.numProcesses)               
             resultsIterator = pool.map(runModel, paramList)     
             #resultsIterator = map(runModel, paramList)     
-        
+
             for result in resultsIterator: 
                 self.numRuns[t] += result
             
-            currentTheta = self.loadThetas(t)                 
+            if self.numRuns[t] >= self.maxRuns:
+                logging.debug("Maximum number of runs exceeded.")
+                break 
+            
+            currentTheta, dists = self.loadThetas(t)                 
             pool.terminate()
             
+        if self.autoEpsilon and t!=self.T-1:
+            self.epsilonArray[t+1] = numpy.mean(dists)
+            logging.debug("Found new epsilon: " + str(self.epsilonArray))
+              
         return currentTheta
 
     def run(self):
