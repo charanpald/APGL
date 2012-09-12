@@ -26,8 +26,7 @@ numpy.seterr(invalid='raise')
 
 resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/" 
 startDate, endDates, numRecordSteps, M, targetGraph = HIVModelUtils.realSimulationParams()
-#epsilonArray = numpy.array([0.2, 0.0, -0.2, -0.3, -0.4])
-epsilonArray = numpy.array([0.2, 0.0, -0.1, -0.2, -0.25, -0.3, 0.35])
+epsilonArray = numpy.array([0.4, 0.4, 0.4])
 
 if len(sys.argv) > 1:
     numProcesses = int(sys.argv[1])
@@ -35,6 +34,7 @@ else:
     numProcesses = multiprocessing.cpu_count()
 
 posteriorSampleSize = 5
+breakDist = 0.3
 logging.debug("Posterior sample size " + str(posteriorSampleSize))
 
 endDates = [endDates[0]]
@@ -61,7 +61,7 @@ for i, endDate in enumerate(endDates):
         featureInds[HIVVertices.stateIndex] = False
         featureInds = numpy.arange(featureInds.shape[0])[featureInds]
         matcher = GraphMatch("PATH", alpha=0.5, featureInds=featureInds, useWeightM=False)
-        graphMetrics = HIVGraphMetrics2(targetGraph, epsilonArray[t], matcher, float(endDate))
+        graphMetrics = HIVGraphMetrics2(targetGraph, breakDist, matcher, float(endDate))
         graphMetrics.breakDist = 0.0 
         
         recordStep = (endDate-startDate)/float(numRecordSteps)
@@ -71,12 +71,12 @@ for i, endDate in enumerate(endDates):
     
         return model
 
-    purtScale = 0.1
+    purtScale = 0.2
     meanTheta, sigmaTheta = HIVModelUtils.estimatedRealTheta()
     abcParams = HIVABCParameters(meanTheta, sigmaTheta, purtScale)
     thetaDir = resultsDir + "theta" + str(i) + "/"
     
-    abcSMC = ABCSMC(epsilonArray, createModel, abcParams, thetaDir)
+    abcSMC = ABCSMC(epsilonArray, createModel, abcParams, thetaDir, True)
     abcSMC.setPosteriorSampleSize(posteriorSampleSize)
     abcSMC.setNumProcesses(numProcesses)
     abcSMC.batchSize = 50
@@ -88,6 +88,7 @@ for i, endDate in enumerate(endDates):
     logging.debug("meanTheta=" + str(meanTheta))
     logging.debug("stdTheta=" + str(stdTheta))
     
+    logging.debug("New epsilon array: " + str(abcSMC.epsilonArray))
     logging.debug("Number of ABC runs: " + str(abcSMC.numRuns))
 
 

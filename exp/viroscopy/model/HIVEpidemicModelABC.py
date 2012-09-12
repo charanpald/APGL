@@ -27,8 +27,12 @@ numpy.seterr(invalid='raise')
 
 resultsDir = PathDefaults.getOutputDir() + "viroscopy/toy/" 
 startDate, endDate, recordStep, M, targetGraph = HIVModelUtils.toySimulationParams()
-epsilonArray = numpy.array([-0.2, -0.3, -0.4, -0.5, -0.6, -0.65])
+epsilonArray = numpy.array([0.4, 0.4, 0.4, 0.4])
 logging.debug("Total time of simulation is " + str(endDate-startDate))
+
+posteriorSampleSize = 10
+breakDist = 0.4
+logging.debug("Posterior sample size " + str(posteriorSampleSize))
 
 def createModel(t):
     """
@@ -49,7 +53,7 @@ def createModel(t):
     featureInds[HIVVertices.stateIndex] = False
     featureInds = numpy.arange(featureInds.shape[0])[featureInds]
     matcher = GraphMatch("PATH", alpha=0.5, featureInds=featureInds, useWeightM=False)
-    graphMetrics = HIVGraphMetrics2(targetGraph, epsilonArray[t], matcher, endDate)
+    graphMetrics = HIVGraphMetrics2(targetGraph, breakDist, matcher, endDate)
     graphMetrics.breakDist = 0.0 
 
     rates = HIVRates(graph, hiddenDegSeq)
@@ -63,15 +67,14 @@ if len(sys.argv) > 1:
 else: 
     numProcesses = multiprocessing.cpu_count()
 
-posteriorSampleSize = 10
-logging.debug("Posterior sample size " + str(posteriorSampleSize))
+
 
 purtScale = 0.1 
 meanTheta, sigmaTheta = HIVModelUtils.toyTheta()
 abcParams = HIVABCParameters(meanTheta, sigmaTheta, purtScale)
 thetaDir = resultsDir + "theta/"
 
-abcSMC = ABCSMC(epsilonArray, createModel, abcParams, thetaDir)
+abcSMC = ABCSMC(epsilonArray, createModel, abcParams, thetaDir, True)
 abcSMC.setPosteriorSampleSize(posteriorSampleSize)
 abcSMC.batchSize = 30
 thetasArray = abcSMC.run()
@@ -82,5 +85,7 @@ logging.debug(thetasArray)
 logging.debug("meanTheta=" + str(meanTheta))
 logging.debug("stdTheta=" + str(stdTheta))
 logging.debug("realTheta=" + str(HIVModelUtils.toyTheta()[0]))
+logging.debug("New epsilon array: " + str(abcSMC.epsilonArray))
+logging.debug("Number of ABC runs: " + str(abcSMC.numRuns))
 
 logging.debug("All done!")
