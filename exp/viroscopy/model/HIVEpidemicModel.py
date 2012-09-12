@@ -171,7 +171,6 @@ class HIVEpidemicModel():
                     infectedSet.add(contactIndex)
                     susceptibleSet.remove(contactIndex)
                     
-                self.graph.endEventTime = t 
             elif p >= contactProb and p < contactProb+detectionRandom:             
                 eventInd = Util.randomChoice(randomDetectRates)
                 newDetectedIndex = infectedList[eventInd]
@@ -179,7 +178,6 @@ class HIVEpidemicModel():
                 removedSet.add(newDetectedIndex)
                 infectedSet.remove(newDetectedIndex)
                 contactSet.remove(newDetectedIndex)
-                self.graph.endEventTime = t
             elif p >= contactProb+detectionRandom and p < contactProb+detectionRandom+detectionContact:
                 eventInd = Util.randomChoice(contactTracingRates)
                 newDetectedIndex = infectedList[eventInd]
@@ -187,7 +185,8 @@ class HIVEpidemicModel():
                 removedSet.add(newDetectedIndex)
                 infectedSet.remove(newDetectedIndex)
                 contactSet.remove(newDetectedIndex)
-                self.graph.endEventTime = t
+            
+            self.graph.endEventTime = t
 
             assert infectedSet.union(removedSet).union(susceptibleSet) == set(range(self.graph.getNumVertices()))
             assert contactSet == infectedSet.union(susceptibleSet)
