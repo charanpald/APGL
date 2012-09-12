@@ -20,21 +20,21 @@ numpy.set_printoptions(suppress=True, precision=4, linewidth=150)
 
 plotStyles = ['k-', 'kx-', 'k+-', 'k.-', 'k*-']
 
-#resultsDir = PathDefaults.getOutputDir() + "viroscopy/toy/theta"
-#startDate, endDate, recordStep, M, targetGraph = HIVModelUtils.toySimulationParams()
-#endDate += HIVModelUtils.toyTestPeriod
+resultsDir = PathDefaults.getOutputDir() + "viroscopy/toy/theta/"
+startDate, endDate, recordStep, M, targetGraph = HIVModelUtils.toySimulationParams()
+endDate += HIVModelUtils.toyTestPeriod
 
-resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/theta0/"
-startDate, endDates, numRecordSteps, M, targetGraph = HIVModelUtils.realSimulationParams()
-endDate = endDates[0]
-endDate += HIVModelUtils.realTestPeriod
-recordStep = (endDate-startDate)/float(numRecordSteps)
+#resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/theta0/"
+#startDate, endDates, numRecordSteps, M, targetGraph = HIVModelUtils.realSimulationParams()
+#endDate = endDates[0]
+#endDate += HIVModelUtils.realTestPeriod
+#recordStep = (endDate-startDate)/float(numRecordSteps)
 
 saveResults = False 
 graphStats = GraphStatistics()
 
 N = 10 
-t = 2
+t = 5
 
 #We plot some stats for the ideal simulated epidemic 
 #and those epidemics found using ABC. 
@@ -62,7 +62,7 @@ def saveStats(args):
 
 if saveResults:
 
-    thetaArray = loadThetaArray(N, resultsDir, t)
+    thetaArray = loadThetaArray(N, resultsDir, t)[0]
     logging.debug(thetaArray)
     
 
@@ -82,14 +82,14 @@ if saveResults:
     Util.savePickle(stats, resultsFileName)
 else:
     realTheta, sigmaTheta = HIVModelUtils.toyTheta()
-    thetaArray = loadThetaArray(N, resultsDir, t)
+    thetaArray = loadThetaArray(N, resultsDir, t)[0]
     print(realTheta)
     print(thetaArray)    
     
     
     meanTable = numpy.c_[realTheta, thetaArray.mean(0)]
     stdTable = numpy.c_[sigmaTheta, thetaArray.std(0)]
-    table = Latex.array2DToRows(meanTable, stdTable)
+    table = Latex.array2DToRows(meanTable, stdTable, precision=4)
     rowNames = ["$\\|\\mathcal{I}_0 \\|$", "$\\rho_B$", "$\\alpha$", "$C$", "$\\gamma$", "$\\beta$", "$\\kappa_{max}$", "$\\lambda_H$", "$\\lambda_B$", "$\\sigma_{WM}$",  "$\\sigma_{MW}$","$\\sigma_{MB}$"]
     table = Latex.addRowNames(rowNames, table)
     print(table)
