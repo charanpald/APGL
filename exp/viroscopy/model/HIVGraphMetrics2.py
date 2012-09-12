@@ -5,7 +5,7 @@ from apgl.util.Parameter import Parameter
 from exp.sandbox.GraphMatch import GraphMatch 
 
 class HIVGraphMetrics2(object): 
-    def __init__(self, realGraph, epsilon, matcher=None, T=1000):
+    def __init__(self, realGraph, breakDist=0.2, matcher=None, T=1000):
         """
         A class to model metrics about and between HIVGraphs such as summary 
         statistics and distances. In this case we perform graph matching 
@@ -22,9 +22,8 @@ class HIVGraphMetrics2(object):
         
         self.dists = [] 
         self.realGraph = realGraph
-        self.epsilon = epsilon 
-        self.breakDist = 0.1 
-        self.breakIgnore = 5 
+        self.breakDist = breakDist 
+        self.breakIgnore = 3 
         self.T = T 
         self.times = []
         
