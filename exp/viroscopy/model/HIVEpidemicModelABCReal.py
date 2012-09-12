@@ -26,7 +26,7 @@ numpy.seterr(invalid='raise')
 
 resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/" 
 startDate, endDates, numRecordSteps, M, targetGraph = HIVModelUtils.realSimulationParams()
-epsilonArray = numpy.ones(4)*0.4
+epsilonArray = numpy.ones(10)*0.4
 
 if len(sys.argv) > 1:
     numProcesses = int(sys.argv[1])
