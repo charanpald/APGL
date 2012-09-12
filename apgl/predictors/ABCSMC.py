@@ -86,7 +86,7 @@ class ABCSMC(object):
         self.numProcesses = multiprocessing.cpu_count() 
         self.batchSize = self.numProcesses*2
         self.numRuns = numpy.zeros(self.T) 
-        self.maxRuns = 100
+        self.maxRuns = 500
 
     def setPosteriorSampleSize(self, posteriorSampleSize):
         """
