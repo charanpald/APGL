@@ -162,6 +162,9 @@ class ABCSMC(object):
             currentWeights = numpy.zeros(self.N)
 
             currentTheta = self.findThetas(lastTheta, lastWeights, t)
+            
+            if len(currentTheta) != self.N: 
+                break 
                    
             for i in range(self.N):
                 theta = currentTheta[i]                
