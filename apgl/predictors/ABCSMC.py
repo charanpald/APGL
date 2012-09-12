@@ -41,7 +41,7 @@ def runModel(args):
         currentTheta = loadThetaArray(N, thetaDir, t)[0].tolist()                
         
         if dist <= epsilon and len(currentTheta) < N:    
-            logging.debug("Accepting " + str(len(currentTheta)) + ", population: " + str(t) + " " + str(theta)  + " dist=" + str(dist))
+            logging.debug("Accepting " + str(len(currentTheta)) + " pop. " + str(t) + " " + str(theta)  + " dist=" + str(dist))
             fileName = thetaDir + "theta_t="+str(t)+"_"+str(len(currentTheta))
             
             distArray = numpy.array([dist])            
