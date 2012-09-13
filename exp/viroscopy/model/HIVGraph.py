@@ -4,6 +4,7 @@ import zipfile
 import logging
 from apgl.graph.PySparseGraph import PySparseGraph
 from exp.viroscopy.model.HIVVertices import HIVVertices
+from apgl.graph.VertexList import VertexList
 from apgl.util.Parameter import Parameter
 from apgl.util.Util import Util 
 
