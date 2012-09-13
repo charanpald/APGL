@@ -26,7 +26,7 @@ numpy.seterr(invalid='raise')
 
 resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/" 
 startDate, endDates, numRecordSteps, M, targetGraph = HIVModelUtils.realSimulationParams()
-epsilonArray = numpy.ones(10)*0.4
+epsilonArray = numpy.ones(15)*0.4
 
 if len(sys.argv) > 1:
     numProcesses = int(sys.argv[1])
@@ -71,9 +71,9 @@ for i, endDate in enumerate(endDates):
     
         return model
 
-    purtScale = 0.1
+    pertScale = 0.05
     meanTheta, sigmaTheta = HIVModelUtils.estimatedRealTheta()
-    abcParams = HIVABCParameters(meanTheta, sigmaTheta, purtScale)
+    abcParams = HIVABCParameters(meanTheta, sigmaTheta, pertScale)
     thetaDir = resultsDir + "theta" + str(i) + "/"
     
     abcSMC = ABCSMC(epsilonArray, createModel, abcParams, thetaDir, True)
