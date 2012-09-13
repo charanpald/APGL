@@ -121,7 +121,7 @@ class ABCSMC(object):
                 else:  
                     while True: 
                         tempTheta = lastTheta[Util.randomChoice(lastWeights)[0], :]
-                        tempTheta = self.abcParams.purtubationKernel(tempTheta)
+                        tempTheta = self.abcParams.perturbationKernel(tempTheta)
                         if self.abcParams.priorDensity(tempTheta) != 0: 
                             break 
                     paramList.append((tempTheta.copy(), self.createModel, t, self.epsilonArray[t], self.N, self.thetaDir))
@@ -174,7 +174,7 @@ class ABCSMC(object):
                 else:
                     normalisation = 0
                     for j in range(self.N):
-                        normalisation += lastWeights[j]*self.abcParams.purtubationKernelDensity(lastTheta[j], theta)
+                        normalisation += lastWeights[j]*self.abcParams.perturbationKernelDensity(lastTheta[j], theta)
                         
                     currentWeights[i] = self.abcParams.priorDensity(theta)/normalisation
             

@@ -17,8 +17,8 @@ class HIVABCParameters(object):
         self.paramFuncs = []
         self.priorDists = []
         self.priorDensities = []
-        self.purtubationKernels = []
-        self.purtubationKernelDensities = []
+        self.perturbationKernels = []
+        self.perturbationKernelDensities = []
         
         self.meanTheta = meanTheta
         self.sigmaTheta = sigmaTheta 
@@ -31,85 +31,85 @@ class HIVABCParameters(object):
         mu = meanTheta[ind]
         sigma = sigmaTheta[ind]
         priorDist, priorDensity = self.createDiscTruncNormParam(float(sigma), float(mu), upperInfected)
-        purtubationKernel, purtubationKernelDensity = self.__createNormalDiscPurt(sigma, purtScale)
-        self.__addParameter(("graph", "setRandomInfected"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
+        perturbationKernel, perturbationKernelDensity = self.__createNormalDiscPurt(sigma, purtScale)
+        self.__addParameter(("graph", "setRandomInfected"), priorDist, priorDensity, perturbationKernel, perturbationKernelDensity)
 
         ind += 1
         mu = meanTheta[ind]
         sigma = sigmaTheta[ind]
         priorDist, priorDensity = self.createTruncNormParam(sigma, mu)
-        purtubationKernel, purtubationKernelDensity = self.__createNormalPurt(sigma, purtScale)
-        self.__addParameter(("graph", "setRandomInfected2"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
+        perturbationKernel, perturbationKernelDensity = self.__createNormalPurt(sigma, purtScale)
+        self.__addParameter(("graph", "setRandomInfected2"), priorDist, priorDensity, perturbationKernel, perturbationKernelDensity)
 
         ind += 1
         mu = meanTheta[ind]
         sigma = sigmaTheta[ind]
         priorDist, priorDensity = self.createGammaParam(sigma, mu)
-        purtubationKernel, purtubationKernelDensity = self.__createNormalPurt(sigma, purtScale)
-        self.__addParameter(("rates", "setAlpha"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
+        perturbationKernel, perturbationKernelDensity = self.__createNormalPurt(sigma, purtScale)
+        self.__addParameter(("rates", "setAlpha"), priorDist, priorDensity, perturbationKernel, perturbationKernelDensity)
 
         ind += 1
         mu = meanTheta[ind]
         sigma = sigmaTheta[ind]
         priorDist, priorDensity = self.createGammaParam(sigma, mu)
-        purtubationKernel, purtubationKernelDensity = self.__createNormalPurt(sigma, purtScale)
-        self.__addParameter(("rates", "setNewContactChance"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
+        perturbationKernel, perturbationKernelDensity = self.__createNormalPurt(sigma, purtScale)
+        self.__addParameter(("rates", "setNewContactChance"), priorDist, priorDensity, perturbationKernel, perturbationKernelDensity)
 
         ind += 1
         mu = meanTheta[ind]
         sigma = sigmaTheta[ind]
         priorDist, priorDensity = self.createGammaParam(sigma, mu)
-        purtubationKernel, purtubationKernelDensity = self.__createNormalPurt(sigma, purtScale)
-        self.__addParameter(("rates", "setRandDetectRate"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
+        perturbationKernel, perturbationKernelDensity = self.__createNormalPurt(sigma, purtScale)
+        self.__addParameter(("rates", "setRandDetectRate"), priorDist, priorDensity, perturbationKernel, perturbationKernelDensity)
 
         ind += 1
         mu = meanTheta[ind]
         sigma = sigmaTheta[ind]
         priorDist, priorDensity = self.createGammaParam(sigma, mu)
-        purtubationKernel, purtubationKernelDensity = self.__createNormalPurt(sigma, purtScale)
-        self.__addParameter(("rates", "setCtRatePerPerson"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
+        perturbationKernel, perturbationKernelDensity = self.__createNormalPurt(sigma, purtScale)
+        self.__addParameter(("rates", "setCtRatePerPerson"), priorDist, priorDensity, perturbationKernel, perturbationKernelDensity)
 
         ind += 1
         mu = meanTheta[ind]
         sigma = sigmaTheta[ind]
         priorDist, priorDensity = self.createDiscTruncNormParam(float(sigma), float(mu), self.upperMaxDetects)
-        purtubationKernel, purtubationKernelDensity = self.__createNormalDiscPurt(sigma, purtScale)
-        self.__addParameter(("rates", "setMaxDetects"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
+        perturbationKernel, perturbationKernelDensity = self.__createNormalDiscPurt(sigma, purtScale)
+        self.__addParameter(("rates", "setMaxDetects"), priorDist, priorDensity, perturbationKernel, perturbationKernelDensity)
 
         ind += 1
         mu = meanTheta[ind]
         sigma = sigmaTheta[ind]
         priorDist, priorDensity = self.createGammaParam(sigma, mu)
-        purtubationKernel, purtubationKernelDensity = self.__createNormalPurt(sigma, purtScale)
-        self.__addParameter(("rates", "setHeteroContactRate"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
+        perturbationKernel, perturbationKernelDensity = self.__createNormalPurt(sigma, purtScale)
+        self.__addParameter(("rates", "setHeteroContactRate"), priorDist, priorDensity, perturbationKernel, perturbationKernelDensity)
 
         ind += 1
         mu = meanTheta[ind]
         sigma = sigmaTheta[ind]
         priorDist, priorDensity = self.createGammaParam(sigma, mu)
-        purtubationKernel, purtubationKernelDensity = self.__createNormalPurt(sigma, purtScale)
-        self.__addParameter(("rates", "setBiContactRate"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
+        perturbationKernel, perturbationKernelDensity = self.__createNormalPurt(sigma, purtScale)
+        self.__addParameter(("rates", "setBiContactRate"), priorDist, priorDensity, perturbationKernel, perturbationKernelDensity)
 
         ind += 1
         mu = meanTheta[ind]
         sigma = sigmaTheta[ind]
         priorDist, priorDensity = self.createTruncNormParam(sigma, mu)
-        purtubationKernel, purtubationKernelDensity = self.__createNormalPurt(sigma, purtScale)
-        self.__addParameter(("rates", "setWomanManInfectProb"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
+        perturbationKernel, perturbationKernelDensity = self.__createNormalPurt(sigma, purtScale)
+        self.__addParameter(("rates", "setWomanManInfectProb"), priorDist, priorDensity, perturbationKernel, perturbationKernelDensity)
 
         ind += 1
         mu = meanTheta[ind]
         sigma = sigmaTheta[ind]
         priorDist, priorDensity = self.createTruncNormParam(sigma, mu)
-        purtubationKernel, purtubationKernelDensity = self.__createNormalPurt(sigma, purtScale)
-        self.__addParameter(("rates", "setManWomanInfectProb"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
+        perturbationKernel, perturbationKernelDensity = self.__createNormalPurt(sigma, purtScale)
+        self.__addParameter(("rates", "setManWomanInfectProb"), priorDist, priorDensity, perturbationKernel, perturbationKernelDensity)
 
         ind += 1
         mu = meanTheta[ind]
         sigma = sigmaTheta[ind]
         priorDist, priorDensity = self.createTruncNormParam(sigma, mu)
-        purtubationKernel, purtubationKernelDensity = self.__createNormalPurt(sigma, purtScale)
-        self.__addParameter(("rates", "setManBiInfectProb"), priorDist, priorDensity, purtubationKernel, purtubationKernelDensity)
+        perturbationKernel, perturbationKernelDensity = self.__createNormalPurt(sigma, purtScale)
+        self.__addParameter(("rates", "setManBiInfectProb"), priorDist, priorDensity, perturbationKernel, perturbationKernelDensity)
      
 
     def createDiscTruncNormParam(self, sigma, mode, upper):
@@ -156,23 +156,23 @@ class HIVABCParameters(object):
     def __createNormalPurt(self, sigma, purtScale):
         Parameter.checkFloat(sigma, 0.0, float('inf'))
         Parameter.checkFloat(purtScale, 0.0, float('inf'))
-        purtubationKernel = lambda x: stats.norm.rvs(x, sigma*purtScale)
-        purtubationKernelDensity = lambda old, new: stats.norm.pdf(new, old, sigma*purtScale)
-        return purtubationKernel, purtubationKernelDensity
+        perturbationKernel = lambda x: stats.norm.rvs(x, sigma*purtScale)
+        perturbationKernelDensity = lambda old, new: stats.norm.pdf(new, old, sigma*purtScale)
+        return perturbationKernel, perturbationKernelDensity
 
     def __createNormalDiscPurt(self, sigma, purtScale):
         Parameter.checkFloat(sigma, 0.0, float('inf'))
         Parameter.checkFloat(purtScale, 0.0, float('inf'))
-        purtubationKernel = lambda x: numpy.round(stats.norm.rvs(x, sigma*purtScale))
-        purtubationKernelDensity = lambda old, new: stats.norm.pdf(new, old, sigma*purtScale)
-        return purtubationKernel, purtubationKernelDensity
+        perturbationKernel = lambda x: numpy.round(stats.norm.rvs(x, sigma*purtScale))
+        perturbationKernelDensity = lambda old, new: stats.norm.pdf(new, old, sigma*purtScale)
+        return perturbationKernel, perturbationKernelDensity
 
-    def __addParameter(self, paramFunc, priorDist, priorDensity, purtubationKernel, purtubationKernelDensity):
+    def __addParameter(self, paramFunc, priorDist, priorDensity, perturbationKernel, perturbationKernelDensity):
         self.paramFuncs.append(paramFunc)
         self.priorDists.append(priorDist)
         self.priorDensities.append(priorDensity)
-        self.purtubationKernels.append(purtubationKernel)
-        self.purtubationKernelDensities.append(purtubationKernelDensity)
+        self.perturbationKernels.append(perturbationKernel)
+        self.perturbationKernelDensities.append(perturbationKernelDensity)
 
     def getParamFuncs(self):
         return self.paramFuncs
@@ -204,24 +204,24 @@ class HIVABCParameters(object):
             return density.prod()
  
 
-    def purtubationKernel(self, theta):
+    def perturbationKernel(self, theta):
         """
-        Find a purtubation of theta based on the same random distributions used 
+        Find a pertubation of theta based on the same random distributions used 
         to generate theta. The std is given by self.meanTheta*sigmaScale*purtScale. 
         """
         newTheta = []
 
-        for i in range(len(self.purtubationKernels)):
-            newTheta.append(self.purtubationKernels[i](theta[i]))
+        for i in range(len(self.perturbationKernels)):
+            newTheta.append(self.perturbationKernels[i](theta[i]))
         
         newTheta = numpy.array(newTheta)
         return newTheta
 
-    def purtubationKernelDensity(self, oldTheta, theta, full=False):
+    def perturbationKernelDensity(self, oldTheta, theta, full=False):
         density = []
 
-        for i in range(len(self.purtubationKernelDensities)):
-            density.append(self.purtubationKernelDensities[i](oldTheta[i], theta[i]))
+        for i in range(len(self.perturbationKernelDensities)):
+            density.append(self.perturbationKernelDensities[i](oldTheta[i], theta[i]))
 
         density = numpy.array(density) 
         
@@ -235,8 +235,8 @@ class HIVABCParameters(object):
         del odict['paramFuncs']   
         del odict['priorDists']   
         del odict['priorDensities']   
-        del odict['purtubationKernels']   
-        del odict['purtubationKernelDensities']   
+        del odict['perturbationKernels']   
+        del odict['perturbationKernelDensities']   
         
         return odict
         
@@ -246,6 +246,6 @@ class HIVABCParameters(object):
         self.paramFuncs = params.paramFuncs     
         self.priorDists = params.priorDists     
         self.priorDensities = params.priorDensities     
-        self.purtubationKernels = params.purtubationKernels     
-        self.purtubationKernelDensities = params.purtubationKernelDensities 
+        self.perturbationKernels = params.perturbationKernels     
+        self.perturbationKernelDensities = params.perturbationKernelDensities 
         
