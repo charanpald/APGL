@@ -23,7 +23,7 @@ class HIVModelUtils(object):
         """
         This is taken from simulated runs using the real data 
         """
-        theta = numpy.array([ 250,  0.5, 0.3, 0.3, 0.001, 0.02, 400, 0.2, 0.01, 0.0038, 0.003, 0.017])
+        theta = numpy.array([ 500,  0.5, 0.5, 0.5, 0.2, 0.2, 500, 0.5, 0.5, 0.1, 0.1, 0.1])
         sigmaTheta = theta*2
         return theta, sigmaTheta 
     
@@ -117,4 +117,4 @@ class HIVModelUtils(object):
         return times, vertexArray, removedGraphStats
     
     toyTestPeriod = 500 
-    realTestPeriod = 730
+    realTestPeriod = 365
