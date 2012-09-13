@@ -71,7 +71,7 @@ for i, endDate in enumerate(endDates):
     
         return model
 
-    pertScale = 0.05
+    pertScale = 0.02
     meanTheta, sigmaTheta = HIVModelUtils.estimatedRealTheta()
     abcParams = HIVABCParameters(meanTheta, sigmaTheta, pertScale)
     thetaDir = resultsDir + "theta" + str(i) + "/"
