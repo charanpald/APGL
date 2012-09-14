@@ -87,7 +87,7 @@ class ABCSMC(object):
         self.batchSize = self.numProcesses*2
         self.numRuns = numpy.zeros(self.T) 
         self.maxRuns = 500
-        self.epsThreshold = 0.01 
+        self.epsThreshold = 0.02 
 
     def setPosteriorSampleSize(self, posteriorSampleSize):
         """
