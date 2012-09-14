@@ -27,10 +27,10 @@ numpy.seterr(invalid='raise')
 
 resultsDir = PathDefaults.getOutputDir() + "viroscopy/toy/" 
 startDate, endDate, recordStep, M, targetGraph = HIVModelUtils.toySimulationParams()
-epsilonArray = numpy.ones(6)*0.4
+epsilonArray = numpy.ones(10)*0.4
 logging.debug("Total time of simulation is " + str(endDate-startDate))
 
-posteriorSampleSize = 10
+posteriorSampleSize = 20
 breakDist = 0.4
 logging.debug("Posterior sample size " + str(posteriorSampleSize))
 
@@ -68,15 +68,14 @@ else:
     numProcesses = multiprocessing.cpu_count()
 
 
-
-purtScale = 0.1 
+purtScale = 0.02 
 meanTheta, sigmaTheta = HIVModelUtils.toyTheta()
 abcParams = HIVABCParameters(meanTheta, sigmaTheta, purtScale)
 thetaDir = resultsDir + "theta/"
 
 abcSMC = ABCSMC(epsilonArray, createModel, abcParams, thetaDir, True)
 abcSMC.setPosteriorSampleSize(posteriorSampleSize)
-abcSMC.batchSize = 30
+abcSMC.batchSize = 50
 thetasArray = abcSMC.run()
 
 meanTheta = numpy.mean(thetasArray, 0)
