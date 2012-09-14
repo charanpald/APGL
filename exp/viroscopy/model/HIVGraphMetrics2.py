@@ -21,6 +21,8 @@ class HIVGraphMetrics2(object):
         """
         
         self.dists = [] 
+        self.graphDists = []
+        self.labelDists = []
         self.realGraph = realGraph
         self.breakDist = breakDist 
         self.breakIgnore = 3 
@@ -44,11 +46,13 @@ class HIVGraphMetrics2(object):
         #Only add distance if the real graph has nonzero size
         if subRealGraph.size != 0: 
             permutation, distance, time = self.matcher.match(subgraph, subRealGraph)
-            lastDist = self.matcher.distance(subgraph, subRealGraph, permutation, True, False) 
+            lastDist, lastGraphDist, lastLabelDist = self.matcher.distance(subgraph, subRealGraph, permutation, True, False, True) 
             
             logging.debug("Distance at time " + str(t) + " is " + str(lastDist) + " with simulated size " + str(subgraph.size) + " and real size " + str(subRealGraph.size))        
             
             self.dists.append(lastDist)
+            self.graphDists.append(lastGraphDist)
+            self.labelDists.append(lastLabelDist)
             self.times.append(t) 
         else: 
             logging.debug("Not adding distance at time " + str(t) + " with simulated size " + str(subgraph.size) + " and real size " + str(subRealGraph.size))
@@ -70,6 +74,26 @@ class HIVGraphMetrics2(object):
         dists = numpy.array(self.dists)
         if dists.shape[0]!=0: 
             return dists.mean()
+        else: 
+            return 0
+            
+    def meanGraphDistance(self):
+        """
+        This is the mean graph distance of the graph matches so far. 
+        """
+        graphDists = numpy.array(self.graphDists)
+        if graphDists.shape[0]!=0: 
+            return graphDists.mean()
+        else: 
+            return 0
+            
+    def meanLabelDistance(self):
+        """
+        This is the mean label distance of the graph matches so far. 
+        """
+        labelDists = numpy.array(self.labelDists)
+        if labelDists.shape[0]!=0: 
+            return labelDists.mean()
         else: 
             return 0
         
