@@ -37,8 +37,6 @@ posteriorSampleSize = 20
 breakDist = 0.4
 logging.debug("Posterior sample size " + str(posteriorSampleSize))
 
-endDates = [endDates[0]]
-
 for i, endDate in enumerate(endDates): 
     logging.debug("Total time of simulation is " + str(endDate-startDate))    
     
@@ -71,7 +69,7 @@ for i, endDate in enumerate(endDates):
     
         return model
 
-    pertScale = 0.01
+    pertScale = 0.02
     meanTheta, sigmaTheta = HIVModelUtils.estimatedRealTheta()
     abcParams = HIVABCParameters(meanTheta, sigmaTheta, pertScale)
     thetaDir = resultsDir + "theta" + str(i) + "/"
