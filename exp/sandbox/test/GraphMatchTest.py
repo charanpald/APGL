@@ -306,10 +306,12 @@ class GraphMatchTest(unittest.TestCase):
         #print("Running match")
         J = numpy.ones((numExamples, numFeatures))
         Z = numpy.zeros((numExamples, numFeatures))
+
         C2 = matcher.matrixSimilarity(J, Z)
-        #This should be 0 ideally 
+        #This should be 1 ideally 
         
-        nptst.assert_array_almost_equal(C2, numpy.zeros(C2.shape))  
+        
+        nptst.assert_array_almost_equal(C2, numpy.ones(C2.shape))  
         
         C2 = matcher.matrixSimilarity(J, J)
         nptst.assert_array_almost_equal(C2, numpy.ones(C2.shape))  

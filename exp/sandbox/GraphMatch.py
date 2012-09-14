@@ -8,11 +8,9 @@ import sys
 import tempfile
 import logging 
 from apgl.graph import SparseGraph, VertexList
-from apgl.util.PathDefaults import PathDefaults
 from apgl.util.Parameter import Parameter
 from apgl.util.Util import Util
 from apgl.data.Standardiser import Standardiser 
-from apgl.kernel.KernelUtils import KernelUtils
 
 class GraphMatch(object): 
     def __init__(self, algorithm="PATH", alpha=0.5, featureInds=None, useWeightM=True):
@@ -199,14 +197,14 @@ class GraphMatch(object):
         D = Util.distanceMatrix(V1, V2)
         maxD = numpy.max(D)
         minD = numpy.min(D)
-        if maxD != 0: 
+        if (maxD-minD) != 0: 
             C = (maxD - D)/(maxD-minD)
         else: 
             C = numpy.ones((V1.shape[0], V2.shape[0])) 
             
         return C
      
-    def distance(self, graph1, graph2, permutation, normalised=False, nonNeg=False):
+    def distance(self, graph1, graph2, permutation, normalised=False, nonNeg=False, verbose=False):
         """
         Compute the graph distance metric between two graphs given a permutation 
         vector. This is given by F(P) = (1-alpha)/(||W1||^2_F + ||W2||^2_F)(||W1 - P W2 P.T||^2_F)
@@ -227,6 +225,9 @@ class GraphMatch(object):
         :type normalised: `bool`
         
         :param nonNeg: Specify whether we want a non-negative solution.  
+        :type nonNeg: `bool`
+        
+        :param verbose: Specify whether to return graph and label distance 
         :type nonNeg: `bool`
         """
         if graph1.size == 0 and graph2.size == 0:        
@@ -280,11 +281,13 @@ class GraphMatch(object):
             logging.debug("Graph distance: " + str(dist1) + " label distance: " + str(dist2) + " distance offset: " + str(self.alpha*n/normC) + " graph sizes: " + str((graph1.size, graph2.size)))           
 
             if normC != 0: 
-                return dist + self.alpha*n/normC 
-            else: 
-                return dist 
+                dist = dist + self.alpha*n/normC 
         else: 
             logging.debug("Graph distance: " + str(dist1) + " label distance: " + str(dist2) + " graph sizes: " + str((graph1.size, graph2.size)))   
+        
+        if verbose: 
+            return dist, dist1, dist2
+        else: 
             return dist 
         
     def distance2(self, graph1, graph2, permutation):
