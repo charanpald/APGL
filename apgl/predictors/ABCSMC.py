@@ -87,6 +87,7 @@ class ABCSMC(object):
         self.batchSize = self.numProcesses*2
         self.numRuns = numpy.zeros(self.T) 
         self.maxRuns = 500
+        self.epsThreshold = 0.01 
 
     def setPosteriorSampleSize(self, posteriorSampleSize):
         """
@@ -164,6 +165,10 @@ class ABCSMC(object):
             currentTheta = self.findThetas(lastTheta, lastWeights, t)
             
             if len(currentTheta) != self.N: 
+                break 
+            
+            if self.autoEpsilon and t!=self.T-1 and self.epsilonArray[t]-self.epsilonArray[t+1] <= self.epsThreshold:
+                logging.debug("Epsilon threshold became too small")
                 break 
                    
             for i in range(self.N):
