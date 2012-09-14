@@ -72,7 +72,7 @@ class HIVABCParameters(object):
         ind += 1
         mu = meanTheta[ind]
         sigma = sigmaTheta[ind]
-        priorDist, priorDensity = self.createDiscTruncNormParam(float(sigma), float(mu), self.upperMaxDetects)
+        priorDist, priorDensity = self.createDiscTruncNormParam(float(sigma), float(mu), self.upperMaxDetects, 1)
         perturbationKernel, perturbationKernelDensity = self.__createNormalDiscPurt(sigma, purtScale)
         self.__addParameter(("rates", "setMaxDetects"), priorDist, priorDensity, perturbationKernel, perturbationKernelDensity)
 
@@ -112,13 +112,13 @@ class HIVABCParameters(object):
         self.__addParameter(("rates", "setManBiInfectProb"), priorDist, priorDensity, perturbationKernel, perturbationKernelDensity)
      
 
-    def createDiscTruncNormParam(self, sigma, mode, upper):
+    def createDiscTruncNormParam(self, sigma, mode, upper, lower=0):
         """
         Discrete truncated norm parameter 
         """
         Parameter.checkFloat(sigma, 0.0, float('inf'))
         Parameter.checkFloat(mode, 0.0, float('inf'))
-        a = -mode/sigma
+        a = (lower-mode)/sigma
         b = (upper-mode)/sigma
         priorDist = lambda: round(stats.truncnorm.rvs(a, b, loc=mode, scale=sigma))
         priorDensity = lambda x: stats.truncnorm.pdf(x, a, b, loc=mode, scale=sigma)
