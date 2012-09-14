@@ -71,7 +71,7 @@ for i, endDate in enumerate(endDates):
     
         return model
 
-    pertScale = 0.02
+    pertScale = 0.01
     meanTheta, sigmaTheta = HIVModelUtils.estimatedRealTheta()
     abcParams = HIVABCParameters(meanTheta, sigmaTheta, pertScale)
     thetaDir = resultsDir + "theta" + str(i) + "/"
@@ -80,6 +80,7 @@ for i, endDate in enumerate(endDates):
     abcSMC.setPosteriorSampleSize(posteriorSampleSize)
     abcSMC.setNumProcesses(numProcesses)
     abcSMC.batchSize = 50
+    abcSMC.maxRuns = 1000
     thetasArray = abcSMC.run()
     
     meanTheta = numpy.mean(thetasArray, 0)
