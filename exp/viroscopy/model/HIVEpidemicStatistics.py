@@ -26,15 +26,16 @@ plotStyles = ['k-', 'kx-', 'k+-', 'k.-', 'k*-']
 
 resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/theta0/"
 startDate, endDates, numRecordSteps, M, targetGraph = HIVModelUtils.realSimulationParams()
-endDate = endDates[0]
-endDate += HIVModelUtils.realTestPeriod
+endDate = startDate+500
+#endDate = endDates[0]
+#endDate += HIVModelUtils.realTestPeriod
 recordStep = (endDate-startDate)/float(numRecordSteps)
 
-saveResults = False 
+saveResults = True 
 graphStats = GraphStatistics()
 
-N = 6 
-t = 10
+N = 8 
+t = 7
 
 #We plot some stats for the ideal simulated epidemic 
 #and those epidemics found using ABC. 
@@ -55,7 +56,7 @@ def saveStats(args):
     times, infectedIndices, removedIndices, graph = HIVModelUtils.simulate(thetaArray[i], startDate, endDate, recordStep, M, graphMetrics)
     times, vertexArray, removedGraphStats = HIVModelUtils.generateStatistics(graph, startDate, endDate, recordStep)
 
-    stats = times, vertexArray, removedGraphStats, graphMetrics.dists
+    stats = times, vertexArray, removedGraphStats, graphMetrics.dists, graphMetrics.graphDists, graphMetrics.labelDists
     
     resultsFileName = resultsDir + "SimStats" + str(i) + ".pkl"
     Util.savePickle(stats, resultsFileName)
@@ -160,7 +161,17 @@ else:
 
     plt.figure(plotInd)
     plt.xlabel("Time (days)")
+    plt.ylabel("Distance")
+    plotInd += 1
+    
+    plt.figure(plotInd)
+    plt.xlabel("Time (days)")
     plt.ylabel("Graph distance")
+    plotInd += 1
+    
+    plt.figure(plotInd)
+    plt.xlabel("Time (days)")
+    plt.ylabel("Label distance")
     plotInd += 1
     
     meanDists = []
@@ -170,7 +181,7 @@ else:
         resultsFileName = resultsDir + "SimStats" + str(i) + ".pkl"
         stats = Util.loadPickle(resultsFileName)
         
-        times, vertexArray, removedGraphStats, dists = stats 
+        times, vertexArray, removedGraphStats, dists, graphDists, labelDists = stats 
 
         plt.figure(plotInd)
         plt.plot(times, vertexArray[:, 0], plotStyles[0])
@@ -205,12 +216,23 @@ else:
         plotInd += 1
 
         plt.figure(plotInd)
-        plt.plot(times2, dists, plotStyles[0])
+        distPlotInd = plotInd
+        plt.plot(times2, dists, plotStyles[0], label="Distance")
         plotInd += 1
         meanDists.append(dists)
         print(numpy.array(dists).mean())
+        
+        plt.figure(plotInd)
+        plt.plot(times2, graphDists, plotStyles[0])
+        plotInd += 1
+        
+        plt.figure(plotInd)
+        plt.plot(times2, labelDists, plotStyles[0])
+        plotInd += 1
+
     
     meanDists = numpy.array(meanDists).mean(0)
+    plt.figure(distPlotInd)
     plt.plot(times2, meanDists, "b")  
     
     plt.show()
