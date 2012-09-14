@@ -26,7 +26,7 @@ numpy.seterr(invalid='raise')
 
 resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/" 
 startDate, endDates, numRecordSteps, M, targetGraph = HIVModelUtils.realSimulationParams()
-epsilonArray = numpy.ones(15)*0.4
+
 
 if len(sys.argv) > 1:
     numProcesses = int(sys.argv[1])
@@ -38,7 +38,9 @@ breakDist = 0.4
 logging.debug("Posterior sample size " + str(posteriorSampleSize))
 
 for i, endDate in enumerate(endDates): 
+    logging.debug("="*10 + "Starting new simulation batch" + "="*10) 
     logging.debug("Total time of simulation is " + str(endDate-startDate))    
+    epsilonArray = numpy.ones(15)*0.4
     
     def createModel(t):
         """
