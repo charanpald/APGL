@@ -76,6 +76,7 @@ thetaDir = resultsDir + "theta/"
 abcSMC = ABCSMC(epsilonArray, createModel, abcParams, thetaDir, True)
 abcSMC.setPosteriorSampleSize(posteriorSampleSize)
 abcSMC.batchSize = 50
+abcSMC.maxRuns = 1000
 thetasArray = abcSMC.run()
 
 meanTheta = numpy.mean(thetasArray, 0)
