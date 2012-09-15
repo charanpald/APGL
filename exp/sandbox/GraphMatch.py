@@ -230,11 +230,17 @@ class GraphMatch(object):
         :param verbose: Specify whether to return graph and label distance 
         :type nonNeg: `bool`
         """
-        if graph1.size == 0 and graph2.size == 0:        
-            return 0.0        
+        if graph1.size == 0 and graph2.size == 0: 
+            if not verbose: 
+                return 0.0
+            else: 
+                return 0.0, 0.0, 0.0
         elif graph1.size == 0 or graph2.size == 0: 
             if normalised: 
-                return 1.0
+                if not verbose: 
+                    return 1-self.alpha
+                else: 
+                    return 1-self.alpha, 1-self.alpha, 0.0
             else: 
                 raise ValueError("Unsupported case")
         
