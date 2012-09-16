@@ -118,4 +118,4 @@ class HIVModelUtils(object):
         return times, vertexArray, removedGraphStats
     
     toyTestPeriod = 500 
-    realTestPeriod = 365
+    realTestPeriods = [365, 365, 730, 730]
