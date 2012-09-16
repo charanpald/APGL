@@ -7,7 +7,7 @@ from apgl.graph.GraphStatistics import GraphStatistics
 from apgl.util.PathDefaults import PathDefaults
 from apgl.util.Util import Util 
 from apgl.util.Latex import Latex 
-from apgl.predictors.ABCSMC import ABCSMC, loadThetaArray 
+from apgl.predictors.ABCSMC import loadThetaArray 
 from exp.viroscopy.model.HIVModelUtils import HIVModelUtils
 from exp.viroscopy.model.HIVVertices import HIVVertices
 from exp.sandbox.GraphMatch import GraphMatch
@@ -20,26 +20,16 @@ numpy.set_printoptions(suppress=True, precision=4, linewidth=150)
 
 plotStyles = ['k-', 'kx-', 'k+-', 'k.-', 'k*-']
 
-#resultsDir = PathDefaults.getOutputDir() + "viroscopy/toy/theta/"
-#startDate, endDate, recordStep, M, targetGraph = HIVModelUtils.toySimulationParams()
-#endDate += HIVModelUtils.toyTestPeriod
-
-resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/theta0/"
-startDate, endDates, numRecordSteps, M, targetGraph = HIVModelUtils.realSimulationParams()
-endDate = startDate+500
-#endDate = endDates[0]
-#endDate += HIVModelUtils.realTestPeriod
-recordStep = (endDate-startDate)/float(numRecordSteps)
 
 saveResults = True 
 graphStats = GraphStatistics()
+startDate, endDates, numRecordSteps, M, targetGraph = HIVModelUtils.realSimulationParams()
 
-N = 8 
-t = 7
+
+
 
 #We plot some stats for the ideal simulated epidemic 
 #and those epidemics found using ABC. 
-
 def saveStats(args):
     i, theta = args 
     
@@ -62,25 +52,40 @@ def saveStats(args):
     Util.savePickle(stats, resultsFileName)
 
 if saveResults:
-
-    thetaArray = loadThetaArray(N, resultsDir, t)[0]
-    logging.debug(thetaArray)
+    for j, endDate in enumerate(endDates): 
+        resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/theta" + str(j) + "/"
+        outputDir = resultsDir + "stats/"
+        
+        logging.debug(resultsDir)
+        recordStep = (endDate-startDate)/float(numRecordSteps)
+        endDate += HIVModelUtils.realTestPeriods[j]
+        
+        N = 8 
+        t = 0
+        maxT = 10
+        
+        for i in range(maxT): 
+            thetaArray, distArray = loadThetaArray(N, resultsDir, i)
+            if thetaArray.shape[0] == N: 
+                t = i       
+        
+        thetaArray = loadThetaArray(N, resultsDir, t)[0]
+        logging.debug(thetaArray)
+        
+        paramList = []
+        
+        for i in range(thetaArray.shape[0]): 
+            paramList.append((i, thetaArray[i, :]))
     
-
-    paramList = []
+        pool = multiprocessing.Pool(multiprocessing.cpu_count())               
+        resultIterator = pool.map(saveStats, paramList)  
+        #resultIterator = map(saveStats, paramList)  
+        pool.terminate()
     
-    for i in range(thetaArray.shape[0]): 
-        paramList.append((i, thetaArray[i, :]))
-
-    pool = multiprocessing.Pool(multiprocessing.cpu_count())               
-    resultIterator = pool.map(saveStats, paramList)  
-    #resultIterator = map(saveStats, paramList)  
-    pool.terminate()
-
-    #Now save the statistics on the target graph 
-    stats = HIVModelUtils.generateStatistics(targetGraph, startDate, endDate, recordStep)
-    resultsFileName = resultsDir + "IdealStats.pkl"
-    Util.savePickle(stats, resultsFileName)
+        #Now save the statistics on the target graph 
+        stats = HIVModelUtils.generateStatistics(targetGraph, startDate, endDate, recordStep)
+        resultsFileName = outputDir + "IdealStats.pkl"
+        Util.savePickle(stats, resultsFileName)
 else:
     #for i in range(t): 
     #    thetaArray = loadThetaArray(N, resultsDir, i)[0]
