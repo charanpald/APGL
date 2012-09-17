@@ -30,8 +30,8 @@ startDate, endDate, recordStep, M, targetGraph = HIVModelUtils.toySimulationPara
 epsilonArray = numpy.ones(10)*0.4
 logging.debug("Total time of simulation is " + str(endDate-startDate))
 
-posteriorSampleSize = 20
-breakDist = 0.4
+posteriorSampleSize = 100
+breakDist = 0.5
 logging.debug("Posterior sample size " + str(posteriorSampleSize))
 
 def createModel(t):
@@ -69,14 +69,14 @@ else:
 
 
 purtScale = 0.02 
-meanTheta, sigmaTheta = HIVModelUtils.toyTheta()
+meanTheta, sigmaTheta = HIVModelUtils.estimatedRealTheta()
 abcParams = HIVABCParameters(meanTheta, sigmaTheta, purtScale)
 thetaDir = resultsDir + "theta/"
 
 abcSMC = ABCSMC(epsilonArray, createModel, abcParams, thetaDir, True)
 abcSMC.setPosteriorSampleSize(posteriorSampleSize)
 abcSMC.batchSize = 50
-abcSMC.maxRuns = 1000
+abcSMC.maxRuns = 2000
 thetasArray = abcSMC.run()
 
 meanTheta = numpy.mean(thetasArray, 0)
