@@ -33,7 +33,7 @@ if len(sys.argv) > 1:
 else: 
     numProcesses = multiprocessing.cpu_count()
 
-posteriorSampleSize = 20
+posteriorSampleSize = 50
 breakDist = 0.4
 logging.debug("Posterior sample size " + str(posteriorSampleSize))
 
@@ -80,7 +80,7 @@ for i, endDate in enumerate(endDates):
     abcSMC.setPosteriorSampleSize(posteriorSampleSize)
     abcSMC.setNumProcesses(numProcesses)
     abcSMC.batchSize = 50
-    abcSMC.maxRuns = 1000
+    abcSMC.maxRuns = 1500
     thetasArray = abcSMC.run()
     
     meanTheta = numpy.mean(thetasArray, 0)
