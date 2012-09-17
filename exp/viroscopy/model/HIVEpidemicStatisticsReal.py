@@ -48,7 +48,7 @@ def saveStats(args):
 
     stats = times, vertexArray, removedGraphStats, graphMetrics.dists, graphMetrics.graphDists, graphMetrics.labelDists
     
-    resultsFileName = resultsDir + "SimStats" + str(i) + ".pkl"
+    resultsFileName = outputDir + "SimStats" + str(i) + ".pkl"
     Util.savePickle(stats, resultsFileName)
 
 if saveResults:
