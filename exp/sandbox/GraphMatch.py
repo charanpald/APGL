@@ -30,6 +30,8 @@ class GraphMatch(object):
         self.useWeightM = useWeightM 
         #Gamma is the same as dummy_nodes_c_coef for costing added vertex labels         
         self.gamma = 0.0
+        #Same as dummy_nodes_fill 
+        self.rho = 0.5 
         
     def match(self, graph1, graph2): 
         """
@@ -98,8 +100,8 @@ class GraphMatch(object):
         configStr +="algo_fw_xeps=0.01 d\n"
         configStr +="algo_fw_feps=0.01 d\n"
         configStr +="dummy_nodes=0 i\n"
-        configStr +="dummy_nodes_fill=0 d\n"
-        configStr +="dummy_nodes_c_coef=0 d\n"
+        configStr +="dummy_nodes_fill=" + str(self.rho) + " d\n"
+        configStr +="dummy_nodes_c_coef=" + str(self.gamma) + " d\n"
         configStr +="qcvqcc_lambda_M=10 d\n"
         configStr +="qcvqcc_lambda_min=1e-5 d\n"
         configStr +="blast_match=0 i\n"
@@ -252,9 +254,9 @@ class GraphMatch(object):
             W2 = graph2.adjacencyMatrix()
         
         if W1.shape[0] < W2.shape[0]: 
-            W1 = Util.extendArray(W1, W2.shape)
+            W1 = Util.extendArray(W1, W2.shape, self.rho)
         elif W2.shape[0] < W1.shape[0]:
-            W2 = Util.extendArray(W2, W1.shape)
+            W2 = Util.extendArray(W2, W1.shape, self.rho)
         
         n = W1.shape[0]
         P = numpy.zeros((n, n)) 
