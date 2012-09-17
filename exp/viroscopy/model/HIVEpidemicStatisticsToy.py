@@ -28,9 +28,13 @@ endDate += HIVModelUtils.toyTestPeriod
 saveResults = False 
 graphStats = GraphStatistics()
 
-N = 8 
+N = 20 
 t = 0
 maxT = 10
+
+realTheta, sigmaTheta = HIVModelUtils.toyTheta()
+
+minVal = 10 
 
 for i in range(maxT): 
     thetaArray, distArray = loadThetaArray(N, resultsDir, i)
@@ -83,9 +87,10 @@ else:
     #    thetaArray = loadThetaArray(N, resultsDir, i)[0]
 
     realTheta, sigmaTheta = HIVModelUtils.toyTheta()
-    thetaArray = loadThetaArray(N, resultsDir, t)[0]
+    thetaArray, distArray = loadThetaArray(N, resultsDir, t)
     print(realTheta)
     print(thetaArray)    
+    print(distArray)
     
     meanTable = numpy.c_[realTheta, thetaArray.mean(0)]
     stdTable = numpy.c_[sigmaTheta, thetaArray.std(0)]
