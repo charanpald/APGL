@@ -29,8 +29,8 @@ class HIVModelUtils(object):
     
     @staticmethod
     def toyTheta(): 
-        #theta = numpy.array([100, 0.5, 1.0, 0.5, 1.0/800, 0.01, 200, 0.1, 0.2, 38.0/1000, 30.0/1000, 170.0/1000])
-        theta = numpy.array([ 500,  0.5, 0.5, 0.5, 0.2, 0.2, 500, 0.5, 0.5, 0.1, 0.1, 0.1])
+        theta = numpy.array([100, 0.5, 1.0, 0.5, 1.0/800, 0.01, 200, 0.1, 0.2, 38.0/1000, 30.0/1000, 170.0/1000])
+        #theta = numpy.array([ 500,  0.5, 0.5, 0.5, 0.2, 0.2, 500, 0.5, 0.5, 0.1, 0.1, 0.1])
         sigmaTheta = theta*2
         return theta, sigmaTheta 
         
@@ -43,8 +43,8 @@ class HIVModelUtils(object):
             targetGraph = HIVGraph.load(graphFile)        
         
         startDate = 0.0        
-        endDate = 1000.0
-        recordStep = 100
+        endDate = 500.0
+        recordStep = 50
         M = 5000
         
         if loadTarget: 
@@ -117,5 +117,5 @@ class HIVModelUtils(object):
         
         return times, vertexArray, removedGraphStats
     
-    toyTestPeriod = 500 
+    toyTestPeriod = 250 
     realTestPeriods = [365, 365, 730, 730]
