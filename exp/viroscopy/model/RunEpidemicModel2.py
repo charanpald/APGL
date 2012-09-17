@@ -28,6 +28,9 @@ numpy.set_printoptions(suppress=True, precision=4, linewidth=100)
 startDate, endDate, recordStep, M, targetGraph = HIVModelUtils.toySimulationParams()
 meanTheta, sigmaTheta = HIVModelUtils.toyTheta()
 
+#In this case, we'll extend the end date 
+endDate *= 2 
+
 epsilon = 5.0
 reps = 10
 
@@ -89,16 +92,18 @@ print(graphDistsStd)
 
 times = range(int(startDate), int(endDate)+1, recordStep)
 
+print(times)
+
 plt.figure(0)
 plt.errorbar(times[1:], graphDistsMean, yerr=graphDistsStd)
 plt.xlabel("Time")
 plt.ylabel("Objective")
 
 plt.figure(1)
-plt.errorbar(times[1:], removedArray.mean(0), yerr=removedArray.std(0), label="total")
-plt.errorbar(times[1:], maleArray.mean(0), yerr=maleArray.std(0), label="male")
-plt.errorbar(times[1:], femaleArray.mean(0), yerr=femaleArray.std(0), label="female")
-plt.errorbar(times[1:], biArray.mean(0), yerr=biArray.std(0), label="bisexual")
+plt.errorbar(times, removedArray.mean(0), yerr=removedArray.std(0), label="total")
+plt.errorbar(times, maleArray.mean(0), yerr=maleArray.std(0), label="male")
+plt.errorbar(times, femaleArray.mean(0), yerr=femaleArray.std(0), label="female")
+plt.errorbar(times, biArray.mean(0), yerr=biArray.std(0), label="bisexual")
 plt.xlabel("Time")
 plt.ylabel("No. Detected")
 plt.legend(loc='upper left')
