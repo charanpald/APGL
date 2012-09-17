@@ -48,8 +48,10 @@ def runModel(args):
             numpy.savez(fileName, theta, distArray)
             currentTheta.append(theta)
             
-        return 1 
-    return 0 
+            return 1, 1
+            
+        return 1, 0 
+    return 0, 0 
             
 class ABCSMC(object):
     def __init__(self, epsilonArray, createModel, paramsObj, thetaDir, autoEpsilon=False):
@@ -86,7 +88,8 @@ class ABCSMC(object):
         self.numProcesses = multiprocessing.cpu_count() 
         self.batchSize = self.numProcesses*2
         self.numRuns = numpy.zeros(self.T) 
-        self.maxRuns = 500
+        self.numAccepts = numpy.zeros(self.T)
+        self.maxRuns = 1000
         self.epsThreshold = 0.02 
 
     def setPosteriorSampleSize(self, posteriorSampleSize):
@@ -132,7 +135,8 @@ class ABCSMC(object):
             #resultsIterator = map(runModel, paramList)     
 
             for result in resultsIterator: 
-                self.numRuns[t] += result
+                self.numRuns[t] += result[0]
+                self.numAccepts[t] += result[1]
             
             if self.numRuns[t] >= self.maxRuns:
                 logging.debug("Maximum number of runs exceeded.")
@@ -144,6 +148,8 @@ class ABCSMC(object):
         if self.autoEpsilon and t!=self.T-1:
             self.epsilonArray[t+1] = numpy.mean(dists)
             logging.debug("Found new epsilon: " + str(self.epsilonArray))
+            
+        logging.debug("Acceptance rate: " + str(self.numAccepts/(self.numRuns + self.numRuns==0)))
               
         return currentTheta
 
