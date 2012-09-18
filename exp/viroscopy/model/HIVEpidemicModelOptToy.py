@@ -37,10 +37,13 @@ def runModel(params):
     The parameter t is the particle index. 
     """
     minTheta = numpy.zeros(12)
+    minTheta[2] = 0.01
+    minTheta[3] = 0.01
     minTheta[6] = 1
     maxTheta = numpy.ones(12)
     maxTheta[0] = 1000
     maxTheta[6] = 1000
+    print(params)
     params = numpy.clip(params, minTheta, maxTheta)    
     
     logging.debug("Theta = " + str(params))
@@ -94,6 +97,7 @@ N = 8
 t = 0  
 thetaDir = resultsDir + "theta/"
 thetaArray, dists = loadThetaArray(N, thetaDir, t)
+print(thetaArray)
 
 paramList = []
 for i in range(N): 
