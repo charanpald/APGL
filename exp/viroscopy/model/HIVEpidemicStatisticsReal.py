@@ -19,37 +19,41 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 numpy.set_printoptions(suppress=True, precision=4, linewidth=150)
 
 plotStyles = ['k-', 'kx-', 'k+-', 'k.-', 'k*-']
-
-
-saveResults = True 
+saveResults = False 
 graphStats = GraphStatistics()
 startDate, endDates, numRecordSteps, M, targetGraph = HIVModelUtils.realSimulationParams()
 
-
-
+N = 8 
+t = 0
+maxT = 20
 
 #We plot some stats for the ideal simulated epidemic 
 #and those epidemics found using ABC. 
 def saveStats(args):
     i, theta = args 
     
-    featureInds= numpy.ones(targetGraph.vlist.getNumFeatures(), numpy.bool)
-    featureInds[HIVVertices.dobIndex] = False 
-    featureInds[HIVVertices.infectionTimeIndex] = False 
-    featureInds[HIVVertices.hiddenDegreeIndex] = False 
-    featureInds[HIVVertices.stateIndex] = False 
-    featureInds = numpy.arange(featureInds.shape[0])[featureInds]        
-    
-    matcher = GraphMatch("PATH", alpha=0.5, featureInds=featureInds, useWeightM=False)
-    graphMetrics = HIVGraphMetrics2(targetGraph, 1.0, matcher, float(endDate))        
-    
-    times, infectedIndices, removedIndices, graph = HIVModelUtils.simulate(thetaArray[i], startDate, endDate, recordStep, M, graphMetrics)
-    times, vertexArray, removedGraphStats = HIVModelUtils.generateStatistics(graph, startDate, endDate, recordStep)
-
-    stats = times, vertexArray, removedGraphStats, graphMetrics.dists, graphMetrics.graphDists, graphMetrics.labelDists
-    
     resultsFileName = outputDir + "SimStats" + str(i) + ".pkl"
-    Util.savePickle(stats, resultsFileName)
+    
+    try:
+        with open(resultsFileName) as f: pass
+    except IOError as e:
+        featureInds= numpy.ones(targetGraph.vlist.getNumFeatures(), numpy.bool)
+        featureInds[HIVVertices.dobIndex] = False 
+        featureInds[HIVVertices.infectionTimeIndex] = False 
+        featureInds[HIVVertices.hiddenDegreeIndex] = False 
+        featureInds[HIVVertices.stateIndex] = False 
+        featureInds = numpy.arange(featureInds.shape[0])[featureInds]        
+        
+        matcher = GraphMatch("PATH", alpha=0.5, featureInds=featureInds, useWeightM=False)
+        graphMetrics = HIVGraphMetrics2(targetGraph, 1.0, matcher, float(endDate))        
+        
+        times, infectedIndices, removedIndices, graph = HIVModelUtils.simulate(thetaArray[i], startDate, endDate, recordStep, M, graphMetrics)
+        times, vertexArray, removedGraphStats = HIVModelUtils.generateStatistics(graph, startDate, endDate, recordStep)
+    
+        stats = times, vertexArray, removedGraphStats, graphMetrics.dists, graphMetrics.graphDists, graphMetrics.labelDists
+        
+        
+        Util.savePickle(stats, resultsFileName)
 
 if saveResults:
     for j, endDate in enumerate(endDates): 
@@ -57,12 +61,9 @@ if saveResults:
         outputDir = resultsDir + "stats/"
         
         logging.debug(resultsDir)
-        recordStep = (endDate-startDate)/float(numRecordSteps)
+        numRecordSteps += 5         
         endDate += HIVModelUtils.realTestPeriods[j]
-        
-        N = 8 
-        t = 0
-        maxT = 10
+        recordStep = (endDate-startDate)/float(numRecordSteps)
         
         for i in range(maxT): 
             thetaArray, distArray = loadThetaArray(N, resultsDir, i)
@@ -87,29 +88,33 @@ if saveResults:
         resultsFileName = outputDir + "IdealStats.pkl"
         Util.savePickle(stats, resultsFileName)
 else:
-    #for i in range(t): 
-    #    thetaArray = loadThetaArray(N, resultsDir, i)[0]
+    j = 1
+    resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/theta" + str(j) + "/"
+    outputDir = resultsDir + "stats/"
+    endDate = endDates[j]
 
-    realTheta, sigmaTheta = HIVModelUtils.toyTheta()
+    for i in range(maxT): 
+        thetaArray, distArray = loadThetaArray(N, resultsDir, i)
+        if thetaArray.shape[0] == N: 
+            t = i       
+    
+    print(t)
+    logging.debug(resultsDir)
+    numRecordSteps += 5         
+    endDate += HIVModelUtils.realTestPeriods[j]
+    recordStep = (endDate-startDate)/float(numRecordSteps)
+
     thetaArray = loadThetaArray(N, resultsDir, t)[0]
-    print(realTheta)
     print(thetaArray)    
     
-    
-    meanTable = numpy.c_[realTheta, thetaArray.mean(0)]
-    stdTable = numpy.c_[sigmaTheta, thetaArray.std(0)]
-    table = Latex.array2DToRows(meanTable, stdTable, precision=4)
-    rowNames = ["$\\|\\mathcal{I}_0 \\|$", "$\\rho_B$", "$\\alpha$", "$C$", "$\\gamma$", "$\\beta$", "$\\kappa_{max}$", "$\\lambda_H$", "$\\lambda_B$", "$\\sigma_{WM}$",  "$\\sigma_{MW}$","$\\sigma_{MB}$"]
-    table = Latex.addRowNames(rowNames, table)
-    print(table)
-
-    
-    resultsFileName = resultsDir + "IdealStats.pkl"
+    resultsFileName = outputDir + "IdealStats.pkl"
     stats = Util.loadPickle(resultsFileName)  
     times, vertexArray, removedGraphStats = stats 
     
+    times = numpy.array(times) - startDate
     times2 = numpy.arange(startDate, endDate+1, recordStep)  
     times2 = times2[1:]
+    times2 = numpy.array(times2) - startDate
     
     graphStats = GraphStatistics()
     
@@ -183,10 +188,11 @@ else:
 
     for i in range(thetaArray.shape[0]): 
         plotInd = 0
-        resultsFileName = resultsDir + "SimStats" + str(i) + ".pkl"
+        resultsFileName = outputDir + "SimStats" + str(i) + ".pkl"
         stats = Util.loadPickle(resultsFileName)
         
         times, vertexArray, removedGraphStats, dists, graphDists, labelDists = stats 
+        times = numpy.array(times) - startDate
 
         plt.figure(plotInd)
         plt.plot(times, vertexArray[:, 0], plotStyles[0])
@@ -219,25 +225,28 @@ else:
         plt.figure(plotInd)
         plt.plot(times, removedGraphStats[:, graphStats.numComponentsIndex], plotStyles[0])
         plotInd += 1
-
+        
+        print(len(times), len(dists))        
+        """
         plt.figure(plotInd)
         distPlotInd = plotInd
-        plt.plot(times2, dists, plotStyles[0], label="Distance")
+        
+        plt.plot(times[1:], dists, plotStyles[0], label="Distance")
         plotInd += 1
         meanDists.append(dists)
         print(numpy.array(dists).mean())
         
         plt.figure(plotInd)
-        plt.plot(times2, graphDists, plotStyles[0])
+        plt.plot(times[1:], graphDists, plotStyles[0])
         plotInd += 1
         
         plt.figure(plotInd)
-        plt.plot(times2, labelDists, plotStyles[0])
+        plt.plot(times[1:], labelDists, plotStyles[0])
         plotInd += 1
-
+        """
     
     meanDists = numpy.array(meanDists).mean(0)
-    plt.figure(distPlotInd)
-    plt.plot(times2, meanDists, "b")  
+    #plt.figure(distPlotInd)
+    #plt.plot(times2, meanDists, "b")  
     
     plt.show()
