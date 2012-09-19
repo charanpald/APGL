@@ -28,7 +28,7 @@ endDate += HIVModelUtils.toyTestPeriod
 saveResults = False 
 graphStats = GraphStatistics()
 
-N = 20 
+N = 16 
 t = 0
 maxT = 10
 
@@ -101,8 +101,10 @@ else:
 
     resultsFileName = outputDir + "IdealStats.pkl"
     stats = Util.loadPickle(resultsFileName)  
-    times, vertexArray, removedGraphStats = stats 
+    timesIdeal, vertexArrayIdeal, removedGraphStats = stats 
     
+    recordStep = 100
+    endDate = 1500
     times2 = numpy.arange(startDate, endDate+1, recordStep)  
     times2 = times2[1:]
     
@@ -112,49 +114,49 @@ else:
     plotInd = 0 
     
     plt.figure(plotInd)
-    plt.plot(times, vertexArray[:, 0], "r")
+    plt.plot(timesIdeal, vertexArrayIdeal[:, 0], "r")
     plt.xlabel("Time (days)")
     plt.ylabel("Removed")
     plotInd += 1
     
     plt.figure(plotInd)
-    plt.plot(times, vertexArray[:, 1], "r")
+    plt.plot(timesIdeal, vertexArrayIdeal[:, 1], "r")
     plt.xlabel("Time (days)")
     plt.ylabel("Males")
     plotInd += 1
     
     plt.figure(plotInd)
-    plt.plot(times, vertexArray[:, 2], "r")
+    plt.plot(timesIdeal, vertexArrayIdeal[:, 2], "r")
     plt.xlabel("Time (days)")
     plt.ylabel("Females")
     plotInd += 1
     
     plt.figure(plotInd)
-    plt.plot(times, vertexArray[:, 3], "r")
+    plt.plot(timesIdeal, vertexArrayIdeal[:, 3], "r")
     plt.xlabel("Time (days)")
     plt.ylabel("Hetero")
     plotInd += 1
     
     plt.figure(plotInd)
-    plt.plot(times, vertexArray[:, 4], "r")
+    plt.plot(timesIdeal, vertexArrayIdeal[:, 4], "r")
     plt.xlabel("Time (days)")
     plt.ylabel("Bi")
     plotInd += 1
     
     plt.figure(plotInd)
-    plt.plot(times, vertexArray[:, 5], "r")
+    plt.plot(timesIdeal, vertexArrayIdeal[:, 5], "r")
     plt.xlabel("Time (days)")
     plt.ylabel("Random detection")
     plotInd += 1
     
     plt.figure(plotInd)
-    plt.plot(times, vertexArray[:, 6], "r")
+    plt.plot(timesIdeal, vertexArrayIdeal[:, 6], "r")
     plt.xlabel("Time (days)")
     plt.ylabel("Contact Tracing")
     plotInd += 1
     
     plt.figure(plotInd)
-    plt.plot(times, removedGraphStats[:, graphStats.numComponentsIndex], "r")
+    plt.plot(timesIdeal, removedGraphStats[:, graphStats.numComponentsIndex], "r")
     plt.xlabel("Time (days)")
     plt.ylabel("Number of components")
     plotInd += 1
@@ -174,7 +176,8 @@ else:
     plt.ylabel("Label distance")
     plotInd += 1
     
-    meanDists = []
+    distsArr = []
+    detectsArr = []
 
     for i in range(thetaArray.shape[0]): 
         plotInd = 0
@@ -186,6 +189,7 @@ else:
         plt.figure(plotInd)
         plt.plot(times, vertexArray[:, 0], plotStyles[0])
         plotInd += 1 
+        detectsArr.append(vertexArray[:, 0])
         
         plt.figure(plotInd)
         plt.plot(times, vertexArray[:, 1], plotStyles[0])
@@ -219,8 +223,8 @@ else:
         distPlotInd = plotInd
         plt.plot(times2, dists, plotStyles[0], label="Distance")
         plotInd += 1
-        meanDists.append(dists)
-        print(numpy.array(dists).mean())
+        distsArr.append(dists)
+        print(numpy.array(distsArr).mean())
         
         plt.figure(plotInd)
         plt.plot(times2, graphDists, plotStyles[0])
@@ -230,9 +234,17 @@ else:
         plt.plot(times2, labelDists, plotStyles[0])
         plotInd += 1
 
+    meanDetects = numpy.array(detectsArr).mean(0)
+    stdDetects = numpy.array(detectsArr).std(0)
+    plt.figure(plotInd)
+    plt.errorbar(times, meanDetects, yerr=stdDetects)  
+    plt.plot(timesIdeal, vertexArrayIdeal[:, 0], "r")
+    plotInd += 1
     
-    meanDists = numpy.array(meanDists).mean(0)
-    plt.figure(distPlotInd)
-    plt.plot(times2, meanDists, "b")  
+    meanDists = numpy.array(distsArr).mean(0)
+    stdDists = numpy.array(distsArr).std(0)
+    plt.figure(plotInd)
+    plt.errorbar(times2, meanDists, yerr=stdDists) 
+    plotInd += 1
     
     plt.show()

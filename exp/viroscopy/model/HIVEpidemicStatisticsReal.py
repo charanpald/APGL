@@ -17,11 +17,11 @@ assert False, "Must run with -O flag"
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 numpy.set_printoptions(suppress=True, precision=4, linewidth=150)
-
-plotStyles = ['k-', 'kx-', 'k+-', 'k.-', 'k*-']
-saveResults = False 
-graphStats = GraphStatistics()
 startDate, endDates, numRecordSteps, M, targetGraph = HIVModelUtils.realSimulationParams()
+plotStyles = ['k-', 'kx-', 'k+-', 'k.-', 'k*-']
+saveResults = True 
+graphStats = GraphStatistics()
+
 
 N = 8 
 t = 0
@@ -30,7 +30,7 @@ maxT = 20
 #We plot some stats for the ideal simulated epidemic 
 #and those epidemics found using ABC. 
 def saveStats(args):
-    i, theta = args 
+    i, theta, startDate, endDate, recordStep = args 
     
     resultsFileName = outputDir + "SimStats" + str(i) + ".pkl"
     
@@ -61,9 +61,9 @@ if saveResults:
         outputDir = resultsDir + "stats/"
         
         logging.debug(resultsDir)
-        numRecordSteps += 5         
+        newNumRecordSteps = numRecordSteps + 5         
         endDate += HIVModelUtils.realTestPeriods[j]
-        recordStep = (endDate-startDate)/float(numRecordSteps)
+        recordStep = (endDate-startDate)/float(newNumRecordSteps)
         
         for i in range(maxT): 
             thetaArray, distArray = loadThetaArray(N, resultsDir, i)
@@ -76,7 +76,7 @@ if saveResults:
         paramList = []
         
         for i in range(thetaArray.shape[0]): 
-            paramList.append((i, thetaArray[i, :]))
+            paramList.append((i, thetaArray[i, :], startDate, endDate, recordStep))
     
         pool = multiprocessing.Pool(multiprocessing.cpu_count())               
         resultIterator = pool.map(saveStats, paramList)  
@@ -88,7 +88,7 @@ if saveResults:
         resultsFileName = outputDir + "IdealStats.pkl"
         Util.savePickle(stats, resultsFileName)
 else:
-    j = 1
+    j = 2
     resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/theta" + str(j) + "/"
     outputDir = resultsDir + "stats/"
     endDate = endDates[j]
@@ -100,9 +100,9 @@ else:
     
     print(t)
     logging.debug(resultsDir)
-    numRecordSteps += 5         
+    newNumRecordSteps = numRecordSteps + 5        
     endDate += HIVModelUtils.realTestPeriods[j]
-    recordStep = (endDate-startDate)/float(numRecordSteps)
+    recordStep = (endDate-startDate)/float(newNumRecordSteps)
 
     thetaArray = loadThetaArray(N, resultsDir, t)[0]
     print(thetaArray)    
@@ -227,7 +227,10 @@ else:
         plotInd += 1
         
         print(len(times), len(dists))        
-        """
+        
+        times = times[0:12]
+        dists = dists[0:11]
+        #dists = Util.extendArray(dists, len(times), dists[-1])
         plt.figure(plotInd)
         distPlotInd = plotInd
         
@@ -236,6 +239,7 @@ else:
         meanDists.append(dists)
         print(numpy.array(dists).mean())
         
+        """
         plt.figure(plotInd)
         plt.plot(times[1:], graphDists, plotStyles[0])
         plotInd += 1
