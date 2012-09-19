@@ -30,7 +30,7 @@ startDate, endDate, recordStep, M, targetGraph = HIVModelUtils.toySimulationPara
 epsilonArray = numpy.ones(10)*0.4
 logging.debug("Total time of simulation is " + str(endDate-startDate))
 
-posteriorSampleSize = 50
+posteriorSampleSize = 30
 breakDist = 0.5
 logging.debug("Posterior sample size " + str(posteriorSampleSize))
 

@@ -33,7 +33,7 @@ if len(sys.argv) > 1:
 else: 
     numProcesses = multiprocessing.cpu_count()
 
-posteriorSampleSize = 20
+posteriorSampleSize = 30
 breakDist = 0.4
 logging.debug("Posterior sample size " + str(posteriorSampleSize))
 
