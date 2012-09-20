@@ -19,11 +19,11 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 numpy.set_printoptions(suppress=True, precision=4, linewidth=150)
 startDate, endDates, numRecordSteps, M, targetGraph = HIVModelUtils.realSimulationParams()
 plotStyles = ['k-', 'kx-', 'k+-', 'k.-', 'k*-']
-saveResults = True 
+saveResults = False 
 graphStats = GraphStatistics()
 
 
-N = 8 
+N = 8
 t = 0
 maxT = 20
 
@@ -88,7 +88,7 @@ if saveResults:
         resultsFileName = outputDir + "IdealStats.pkl"
         Util.savePickle(stats, resultsFileName)
 else:
-    j = 2
+    j = 0
     resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/theta" + str(j) + "/"
     outputDir = resultsDir + "stats/"
     endDate = endDates[j]
@@ -98,7 +98,8 @@ else:
         if thetaArray.shape[0] == N: 
             t = i       
     
-    print(t)
+
+    
     logging.debug(resultsDir)
     newNumRecordSteps = numRecordSteps + 5        
     endDate += HIVModelUtils.realTestPeriods[j]
@@ -106,6 +107,14 @@ else:
 
     thetaArray = loadThetaArray(N, resultsDir, t)[0]
     print(thetaArray)    
+    
+    meanTable = numpy.array([thetaArray.mean(0)]).T
+    print(meanTable)
+    stdTable = numpy.array([thetaArray.std(0)]).T
+    table = Latex.array2DToRows(meanTable, stdTable, precision=4)
+    rowNames = ["$\\|\\mathcal{I}_0 \\|$", "$\\rho_B$", "$\\alpha$", "$C$", "$\\gamma$", "$\\beta$", "$\\kappa_{max}$", "$\\lambda_H$", "$\\lambda_B$", "$\\sigma_{WM}$",  "$\\sigma_{MW}$","$\\sigma_{MB}$"]
+    table = Latex.addRowNames(rowNames, table)
+    print(table)
     
     resultsFileName = outputDir + "IdealStats.pkl"
     stats = Util.loadPickle(resultsFileName)  
@@ -224,9 +233,7 @@ else:
     
         plt.figure(plotInd)
         plt.plot(times, removedGraphStats[:, graphStats.numComponentsIndex], plotStyles[0])
-        plotInd += 1
-        
-        print(len(times), len(dists))        
+        plotInd += 1   
         
         times = times[0:12]
         dists = dists[0:11]
