@@ -149,6 +149,8 @@ class ABCSMC(object):
             self.epsilonArray[t+1] = numpy.mean(dists)
             logging.debug("Found new epsilon: " + str(self.epsilonArray))
             
+        logging.debug("Num accepts: " + str(self.numAccepts))
+        logging.debug("Num runs: " + str(self.numRuns))
         logging.debug("Acceptance rate: " + str(self.numAccepts/(self.numRuns + self.numRuns==0)))
               
         return currentTheta
