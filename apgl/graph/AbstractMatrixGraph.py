@@ -854,8 +854,8 @@ class AbstractMatrixGraph(AbstractSingleGraph):
         :returns: The clustering coefficient of this graph. 
         """
         A = self.adjacencyMatrix()
-        A2 = numpy.dot(A, A)
-        A3 = numpy.dot(A2, A)
+        A2 = A.dot(A)
+        A3 = A2.dot(A)
 
         diagSumA2 = 0
 
