@@ -92,7 +92,7 @@ class Nystrom(object):
         lmbda, U = numpy.linalg.eigh(S)
 #        V = X[:, inds].dot(Am12).dot(U).dot(numpy.diag(lmbda**-0.5))
         tol = 10**-10
-		lmbdaN = lambda
+        lmbdaN = lmbda
         lmbdaN[numpy.abs(lmbda) < tol] = 0
         lmbdaN[numpy.abs(lmbda) > tol] = lmbdaN[numpy.abs(lmbda) > tol]**-0.5
         V = X[:, inds].dot(Am12.dot(U)*lmbdaN)
