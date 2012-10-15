@@ -286,7 +286,7 @@ class EigenUpdater(object):
         # remove too small eigenvalues
         pi, H = Util.indEig(pi, H, numpy.arange(pi.shape[0])[numpy.abs(pi)>EigenUpdater.tol])
         # keep greatest eigenvalues
-        pi, H = Util.indEig(pi, H, numpy.flipud(numpy.argsort(pi))[:min(k,pi.shape[0])])
+        #pi, H = Util.indEig(pi, H, numpy.flipud(numpy.argsort(pi))[:min(k,pi.shape[0])])
 
 
         V = D.dot(H)
