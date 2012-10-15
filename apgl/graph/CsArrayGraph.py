@@ -273,6 +273,13 @@ class CsArrayGraph(AbstractMatrixGraph):
 
         self.W = numpy.array(W)
 
+    def removeAllEdges(self):
+        """
+        Removes all edges from this graph. 
+        """
+        self.W = self.W*0
+        self.W.compress()
+
     undirected = None
     vList = None
     W = None
