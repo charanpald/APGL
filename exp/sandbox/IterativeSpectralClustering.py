@@ -39,6 +39,7 @@ class IterativeSpectralClustering(object):
 
         self.nb_iter_kmeans = 100
         self.nystromEigs = nystromEigs
+        self.computeBound = False 
 
     def findCentroids(self, V, clusters):
         """
@@ -52,7 +53,7 @@ class IterativeSpectralClustering(object):
             
         return centroids 
 
-    def clusterFromIterator(self, graphListIterator, approx=True, timeIter=False, T=10):
+    def clusterFromIterator(self, graphListIterator, approx=True, verbose=False, T=10):
         """
         Find a set of clusters for the graphs given by the iterator. If approx
         is True then we use the approximate eigen-update, otherwise we compute
@@ -66,6 +67,7 @@ class IterativeSpectralClustering(object):
 
         clustersList = []
         timeList = [] 
+        boundList = []
         i = 0
 
         for subW in graphListIterator:
@@ -78,13 +80,19 @@ class IterativeSpectralClustering(object):
 
             # --- Eigen value decomposition ---
             if approx and i % T != 0:
+                lastOmega = omega 
                 omega, Q = self.approxUpdateEig(subW, ABBA, omega, Q)
+                if self.computeBound:
+                    boundList.append([i, self.frobeniusBound(lastOmega, omega, self.k2), self.spectralBound(lastOmega, omega, self.k2)])
             else:
                 if approx and i != 0:
                     logging.info("Recomputing eigenvectors")
 
                 if not self.nystromEigs:
-                    omega, Q = scipy.sparse.linalg.eigsh(ABBA, min(self.k2, ABBA.shape[0]-1), which="LM", ncv = min(10*self.k2, ABBA.shape[0]))
+                    if self.computeBound: 
+                        omega, Q = scipy.sparse.linalg.eigsh(ABBA, min(self.k2*2, ABBA.shape[0]-1), which="LM", ncv = min(10*self.k2, ABBA.shape[0]))
+                    else: 
+                        omega, Q = scipy.sparse.linalg.eigsh(ABBA, min(self.k2, ABBA.shape[0]-1), which="LM", ncv = min(10*self.k2, ABBA.shape[0]))
                 else:
                     omega, Q = Nystrom.eigpsd(ABBA, self.k3)
 
@@ -127,8 +135,8 @@ class IterativeSpectralClustering(object):
 
             i += 1
 
-        if timeIter:
-            return clustersList, timeList
+        if verbose:
+            return clustersList, timeList, boundList
         else:
             return clustersList
 
@@ -168,3 +176,30 @@ class IterativeSpectralClustering(object):
         self.ABBALast = ABBA.copy()
         self.degrees = numpy.array(subW.sum(0)).ravel()
         self.n = ABBA.shape[0]
+
+
+    def frobeniusBound(self, omega, pi, k): 
+        """
+        Bound the canonical angles using Frobenius norm, Theorem 4.5 in the paper. 
+        Note that omega and pi must be the full set of eigenvalues.
+        """
+        normR = numpy.sqrt(omega[k:2*k]**2).sum()
+        #omega[-1] is 0 I think 
+        delta = pi[k-1] - (pi[k])
+        
+        print(normR, delta)        
+        
+        return normR/delta 
+    
+    def spectralBound(self, omega, pi, k): 
+        """
+        Bound the canonical angles using spectral norm, Theorem 4.5 in the paper.  
+        Note that omega and pi must be the full set of eigenvalues.
+        """
+        
+        normR = omega[k]
+        delta = pi[k-1] - (pi[k])
+        
+        print(normR, delta)
+        
+        return normR/delta 
