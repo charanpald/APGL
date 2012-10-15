@@ -11,6 +11,7 @@ from apgl.util.PathDefaults import PathDefaults
 from apgl.util.DateUtils import DateUtils
 from exp.clusterexp.ClusterExpHelper import ClusterExpHelper
 from exp.sandbox.GraphIterators import IncreasingSubgraphListIterator, toDenseGraphListIterator
+from exp.sandbox.IterativeSpectralClustering import IterativeSpectralClustering
 
 numpy.random.seed(21)
 #numpy.seterr("raise")
@@ -44,24 +45,21 @@ detections = vertexArray[:, detectionIndex]
 
 startYear = 1900
 daysInMonth = 30
-monthStep = 3
+monthStep = 1
 dayList = list(range(int(numpy.min(detections)), int(numpy.max(detections)), daysInMonth*monthStep))
 dayList.append(numpy.max(detections))
 
 subgraphIndicesList = []
 minGraphSize = 500
+maxGraphSize = 1000 
 
 #Generate subgraph indices list 
 for i in dayList:
     logging.info("Date: " + str(DateUtils.getDateStrFromDay(i, startYear)))
     subgraphIndices = numpy.nonzero(detections <= i)[0]
-    if subgraphIndices.shape[0] >= minGraphSize: 
+    if subgraphIndices.shape[0] >= minGraphSize and subgraphIndices.shape[0] <= maxGraphSize: 
         subgraphIndicesList.append(subgraphIndices)
 
-#subgraphIndicesList2 = []
-#for i in range(5):
-#    subgraphIndicesList2.append(subgraphIndicesList[i])
-#subgraphIndicesList = subgraphIndicesList2
 
 def getIterator():
     return IncreasingSubgraphListIterator(graph, subgraphIndicesList)
@@ -69,13 +67,14 @@ def getIterator():
 datasetName = "HIV"
 numGraphs = len(subgraphIndicesList)
 
-clusterExpHelper = ClusterExpHelper(getIterator, datasetName, numGraphs)
-clusterExpHelper.runIASC = False
-clusterExpHelper.runExact = False
-clusterExpHelper.runModularity = False
-clusterExpHelper.runNystrom = True
-clusterExpHelper.runNing = False
-clusterExpHelper.k1 = 25
-clusterExpHelper.k2 = 2*clusterExpHelper.k1
+k1 = 25 
+k2 = 2*k1
 
-clusterExpHelper.runExperiment()
+clusterer = IterativeSpectralClustering(k1, k2)
+clusterer.nb_iter_kmeans = 20
+clusterer.computeBound = True 
+iterator = getIterator() 
+clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, verbose=True)
+
+boundList = numpy.array(boundList)
+print(boundList)
