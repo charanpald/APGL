@@ -76,7 +76,7 @@ class EigenUpdater(object):
         Computation could be upgraded a bit because of the particular update
         type (Y1Bar = Y1 = [0,I]',  Y2Bar = [(I-QQ')A'B, 0]').
         """
-        logging.debug("< lazyEigenConcatAsUpdate >")
+        #logging.debug("< lazyEigenConcatAsUpdate >")
         Parameter.checkClass(omega, numpy.ndarray)
         Parameter.checkClass(Q, numpy.ndarray)
         Parameter.checkClass(AB, numpy.ndarray)
@@ -107,7 +107,7 @@ class EigenUpdater(object):
         Y1 = numpy.r_[numpy.zeros((m,p)), numpy.eye(p)]
         Y2 = numpy.r_[AB, 0.5*BB]
         pi, V = EigenUpdater.eigenAdd2(omega, Q, Y1, Y2, k, debug=debug)
-        logging.debug("</ lazyEigenConcatAsUpdate >")
+        #logging.debug("</ lazyEigenConcatAsUpdate >")
         return pi, V
 
     @staticmethod
@@ -117,7 +117,7 @@ class EigenUpdater(object):
         and A^*A = Q Omega Q*. We use the rank-k approximation of A:  Q_k Omega_k Q_k^*
         and then approximate [A^*A_k Y^*Y]_k.
         """
-        logging.debug("< eigenAdd >")
+        #logging.debug("< eigenAdd >")
         Parameter.checkInt(k, 0, omega.shape[0])
         #if not numpy.isrealobj(omega) or not numpy.isrealobj(Q):
         #    raise ValueError("Eigenvalues and eigenvectors must be real")
@@ -166,7 +166,7 @@ class EigenUpdater(object):
         pi = pi[inds[0:k]]
 
         V = D.dot(H)
-        logging.debug("</ eigenAdd >")
+        #logging.debug("</ eigenAdd >")
         return pi, V
 
     @staticmethod 
@@ -177,7 +177,7 @@ class EigenUpdater(object):
         rank-k approximation of A^*A: Q_k Omega_k Q_k^* and then approximate
         [A^*A_k + Y1Y2^* + Y2Y1^*]_k.
         """
-        logging.debug("< eigenAdd2 >")
+        #logging.debug("< eigenAdd2 >")
         Parameter.checkInt(k, 0, float('inf'))
         Parameter.checkClass(omega, numpy.ndarray)
         Parameter.checkClass(Q, numpy.ndarray)
@@ -300,7 +300,7 @@ class EigenUpdater(object):
         if ProfileUtils.memory() > 10**9:
             ProfileUtils.memDisplay(locals())
             
-        logging.debug("</ eigenAdd2 >")
+        #logging.debug("</ eigenAdd2 >")
         if debug:
             return pi, V, D, DStarY1Y2StarD + DStarY1Y2StarD.conj().T
         else:
