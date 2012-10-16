@@ -50,8 +50,8 @@ dayList = list(range(int(numpy.min(detections)), int(numpy.max(detections)), day
 dayList.append(numpy.max(detections))
 
 subgraphIndicesList = []
-minGraphSize = 500
-maxGraphSize = 1000 
+minGraphSize = 150
+maxGraphSize = 500 
 
 #Generate subgraph indices list 
 for i in dayList:
