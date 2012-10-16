@@ -43,3 +43,20 @@ class SparseUtils(object):
         elements = X.data
         return numpy.sqrt((elements**2).sum()) 
         
+    @staticmethod
+    def resize(X, shape): 
+        """
+        Resize a sparse matrix to the given shape, padding with zero if required. 
+        """
+        Y = scipy.sparse.csr_matrix((shape))
+        rows, cols = X.nonzero()
+        
+        for ind in range(rows.shape[0]):
+            i = rows[ind]
+            j = cols[ind]
+            if i < Y.shape[0] and j < Y.shape[1]: 
+                Y[i, j] = X[i, j]
+        
+        return Y 
+        
+        
