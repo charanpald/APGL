@@ -82,29 +82,30 @@ class IterativeSpectralClustering(object):
             # --- Eigen value decomposition ---
             if approx and i % T != 0:
                 omega, Q = self.approxUpdateEig(subW, ABBA, omega, Q)
+                print(omega)     
+                
                 if self.computeBound:
-                    
                     U = ABBA - SparseUtils.resize(exactABBA, ABBA.shape)
-                    print("Computing R")
-                    #U = U.todense()
-                    #exactQ = numpy.resize(exactQ, (ABBA.shape[0], exactQ.shape[1]))
-                    #R = exactQ.T.dot(U).dot(U).dot(exactQ)
                     R = U
-                    #print(R)
                     epsilon, S = scipy.sparse.linalg.eigsh(R, min(self.k2, R.shape[0]-1), which="LM", ncv = min(10*self.k2, R.shape[0]))
-                    epsilon = numpy.flipud(numpy.sort(epsilon))             
                     print(epsilon)
-                    boundList.append([i, self.frobeniusBound(exactOmega, epsilon, self.k2), self.spectralBound(exactOmega, epsilon, self.k2)])
+                    boundList.append([i, self.frobeniusBound(omega, omegaKbot, self.k2), self.spectralBound(omega, omegaKbot, self.k2)])
+                    
+                    omega2, Q2 = scipy.sparse.linalg.eigsh(ABBA, min(self.k2*4, ABBA.shape[0]-1), which="LM", ncv = min(10*self.k2, ABBA.shape[0]))
+                    omega2 = numpy.flipud(numpy.sort(omega2))
+                    omega = numpy.flipud(numpy.sort(omega))
+                    print(omega2[self.k2], numpy.max(epsilon)+omega[self.k2-1])
+                    
             else:
                 if approx and i != 0:
                     logging.info("Recomputing eigenvectors")
 
                 if not self.nystromEigs:
                     if self.computeBound: 
-                        omega, Q = scipy.sparse.linalg.eigsh(ABBA, min(self.k2+1, ABBA.shape[0]-1), which="LM", ncv = min(10*self.k2, ABBA.shape[0]))
-                        exactOmega = omega 
-                        exactQ = Q
+                        omega, Q = scipy.sparse.linalg.eigsh(ABBA, min(self.k2*4, ABBA.shape[0]-1), which="LM", ncv = min(10*self.k2, ABBA.shape[0]))
+                        omegaKbot = numpy.flipud(numpy.sort(omega))[self.k2:] 
                         exactABBA = ABBA 
+                        
                     else: 
                         omega, Q = scipy.sparse.linalg.eigsh(ABBA, min(self.k2, ABBA.shape[0]-1), which="LM", ncv = min(10*self.k2, ABBA.shape[0]))
                 else:
@@ -197,6 +198,9 @@ class IterativeSpectralClustering(object):
         Bound the canonical angles using Frobenius norm, Theorem 4.5 in the paper. 
         Note that omega and epsilon must be in descending order. 
         """
+        omega = numpy.flipud(numpy.sort(omega))
+        epsilon = numpy.flipud(numpy.sort(epsilon))
+        
         normR = numpy.sqrt(epsilon[0:k]**2).sum()
         delta = omega[k-1] - (omega[k] + epsilon[0])
         
@@ -206,7 +210,9 @@ class IterativeSpectralClustering(object):
         """
         Bound the canonical angles using spectral norm, Theorem 4.5 in the paper.  
         Note that omega and epsilon must be in descending order. 
-        """        
+        """  
+        omega = numpy.flipud(numpy.sort(omega))
+        epsilon = numpy.flipud(numpy.sort(epsilon))
         normR = epsilon[0]
         delta = omega[k-1] - (omega[k] + epsilon[0])
         logging.debug((normR, delta))
