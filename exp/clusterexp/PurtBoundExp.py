@@ -3,6 +3,7 @@
 import sys 
 import logging
 import numpy
+import scipy 
 import itertools 
 import copy
 from apgl.graph import *
@@ -58,6 +59,11 @@ W[upTriInds] = 0
 W = W + W.T
 graph = SparseGraph(vList)
 graph.setWeightMatrix(W)
+
+L = GraphUtils.shiftLaplacian(scipy.sparse.csr_matrix(W))
+u, V = numpy.linalg.eig(L.todense())
+print(V.shape)
+print(numpy.linalg.cond(V))
 
 # run with exact eigenvalue decomposition
 logging.info("Running exact method")
