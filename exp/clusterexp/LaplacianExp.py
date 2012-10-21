@@ -9,34 +9,27 @@ import scipy
 import itertools 
 import copy
 from apgl.graph import *
-from exp.viroscopy.HIVGraphReader import HIVGraphReader
 from apgl.util.PathDefaults import PathDefaults
-from apgl.util.DateUtils import DateUtils
-from exp.clusterexp.ClusterExpHelper import ClusterExpHelper
-from exp.sandbox.GraphIterators import IncreasingSubgraphListIterator, toDenseGraphListIterator
 from exp.sandbox.IterativeSpectralClustering import IterativeSpectralClustering
 from apgl.graph.GraphUtils import GraphUtils
-from exp.clusterexp.BemolData import BemolData
 from apgl.generator.SmallWorldGenerator import SmallWorldGenerator
 from apgl.util.Util import Util 
 
 numpy.random.seed(21)
 #numpy.seterr("raise")
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-numpy.set_printoptions(suppress=True, linewidth=60)
+numpy.set_printoptions(suppress=True, linewidth=60, precision=3)
 
 numVertices = 100 
 graph = SparseGraph(GeneralVertexList(numVertices))
 
-p = 0.1 
-k = 5 
+p = 0.2 
+k = 10 
 generator = SmallWorldGenerator(p, k)
 graph = generator.generate(graph)
-
 graph2 = graph.copy()
 
-
-changeEdges = 10 
+changeEdges = 5 
 i = 0
 
 while i < changeEdges: 
@@ -58,10 +51,9 @@ B = (L2-L).todense()
 u3, V3 = numpy.linalg.eig(B)
 #print(B)
 
-
-u = numpy.sort(u)
-u2 = numpy.sort(u2)
-u3 = numpy.sort(u3)
+u = numpy.flipud(numpy.sort(u))
+u2 = numpy.flipud(numpy.sort(u2))
+u3 = numpy.flipud(numpy.sort(u3))
 
 Lroot = Util.matrixPower(L.todense(), -0.5)
 bound = numpy.linalg.norm(Lroot.dot(B).dot(Lroot), 2)
@@ -70,11 +62,29 @@ print(bound)
 print(numpy.trace(L.todense()))
 
 print(u)
+print(numpy.abs(numpy.diff(u)))
 print(u2)
 print(u3)
 
-print(numpy.diff(u))
+
 print(graph)
 print(graph2)
 
+k1 = numpy.argmax(numpy.abs(numpy.diff(u)))+1
+k2 = k1
+
+logging.debug("k=" + str(k1))
+iterator = iter([W, W2])
+
+clusterer = IterativeSpectralClustering(k1, k2)
+clusterer.nb_iter_kmeans = 20
+clusterer.computeBound = True 
+logging.debug("Starting clustering")
+clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, verbose=True)
+
+boundList = numpy.array(boundList)
+print(boundList)
+
+#TODO: Use 3 Erdos Renyi graphs and concantenate, then add random edges 
+#Create class for this
 
