@@ -84,29 +84,19 @@ class IterativeSpectralClustering(object):
                 omega, Q = self.approxUpdateEig(subW, ABBA, omega, Q)   
                 
                 if self.computeBound:
-                    #U = ABBA - SparseUtils.resize(exactABBA, ABBA.shape)
-                    #R = U
-                    #epsilon, S = scipy.sparse.linalg.eigsh(R, min(self.k2, R.shape[0]-1), which="LM", ncv = min(10*self.k2, R.shape[0]))
-                    #print(epsilon)
-                    bounds = self.pertBound(omega, omegaKbot, self.k2)
+                    pi = numpy.flipud(numpy.sort(omega))
+                    print("pi=" + str(pi))
+                    bounds = self.pertBound(pi, omegaKbot, self.k2)
                     boundList.append([i, bounds[0], bounds[1]])
-                    
-                    #omega2, Q2 = scipy.sparse.linalg.eigsh(ABBA, min(self.k2*4, ABBA.shape[0]-1), which="LM", ncv = min(10*self.k2, ABBA.shape[0]))
-                    #omega2 = numpy.flipud(numpy.sort(omega2))
-                    #omega = numpy.flipud(numpy.sort(omega))
-                    #print(omega2[self.k2], numpy.max(epsilon)+omega[self.k2-1])
-                    
             else:
                 if approx and i != 0:
                     logging.info("Recomputing eigenvectors")
 
                 if not self.nystromEigs:
                     if self.computeBound: 
-                        omega, Q = scipy.sparse.linalg.eigsh(ABBA, min(self.k2*4, ABBA.shape[0]-1), which="LM", ncv = min(10*self.k2, ABBA.shape[0]))
+                        omega, Q = scipy.sparse.linalg.eigsh(ABBA, min(self.k2*2, ABBA.shape[0]-1), which="LM", ncv = min(10*self.k2, ABBA.shape[0]))
                         omegaKbot = numpy.flipud(numpy.sort(omega))[self.k2:] 
-                        print(numpy.flipud(numpy.sort(omega)))
-                        #exactABBA = ABBA 
-                        
+                        print("omega = " + str(numpy.flipud(numpy.sort(omega))))       
                     else: 
                         omega, Q = scipy.sparse.linalg.eigsh(ABBA, min(self.k2, ABBA.shape[0]-1), which="LM", ncv = min(10*self.k2, ABBA.shape[0]))
                 else:
@@ -201,11 +191,10 @@ class IterativeSpectralClustering(object):
         pi = numpy.flipud(numpy.sort(pi))
         omegaKbot = numpy.flipud(numpy.sort(omegaKbot))
         
-        normRF = numpy.sqrt(omegaKbot[0:k]**2).sum()
+        normRF = numpy.sqrt((omegaKbot[0:k]**2).sum())
         normR2 = omegaKbot[0]
         delta = pi[k-1] - (pi[k] + omegaKbot[0])
         
-        print("pi=" + str(pi))
         logging.debug((normRF, normR2, delta))
         
         return normRF/delta,  normR2/delta
