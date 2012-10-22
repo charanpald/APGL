@@ -159,3 +159,19 @@ class GraphUtils(object):
         D = scipy.sparse.spdiags(d**-0.5, 0, d.shape[0], d.shape[0], format='csr')
         Lhat = scipy.sparse.eye(W.shape[0], W.shape[0], format='csr') + D.dot(W).dot(D)
         return Lhat
+    
+    @staticmethod
+    def randIndex(clustering1, clustering2):
+        """
+        Compute the rand index for 2 clusterings given in arrays v1 and v2.
+        """
+        numVertices = clustering1.shape[0]
+        error = 0        
+        
+        for i in range(numVertices):
+            same_cl = clustering1[i] == clustering1
+            same_learned_cl = clustering2[i] == clustering2
+            error += (same_cl != same_learned_cl).sum()
+        
+        return float(error)/(numVertices*(numVertices-1))
+        

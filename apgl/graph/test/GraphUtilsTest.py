@@ -189,5 +189,18 @@ class AbstractMatrixGraphTest(unittest.TestCase):
         tol = 10**-6
         self.assertTrue(numpy.linalg.norm(L - L2) < tol)
 
+
+    def testRandIndex(self): 
+        clustering1 = numpy.array([1, 1, 1, 2, 2, 2])
+        clustering2 = numpy.array([2, 2, 2, 1, 1, 1])
+        
+        self.assertEquals(GraphUtils.randIndex(clustering1, clustering2), 0.0)
+        
+        clustering2 = numpy.array([2, 2, 2, 1, 1, 2])
+        self.assertEquals(GraphUtils.randIndex(clustering1, clustering2), 1/3.0) 
+        
+        clustering2 = numpy.array([1, 2, 2, 1, 1, 2])
+        self.assertEquals(GraphUtils.randIndex(clustering1, clustering2), 16/30.0) 
+
 if __name__ == '__main__':
     unittest.main()
