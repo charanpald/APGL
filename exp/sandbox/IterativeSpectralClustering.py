@@ -18,6 +18,7 @@ from apgl.util.Parameter import Parameter
 from apgl.util.ProfileUtils import ProfileUtils
 from apgl.util.SparseUtils import SparseUtils
 from apgl.util.VqUtils import VqUtils
+from apgl.util.Util import Util
 
 class IterativeSpectralClustering(object):
     def __init__(self, k1, k2, k3=100, nystromEigs=False):
@@ -84,19 +85,36 @@ class IterativeSpectralClustering(object):
                 omega, Q = self.approxUpdateEig(subW, ABBA, omega, Q)   
                 
                 if self.computeBound:
-                    pi = numpy.flipud(numpy.sort(omega))
-                    print("pi=" + str(pi))
-                    bounds = self.pertBound(pi, omegaKbot, self.k2)
-                    boundList.append([i, bounds[0], bounds[1]])
+                    inds = numpy.flipud(numpy.argsort(omega))
+                    Q = Q[:, inds]
+                    omega = omega[inds]
+                    bounds = self.pertBound(omega, Q, omegaKbot, AKbot, self.k2)
+                    #boundList.append([i, bounds[0], bounds[1]])
+                    
+                    #Now use accurate values of norm of R and delta   
+                    rank = Util.rank(ABBA.todense())
+                    gamma, U = scipy.sparse.linalg.eigsh(ABBA, rank-1, which="LM", ncv = ABBA.shape[0])
+                    #logging.debug("gamma=" + str(gamma))
+                    bounds2 = self.realBound(omega, Q, gamma, AKbot, self.k2)                  
+                    boundList.append([i, bounds[0], bounds[1], bounds2[0], bounds2[1]])
             else:
                 if approx and i != 0:
                     logging.info("Recomputing eigenvectors")
 
+                if approx:                     
+                    self.storeInformation(subW, ABBA)
+
                 if not self.nystromEigs:
                     if self.computeBound: 
-                        omega, Q = scipy.sparse.linalg.eigsh(ABBA, min(self.k2*2, ABBA.shape[0]-1), which="LM", ncv = min(10*self.k2, ABBA.shape[0]))
-                        omegaKbot = numpy.flipud(numpy.sort(omega))[self.k2:] 
-                        print("omega = " + str(numpy.flipud(numpy.sort(omega))))       
+                        #omega, Q = scipy.sparse.linalg.eigsh(ABBA, min(self.k2*2, ABBA.shape[0]-1), which="LM", ncv = min(10*self.k2, ABBA.shape[0]))
+                        rank = Util.rank(ABBA.todense())
+                        omega, Q = scipy.sparse.linalg.eigsh(ABBA, rank-1, which="LM", ncv = ABBA.shape[0])
+                        inds = numpy.flipud(numpy.argsort(omega))
+                        omegaKbot = omega[inds[self.k2:]]  
+                        QKbot = Q[:, inds[self.k2:]] 
+                        AKbot = (QKbot*omegaKbot).dot(QKbot.T)
+                        
+                        omegaSort = numpy.flipud(numpy.sort(omega))
                     else: 
                         omega, Q = scipy.sparse.linalg.eigsh(ABBA, min(self.k2, ABBA.shape[0]-1), which="LM", ncv = min(10*self.k2, ABBA.shape[0]))
                 else:
@@ -154,7 +172,7 @@ class IterativeSpectralClustering(object):
         if self.n > ABBA.shape[0]:
             omega, Q = EigenUpdater.eigenRemove(omega, Q, ABBA.shape[0], min(self.k2, ABBA.shape[0]))
 
-        # --- update already existing nodes ---
+        # --- update existing nodes ---
         currentN = min(self.n, ABBA.shape[0])
         deltaDegrees = numpy.array(subW.sum(0)).ravel()[0:currentN]- self.degrees[:currentN]
         inds = numpy.arange(currentN)[deltaDegrees!=0]
@@ -184,18 +202,37 @@ class IterativeSpectralClustering(object):
         self.n = ABBA.shape[0]
 
 
-    def pertBound(self, pi, omegaKbot, k): 
+    def pertBound(self, pi, V, omegaKbot, AKbot, k): 
         """
-        Bound the canonical angles using Frobenius and 2-norm, Theorem 4.5 in the paper. 
+        Bound the canonical angles using Frobenius and 2-norm, Theorem 4.4 in the paper. 
         """
         pi = numpy.flipud(numpy.sort(pi))
-        omegaKbot = numpy.flipud(numpy.sort(omegaKbot))
         
-        normRF = numpy.sqrt((omegaKbot[0:k]**2).sum())
-        normR2 = omegaKbot[0]
+        #logging.debug("pi=" + str(pi))
+        
+        Vk = V[:, 0:k]
+        normRF = numpy.linalg.norm(AKbot.dot(Vk), "fro")
+        normR2 = numpy.linalg.norm(AKbot.dot(Vk), 2)
         delta = pi[k-1] - (pi[k] + omegaKbot[0])
         
-        logging.debug((normRF, normR2, delta))
+        #logging.debug((normRF, normR2, delta))
         
         return normRF/delta,  normR2/delta
-    
+        
+    def realBound(self, pi, V, gamma, AKbot, k): 
+        """
+        Compute the bound of the canonical angles using the real V and gamma 
+        """
+        pi = numpy.flipud(numpy.sort(pi))
+        gamma = numpy.flipud(numpy.sort(gamma))
+        
+        Vk = V[:, 0:k]
+        normRF = numpy.linalg.norm(AKbot.dot(Vk), "fro")
+        normR2 = numpy.linalg.norm(AKbot.dot(Vk), 2)
+        delta = pi[k-1] - gamma[k]
+        
+        #logging.debug((normRF, normR2, delta))
+        
+        
+        return normRF/delta,  normR2/delta
+        
