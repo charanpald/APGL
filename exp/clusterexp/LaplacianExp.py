@@ -65,7 +65,7 @@ class GraphIterator(object):
                 self.graph[inds[0], inds[1]] = 1
                 i += 1 
         
-        logging.debug(self.graph)        
+        #logging.debug(self.graph)        
         
         W = self.graph.getSparseWeightMatrix().tocsr()
         self.graphInd += 1 
@@ -93,7 +93,7 @@ clusterer = IterativeSpectralClustering(k1, k2)
 clusterer.nb_iter_kmeans = 20
 clusterer.computeBound = True 
 logging.debug("Starting clustering")
-clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, verbose=True, T=10)
+clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, verbose=True, T=100)
 boundList = numpy.array(boundList)
 print(boundList)
 
@@ -102,15 +102,19 @@ errors = numpy.zeros(len(clusterList))
 for i in range(len(clusterList)): 
     errors[i] = GraphUtils.randIndex(clusterList[i], iterator.realClustering)
 
-print(clusterList[-1])
 
 plt.figure(0)
-plt.plot(boundList[:, 0], boundList[:, 1])
-plt.plot(boundList[:, 0], boundList[:, 2])
+plt.plot(boundList[:, 0], boundList[:, 1], label="frobenius approx")
+plt.plot(boundList[:, 0], boundList[:, 2], label="2-norm approx")
+plt.plot(boundList[:, 0], boundList[:, 3], label="frobenius precise")
+plt.plot(boundList[:, 0], boundList[:, 4], label="2-norm precise")
+plt.xlabel("||sin(theta)||")
+plt.ylabel("Graph")
+plt.legend(loc="upper left")
 
-plt.figure(1)
-plt.plot(numpy.arange(errors.shape[0]), errors)
-
+#plt.figure(1)
+#plt.plot(numpy.arange(errors.shape[0]), errors)
 plt.show()
+
 
 
