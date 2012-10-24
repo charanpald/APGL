@@ -72,7 +72,17 @@ class  SparseUtilsTest(unittest.TestCase):
         for i in range(10): 
             for j in range(10): 
                 self.assertEquals(B[i,j], A[i,j])
-                
+
+
+    def testDiag(self):
+        numRows = 10
+        numCols = 10  
+        A = scipy.sparse.rand(numRows, numCols, 0.5, "csr")
+
+        d = SparseUtils.diag(A)
+
+        for i in range(numRows): 
+            self.assertEquals(d[i], A[i,i])             
 
 if __name__ == '__main__':
     unittest.main()

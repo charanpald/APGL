@@ -26,12 +26,12 @@ class SparseUtils(object):
     @staticmethod
     def diag(X):
         """
-        Find the diagonal of a lil_matrix
+        Find the diagonal of a sparse matrix and return as a numpy array. 
         """
-        d = scipy.sparse.lil_matrix((X.shape[0], 1))
+        d = numpy.zeros(X.shape[0])
 
-        for i in range(0, X.shape[0]):
-            d[i, 0] = X[i, i]
+        for i in range(X.shape[0]):
+            d[i] = X[i, i]
 
         return d
 
