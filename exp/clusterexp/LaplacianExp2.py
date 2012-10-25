@@ -24,7 +24,7 @@ numpy.set_printoptions(suppress=True, linewidth=200, precision=3)
 
 numGraphs = 10 
 k = 3
-nystromN = 10
+nystromN = 250
 i = 0 
 
 iterator = BoundGraphIterator(changeEdges=1, numGraphs=numGraphs, numClusterVertices=100, p=0.1)
@@ -37,7 +37,7 @@ def eigenUpdate(L1, L2, omega, Q, k):
     deltaL = L2 - L1 
     deltaL.prune()
     inds = numpy.unique(deltaL.nonzero()[0]) 
-    print(inds)
+    #print(inds)
     
     if len(inds) > 0:
         Y1 = deltaL[:, inds]
@@ -52,19 +52,34 @@ def eigenUpdate(L1, L2, omega, Q, k):
     return omega, Q
 
 
-def computeBound(A, omega, Q, omega2, Q2):
+def computeBound(A, omega, Q, omega2, Q2, k):
     """
     Compute the perturbation bound on L using exact eigenvalues/vectors omega and 
     Q and approximate ones omega2, Q. 
     """
+    A = A.todense()
     M = Q2.T.dot(A).dot(Q2)
     R = A.dot(Q2) - Q2.dot(M)
     
     normR = numpy.linalg.norm(R)
+    #print("normR=" + str(normR))    
     
     lmbda, U = numpy.linalg.eig(M)
     
-    #delta = 
+    L2 = omega[k:]
+    
+    delta = float("inf")
+    
+    print(lmbda)
+    print(L2)
+    
+    for i in lmbda: 
+        for j in L2: 
+            
+            if abs(i-j) < delta: 
+                delta = abs(i-j)
+                
+    #print("delta="+str(delta))
     
     return normR/delta 
 
@@ -77,28 +92,34 @@ for W in iterator:
     if i == 0: 
         lastL = L
         lastOmega, lastQ = numpy.linalg.eig(L.todense())
+        inds = numpy.flipud(numpy.argsort(lastOmega))
+        lastOmega, lastQ = lastOmega[inds], lastQ[:, inds]
     
     #Compute exact eigenvalues 
     omega, Q = numpy.linalg.eig(L.todense())
-    inds = numpy.flipud(numpy.argsort(omega))[0:k]
-    Qk = Q[:, inds]
-    omegak = omega[inds]
+    inds = numpy.flipud(numpy.argsort(omega))    
+    omega, Q = omega[inds], Q[:, inds]
+    print("omega=" + str(omega))
+    omegak, Qk = omega[inds[0:k]], Q[:, inds[0:k]]
+    
     
     #Nystrom method 
+    print("Running Nystrom")
     omega2, Q2 = Nystrom.eigpsd(L, nystromN)
-    inds = numpy.flipud(numpy.argsort(omega2))[0:k]
-    Q2k = Q2[:, inds]
-    omega2k = omega2[inds]
+    inds = numpy.flipud(numpy.argsort(omega2))
+    omega2, Q2 = omega2[inds], Q2[:, inds]
+    print("omega2=" + str(omega2))
+    omega2k, Q2k = omega2[inds[0:k]], Q2[:, inds[0:k]]
     
-    errors[i, 0] = numpy.linalg.norm(Q2k - Qk)
+    errors[i, 0] = computeBound(L, omega, Q, omega2k, Q2k, k)
     
     #Incremental updates 
     omega3, Q3 = eigenUpdate(lastL, L, lastOmega, lastQ, k)
-    inds = numpy.flipud(numpy.argsort(omega3))[0:k]
-    Q3k = Q3[:, inds]
-    omega3k = omega3[inds]
+    inds = numpy.flipud(numpy.argsort(omega3))
+    omega3, Q3 = omega3[inds], Q3[:, inds]
+    omega3k, Q3k = omega3[inds[0:k]], Q3[:, inds[0:k]]
     
-    errors[i, 1] = numpy.linalg.norm(Q3k - Qk)
+    errors[i, 1] = computeBound(L, omega, Q, omega3k, Q3k, k)
     
     i += 1 
     
