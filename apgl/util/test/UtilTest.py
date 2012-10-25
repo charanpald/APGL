@@ -23,7 +23,7 @@ class UtilTest(unittest.TestCase):
     def setUp(self):
         logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
         numpy.random.seed(22)
-        numpy.set_printoptions(precision=3, suppress=True)
+        numpy.set_printoptions(precision=3, suppress=True, linewidth=150)
 
 
     def tearDown(self):
@@ -286,19 +286,52 @@ class UtilTest(unittest.TestCase):
         self.assertTrue(numpy.linalg.norm(numpy.linalg.inv(A) - Util.matrixPower(A, -1)) < tol)
         self.assertTrue(numpy.linalg.norm(A - Util.matrixPower(A, 1)) < tol)
         self.assertTrue(numpy.linalg.norm(A2 - Util.matrixPower(A, 2)) < tol)
-
+        self.assertTrue(numpy.linalg.norm(numpy.linalg.inv(A).dot(numpy.linalg.inv(A)) - Util.matrixPower(A, -2)) < tol)        
+        
         #Now lets test on a low rank matrix
         lmbda[5:] = 0
         A = V.dot(numpy.diag(lmbda)).dot(numpy.linalg.inv(V))
         A2 = A.dot(A)
         A12 = Util.matrixPower(A, 0.5)
         Am12 = Util.matrixPower(A, -0.5)
-
+        
+        
         self.assertTrue(numpy.linalg.norm(numpy.linalg.pinv(A) - Util.matrixPower(A, -1)) < tol)
         self.assertTrue(numpy.linalg.norm(numpy.linalg.pinv(A) - Am12.dot(Am12)) < tol)
         self.assertTrue(numpy.linalg.norm(A12.dot(A12)  - A) < tol)
         self.assertTrue(numpy.linalg.norm(A - Util.matrixPower(A, 1)) < tol)
         self.assertTrue(numpy.linalg.norm(A2 - Util.matrixPower(A, 2)) < tol)
+
+    def testMatrixPowerh(self):
+        A = numpy.random.rand(10, 10)
+        A = A.T.dot(A)            
+            
+        tol = 10**-6 
+        A2 = A.dot(A)
+
+        lmbda, V = scipy.linalg.eig(A)
+
+        A12 = Util.matrixPowerh(A, 0.5)
+
+        self.assertTrue(numpy.linalg.norm(A12.dot(A12)  - A) < tol)
+        self.assertTrue(numpy.linalg.norm(numpy.linalg.inv(A) - Util.matrixPowerh(A, -1)) < tol)
+        self.assertTrue(numpy.linalg.norm(A - Util.matrixPowerh(A, 1)) < tol)
+        self.assertTrue(numpy.linalg.norm(A2 - Util.matrixPowerh(A, 2)) < tol)
+        self.assertTrue(numpy.linalg.norm(numpy.linalg.inv(A).dot(numpy.linalg.inv(A)) - Util.matrixPowerh(A, -2)) < tol)        
+        
+        #Now lets test on a low rank matrix
+        lmbda[5:] = 0
+        A = V.dot(numpy.diag(lmbda)).dot(numpy.linalg.inv(V))
+        A2 = A.dot(A)
+        A12 = Util.matrixPowerh(A, 0.5)
+        Am12 = Util.matrixPowerh(A, -0.5)
+
+        
+        self.assertTrue(numpy.linalg.norm(numpy.linalg.pinv(A) - Util.matrixPowerh(A, -1)) < tol)
+        self.assertTrue(numpy.linalg.norm(numpy.linalg.pinv(A) - Am12.dot(Am12)) < tol)
+        self.assertTrue(numpy.linalg.norm(A12.dot(A12)  - A) < tol)
+        self.assertTrue(numpy.linalg.norm(A - Util.matrixPowerh(A, 1)) < tol)
+        self.assertTrue(numpy.linalg.norm(A2 - Util.matrixPowerh(A, 2)) < tol)
         
     def testDistanceMatrix(self): 
         numExamples1 = 10 
