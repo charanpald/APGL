@@ -555,7 +555,7 @@ class Util(object):
     def matrixPower(A, n):
         """
         Compute the matrix power of A using the exponent n. The computation simply
-        evaluated the eigendecomposition of A and then powers the eigenvector
+        evaluated the eigendecomposition of A and then powers the eigenvalue
         matrix accordingly.
         
         Warning: if at least one eigen-value is negative, n should be an integer.
@@ -564,18 +564,27 @@ class Util(object):
         tol = 10**-10
 
         lmbda, V = scipy.linalg.eig(A)
-        lmbda[numpy.abs(lmbda) < tol] = 0
+        lmbda[numpy.abs(lmbda) <= tol] = 0
         lmbda[numpy.abs(lmbda) > tol] = lmbda[numpy.abs(lmbda) > tol]**n
-        return (V*lmbda).dot(numpy.linalg.inv(V)) # = V.dot(numpy.diag(lmbda)).dot(numpy.linalg.inv(V))
+        
+        if n >= 0: 
+            return (V*lmbda).dot(numpy.linalg.inv(V))
+        else: 
+            A = scipy.linalg.pinv(A)
+            n = numpy.abs(n)
+            lmbda, V = scipy.linalg.eig(A)
+            lmbda[numpy.abs(lmbda) > tol] = lmbda[numpy.abs(lmbda) > tol]**n
+            return (V*lmbda).dot(numpy.linalg.inv(V))  
 
+            
     @staticmethod 
     def matrixPowerh(A, n):
         """
         Compute the matrix power of A using the exponent n. The computation simply
-        evaluated the eigendecomposition of A and then powers the eigenvector
+        evaluated the eigendecomposition of A and then powers the eigenvalue
         matrix accordingly.
         
-        This version guess that A is hermitian.
+        This version assumes that A is hermitian.
         Warning: if at least one eigen-value is negative, n should be an integer.
         """
         Parameter.checkClass(A, numpy.ndarray)
@@ -584,8 +593,9 @@ class Util(object):
         lmbda, V = scipy.linalg.eigh(A)
         lmbda[numpy.abs(lmbda) < tol] = 0
         lmbda[numpy.abs(lmbda) > tol] = lmbda[numpy.abs(lmbda) > tol]**n
-        # next line uses the fact that eigh claims returning an orthonormal basis (even if one sub-space is of dimension >=2) (to be precise, it claims using dsyevd which claims returning an orthonormal matrix)
-        return (V*lmbda).dot(V.T) # = V.dot(numpy.diag(lmbda)).dot(numpy.linalg.inv(V))
+        # next line uses the fact that eigh claims returning an orthonormal basis (even if 
+        #one sub-space is of dimension >=2) (to be precise, it claims using dsyevd which claims returning an orthonormal matrix)
+        return (V*lmbda).dot(V.T) 
 
     @staticmethod 
     def extendArray(A, newShape, val=0): 
