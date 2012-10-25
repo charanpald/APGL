@@ -2,6 +2,7 @@ import numpy
 import logging
 import scipy.sparse
 import scipy.sparse.linalg
+import scipy.linalg
 from apgl.util.Util import Util 
 
 class Nystrom(object):
@@ -32,8 +33,9 @@ class Nystrom(object):
 
         A = X[inds, :][:, inds]
         B = X[inds, :][:, invInds]
-
-        Am12 = Util.matrixPowerh(A, -0.5)
+        
+        Am12 = numpy.linalg.inv(scipy.linalg.sqrtm(A))
+        #Am12 = Util.matrixPowerh(A, -0.5)
         S = A + Am12.dot(B).dot(B.T).dot(Am12)
 
         lmbda, U = numpy.linalg.eig(S)
@@ -81,7 +83,8 @@ class Nystrom(object):
         else:
             BB = B.dot(B.T)
 
-        Am12 = Util.matrixPowerh(A, -0.5)
+        Am12 = numpy.linalg.pinv(scipy.linalg.sqrtm(A))
+        #Am12 = Util.matrixPowerh(A, -0.5)
         S = A + Am12.dot(BB).dot(Am12)
 
         #tol = 10**-8
@@ -90,13 +93,17 @@ class Nystrom(object):
         #assert numpy.linalg.norm(A12.dot(S).dot(A12) - AA - BB) < tol
 
         lmbda, U = numpy.linalg.eigh(S)
-#        V = X[:, inds].dot(Am12).dot(U).dot(numpy.diag(lmbda**-0.5))
+        
+        
+        
         tol = 10**-10
-        lmbdaN = lmbda
+        
+        lmbdaN = lmbda.copy()
         lmbdaN[numpy.abs(lmbda) < tol] = 0
         lmbdaN[numpy.abs(lmbda) > tol] = lmbdaN[numpy.abs(lmbda) > tol]**-0.5
+        
         V = X[:, inds].dot(Am12.dot(U)*lmbdaN)
-
+        
         return lmbda, V
 
     @staticmethod 
