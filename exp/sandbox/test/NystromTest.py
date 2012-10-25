@@ -85,7 +85,7 @@ class  NystromTestCase(unittest.TestCase):
         # relevant matrix 
         Arel = numpy.random.rand(m, m)
         Arel = Arel.dot(Arel.T)
-        w, U = numpy.linalg.eig(Arel)
+        w, U = numpy.linalg.eigh(Arel)
         Arel = U.dot(numpy.diag(w+1)).dot(U.T)
         tolArel = tol*numpy.linalg.norm(Arel)
 
@@ -100,6 +100,7 @@ class  NystromTestCase(unittest.TestCase):
             lmbda, V = Nystrom.eigpsd(A, inds)
             AHat = V.dot(numpy.diag(lmbda)).dot(V.T)
             AHat2 = Nystrom.matrixApprox(A, inds)
+                        
             self.assertTrue(numpy.linalg.norm(A - AHat) < numpy.linalg.norm(A))
             min_error = min(min_error, numpy.linalg.norm(A - AHat))
             a, b, places = numpy.linalg.norm(A - AHat), numpy.linalg.norm(A - AHat2), -int(numpy.log10(tolA))
