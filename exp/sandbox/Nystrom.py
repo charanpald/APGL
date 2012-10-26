@@ -82,9 +82,10 @@ class Nystrom(object):
             BB = numpy.array((B*B.T).todense())
         else:
             BB = B.dot(B.T)
-
-        Am12 = scipy.linalg.sqrtm(numpy.linalg.pinv(A)) 
-        #Am12 = Util.matrixPowerh(A, -0.5)
+        
+        #Following line is very slow 
+        #Am12 = scipy.linalg.sqrtm(numpy.linalg.pinv(A)) 
+        Am12 = Util.matrixPowerh(A, -0.5)
         S = A + Am12.dot(BB).dot(Am12)
         S = (S.T + S)/2
 
