@@ -1,5 +1,6 @@
 """
-Compare eigen-updating, exact eigenvalues and the Nystrom method. 
+Compare eigen-updating and the Nystrom method to the exact eigen-decomposition 
+using the bound on the canonical angles of two subspaces.  
 """
 
 import sys 
@@ -21,14 +22,6 @@ numpy.random.seed(21)
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 numpy.set_printoptions(suppress=True, linewidth=200, precision=3)
        
-
-numGraphs = 10 
-k = 3
-nystromN = 250
-i = 0 
-
-iterator = BoundGraphIterator(changeEdges=1, numGraphs=numGraphs, numClusterVertices=100, p=0.1)
-
 def eigenUpdate(L1, L2, omega, Q, k): 
     """
     Find the eigen-update between two matrices L1 (with eigenvalues omega, and 
@@ -37,12 +30,13 @@ def eigenUpdate(L1, L2, omega, Q, k):
     deltaL = L2 - L1 
     deltaL.prune()
     inds = numpy.unique(deltaL.nonzero()[0]) 
-    #print(inds)
     
     if len(inds) > 0:
         Y1 = deltaL[:, inds]
         Y1 = numpy.array(Y1.todense())
         Y1[inds, :] = Y1[inds, :]/2
+        
+        logging.debug("rank(deltaL)=" + str(Y1.shape[1]))
         
         Y2 = numpy.zeros((L1.shape[0], inds.shape[0]))
         Y2[(inds, numpy.arange(inds.shape[0]))] = 1
@@ -61,66 +55,95 @@ def computeBound(A, omega, Q, omega2, Q2, k):
     M = Q2.T.dot(A).dot(Q2)
     R = A.dot(Q2) - Q2.dot(M)
     
-    normR = numpy.linalg.norm(R)
-    #print("normR=" + str(normR))    
-    
-    lmbda, U = numpy.linalg.eig(M)
-    
+    normR = numpy.linalg.norm(R)    
+    lmbda, U = numpy.linalg.eigh(M)
     L2 = omega[k:]
-    
+
     delta = float("inf")
-    
-    print(lmbda)
-    print(L2)
     
     for i in lmbda: 
         for j in L2: 
-            
             if abs(i-j) < delta: 
-                delta = abs(i-j)
-                
-    #print("delta="+str(delta))
+                delta = abs(i-j)      
     
-    return normR/delta 
+    #print(lmbda, L2)
+    print("normR=" + str(normR), "delta="+ str(delta))
+    
+    return normR/delta
 
-numMethods = 2 
+
+k = 4
+numGraphs = 100 
+nystromNs = [300, 600, 900]
+numClusterVertices = 250
+numMethods = len(nystromNs) + 2 
 errors = numpy.zeros((numGraphs, numMethods)) 
+i = 0 
+
+iterator = BoundGraphIterator(changeEdges=50, numGraphs=numGraphs, numClusterVertices=numClusterVertices, numClusters=k, p=0.1)
 
 for W in iterator: 
+    print("i="+str(i))
     L = GraphUtils.shiftLaplacian(W)
+    
+    #print("rank=" + str(Util.rank(L.todense())))  
     
     if i == 0: 
         lastL = L
-        lastOmega, lastQ = numpy.linalg.eig(L.todense())
+        lastOmega, lastQ = numpy.linalg.eigh(L.todense())
         inds = numpy.flipud(numpy.argsort(lastOmega))
         lastOmega, lastQ = lastOmega[inds], lastQ[:, inds]
+        initialOmega, initialQ = lastOmega[0:k], lastQ[:, 0:k]
+        #Fix for weird error in EigenAdd2 later on 
+        lastQ = numpy.array(lastQ)
     
     #Compute exact eigenvalues 
-    omega, Q = numpy.linalg.eig(L.todense())
+    omega, Q = numpy.linalg.eigh(L.todense())
     inds = numpy.flipud(numpy.argsort(omega))    
     omega, Q = omega[inds], Q[:, inds]
-    print("omega=" + str(omega))
-    omegak, Qk = omega[inds[0:k]], Q[:, inds[0:k]]
-    
-    
+    omegak, Qk = omega[0:k], Q[:, 0:k]
+       
     #Nystrom method 
     print("Running Nystrom")
-    omega2, Q2 = Nystrom.eigpsd(L, nystromN)
-    inds = numpy.flipud(numpy.argsort(omega2))
-    omega2, Q2 = omega2[inds], Q2[:, inds]
-    print("omega2=" + str(omega2))
-    omega2k, Q2k = omega2[inds[0:k]], Q2[:, inds[0:k]]
-    
-    errors[i, 0] = computeBound(L, omega, Q, omega2k, Q2k, k)
+    for j, nystromN in enumerate(nystromNs):  
+        omega2, Q2 = Nystrom.eigpsd(L, nystromN)
+        inds = numpy.flipud(numpy.argsort(omega2))
+        omega2, Q2 = omega2[inds], Q2[:, inds]
+        omega2k, Q2k = omega2[0:k], Q2[:, 0:k]
+        
+        errors[i, j] = computeBound(L, omega, Q, omega2k, Q2k, k)
     
     #Incremental updates 
+    print("Running Eigen-update")
     omega3, Q3 = eigenUpdate(lastL, L, lastOmega, lastQ, k)
     inds = numpy.flipud(numpy.argsort(omega3))
     omega3, Q3 = omega3[inds], Q3[:, inds]
-    omega3k, Q3k = omega3[inds[0:k]], Q3[:, inds[0:k]]
+    omega3k, Q3k = omega3[0:k], Q3[:, 0:k]
     
-    errors[i, 1] = computeBound(L, omega, Q, omega3k, Q3k, k)
+    #Use previous results for update, not 1st ones 
+    lastL = L 
+    lastOmega = omega3 
+    lastQ = Q3
+    
+    errors[i, len(nystromNs)] = computeBound(L, omega, Q, omega3k, Q3k, k)
+    
+    #Compare vs initial solution     
+    errors[i, len(nystromNs)+1] = computeBound(L, omega, Q, initialOmega, initialQ, k)
     
     i += 1 
-    
+
 print(errors)
+
+plt.figure(0)
+#plt.plot(numpy.arange(errors.shape[0]), errors[:, 0], label="Nystrom m=300")
+plt.plot(numpy.arange(errors.shape[0]), errors[:, 1], label="Nystrom m=600")
+plt.plot(numpy.arange(errors.shape[0]), errors[:, 2], label="Nystrom m=900")
+plt.plot(numpy.arange(errors.shape[0]), errors[:, 3], label="Eigen-update") 
+#plt.plot(numpy.arange(errors.shape[0]), errors[:, 4], label="Initial sol.")  
+plt.legend(loc="upper left")
+plt.xlabel("Graph no.")
+plt.ylabel("||sin(theta)||")
+
+plt.show()
+  
+
