@@ -83,19 +83,13 @@ class Nystrom(object):
         else:
             BB = B.dot(B.T)
 
-        Am12 = numpy.linalg.pinv(scipy.linalg.sqrtm(A))
+        Am12 = scipy.linalg.sqrtm(numpy.linalg.pinv(A)) 
         #Am12 = Util.matrixPowerh(A, -0.5)
         S = A + Am12.dot(BB).dot(Am12)
-
-        #tol = 10**-8
-        #A12 = Util.matrixPowerh(A, 0.5)
-        #AA = A.dot(A)
-        #assert numpy.linalg.norm(A12.dot(S).dot(A12) - AA - BB) < tol
+        S = (S.T + S)/2
 
         lmbda, U = numpy.linalg.eigh(S)
-        
-        
-        
+          
         tol = 10**-10
         
         lmbdaN = lmbda.copy()
