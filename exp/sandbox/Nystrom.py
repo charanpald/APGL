@@ -60,6 +60,7 @@ class Nystrom(object):
         :return V: The matrix of eigenvectors as a ndarray
         """
         if type(n) == int:
+            n = min(n, X.shape[0])
             inds = numpy.sort(numpy.random.permutation(X.shape[0])[0:n])
         else:
             inds = n 
@@ -68,7 +69,7 @@ class Nystrom(object):
         if numpy.sort(inds).shape[0] == X.shape[0] and (numpy.sort(inds) == numpy.arange(X.shape[0])).all():
             if scipy.sparse.issparse(X):
                 X = numpy.array(X.todense())
-            lmbda, V = numpy.linalg.eigh(X)
+            lmbda, V = Util.safeEigh(X)
             return lmbda, V
 
         tmp = X[inds, :] 
@@ -89,10 +90,19 @@ class Nystrom(object):
         #AA = A.dot(A)
         #assert numpy.linalg.norm(A12.dot(S).dot(A12) - AA - BB) < tol
 
-        lmbda, U = numpy.linalg.eigh(S)
+#        if __debug__:
+#            file_name = "matrix"
+#            try:
+#                with open(file_name, 'wb') as fd:
+#                    numpy.savetxt(fd, S)
+#            except IOError as e:
+#                logging.warning(" unable to open file '", file_name, "'\n", e)
+#                logging.warning("=> matrix not saved")
+#                raise
+        lmbda, U = Util.safeEigh(S)
 #        V = X[:, inds].dot(Am12).dot(U).dot(numpy.diag(lmbda**-0.5))
         tol = 10**-10
-		lmbdaN = lambda
+        lmbdaN = lmbda
         lmbdaN[numpy.abs(lmbda) < tol] = 0
         lmbdaN[numpy.abs(lmbda) > tol] = lmbdaN[numpy.abs(lmbda) > tol]**-0.5
         V = X[:, inds].dot(Am12.dot(U)*lmbdaN)
