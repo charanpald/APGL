@@ -52,7 +52,7 @@ class IterativeSpectralClustering(object):
             
         return centroids 
 
-    def clusterFromIterator(self, graphListIterator, approx=True, timeIter=False, T=10):
+    def clusterFromIterator(self, graphListIterator, approx=True, timeIter=False, T=10, TLogging=None):
         """
         Find a set of clusters for the graphs given by the iterator. If approx
         is True then we use the approximate eigen-update, otherwise we compute
@@ -65,18 +65,21 @@ class IterativeSpectralClustering(object):
         Parameter.checkInt(T, 1, float('inf'))
 
         clustersList = []
-        timeList = [] 
+        decompositionTimeList = [] 
+        kMeansTimeList = [] 
         i = 0
 
         for subW in graphListIterator:
             if __debug__:
                 Parameter.checkSymmetric(subW)
 
+            if TLogging and i % TLogging == 0:
+                logging.info("Graph index: " + str(i))
             logging.debug("Clustering graph of size " + str(subW.shape))
-            startTime = time.time()
             ABBA = GraphUtils.shiftLaplacian(subW)
 
             # --- Eigen value decomposition ---
+            startTime = time.time()
             if approx and i % T != 0:
                 omega, Q = self.approxUpdateEig(subW, ABBA, omega, Q)
             else:
@@ -84,14 +87,16 @@ class IterativeSpectralClustering(object):
                     logging.info("Recomputing eigenvectors")
 
                 if not self.nystromEigs:
-                    omega, Q = scipy.sparse.linalg.eigsh(ABBA, min(self.k2, ABBA.shape[0]-1), which="LM", ncv = min(10*self.k2, ABBA.shape[0]))
+                    omega, Q = scipy.sparse.linalg.eigsh(ABBA, min(self.k2, ABBA.shape[0]-1), which="LM", ncv = min(20*self.k2, ABBA.shape[0]))
                 else:
                     omega, Q = Nystrom.eigpsd(ABBA, self.k3)
 
             if approx:
                 self.storeInformation(subW, ABBA)
+            decompositionTimeList.append(time.time()-startTime)
 
             # --- Kmeans ---
+            startTime = time.time()
             inds = numpy.flipud(numpy.argsort(omega))
 
             standardiser = Standardiser()
@@ -113,9 +118,9 @@ class IterativeSpectralClustering(object):
                     centroids = numpy.vstack((centroids, random_centroids))
                 centroids, distortion = vq.kmeans(V, centroids) #iter can only be 1
             clusters, distortion = vq.vq(V, centroids)
+            kMeansTimeList.append(time.time()-startTime)
 
             clustersList.append(clusters)
-            timeList.append(time.time()-startTime)
 
 
             #logging.debug("subW.shape: " + str(subW.shape))
@@ -128,7 +133,7 @@ class IterativeSpectralClustering(object):
             i += 1
 
         if timeIter:
-            return clustersList, timeList
+            return clustersList, numpy.array((decompositionTimeList, kMeansTimeList)).T
         else:
             return clustersList
 
