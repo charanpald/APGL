@@ -159,6 +159,25 @@ class GraphUtils(object):
         D = scipy.sparse.spdiags(d**-0.5, 0, d.shape[0], d.shape[0], format='csr')
         Lhat = scipy.sparse.eye(W.shape[0], W.shape[0], format='csr') + D.dot(W).dot(D)
         return Lhat
+        
+    @staticmethod 
+    def normalisedLaplacianSym(W):
+        """
+        Give a scipy sparse csr matrix W, compute the normalised Laplacian matrix,
+        which is defined as I - D^-0.5 W D^-0.5 where D is a diagonal matrix of
+        degrees. For vertices of degree zero, the corresponding row/col of the
+        Laplacian is zero with a 1 at the diagonal. The eigenvalues of the 
+        Laplacian are between 0 and 2.
+        """
+        if not scipy.sparse.isspmatrix_csr(W):
+            raise ValueError("W is not a csr matrix")
+
+        d = numpy.array(W.sum(0)).ravel()
+        d = d + numpy.array(d==0, numpy.int)
+        D = scipy.sparse.spdiags(d**-0.5, 0, d.shape[0], d.shape[0], format='csr')
+        Lhat = scipy.sparse.eye(W.shape[0], W.shape[0], format='csr') - D.dot(W).dot(D)
+        return Lhat        
+        
     
     @staticmethod
     def randIndex(clustering1, clustering2):
