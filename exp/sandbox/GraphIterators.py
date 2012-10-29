@@ -78,6 +78,8 @@ class DatedPurchasesGroupByIterator(object):
         returned_purchases = self.current_week_purchases[:self.nb_purchases_per_it]
         del self.current_week_purchases[:self.nb_purchases_per_it]
         return returned_purchases
+        
+    next = __next__ 
 
 
 class DatedPurchasesGraphListIterator(object):
@@ -143,6 +145,7 @@ class DatedPurchasesGraphListIterator(object):
           return self.W.tocsr()[self.usefullEdges,:][:,self.usefullEdges]
         else:
           return next(self)
+    next = __next__ 
 
 
 
@@ -187,6 +190,8 @@ class IncreasingSubgraphListIterator(object):
         subW = self.W[:, self.subgraphIndices][self.subgraphIndices, :]
         self.i+=1
         return subW
+    
+    next = __next__ 
 
 
 class toDenseGraphListIterator(object):
@@ -201,3 +206,5 @@ class toDenseGraphListIterator(object):
 
     def __next__(self):
         return numpy.array(next(self.g).todense(), numpy.float)
+        
+    next = __next__ 

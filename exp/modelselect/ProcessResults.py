@@ -361,7 +361,7 @@ def plotPenalty(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, 
                 plt.plot(numpy.log2(gammas), approxGrid1, next(linecycler), label="PenVF+ " )
                 plt.plot(numpy.log2(gammas), approxGrid2, next(linecycler), label="PenVF " )
                     
-                plt.xlabel("log(gamma)")
+                plt.xlabel("log(t)")
                 plt.ylabel('Penalty')
                 plt.legend(loc="upper left")
     plt.show()    
@@ -405,14 +405,14 @@ def plotErrorGrids(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethod
                 plt.plot(numpy.log2(gammas), approxGrid2, next(linecycler), label="PenVF+ " )
                 plt.plot(numpy.log2(gammas), approxGrid3, next(linecycler), label="PenVF " )
                     
-            plt.xlabel("log(gamma)")
+            plt.xlabel("log(t)")
             plt.ylabel('Error')
             plt.legend(loc="lower left")
     plt.show()  
 
 
-showCART = True  
-showSVR = False  
+showCART = False  
+showSVR = True  
 
 from itertools import cycle
 lines = ["k-","k--","k-.","k:","k-x", "k-+"]
@@ -457,10 +457,10 @@ if showCART:
     
     #plotDatasetNames = [datasetNames[7], datasetNames[9]]
     #plotAlphas(plotDatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)    
-    #plotDatasetNames = [datasetNames[0]]    
-    #plotPenalty(plotDatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)  
     plotDatasetNames = [datasetNames[0]]    
-    plotErrorGrids(plotDatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
+    plotPenalty(plotDatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)  
+    #plotDatasetNames = [datasetNames[0]]    
+    #plotErrorGrids(plotDatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
     
     #plotResults("add10", sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
     #Now run some extended results

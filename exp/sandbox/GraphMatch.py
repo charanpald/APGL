@@ -8,12 +8,9 @@ import sys
 import tempfile
 import logging 
 from apgl.graph import SparseGraph, VertexList
-from apgl.util.PathDefaults import PathDefaults
 from apgl.util.Parameter import Parameter
 from apgl.util.Util import Util
 from apgl.data.Standardiser import Standardiser 
-from apgl.kernel.LinearKernel import LinearKernel
-from apgl.kernel.KernelUtils import KernelUtils
 
 class GraphMatch(object): 
     def __init__(self, algorithm="PATH", alpha=0.5, featureInds=None, useWeightM=True):
@@ -31,6 +28,10 @@ class GraphMatch(object):
         self.maxInt = 10**9 
         self.featureInds = featureInds 
         self.useWeightM = useWeightM 
+        #Gamma is the same as dummy_nodes_c_coef for costing added vertex labels         
+        self.gamma = 0.0
+        #Same as dummy_nodes_fill 
+        self.rho = 0.5 
         
     def match(self, graph1, graph2): 
         """
@@ -99,8 +100,8 @@ class GraphMatch(object):
         configStr +="algo_fw_xeps=0.01 d\n"
         configStr +="algo_fw_feps=0.01 d\n"
         configStr +="dummy_nodes=0 i\n"
-        configStr +="dummy_nodes_fill=0 d\n"
-        configStr +="dummy_nodes_c_coef=0 d\n"
+        configStr +="dummy_nodes_fill=" + str(self.rho) + " d\n"
+        configStr +="dummy_nodes_c_coef=" + str(self.gamma) + " d\n"
         configStr +="qcvqcc_lambda_M=10 d\n"
         configStr +="qcvqcc_lambda_min=1e-5 d\n"
         configStr +="blast_match=0 i\n"
@@ -153,8 +154,7 @@ class GraphMatch(object):
         os.remove(configFileName)
         os.remove(outputFileName)
 
-        distanceVector = [graphDistance, fDistance, fDistanceExact]         
-         
+        distanceVector = [graphDistance, fDistance, fDistanceExact]     
         return permutation, distanceVector, time 
         
     def vertexSimilarities(self, graph1, graph2): 
@@ -189,23 +189,24 @@ class GraphMatch(object):
         #print(X)
          
         #Extend arrays with zeros to make them the same size
-        if V1.shape[0] < V2.shape[0]: 
-            V1 = Util.extendArray(V1, V2.shape, X.mean(0))
-        elif V2.shape[0] < V1.shape[0]: 
-            V2 = Util.extendArray(V2, V1.shape, X.mean(0))
+        #if V1.shape[0] < V2.shape[0]: 
+        #    V1 = Util.extendArray(V1, V2.shape, numpy.min(V1))
+        #elif V2.shape[0] < V1.shape[0]: 
+        #    V2 = Util.extendArray(V2, V1.shape, numpy.min(V2))
           
         #Let's compute C as the distance between vertices 
         #Distance is bounded by 1
         D = Util.distanceMatrix(V1, V2)
         maxD = numpy.max(D)
-        if maxD != 0: 
-            C = (maxD - D)/maxD
+        minD = numpy.min(D)
+        if (maxD-minD) != 0: 
+            C = (maxD - D)/(maxD-minD)
         else: 
             C = numpy.ones((V1.shape[0], V2.shape[0])) 
             
         return C
      
-    def distance(self, graph1, graph2, permutation, normalised=False, nonNeg=False):
+    def distance(self, graph1, graph2, permutation, normalised=False, nonNeg=False, verbose=False):
         """
         Compute the graph distance metric between two graphs given a permutation 
         vector. This is given by F(P) = (1-alpha)/(||W1||^2_F + ||W2||^2_F)(||W1 - P W2 P.T||^2_F)
@@ -227,12 +228,21 @@ class GraphMatch(object):
         
         :param nonNeg: Specify whether we want a non-negative solution.  
         :type nonNeg: `bool`
+        
+        :param verbose: Specify whether to return graph and label distance 
+        :type nonNeg: `bool`
         """
-        if graph1.size == 0 and graph2.size == 0:        
-            return 0.0        
+        if graph1.size == 0 and graph2.size == 0: 
+            if not verbose: 
+                return 0.0
+            else: 
+                return 0.0, 0.0, 0.0
         elif graph1.size == 0 or graph2.size == 0: 
             if normalised: 
-                return 1.0
+                if not verbose: 
+                    return 1-self.alpha
+                else: 
+                    return 1-self.alpha, 1-self.alpha, 0.0
             else: 
                 raise ValueError("Unsupported case")
         
@@ -244,9 +254,9 @@ class GraphMatch(object):
             W2 = graph2.adjacencyMatrix()
         
         if W1.shape[0] < W2.shape[0]: 
-            W1 = Util.extendArray(W1, W2.shape)
+            W1 = Util.extendArray(W1, W2.shape, self.rho)
         elif W2.shape[0] < W1.shape[0]:
-            W2 = Util.extendArray(W2, W1.shape)
+            W2 = Util.extendArray(W2, W1.shape, self.rho)
         
         n = W1.shape[0]
         P = numpy.zeros((n, n)) 
@@ -255,6 +265,9 @@ class GraphMatch(object):
         
         #Now compute the vertex similarities trace         
         C = self.vertexSimilarities(graph1, graph2)
+        minC = numpy.min(C)
+        maxC = numpy.max(C)
+        C = Util.extendArray(C, (n, n), minC + self.gamma*(maxC-minC))
 
         dist2 = numpy.trace(C.T.dot(P))
         
@@ -264,7 +277,7 @@ class GraphMatch(object):
             if norm1!= 0: 
                 dist1 = dist1/norm1
             if norm2!= 0:
-                dist2 = dist2/norm2 
+                dist2 = dist2/norm2
         
         dist = (1-self.alpha)*dist1 - self.alpha*dist2
         
@@ -273,12 +286,15 @@ class GraphMatch(object):
         if nonNeg and normalised:
             normC = norm2
     
-            logging.debug("Graph distance: " + str(dist1) + " label distance: " + str(dist2) + " distance offset: " + str(n/normC) + " graph sizes: " + str((graph1.size, graph2.size)))           
-            
+            logging.debug("Graph distance: " + str(dist1) + " label distance: " + str(dist2) + " distance offset: " + str(self.alpha*n/normC) + " graph sizes: " + str((graph1.size, graph2.size)))           
+
             if normC != 0: 
-                return dist + self.alpha*n/normC 
-            else: 
-                return dist 
+                dist = dist + self.alpha*n/normC 
+        else: 
+            logging.debug("Graph distance: " + str(dist1) + " label distance: " + str(dist2) + " graph sizes: " + str((graph1.size, graph2.size)))   
+        
+        if verbose: 
+            return dist, dist1, dist2
         else: 
             return dist 
         

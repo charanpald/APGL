@@ -131,6 +131,41 @@ class  HIVGraphTest(unittest.TestCase):
         
         for i in range(numVertices): 
             nptst.assert_array_equal(graph.getVertex(i), newGraph.getVertex(i))
+
+    def testSetRandomInfected(self): 
+        numVertices = 10000
+        graph = HIVGraph(numVertices)  
+        graph.setRandomInfected(100, 0.8)
+        heteroInfected = numpy.logical_and(graph.vlist.V[:, HIVVertices.stateIndex]==HIVVertices.infected, graph.vlist.V[:, HIVVertices.orientationIndex]==HIVVertices.hetero)        
+        biInfected = numpy.logical_and(graph.vlist.V[:, HIVVertices.stateIndex]==HIVVertices.infected, graph.vlist.V[:, HIVVertices.orientationIndex]==HIVVertices.bi) 
+        
+        self.assertAlmostEqual(heteroInfected.sum()/float(100), 0.8) 
+        self.assertAlmostEqual(biInfected.sum()/float(100), 0.2)
+        
+        graph = HIVGraph(numVertices)  
+        graph.setRandomInfected(100, 0.5)
+        heteroInfected = numpy.logical_and(graph.vlist.V[:, HIVVertices.stateIndex]==HIVVertices.infected, graph.vlist.V[:, HIVVertices.orientationIndex]==HIVVertices.hetero)        
+        biInfected = numpy.logical_and(graph.vlist.V[:, HIVVertices.stateIndex]==HIVVertices.infected, graph.vlist.V[:, HIVVertices.orientationIndex]==HIVVertices.bi) 
+        
+        self.assertAlmostEqual(heteroInfected.sum()/float(100), 0.5) 
+        self.assertAlmostEqual(biInfected.sum()/float(100), 0.5)
+        
+        graph = HIVGraph(numVertices)  
+        graph.setRandomInfected(100, 0.0)
+        heteroInfected = numpy.logical_and(graph.vlist.V[:, HIVVertices.stateIndex]==HIVVertices.infected, graph.vlist.V[:, HIVVertices.orientationIndex]==HIVVertices.hetero)        
+        biInfected = numpy.logical_and(graph.vlist.V[:, HIVVertices.stateIndex]==HIVVertices.infected, graph.vlist.V[:, HIVVertices.orientationIndex]==HIVVertices.bi) 
+        
+        self.assertAlmostEqual(heteroInfected.sum()/float(100), 0.0) 
+        self.assertAlmostEqual(biInfected.sum()/float(100), 1.0)
+        
+        graph = HIVGraph(numVertices)  
+        graph.setRandomInfected(100, 1.0)
+        heteroInfected = numpy.logical_and(graph.vlist.V[:, HIVVertices.stateIndex]==HIVVertices.infected, graph.vlist.V[:, HIVVertices.orientationIndex]==HIVVertices.hetero)        
+        biInfected = numpy.logical_and(graph.vlist.V[:, HIVVertices.stateIndex]==HIVVertices.infected, graph.vlist.V[:, HIVVertices.orientationIndex]==HIVVertices.bi) 
+        
+        self.assertAlmostEqual(heteroInfected.sum()/float(100), 1.0) 
+        self.assertAlmostEqual(biInfected.sum()/float(100), 0.0)
+                
         
 if __name__ == '__main__':
     unittest.main()

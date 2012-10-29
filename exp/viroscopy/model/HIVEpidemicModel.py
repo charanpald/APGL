@@ -26,11 +26,10 @@ class HIVEpidemicModel():
         self.graph.endEventTime = T0
         self.rates = rates
         self.setT(T)
-        self.setRecordStep(10)
-        self.setPrintStep(10000)
         self.breakFunc = None
         self.standardiseResults = True
         self.T0 = T0
+        self.setRecordStep((self.T-self.T0)/10.0)
         self.metrics = metrics 
 
     def setT(self, T):
@@ -51,16 +50,11 @@ class HIVEpidemicModel():
         """
         Set thetime interval in order to record statistics over the model. 
         """
-        Parameter.checkInt(recordStep, 0, float('inf'))
+        if abs((self.T-self.T0) % recordStep) > 10**-6:
+            print((self.T-self.T0) % recordStep)
+            raise ValueError("Record Step must divide exactly into T-T0")
         self.recordStep = recordStep 
 
-    def setPrintStep(self, printStep):
-        """
-        Set the time interval to print the progress of the model. 
-        """
-        Parameter.checkInt(printStep, 0, float('inf'))
-        self.printStep = printStep
-        
         
     def setParams(self, theta): 
         """
@@ -70,21 +64,22 @@ class HIVEpidemicModel():
         :param theta: An array containing parameter values 
         :type theta: `numpy.ndarray`
         """
-        if theta.shape[0] != 10: 
-            raise ValueError("Theta should be of length 10")
+        if theta.shape[0] != 12: 
+            raise ValueError("Theta should be of length 12")
         
-        self.graph.setRandomInfected(int(theta[0]))
-        self.rates.setAlpha(theta[1])
-        self.rates.setNewContactChance(theta[2])
-        self.rates.setRandDetectRate(theta[3])
-        self.rates.setCtRatePerPerson(theta[4])
-        self.rates.setHeteroContactRate(theta[5])
-        self.rates.setBiContactRate(theta[6])
-        self.rates.setWomanManInfectProb(theta[7])
-        self.rates.setManWomanInfectProb(theta[8])
-        self.rates.setManBiInfectProb(theta[9])
+        self.graph.setRandomInfected(int(theta[0]), theta[1])
+        self.rates.setAlpha(theta[2])
+        self.rates.setNewContactChance(theta[3])
+        self.rates.setRandDetectRate(theta[4])
+        self.rates.setCtRatePerPerson(theta[5])
+        self.rates.setMaxDetects(int(theta[6]))
+        self.rates.setHeteroContactRate(theta[7])
+        self.rates.setBiContactRate(theta[8])
+        self.rates.setWomanManInfectProb(theta[9])
+        self.rates.setManWomanInfectProb(theta[10])
+        self.rates.setManBiInfectProb(theta[11])
         
-
+    #@profile
     def simulate(self, verboseOut=False):
         """
         Simulate epidemic propogation until there are no more infectives or
@@ -103,33 +98,35 @@ class HIVEpidemicModel():
         removedList = list(removedSet)
         contactList = list(contactSet)
 
-        vList = self.graph.getVertexList()
         t = self.T0
         times = [t]
         #A list of lists of infected indices 
         infectedIndices = [infectedList]
         removedIndices = [removedList]
         nextStep = t + self.recordStep
-        nextPrintStep = t
         numContacts = 0 
 
         logging.debug("Starting simulation at time " + str(t) + " with graph of size " + str(self.graph.size))
 
         #Now, start the simulation
         while t < self.T and len(infectedSet) != 0:
-            contactRates = self.rates.contactRates(infectedList, contactList, t)
+            contactInds, contactRates = self.rates.contactRates(infectedList, contactList, t)
             contactTracingRates = self.rates.contactTracingRates(infectedList, removedSet, t)
             randomDetectRates = self.rates.randomDetectionRates(infectedList, t)
 
-            assert contactRates.shape == (len(infectedList), len(contactList))
+            #assert contactRates.shape == (len(infectedList), len(contactList))
             assert (contactTracingRates == numpy.abs(contactTracingRates)).all()
             assert (randomDetectRates == numpy.abs(randomDetectRates)).all()
+            
+            assert (contactTracingRates!=0).sum() <= self.rates.maxDetects 
+            assert (randomDetectRates!=0).sum() <= self.rates.maxDetects 
 
-            #sigmat = PySparseUtils.sum(contactRates)
             sigmat = contactRates.sum()
             muRSt = numpy.sum(randomDetectRates)
             muCTt = numpy.sum(contactTracingRates)
             #rhot = sigmat + muRSt + muCTt
+            
+            #print(randomDetectRates)
 
             assert sigmat >= 0
             assert muRSt >= 0
@@ -138,6 +135,8 @@ class HIVEpidemicModel():
             sigmaHat = self.rates.upperContactRates(infectedList)
             muHat = self.rates.upperDetectionRates(infectedList)
             rhoHat = sigmaHat + muHat
+            
+            #print(muHat)
 
             assert rhoHat >= 0
 
@@ -159,15 +158,9 @@ class HIVEpidemicModel():
             p = numpy.random.rand()
 
             if p < contactProb:
-                #(rows, cols) = PySparseUtils.nonzero(contactRates)
-                #nzContactRates = numpy.zeros(len(rows))
-                #contactRates.take(nzContactRates, rows, cols)
-                (rows, cols) = contactRates.nonzero()
-                nzContactRates = contactRates[rows, cols]
-
-                eventInd = Util.randomChoice(nzContactRates)[0]
-                infectedIndex = infectedList[rows[eventInd]]
-                contactIndex = contactList[cols[eventInd]]
+                eventInd = Util.randomChoice(contactRates)[0]
+                infectedIndex = infectedList[eventInd]
+                contactIndex = contactInds[eventInd]
                 #Note that each time a sexual contact occurs we weight the edge with the time 
                 self.rates.contactEvent(infectedIndex, contactIndex, t)
                 numContacts += 1 
@@ -175,19 +168,17 @@ class HIVEpidemicModel():
                 #Check if the contact results in an infection
                 q = numpy.random.rand()
                 if q < self.rates.infectionProbability(infectedIndex, contactIndex, t):
-                    vList.setInfected(contactIndex, t)
+                    self.graph.vlist.setInfected(contactIndex, t)
                     infectedSet.add(contactIndex)
                     susceptibleSet.remove(contactIndex)
                     
-                self.graph.endEventTime = t 
-            elif p >= contactProb and p < contactProb+detectionRandom:
+            elif p >= contactProb and p < contactProb+detectionRandom:             
                 eventInd = Util.randomChoice(randomDetectRates)
                 newDetectedIndex = infectedList[eventInd]
                 self.rates.removeEvent(newDetectedIndex, HIVVertices.randomDetect, t)
                 removedSet.add(newDetectedIndex)
                 infectedSet.remove(newDetectedIndex)
                 contactSet.remove(newDetectedIndex)
-                self.graph.endEventTime = t
             elif p >= contactProb+detectionRandom and p < contactProb+detectionRandom+detectionContact:
                 eventInd = Util.randomChoice(contactTracingRates)
                 newDetectedIndex = infectedList[eventInd]
@@ -195,7 +186,8 @@ class HIVEpidemicModel():
                 removedSet.add(newDetectedIndex)
                 infectedSet.remove(newDetectedIndex)
                 contactSet.remove(newDetectedIndex)
-                self.graph.endEventTime = t
+            
+            self.graph.endEventTime = t
 
             assert infectedSet.union(removedSet).union(susceptibleSet) == set(range(self.graph.getNumVertices()))
             assert contactSet == infectedSet.union(susceptibleSet)
@@ -204,7 +196,9 @@ class HIVEpidemicModel():
             removedList = list(removedSet)
             contactList = list(contactSet)
 
-            if t >= nextStep and t <= self.T:
+            if t >= nextStep:
+                logging.debug("t-T0=" + str(t-self.T0) + " S=" + str(len(susceptibleSet)) + " I=" + str(len(infectedSet)) + " R=" + str(len(removedSet)) + " C=" + str(numContacts) + " E=" + str(self.graph.getNumEdges()))
+                
                 infectedIndices.append(infectedList)
                 removedIndices.append(removedList)
                 times.append(t)
@@ -217,41 +211,18 @@ class HIVEpidemicModel():
                         logging.debug("Breaking as distance has become too large")
                         break 
 
-            if t>= nextPrintStep or len(infectedSet) == 0:
-                logging.debug("t-T0=" + str(t-self.T0) + " S=" + str(len(susceptibleSet)) + " I=" + str(len(infectedSet)) + " R=" + str(len(removedSet)) + " C=" + str(numContacts) + " E=" + str(self.graph.getNumEdges()))
-                nextPrintStep += self.printStep
-
         logging.debug("Finished simulation at time " + str(t) + " for a total time of " + str(t-self.T0))
-
-        if self.metrics != None: 
-            self.metrics.addGraph(self.graph)
-
-        if self.standardiseResults:
-            times, infectedIndices, removedIndices = self.findStandardResults(times, infectedIndices, removedIndices)
-            #logging.debug("times=" + str(times))
+        
+        self.numContacts = numContacts 
             
         if verboseOut: 
             return times, infectedIndices, removedIndices, self.graph
         else: 
             return self.graph
 
-    def findStandardResults(self, times, infectedIndices, removedIndices):
-        """
-        Make sure that the results for the simulations are recorded for all times
-        """
-        idealTimes = range(int(self.T0), int(self.T), self.recordStep)
-
-        newInfectedIndices = []
-        newRemovedIndices = []
-        times = numpy.array(times)
-        
-        for i in range(len(idealTimes)):
-            idx = (numpy.abs(times-idealTimes[i])).argmin()
-            newInfectedIndices.append(infectedIndices[idx])
-            newRemovedIndices.append(removedIndices[idx])
-
-        return idealTimes, newInfectedIndices, newRemovedIndices
-        
     def distance(self): 
         logging.debug("Distance is " + str(self.metrics.distance()) + ", and final event on graph occured at time " + str(self.graph.endTime() - self.T0))
         return self.metrics.distance() 
+        
+    def getNumContacts(self): 
+        return self.numContacts

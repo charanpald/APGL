@@ -32,7 +32,7 @@ class  HIVABCParametersTest(unittest.TestCase):
 
         self.numParams = 10
         self.graph = graph
-        self.meanTheta = numpy.array([50, 1.0, 0.5, 1.0/800, 0.01, 0.05, 0.1, 38.0/1000, 30.0/1000, 170.0/1000])
+        self.meanTheta = numpy.array([50, 0.95, 1.0, 0.5, 1.0/800, 0.01, 0.05, 0.1, 38.0/1000, 30.0/1000, 170.0/1000])
         self.hivAbcParams = HIVABCParameters(self.meanTheta)
         
 

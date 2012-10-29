@@ -1,5 +1,5 @@
 """
-A script to estimate the HIV epidemic model parameters using ABC.
+Use unconstained optimisation to find the best parameters. 
 """
 
 from apgl.util import *
@@ -11,29 +11,42 @@ from exp.viroscopy.model.HIVModelUtils import HIVModelUtils
 from exp.viroscopy.model.HIVGraphMetrics2 import HIVGraphMetrics2
 from exp.viroscopy.model.HIVVertices import HIVVertices
 from exp.sandbox.GraphMatch import GraphMatch
-from apgl.predictors.ABCSMC import ABCSMC
+from apgl.predictors.ABCSMC import ABCSMC, loadThetaArray
 
 import logging
 import sys
 import numpy
 import multiprocessing
+import scipy.optimize
 
 assert False, "Must run with -O flag"
 
 FORMAT = "%(levelname)s:root:%(process)d:%(message)s"
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format=FORMAT)
-numpy.set_printoptions(suppress=True, precision=4, linewidth=100)
+numpy.set_printoptions(suppress=True, precision=4, linewidth=150)
 numpy.seterr(invalid='raise')
 
 resultsDir = PathDefaults.getOutputDir() + "viroscopy/toy/" 
-startDate, endDate, recordStep, printStep, M, targetGraph = HIVModelUtils.toySimulationParams()
-epsilonArray = numpy.array([0.6, 0.5, 0.4, 0.2])
+startDate, endDate, recordStep, M, targetGraph = HIVModelUtils.toySimulationParams()
 logging.debug("Total time of simulation is " + str(endDate-startDate))
 
-def createModel(t):
+breakDist = 0.5
+
+def runModel(params):
     """
     The parameter t is the particle index. 
     """
+    minTheta = numpy.zeros(12)
+    minTheta[2] = 0.01
+    minTheta[3] = 0.01
+    minTheta[6] = 1
+    maxTheta = numpy.ones(12)
+    maxTheta[0] = 1000
+    maxTheta[6] = 1000
+    print(params)
+    params = numpy.clip(params, minTheta, maxTheta)    
+    
+    logging.debug("Theta = " + str(params))
     undirected = True
     graph = HIVGraph(M, undirected)
     
@@ -49,40 +62,55 @@ def createModel(t):
     featureInds[HIVVertices.stateIndex] = False
     featureInds = numpy.arange(featureInds.shape[0])[featureInds]
     matcher = GraphMatch("PATH", alpha=0.5, featureInds=featureInds, useWeightM=False)
-    graphMetrics = HIVGraphMetrics2(targetGraph, epsilonArray[t], matcher, endDate)
+    graphMetrics = HIVGraphMetrics2(targetGraph, breakDist, matcher, endDate)
+    graphMetrics.breakDist = 0.0 
 
     rates = HIVRates(graph, hiddenDegSeq)
     model = HIVEpidemicModel(graph, rates, T=float(endDate), T0=float(startDate), metrics=graphMetrics)
     model.setRecordStep(recordStep)
-    model.setPrintStep(printStep)
+    model.setParams(params)
+    model.simulate()
 
-    return model
+    return model.distance()
+
+def minFunc(args): 
+    (i, theta, alg, options, jacobian, tol) = args 
+    result =  scipy.optimize.minimize(runModel, theta, method=alg, options=options, jac=jacobian, tol=tol)
+    
+    logging.debug("Accepting theta=" + str(result.x) + " dist=" + str(result.fun))
+    fileName = thetaDir + "theta_i="+str(i)
+    distArray = numpy.array([result.fun])            
+    numpy.savez(fileName, result.x, distArray)
+    return result 
 
 if len(sys.argv) > 1:
     numProcesses = int(sys.argv[1])
 else: 
     numProcesses = multiprocessing.cpu_count()
 
-posteriorSampleSize = 20
-thetaLen = 10
+meanTheta, sigmaTheta = HIVModelUtils.toyTheta()
 
-logging.debug("Posterior sample size " + str(posteriorSampleSize))
 
-sigmaScale = 0.5 
-meanTheta = HIVModelUtils.toyTheta()
-abcParams = HIVABCParameters(meanTheta, sigmaScale, 0.2)
+
+#Load initial guess from toy data
+N = 8
+t = 0  
 thetaDir = resultsDir + "theta/"
+thetaArray, dists = loadThetaArray(N, thetaDir, t)
+print(thetaArray)
 
-abcSMC = ABCSMC(epsilonArray, createModel, abcParams, thetaDir)
-abcSMC.setPosteriorSampleSize(posteriorSampleSize)
-abcSMC.batchSize = 30
-thetasArray = abcSMC.run()
+paramList = []
+for i in range(N): 
+    args = (i, thetaArray[i, :], 'BFGS', {"maxiter":2}, False, 0.05)
+    paramList.append(args)
+    
+pool = multiprocessing.Pool(processes=numProcesses)               
+resultsIterator = pool.map(minFunc, paramList)     
+#resultsIterator = map(minFunc, paramList)     
+pool.terminate()    
 
-meanTheta = numpy.mean(thetasArray, 0)
-stdTheta = numpy.std(thetasArray, 0)
-logging.debug(thetasArray)
-logging.debug("meanTheta=" + str(meanTheta))
-logging.debug("stdTheta=" + str(stdTheta))
-logging.debug("realTheta=" + str(HIVModelUtils.defaultTheta()))
+for result in resultsIterator:     
+    logging.debug(result.x)
+    logging.debug(result.fun)
 
 logging.debug("All done!")

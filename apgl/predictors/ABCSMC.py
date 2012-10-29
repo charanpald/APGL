@@ -10,19 +10,51 @@ from datetime import datetime
 from apgl.util.Util import Util 
 from apgl.util.Parameter import Parameter 
 
-def runModel(args):
-    theta, createModel, t = args 
-    
-    logging.debug("Using theta value : " + str(theta)) 
-    model = createModel(t)
-    model.setParams(theta)
-    model.simulate()
-    dist = model.distance() 
-    del model 
-    return dist
+def loadThetaArray(N, thetaDir, t): 
+    """
+    Load the thetas from a particular directory. 
+    """
+    currentThetas = [] 
+    dists = []
+        
+    for i in range(N): 
+        fileName = thetaDir + "theta_t="+str(t)+"_"+str(i)+".npz"
+        if os.path.exists(fileName): 
+            data = numpy.load(fileName)
+            currentThetas.append(data["arr_0"])
+            dists.append(data["arr_1"])
+            
+    return numpy.array(currentThetas), numpy.array(dists)
 
+def runModel(args):
+    theta, createModel, t, epsilon, N, thetaDir = args     
+    currentTheta = loadThetaArray(N, thetaDir, t)[0].tolist()
+    
+    if len(currentTheta) < N:     
+        logging.debug("Using theta value : " + str(theta)) 
+        model = createModel(t)
+        model.setParams(theta)
+        model.simulate()
+        dist = model.distance() 
+        del model 
+        
+        currentTheta = loadThetaArray(N, thetaDir, t)[0].tolist()                
+        
+        if dist <= epsilon and len(currentTheta) < N:    
+            logging.debug("Accepting " + str(len(currentTheta)) + " pop. " + str(t) + " " + str(theta)  + " dist=" + str(dist))
+            fileName = thetaDir + "theta_t="+str(t)+"_"+str(len(currentTheta))
+            
+            distArray = numpy.array([dist])            
+            numpy.savez(fileName, theta, distArray)
+            currentTheta.append(theta)
+            
+            return 1, 1
+            
+        return 1, 0 
+    return 0, 0 
+            
 class ABCSMC(object):
-    def __init__(self, epsilonArray, createModel, paramsObj, thetaDir):
+    def __init__(self, epsilonArray, createModel, paramsObj, thetaDir, autoEpsilon=False):
         """
         Create a multiprocessing SMCABC object with the given arguments. The aim
         is to estimate a posterior pi(theta| x) propto f(x|theta) pi(theta) without
@@ -32,14 +64,14 @@ class ABCSMC(object):
         
         :param epsilonArray: an array of successively smaller minimum distances
         :type epsilonArray: `numpy.ndarray` 
-        
-        :param Sprime: the summary statistics on real data
    
-        :param createModel: A function to create a new stochastic model
+        :param createModel: A function to create a new stochastic model. The model must have a distance function with returns the distance to the target theta. 
 
         :param paramsObj: An object which stores information about the parameters of the model 
         
-        :param metrics: An object to compute summary statistics and distances 
+        :param thetaDir: The directory to store theta values 
+        
+        :param autoEpsilon: If autoEpsilon is true then the first value in epsilonArray is used as epsilon, and epsilonArray[t+1] is computed as the min dist for particles at t   
         """
         dt = datetime.now()
         numpy.random.seed(dt.microsecond)
@@ -47,6 +79,7 @@ class ABCSMC(object):
         self.createModel = createModel
         self.abcParams = paramsObj 
         self.thetaDir = thetaDir 
+        self.autoEpsilon = autoEpsilon
 
         #Number of particles
         self.T = epsilonArray.shape[0]
@@ -54,6 +87,10 @@ class ABCSMC(object):
         self.N = 10
         self.numProcesses = multiprocessing.cpu_count() 
         self.batchSize = self.numProcesses*2
+        self.numRuns = numpy.zeros(self.T) 
+        self.numAccepts = numpy.zeros(self.T)
+        self.maxRuns = 1000
+        self.epsThreshold = 0.02 
 
     def setPosteriorSampleSize(self, posteriorSampleSize):
         """
@@ -69,22 +106,8 @@ class ABCSMC(object):
         """
         Load all thetas saved for particle t. 
         """
-        return ABCSMC.loadThetaArray(self.N, self.thetaDir, t).tolist()
+        return loadThetaArray(self.N, self.thetaDir, t)
         
-    @staticmethod 
-    def loadThetaArray(N, thetaDir, t): 
-        """
-        Load the thetas from a particular directory. 
-        """
-        currentThetas = [] 
-            
-        for i in range(N): 
-            fileName = thetaDir + "theta_t="+str(t)+"_"+str(i)+".npy"
-            if os.path.exists(fileName): 
-                currentThetas.append(numpy.load(fileName))
-                
-        return numpy.array(currentThetas) 
-
     def findThetas(self, lastTheta, lastWeights, t): 
         """
         Find a theta to accept. 
@@ -93,36 +116,43 @@ class ABCSMC(object):
         currentTheta = self.loadThetas(t)
         
         while len(currentTheta) < self.N:
-            thetaList = []   
+            paramList = []   
             
             for i in range(self.batchSize):             
                 if t == 0:
                     tempTheta = self.abcParams.sampleParams()
-                    thetaList.append((tempTheta.copy(), self.createModel, t))
+                    paramList.append((tempTheta.copy(), self.createModel, t, self.epsilonArray[t], self.N, self.thetaDir))
                 else:  
                     while True: 
-                        tempTheta = lastTheta[Util.randomChoice(lastWeights)]
-                        tempTheta = self.abcParams.purtubationKernel(tempTheta)
+                        tempTheta = lastTheta[Util.randomChoice(lastWeights)[0], :]
+                        tempTheta = self.abcParams.perturbationKernel(tempTheta)
                         if self.abcParams.priorDensity(tempTheta) != 0: 
                             break 
-                    thetaList.append((tempTheta.copy(), self.createModel, t))
+                    paramList.append((tempTheta.copy(), self.createModel, t, self.epsilonArray[t], self.N, self.thetaDir))
 
             pool = multiprocessing.Pool(processes=self.numProcesses)               
-            resultIterator = pool.map(runModel, thetaList)     
-            #resultIterator = map(runModel, thetaList)     
-    
-            i = 0 
-            for dist in resultIterator: 
-                currentTheta = self.loadThetas(t)                 
-                
-                if dist <= self.epsilonArray[t] and len(currentTheta) !=self.N:
-                    logging.debug("Accepting particle " + str(len(currentTheta)) + " at population " + str(t) + " " + "theta=" + str(thetaList[i][0])  + " dist=" + str(dist))
-                    fileName = self.thetaDir + "theta_t="+str(t)+"_"+str(len(currentTheta))
-                    numpy.save(fileName, thetaList[i][0])
-                    currentTheta.append(thetaList[i][0])
-                i += 1 
+            resultsIterator = pool.map(runModel, paramList)     
+            #resultsIterator = map(runModel, paramList)     
+
+            for result in resultsIterator: 
+                self.numRuns[t] += result[0]
+                self.numAccepts[t] += result[1]
+            
+            if self.numRuns[t] >= self.maxRuns:
+                logging.debug("Maximum number of runs exceeded.")
+                break 
+            
+            currentTheta, dists = self.loadThetas(t)                 
             pool.terminate()
             
+        if self.autoEpsilon and t!=self.T-1:
+            self.epsilonArray[t+1] = numpy.mean(dists)
+            logging.debug("Found new epsilon: " + str(self.epsilonArray))
+            
+        logging.debug("Num accepts: " + str(self.numAccepts))
+        logging.debug("Num runs: " + str(self.numRuns))
+        logging.debug("Acceptance rate: " + str(self.numAccepts/(self.numRuns + self.numRuns==0)))
+              
         return currentTheta
 
     def run(self):
@@ -141,6 +171,13 @@ class ABCSMC(object):
             currentWeights = numpy.zeros(self.N)
 
             currentTheta = self.findThetas(lastTheta, lastWeights, t)
+            
+            if len(currentTheta) != self.N: 
+                break 
+            
+            if self.autoEpsilon and t!=self.T-1 and self.epsilonArray[t]-self.epsilonArray[t+1] <= self.epsThreshold:
+                logging.debug("Epsilon threshold became too small")
+                break 
                    
             for i in range(self.N):
                 theta = currentTheta[i]                
@@ -150,12 +187,15 @@ class ABCSMC(object):
                 else:
                     normalisation = 0
                     for j in range(self.N):
-                        normalisation += lastWeights[j]*self.abcParams.purtubationKernelDensity(lastTheta[j], theta)
-
+                        normalisation += lastWeights[j]*self.abcParams.perturbationKernelDensity(lastTheta[j], theta)
+                        
                     currentWeights[i] = self.abcParams.priorDensity(theta)/normalisation
-
+            
             currentWeights = currentWeights/numpy.sum(currentWeights)
         
         logging.debug("Finished ABC procedure") 
         
         return currentTheta 
+        
+    def setNumProcesses(self, numProcesses): 
+        self.numProcesses = numProcesses 

@@ -60,7 +60,7 @@ clusterer.nb_iter_kmeans = 20
 
 logging.info("Running exact method")
 iterator = IncreasingSubgraphListIterator(graph, subgraphIndicesList)
-clusterListExact, timeListExact = clusterer.clusterFromIterator(iterator, False, timeIter=True)
+clusterListExact, timeListExact, boundList = clusterer.clusterFromIterator(iterator, False, verbose=True)
 
 clusters = clusterListExact[0]
 

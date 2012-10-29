@@ -2,11 +2,10 @@ import numpy
 import logging 
 
 from apgl.util.Parameter import Parameter
-from exp.viroscopy.model.HIVGraph import HIVGraph 
 from exp.sandbox.GraphMatch import GraphMatch 
 
 class HIVGraphMetrics2(object): 
-    def __init__(self, realGraph, epsilon, matcher=None, T=1000):
+    def __init__(self, realGraph, breakDist=0.2, matcher=None, T=1000):
         """
         A class to model metrics about and between HIVGraphs such as summary 
         statistics and distances. In this case we perform graph matching 
@@ -22,9 +21,11 @@ class HIVGraphMetrics2(object):
         """
         
         self.dists = [] 
+        self.graphDists = []
+        self.labelDists = []
         self.realGraph = realGraph
-        self.epsilon = epsilon 
-        self.breakDist = 0.95 
+        self.breakDist = breakDist 
+        self.breakIgnore = 3 
         self.T = T 
         self.times = []
         
@@ -45,11 +46,13 @@ class HIVGraphMetrics2(object):
         #Only add distance if the real graph has nonzero size
         if subRealGraph.size != 0: 
             permutation, distance, time = self.matcher.match(subgraph, subRealGraph)
-            lastDist = self.matcher.distance(subgraph, subRealGraph, permutation, True, True) 
+            lastDist, lastGraphDist, lastLabelDist = self.matcher.distance(subgraph, subRealGraph, permutation, True, False, True) 
             
             logging.debug("Distance at time " + str(t) + " is " + str(lastDist) + " with simulated size " + str(subgraph.size) + " and real size " + str(subRealGraph.size))        
             
             self.dists.append(lastDist)
+            self.graphDists.append(lastGraphDist)
+            self.labelDists.append(lastLabelDist)
             self.times.append(t) 
         else: 
             logging.debug("Not adding distance at time " + str(t) + " with simulated size " + str(subgraph.size) + " and real size " + str(subRealGraph.size))
@@ -73,9 +76,29 @@ class HIVGraphMetrics2(object):
             return dists.mean()
         else: 
             return 0
+            
+    def meanGraphDistance(self):
+        """
+        This is the mean graph distance of the graph matches so far. 
+        """
+        graphDists = numpy.array(self.graphDists)
+        if graphDists.shape[0]!=0: 
+            return graphDists.mean()
+        else: 
+            return 0
+            
+    def meanLabelDistance(self):
+        """
+        This is the mean label distance of the graph matches so far. 
+        """
+        labelDists = numpy.array(self.labelDists)
+        if labelDists.shape[0]!=0: 
+            return labelDists.mean()
+        else: 
+            return 0
         
     def shouldBreak(self): 
-        if len(self.dists) < 3: 
+        if len(self.dists) < self.breakIgnore: 
             return False 
         else:
             return self.meanDistance() > self.breakDist 

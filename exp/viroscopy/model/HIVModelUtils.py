@@ -23,49 +23,52 @@ class HIVModelUtils(object):
         """
         This is taken from simulated runs using the real data 
         """
-        theta = numpy.array([ 150,  1, 1, 0.2, 0.2, 0.2, 0.2, 0.0038, 0.003, 0.017])
-        sigmaTheta = numpy.array([100, 1, 1, 0.2, 0.2, 0.2, 0.2, 0.02, 0.02, 0.02])
+        theta = numpy.array([ 500,  0.5, 0.5, 0.5, 0.2, 0.2, 500, 0.5, 0.5, 0.1, 0.1, 0.1])
+        sigmaTheta = theta*2
         return theta, sigmaTheta 
     
     @staticmethod
     def toyTheta(): 
-        theta = numpy.array([50, 1.0, 0.5, 1.0/800, 0.01, 0.05, 0.1, 38.0/1000, 30.0/1000, 170.0/1000])
-        sigmaTheta = theta/2
+        theta = numpy.array([100, 0.5, 1.0, 0.5, 1.0/800, 0.01, 200, 0.1, 0.2, 38.0/1000, 30.0/1000, 170.0/1000])
+        #theta = numpy.array([ 500,  0.5, 0.5, 0.5, 0.2, 0.2, 500, 0.5, 0.5, 0.1, 0.1, 0.1])
+        sigmaTheta = theta*2
         return theta, sigmaTheta 
         
     @staticmethod 
-    def toySimulationParams(): 
-
-        resultsDir = PathDefaults.getOutputDir() + "viroscopy/toy/" 
-        graphFile = resultsDir + "ToyEpidemicGraph0"
-        targetGraph = HIVGraph.load(graphFile)        
+    def toySimulationParams(loadTarget=True): 
+        
+        if loadTarget: 
+            resultsDir = PathDefaults.getOutputDir() + "viroscopy/toy/" 
+            graphFile = resultsDir + "ToyEpidemicGraph0"
+            targetGraph = HIVGraph.load(graphFile)        
         
         startDate = 0.0        
-        endDate = 1000.0
-        recordStep = 90
-        printStep = 500
-        M = 2000
+        endDate = 500.0
+        recordStep = 50
+        M = 5000
         
-        return startDate, endDate, recordStep, printStep, M, targetGraph
+        if loadTarget: 
+            return startDate, endDate, recordStep, M, targetGraph
+        else: 
+            return startDate, endDate, recordStep, M
         
     @staticmethod 
     def realSimulationParams(): 
         hivReader = HIVGraphReader()
         targetGraph = hivReader.readSimulationHIVGraph()
         
-        recordStep = 100 
-        printStep = 100
-        #Note that 2% of the population is bi 
+        numRecordSteps = 10 
+        #Note that 5% of the population is bi 
         M = targetGraph.size * 4
         #This needs to be from 1986 to 2004 
         startDate = CsvConverters.dateConv("01/01/1986")
-        endDate = CsvConverters.dateConv("01/01/1989")
-        #endDate = CsvConverters.dateConv("31/12/2004")
+        endDates = [CsvConverters.dateConv("01/01/1987"), CsvConverters.dateConv("01/01/1989"), CsvConverters.dateConv("01/01/1991"), CsvConverters.dateConv("01/01/1993"), CsvConverters.dateConv("01/01/1995"), CsvConverters.dateConv("01/01/1997")]
+        endDates = [float(i) for i in endDates]
         
-        return float(startDate), float(endDate), recordStep, printStep, M, targetGraph
+        return float(startDate), endDates, numRecordSteps, M, targetGraph
     
     @staticmethod     
-    def simulate(theta, startDate, endDate, recordStep, printStep, M, graphMetrics=None): 
+    def simulate(theta, startDate, endDate, recordStep, M, graphMetrics=None): 
         undirected = True
         graph = HIVGraph(M, undirected)
         logging.debug("Created graph: " + str(graph))
@@ -78,7 +81,6 @@ class HIVModelUtils(object):
         rates = HIVRates(graph, hiddenDegSeq)
         model = HIVEpidemicModel(graph, rates, endDate, startDate, metrics=graphMetrics)
         model.setRecordStep(recordStep)
-        model.setPrintStep(printStep)
         model.setParams(theta)
         
         logging.debug("Theta = " + str(theta))
@@ -94,7 +96,7 @@ class HIVModelUtils(object):
         times = [] 
         removedIndices = []
         
-        for t in numpy.arange(startDate, endDate, recordStep): 
+        for t in numpy.arange(startDate, endDate+1, recordStep): 
             times.append(t)
             removedIndices.append(graph.removedIndsAt(t))
 
@@ -105,10 +107,15 @@ class HIVModelUtils(object):
         femaleArray = numpy.array([numpy.sum(V[x, HIVVertices.genderIndex]==HIVVertices.female) for x in removedIndices])
         heteroArray = numpy.array([numpy.sum(V[x, HIVVertices.orientationIndex]==HIVVertices.hetero) for x in removedIndices])
         biArray = numpy.array([numpy.sum(V[x, HIVVertices.orientationIndex]==HIVVertices.bi) for x in removedIndices])
+        randDetectArray = numpy.array([numpy.sum(V[x, HIVVertices.detectionTypeIndex]==HIVVertices.randomDetect) for x in removedIndices])
+        conDetectArray = numpy.array([numpy.sum(V[x, HIVVertices.detectionTypeIndex]==HIVVertices.contactTrace) for x in removedIndices])
         
-        vertexArray = numpy.c_[removedArray, maleArray, femaleArray, heteroArray, biArray]
+        vertexArray = numpy.c_[removedArray, maleArray, femaleArray, heteroArray, biArray, randDetectArray, conDetectArray]
         
         graphStats = GraphStatistics()
         removedGraphStats = graphStats.sequenceScalarStats(graph, removedIndices, slowStats=False)
         
         return times, vertexArray, removedGraphStats
+    
+    toyTestPeriod = 250 
+    realTestPeriods = [365, 365, 365, 730]

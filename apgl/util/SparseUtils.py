@@ -26,12 +26,12 @@ class SparseUtils(object):
     @staticmethod
     def diag(X):
         """
-        Find the diagonal of a lil_matrix
+        Find the diagonal of a sparse matrix and return as a numpy array. 
         """
-        d = scipy.sparse.lil_matrix((X.shape[0], 1))
+        d = numpy.zeros(X.shape[0])
 
-        for i in range(0, X.shape[0]):
-            d[i, 0] = X[i, i]
+        for i in range(X.shape[0]):
+            d[i] = X[i, i]
 
         return d
 
@@ -42,4 +42,21 @@ class SparseUtils(object):
         """
         elements = X.data
         return numpy.sqrt((elements**2).sum()) 
+        
+    @staticmethod
+    def resize(X, shape): 
+        """
+        Resize a sparse matrix to the given shape, padding with zero if required. 
+        """
+        Y = scipy.sparse.csr_matrix((shape))
+        rows, cols = X.nonzero()
+        
+        for ind in range(rows.shape[0]):
+            i = rows[ind]
+            j = cols[ind]
+            if i < Y.shape[0] and j < Y.shape[1]: 
+                Y[i, j] = X[i, j]
+        
+        return Y 
+        
         

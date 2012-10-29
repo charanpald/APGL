@@ -58,9 +58,10 @@ class ErdosRenyiGenerator(AbstractGraphGenerator):
             raise ValueError("Graph must have no edges")
         
         numVertices = graph.getNumVertices()
+        #This function seems slightly weird- sometimes the last cols are empty 
         W = scipy.sparse.rand(numVertices, numVertices, self.p)
         W = W/W
-
+        
         if graph.isUndirected():
             diagW = W.diagonal()
             W = scipy.sparse.triu(W, 1)
@@ -87,6 +88,4 @@ class ErdosRenyiGenerator(AbstractGraphGenerator):
 
     def __str__(self):
         return "ErdosRenyiGenerator:p="+str(self.p)
-
-    graph = None
     

@@ -95,7 +95,7 @@ class SparseGraph(AbstractMatrixGraph):
 
         #Note that self.W.getnnz() doesn't seem to work correctly 
         if self.undirected == True:
-            return (self.W.nonzero()[0].shape[0] + SparseUtils.diag(self.W).getnnz())/2
+            return (self.W.nonzero()[0].shape[0] + numpy.sum(SparseUtils.diag(self.W) != 0))/2
         else: 
             return self.W.nonzero()[0].shape[0]
 

@@ -206,6 +206,14 @@ class GraphMatchTest(unittest.TestCase):
         permutation = numpy.arange(10, dtype=numpy.int)
         distance = GraphMatch(alpha=alpha).distance(self.graph2, graph1, permutation, True, True)
         self.assertEquals(distance, 1.0)
+           
+        #Test on unequal graphs and compare against distance from graphm 
+        alpha = 0.5 
+        matcher = GraphMatch(alpha=alpha)
+        permutation, distanceVector, time = matcher.match(self.graph1, self.graph2)
+        distance = matcher.distance(self.graph1, self.graph2, permutation, True, False)
+        
+        self.assertAlmostEquals(distanceVector[1], distance, 3)
         
     def testDistance2(self): 
         permutation = numpy.arange(self.numVertices)
@@ -298,10 +306,12 @@ class GraphMatchTest(unittest.TestCase):
         #print("Running match")
         J = numpy.ones((numExamples, numFeatures))
         Z = numpy.zeros((numExamples, numFeatures))
+
         C2 = matcher.matrixSimilarity(J, Z)
-        #This should be 0 ideally 
+        #This should be 1 ideally 
         
-        nptst.assert_array_almost_equal(C2, numpy.zeros(C2.shape))  
+        
+        nptst.assert_array_almost_equal(C2, numpy.ones(C2.shape))  
         
         C2 = matcher.matrixSimilarity(J, J)
         nptst.assert_array_almost_equal(C2, numpy.ones(C2.shape))  

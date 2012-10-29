@@ -2,6 +2,7 @@ import numpy
 import logging
 import scipy.sparse
 import scipy.sparse.linalg
+import scipy.linalg
 from apgl.util.Util import Util 
 
 class Nystrom(object):
@@ -32,8 +33,9 @@ class Nystrom(object):
 
         A = X[inds, :][:, inds]
         B = X[inds, :][:, invInds]
-
-        Am12 = Util.matrixPowerh(A, -0.5)
+        
+        Am12 = numpy.linalg.inv(scipy.linalg.sqrtm(A))
+        #Am12 = Util.matrixPowerh(A, -0.5)
         S = A + Am12.dot(B).dot(B.T).dot(Am12)
 
         lmbda, U = numpy.linalg.eig(S)
@@ -81,32 +83,22 @@ class Nystrom(object):
             BB = numpy.array((B*B.T).todense())
         else:
             BB = B.dot(B.T)
-
+        
+        #Following line is very slow 
+        #Am12 = scipy.linalg.sqrtm(numpy.linalg.pinv(A)) 
         Am12 = Util.matrixPowerh(A, -0.5)
         S = A + Am12.dot(BB).dot(Am12)
+        S = (S.T + S)/2
 
-        #tol = 10**-8
-        #A12 = Util.matrixPowerh(A, 0.5)
-        #AA = A.dot(A)
-        #assert numpy.linalg.norm(A12.dot(S).dot(A12) - AA - BB) < tol
-
-#        if __debug__:
-#            file_name = "matrix"
-#            try:
-#                with open(file_name, 'wb') as fd:
-#                    numpy.savetxt(fd, S)
-#            except IOError as e:
-#                logging.warning(" unable to open file '", file_name, "'\n", e)
-#                logging.warning("=> matrix not saved")
-#                raise
         lmbda, U = Util.safeEigh(S)
-#        V = X[:, inds].dot(Am12).dot(U).dot(numpy.diag(lmbda**-0.5))
+
         tol = 10**-10
-        lmbdaN = lmbda
+        lmbdaN = lmbda.copy()
         lmbdaN[numpy.abs(lmbda) < tol] = 0
         lmbdaN[numpy.abs(lmbda) > tol] = lmbdaN[numpy.abs(lmbda) > tol]**-0.5
+        
         V = X[:, inds].dot(Am12.dot(U)*lmbdaN)
-
+        
         return lmbda, V
 
     @staticmethod 

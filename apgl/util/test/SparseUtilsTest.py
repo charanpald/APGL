@@ -5,6 +5,9 @@ import scipy.sparse
 from apgl.util.SparseUtils import SparseUtils
 
 class  SparseUtilsTest(unittest.TestCase):
+    def setUp(self): 
+        numpy.random.seed(21)
+    
     def testEquals(self):
         A = numpy.array([[4, 2, 1], [6, 3, 9], [3, 6, 0]])
         B = numpy.array([[4, 2, 1], [6, 3, 9], [3, 6, 0]])
@@ -49,6 +52,37 @@ class  SparseUtilsTest(unittest.TestCase):
             self.assertAlmostEquals(norm, norm2)
             self.assertAlmostEquals(norm, norm3)
 
+    def testResize(self): 
+        numRows = 10
+        numCols = 10        
+        
+        A = scipy.sparse.rand(numRows, numCols, 0.1, "csr") 
+        
+        B = SparseUtils.resize(A, (5, 5))
+        
+        self.assertEquals(B.shape, (5, 5))
+        for i in range(5): 
+            for j in range(5): 
+                self.assertEquals(B[i,j], A[i,j])
+                
+        B = SparseUtils.resize(A, (15, 15))
+        
+        self.assertEquals(B.shape, (15, 15))
+        self.assertEquals(B.nnz, A.nnz) 
+        for i in range(10): 
+            for j in range(10): 
+                self.assertEquals(B[i,j], A[i,j])
+
+
+    def testDiag(self):
+        numRows = 10
+        numCols = 10  
+        A = scipy.sparse.rand(numRows, numCols, 0.5, "csr")
+
+        d = SparseUtils.diag(A)
+
+        for i in range(numRows): 
+            self.assertEquals(d[i], A[i,i])             
 
 if __name__ == '__main__':
     unittest.main()
