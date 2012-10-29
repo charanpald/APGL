@@ -189,6 +189,27 @@ class AbstractMatrixGraphTest(unittest.TestCase):
         tol = 10**-6
         self.assertTrue(numpy.linalg.norm(L - L2) < tol)
 
+    def normalisedLaplacianSym(self):
+        numVertices = 10
+        numFeatures = 0
+
+        vList = VertexList(numVertices, numFeatures)
+        graph = SparseGraph(vList)
+
+        ell = 2
+        m = 2
+        generator = BarabasiAlbertGenerator(ell, m)
+        graph = generator.generate(graph)
+
+        k = 10
+        W = graph.getSparseWeightMatrix()
+        L = GraphUtils.shiftLaplacian(W)
+
+        L2 = graph.normalisedLaplacianSym()
+
+        tol = 10**-6
+        self.assertTrue(numpy.linalg.norm(L - L2) < tol)
+
 
     def testRandIndex(self): 
         clustering1 = numpy.array([1, 1, 1, 2, 2, 2])
