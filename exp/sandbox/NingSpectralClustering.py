@@ -177,7 +177,7 @@ class NingSpectralClustering(object):
         
         return lmbda, Q 
 
-    def cluster(self, graphIterator, T=10, timeIter=False):
+    def cluster(self, graphIterator, T=10, verbose=False):
         """
         Find a set of clusters using the graph and list of subgraph indices. The
         T parameter is how often one recomputes the eigenvalues.
@@ -186,6 +186,7 @@ class NingSpectralClustering(object):
         clustersList = []
         decompositionTimeList = [] 
         kMeansTimeList = [] 
+        boundList = []
 
         iter = 0 
 
@@ -246,7 +247,7 @@ class NingSpectralClustering(object):
             lastW = W.copy()
             iter += 1
 
-        if timeIter:
-            return clustersList, numpy.array((decompositionTimeList, kMeansTimeList)).T
+        if verbose:
+            return clustersList, numpy.array((decompositionTimeList, kMeansTimeList)).T, boundList
         else:
             return clustersList
