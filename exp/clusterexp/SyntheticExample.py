@@ -71,22 +71,23 @@ class ThreeClustIterator(object):
   
 numClusters = 3
 k1 = numClusters
-k2 = 3
-k3 = 80
-clusterer = IterativeSpectralClustering(k1, k2)
-nystromClusterer = IterativeSpectralClustering(k1, k2, k3=100, nystromEigs=True)
-ningsClusterer = NingSpectralClustering(k1)
+k2 = 20
+k3 = 90
 T = 8 # index of iteration where exact decomposition is computed
+exactClusterer = IterativeSpectralClustering(k1, k2, alg="exact")
+iascClusterer = IterativeSpectralClustering(k1, k2, alg="IASC", T=T)
+nystromClusterer = IterativeSpectralClustering(k1, k3=k3, alg="nystrom")
+ningsClusterer = NingSpectralClustering(k1, T=T)
 
 #After 0.20 results are really bad 
-ps = numpy.arange(0.05, 0.20, 0.05)
+ps = numpy.arange(0.05, 0.20, 0.1)
 #ps = numpy.arange(0.05, 0.20, 0.1)
 pClust = 0.3
 
 perms = [l for l in itertools.permutations([0, 1, 2])]
 #numRepetitions = 50
 numRepetitions = 5
-do_Nings = False
+do_Nings = True
 numGraphs = len(ThreeClustIterator().subgraphIndicesList) 
 
 meanClustErrApprox = numpy.zeros((ps.shape[0], numGraphs, numRepetitions))
@@ -103,22 +104,22 @@ for r in range(numRepetitions):
         logging.info("Run " + str(r) + "  p " + str(ps[t]))
         p = ps[t]
 
-        logging.info("Running exact method")
+        logging.debug("Running exact method")
         graphIterator = ThreeClustIterator(p, numClusters, r).getIterator()
-        clustListExact = clusterer.clusterFromIterator(graphIterator, False)
+        clustListExact = exactClusterer.clusterFromIterator(graphIterator, False)
         
-        logging.info("Running approximate method")
+        logging.debug("Running approximate method")
         graphIterator = ThreeClustIterator(p, numClusters, r).getIterator()
-        clustListApprox = clusterer.clusterFromIterator(graphIterator, True, T=T)
+        clustListApprox = iascClusterer.clusterFromIterator(graphIterator, False)
         
-        logging.info("Running Nystrom method")
+        logging.debug("Running Nystrom method")
         graphIterator = ThreeClustIterator(p, numClusters, r).getIterator()
-        clustListNystrom = nystromClusterer.clusterFromIterator(graphIterator, True, T=T)
+        clustListNystrom = nystromClusterer.clusterFromIterator(graphIterator, False)
 
         if do_Nings:
-            logging.info("Running Nings method")
+            logging.debug("Running Nings method")
             graphIterator = ThreeClustIterator(p, numClusters, r).getIterator()
-            clustListNings = ningsClusterer.cluster(toDenseGraphListIterator(graphIterator), T=T)
+            clustListNings = ningsClusterer.cluster(toDenseGraphListIterator(graphIterator))
 
         # computer rand index error for each iteration
         # error: proportion of pairs of vertices (x,y) s.t.
@@ -182,7 +183,7 @@ for i_res in range(3):
     res = [meanClustErrExact, meanClustErrApprox, meanClustErrNystrom, meanClustErrNings][i_res]
     names = ["Exact", "IASC", "Nystrom", "Ning"]
     for i_p in range(len(ps)):
-        plt.plot(iterations, res[i_p, :], plotStyles[i_res][i_p], label=names[i_res] + "_" + str(ps[i_p]))
+        plt.plot(iterations, res[i_p, :], plotStyles[i_res][i_p], label=names[i_res] + " p=" + str(ps[i_p]))
 plt.xlabel("Graph index")
 plt.ylabel("Rand Index")
 plt.savefig(resultsDir + "ThreeClustErrors.eps")

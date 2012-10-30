@@ -98,7 +98,8 @@ numRepetitions = 50
 #numRepetitions = 2
 
 print "compute clusters"
-clusterer = IterativeSpectralClustering(k1, k2)
+exactClusterer = IterativeSpectralClustering(k1, alg="exact")
+approxClusterer = IterativeSpectralClustering(k1, k2, T=1000, alg="IASC")
 ningsClusterer = NingSpectralClustering(k1)
 
 def getGraphIterator():
@@ -111,13 +112,13 @@ for r in range(numRepetitions):
 		# run with exact eigenvalue decomposition
 		logging.info("Running exact method")
 		graphIterator = getGraphIterator()
-		clustersExact = clusterer.clusterFromIterator(graphIterator, False)
+		clustersExact = exactClusterer.clusterFromIterator(graphIterator)
 
 	if runIASC:
 		# run with our incremental approximation
 		logging.info("Running approximate method")
 		graphIterator = getGraphIterator()
-		clustListApprox = clusterer.clusterFromIterator(graphIterator, True, T=1000)
+		clustListApprox = approxClusterer.clusterFromIterator(graphIterator)
 
 	if runNing:
 		# run with Ning's incremental approximation
