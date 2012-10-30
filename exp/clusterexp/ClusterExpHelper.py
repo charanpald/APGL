@@ -29,6 +29,7 @@ class ClusterExpHelper(object):
         self.k1 = 10
         self.k2 = 10 
         self.k3 = 500
+        self.T = 10 
 
     def getIterator(self):
         return self.getIteratorFunc()
@@ -65,12 +66,10 @@ class ClusterExpHelper(object):
         """
         Run the selected clustering experiments and save results
         """
-        if self.runIASC or self.runExact:
-            clusterer = IterativeSpectralClustering(self.k1, self.k2)
-            clusterer.nb_iter_kmeans = 20
-
         if self.runIASC:
             logging.info("Running approximate method")
+            clusterer = IterativeSpectralClustering(self.k1, self.k2, T=self.T, alg="IASC")
+            clusterer.nb_iter_kmeans = 20
             iterator = self.getIterator()
             clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, verbose=True)
 
@@ -79,18 +78,20 @@ class ClusterExpHelper(object):
 
         if self.runExact:
             logging.info("Running exact method")
+            clusterer = IterativeSpectralClustering(self.k1, alg="exact")
+            clusterer.nb_iter_kmeans = 20
             iterator = self.getIterator()
-            clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, False, verbose=True)
+            clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, verbose=True)
 
             resultsFileName = self.resultsDir + self.datasetName + "ResultsExact.npz"
             self.recordResults(clusterList, timeList, resultsFileName)
 
         if self.runNystrom:
             logging.info("Running nystrom method without updates")
-            clusterer = IterativeSpectralClustering(self.k1, self.k2, k3=self.k3, nystromEigs=True)
+            clusterer = IterativeSpectralClustering(self.k1, self.k2, k3=self.k3, alg="nystrom")
             clusterer.nb_iter_kmeans = 20
             iterator = self.getIterator()
-            clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, False, verbose=True)
+            clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, verbose=True)
 
             resultsFileName = self.resultsDir + self.datasetName + "ResultsNystrom.npz"
             self.recordResults(clusterList, timeList, resultsFileName)
@@ -108,8 +109,8 @@ class ClusterExpHelper(object):
         if self.runNing:
             logging.info("Running Nings method")
             iterator = self.getIterator()
-            clusterer = NingSpectralClustering(self.k1)
-            clusterList, timeList, boundList = clusterer.cluster(toDenseGraphListIterator(iterator), verbose=True)
+            clusterer = NingSpectralClustering(self.k1, T=self.T)
+            clusterList, timeList = clusterer.cluster(toDenseGraphListIterator(iterator), True)
 
             resultsFileName = self.resultsDir + self.datasetName + "ResultsNing.npz"
             self.recordResults(clusterList, timeList, resultsFileName)
