@@ -12,8 +12,14 @@ import scipy.cluster.vq as vq
 from apgl.util.VqUtils import VqUtils
 
 class NingSpectralClustering(object):
-    def __init__(self, k):
+    def __init__(self, k, T=10):
+        """
+        :param k: The number of clusters         
+        
+        :param T: how often one recomputes the eigenvalues.
+        """
         self.k = k
+        self.T = T
         self.kmeansIter = 20
         self.debugSave = False
         self.debugSVDiFile = 0
@@ -33,8 +39,6 @@ class NingSpectralClustering(object):
             numpy.save("i", i)
             numpy.save("j", j)
             numpy.save("deltaW", deltaW)
-
-
 
         n = W.shape[0]
         degrees = numpy.sum(W, 0)
@@ -176,10 +180,9 @@ class NingSpectralClustering(object):
         
         return lmbda, Q 
 
-    def cluster(self, graphIterator, T=10, timeIter=False):
+    def cluster(self, graphIterator, timeIter=False):
         """
-        Find a set of clusters using the graph and list of subgraph indices. The
-        T parameter is how often one recomputes the eigenvalues.
+        Find a set of clusters using the graph and list of subgraph indices. 
         """
         tol = 10**-6 
         clustersList = []
@@ -189,20 +192,30 @@ class NingSpectralClustering(object):
 
         for W in graphIterator:
             startTime = time.time()
-            logging.info("Graph index:" + str(iter))
+            logging.debug("Graph index:" + str(iter))
 
-            if iter % T != 0:
+            if iter % self.T != 0:
                 #Figure out the similarity changes in existing edges
-                n = lastW.shape[0]
+                n = lastW.shape[0] 
                 deltaW = W.copy()
-                deltaW[0:n, 0:n] = deltaW[0:n, 0:n] - lastW
+                #Vertices are removed 
+                if n > W.shape[0]:  
+                    deltaW = Util.extendArray(deltaW, lastW.shape)
+                #Vertices added 
+                elif n < W.shape[0]: 
+                    deltaW[0:n, 0:n] = deltaW[0:n, 0:n] - lastW
                 
                 #If there are vertices added, add zero rows/cols to W
                 WHat = lastW.copy()
-                WHat = numpy.c_[numpy.r_[WHat, numpy.zeros((W.shape[0]-n, n))], numpy.zeros((W.shape[1], W.shape[0]-n))]
-                
-                Q = numpy.r_[Q, numpy.zeros((W.shape[0]-Q.shape[0], Q.shape[1]))]
+                if n < W.shape[0]: 
+                    WHat = numpy.c_[numpy.r_[WHat, numpy.zeros((W.shape[0]-n, n))], numpy.zeros((W.shape[1], W.shape[0]-n))]                
+                    Q = numpy.r_[Q, numpy.zeros((W.shape[0]-Q.shape[0], Q.shape[1]))]
+                    
                 lmbda, Q = self.__updateEigenSystem(lmbda, Q, deltaW, WHat)
+                
+                #Added this bit 
+                if n > W.shape[0]:
+                    Q = Q[0:W.shape[0], :]
             else:
                 logging.debug("Recomputing eigensystem")
                 D = numpy.diag(numpy.sum(W, 0)) + tol*numpy.eye(W.shape[0])
