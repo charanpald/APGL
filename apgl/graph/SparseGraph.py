@@ -304,6 +304,7 @@ class SparseGraph(AbstractMatrixGraph):
         """
         :returns: the adjacency matrix in the native sparse format.
         """
+        self.W.eliminate_zeros()
         A = self.W/self.W
         return A
 
