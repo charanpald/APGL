@@ -29,6 +29,8 @@ class ClusterExpHelper(object):
         
         self.algoArgs.T = 10
         
+        self.algoArgs.computeBound = False
+        
         # Variables related to the dataset
         self.getIteratorFunc = iteratorFunc
         self.numGraphs = numGraphs
@@ -54,6 +56,7 @@ class ClusterExpHelper(object):
         algoParser.add_argument("--k2", type=int, help="Rank of the approximation", default=self.algoArgs.k2)
         algoParser.add_argument("--k3", type=int, help="Number of row/cols used by to find the approximate eigenvalues with Nystrom approach", default=self.algoArgs.k3)
         algoParser.add_argument("--T", type=int, help="The exact decomposition is recomputed any T-ith iteration", default=self.algoArgs.T)
+        algoParser.add_argument("--computeBound", action="store_true", default=self.algoArgs.computeBound, help="Compute bounds on spaces angles")
 
         # parse
         algoParser.parse_args(cmdLine, namespace=args)
@@ -112,6 +115,7 @@ class ClusterExpHelper(object):
         if self.algoArgs.runIASC or self.algoArgs.runExact:
             clusterer = IterativeSpectralClustering(self.algoArgs.k1, self.algoArgs.k2)
             clusterer.nb_iter_kmeans = 20
+            clusterer.computeBound = self.algoArgs.computeBound
 
         if self.algoArgs.runIASC:
             logging.info("Running approximate method")
@@ -133,6 +137,7 @@ class ClusterExpHelper(object):
             logging.info("Running nystrom method without updates")
             clusterer = IterativeSpectralClustering(self.algoArgs.k1, self.algoArgs.k2, k3=self.algoArgs.k3, nystromEigs=True)
             clusterer.nb_iter_kmeans = 20
+            clusterer.computeBound = self.algoArgs.computeBound
             iterator = self.getIterator()
             clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, False, verbose=True, T=self.algoArgs.T, TLogging=TLogging)
 
