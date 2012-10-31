@@ -3,6 +3,7 @@ Some common functions used for the clustering experiments
 """
 import logging
 import numpy
+from copy import copy
 from apgl.graph.GraphUtils import GraphUtils 
 from apgl.util.PathDefaults import PathDefaults
 from exp.sandbox.IterativeSpectralClustering import IterativeSpectralClustering
@@ -12,24 +13,55 @@ from exp.sandbox.GraphIterators import toDenseGraphListIterator
 import networkx
 import argparse
 
-
 class ClusterExpHelper(object):
-    def __init__(self, iteratorFunc, numGraphs, cmdLine=None, algoArgs = None):
-        # Default values for variables to choose which methods to run
-        self.algoArgs = argparse.Namespace()
-        self.algoArgs.runIASC = False
-        self.algoArgs.runExact = False
-        self.algoArgs.runNystrom = False
-        self.algoArgs.runNing = False
-        self.algoArgs.runModularity = False
+    # priority for default args
+    # - best priority: command-line value
+    # - middle priority: set-by-function value
+    # - lower priority: class value
+    defaultAlgoArgs = argparse.Namespace()
+    defaultAlgoArgs.runIASC = False
+    defaultAlgoArgs.runExact = False
+    defaultAlgoArgs.runNystrom = False
+    defaultAlgoArgs.runNing = False
+    defaultAlgoArgs.runModularity = False
 
-        self.algoArgs.k1 = 10
-        self.algoArgs.k2 = 10 
-        self.algoArgs.k3 = 500
+    defaultAlgoArgs.k1 = 10
+    defaultAlgoArgs.k2 = 10 
+    defaultAlgoArgs.k3 = 500
+    
+    defaultAlgoArgs.T = 10
+    
+    defaultAlgoArgs.computeBound = False
+
+    @staticmethod
+    def newDefaultAlgoArgs(defaultAlgoArgs=None):
+        defaultAlgoArgs_ = copy(ClusterExpHelper.defaultAlgoArgs)
+        if defaultAlgoArgs:
+            for key, val in vars(defaultAlgoArgs).items():
+                defaultAlgoArgs_.__setattr__(key, val) 
         
-        self.algoArgs.T = 10
+        return(defaultAlgoArgs_)
+    
+    @staticmethod
+    def newAlgoParser(defaultAlgoArgs=None, add_help=False):
+        # default algorithm args
+        defaultAlgoArgs = ClusterExpHelper.newDefaultAlgoArgs(defaultAlgoArgs)
         
-        self.algoArgs.computeBound = False
+        # define parser
+        algoParser = argparse.ArgumentParser(description="", add_help=add_help)
+        for method in ["runIASC", "runExact", "runModularity", "runNystrom", "runNing"]:
+            algoParser.add_argument("--" + method, action="store_true", default=defaultAlgoArgs.__getattribute__(method))
+        algoParser.add_argument("--k1", type=int, help="Number of clusers", default=defaultAlgoArgs.k1)
+        algoParser.add_argument("--k2", type=int, help="Rank of the approximation", default=defaultAlgoArgs.k2)
+        algoParser.add_argument("--k3", type=int, help="Number of row/cols used by to find the approximate eigenvalues with Nystrom approach", default=defaultAlgoArgs.k3)
+        algoParser.add_argument("--T", type=int, help="The exact decomposition is recomputed any T-ith iteration", default=defaultAlgoArgs.T)
+        algoParser.add_argument("--computeBound", action="store_true", default=defaultAlgoArgs.computeBound, help="Compute bounds on spaces angles")
+        
+        return(algoParser)
+    
+    def __init__(self, iteratorFunc, numGraphs, cmdLine=None, defaultAlgoArgs = None):
+        # Default values for variables to choose which methods to run
+        self.algoArgs = copy(self.__class__.defaultAlgoArgs)
         
         # Variables related to the dataset
         self.getIteratorFunc = iteratorFunc
@@ -39,29 +71,17 @@ class ClusterExpHelper(object):
         self.resultsDir = PathDefaults.getOutputDir() + "cluster/"
 
         # read params from command line
-        self.readAlgoParams(cmdLine, algoArgs)
+        self.readAlgoParams(cmdLine, defaultAlgoArgs)
 
-    def readAlgoParams(self, cmdLine=None, args = None):
-        # default values
-        if not args:
-            args = argparse.Namespace()
-        for key, val in vars(args).items():
-            self.algoArgs.__setattr__(key, val) 
-
+    def readAlgoParams(self, cmdLine=None, defaultAlgoArgs=None):
+        # update current algorithm args
+        self.algoArgs = self.__class__.newDefaultAlgoArgs(self.algoArgs)
+        
         # define parser
-        algoParser = argparse.ArgumentParser(description="")
-        for method in ["runIASC", "runExact", "runModularity", "runNystrom", "runNing"]:
-            algoParser.add_argument("--" + method, action="store_true", default=self.algoArgs.__getattribute__(method))
-        algoParser.add_argument("--k1", type=int, help="Number of clusers", default=self.algoArgs.k1)
-        algoParser.add_argument("--k2", type=int, help="Rank of the approximation", default=self.algoArgs.k2)
-        algoParser.add_argument("--k3", type=int, help="Number of row/cols used by to find the approximate eigenvalues with Nystrom approach", default=self.algoArgs.k3)
-        algoParser.add_argument("--T", type=int, help="The exact decomposition is recomputed any T-ith iteration", default=self.algoArgs.T)
-        algoParser.add_argument("--computeBound", action="store_true", default=self.algoArgs.computeBound, help="Compute bounds on spaces angles")
+        algoParser = self.__class__.newAlgoParser(self.algoArgs, True)
 
         # parse
-        algoParser.parse_args(cmdLine, namespace=args)
-        for key, val in vars(args).items():
-            self.algoArgs.__setattr__(key, val)
+        algoParser.parse_args(cmdLine, namespace=self.algoArgs)
             
     def extendResultsDir(self, middle = None):
         if middle == None:
@@ -112,34 +132,34 @@ class ClusterExpHelper(object):
         """
         TLogging = max(self.numGraphs // 100, 1)
         
-        if self.algoArgs.runIASC or self.algoArgs.runExact:
-            clusterer = IterativeSpectralClustering(self.algoArgs.k1, self.algoArgs.k2)
-            clusterer.nb_iter_kmeans = 20
-            clusterer.computeBound = self.algoArgs.computeBound
-
         if self.algoArgs.runIASC:
             logging.info("Running approximate method")
+            clusterer = IterativeSpectralClustering(self.algoArgs.k1, self.algoArgs.k2, T=self.algoArgs.T, alg="IASC")
+            clusterer.nb_iter_kmeans = 20
+            clusterer.computeBound = self.algoArgs.computeBound
             iterator = self.getIterator()
-            clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, verbose=True, T=self.algoArgs.T, TLogging=TLogging)
+            clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, verbose=True, TLogging=TLogging)
 
             resultsFileName = self.resultsDir + "ResultsIASC.npz"
             self.recordResults(clusterList, timeList, resultsFileName)
 
         if self.algoArgs.runExact:
             logging.info("Running exact method")
+            clusterer = IterativeSpectralClustering(self.algoArgs.k1, alg="exact")
+            clusterer.nb_iter_kmeans = 20
             iterator = self.getIterator()
-            clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, False, verbose=True, TLogging=TLogging)
+            clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, verbose=True, TLogging=TLogging)
 
             resultsFileName = self.resultsDir + "ResultsExact.npz"
             self.recordResults(clusterList, timeList, resultsFileName)
 
         if self.algoArgs.runNystrom:
             logging.info("Running nystrom method without updates")
-            clusterer = IterativeSpectralClustering(self.algoArgs.k1, self.algoArgs.k2, k3=self.algoArgs.k3, nystromEigs=True)
+            clusterer = IterativeSpectralClustering(self.algoArgs.k1, self.algoArgs.k2, k3=self.algoArgs.k3, alg="nystrom")
             clusterer.nb_iter_kmeans = 20
             clusterer.computeBound = self.algoArgs.computeBound
             iterator = self.getIterator()
-            clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, False, verbose=True, T=self.algoArgs.T, TLogging=TLogging)
+            clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, verbose=True, TLogging=TLogging)
 
             resultsFileName = self.resultsDir + "ResultsNystrom.npz"
             self.recordResults(clusterList, timeList, resultsFileName)

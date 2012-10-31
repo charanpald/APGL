@@ -21,26 +21,40 @@ from apgl.util.VqUtils import VqUtils
 from apgl.util.Util import Util
 
 class IterativeSpectralClustering(object):
-    def __init__(self, k1, k2, k3=100, nystromEigs=False):
+    def __init__(self, k1, k2=20, k3=100, alg="exact", T=10):
         """
         Intialise this object with integer k1 which is the number of clusters to
         find, and k2 which is the maximum rank of the approximation of the shift
         Laplacian. When using the Nystrom approximation k3 is the number of row/cols
         used to find the approximate eigenvalues. 
+        
+        :param k1: The number of clusters 
+        
+        :param k2: The number of eigenvectors to keep for IASC 
+        
+        :param k3: The number of columns to sample for Nystrom approximation 
+        
+        :param alg: The algorithm to use: "exact", "IASC", or "nystrom" clustering
+        
+        :param T: The number of iterations before eigenvectors are recomputed in IASC 
         """
         Parameter.checkInt(k1, 1, float('inf'))
         Parameter.checkInt(k2, 1, float('inf'))
         Parameter.checkInt(k3, 1, float('inf'))
-        Parameter.checkBoolean(nystromEigs)
+        Parameter.checkInt(T, 1, float('inf'))
+        
+        if alg not in ["exact", "IASC", "nystrom"]: 
+            raise ValueError("Invalid algorithm : " + str(alg))
 
         self.k1 = k1
         self.k2 = k2
         self.k3 = k3
+        self.T = T
         
-        logging.debug("IterativeSpectralClustering(" + str((k1, k2, k3)) + ")")
+        logging.debug("IterativeSpectralClustering(" + str((k1, k2, k3, T)) + ")")
 
         self.nb_iter_kmeans = 100
-        self.nystromEigs = nystromEigs
+        self.alg = alg
         self.computeBound = False 
 
     def findCentroids(self, V, clusters):
@@ -55,18 +69,15 @@ class IterativeSpectralClustering(object):
             
         return centroids 
 
-    def clusterFromIterator(self, graphListIterator, approx=True, verbose=False, T=10, TLogging=None):
+    def clusterFromIterator(self, graphListIterator, verbose=False, TLogging=None):
         """
-        Find a set of clusters for the graphs given by the iterator. If approx
-        is True then we use the approximate eigen-update, otherwise we compute
-        the whole eigen decomposition. If verbose is true the each iteration is
-        timed and the results are returned as a list.
+        Find a set of clusters for the graphs given by the iterator. If verbose 
+        is true the each iteration is timed and bounded the results are returned 
+        as lists.
         
         The difference between a weight matrix and the previous one should be
         positive.
         """
-        Parameter.checkInt(T, 1, float('inf'))
-
         clustersList = []
         decompositionTimeList = [] 
         kMeansTimeList = [] 
@@ -84,30 +95,27 @@ class IterativeSpectralClustering(object):
 
             # --- Eigen value decomposition ---
             startTime = time.time()
-            if approx and i % T != 0:
-                omega, Q = self.approxUpdateEig(subW, ABBA, omega, Q)   
-                
-                if self.computeBound:
-                    inds = numpy.flipud(numpy.argsort(omega))
-                    Q = Q[:, inds]
-                    omega = omega[inds]
-                    bounds = self.pertBound(omega, Q, omegaKbot, AKbot, self.k2)
-                    #boundList.append([i, bounds[0], bounds[1]])
+            if self.alg=="IASC": 
+                if i % self.T != 0:
+                    omega, Q = self.approxUpdateEig(subW, ABBA, omega, Q)   
                     
-                    #Now use accurate values of norm of R and delta   
-                    rank = Util.rank(ABBA.todense())
-                    gamma, U = scipy.sparse.linalg.eigsh(ABBA, rank-1, which="LM", ncv = ABBA.shape[0])
-                    #logging.debug("gamma=" + str(gamma))
-                    bounds2 = self.realBound(omega, Q, gamma, AKbot, self.k2)                  
-                    boundList.append([i, bounds[0], bounds[1], bounds2[0], bounds2[1]])
-            else:
-                if approx and i != 0:
-                    logging.info("Recomputing eigenvectors")
-
-                if approx:                     
+                    if self.computeBound:
+                        inds = numpy.flipud(numpy.argsort(omega))
+                        Q = Q[:, inds]
+                        omega = omega[inds]
+                        bounds = self.pertBound(omega, Q, omegaKbot, AKbot, self.k2)
+                        #boundList.append([i, bounds[0], bounds[1]])
+                        
+                        #Now use accurate values of norm of R and delta   
+                        rank = Util.rank(ABBA.todense())
+                        gamma, U = scipy.sparse.linalg.eigsh(ABBA, rank-1, which="LM", ncv = ABBA.shape[0])
+                        #logging.debug("gamma=" + str(gamma))
+                        bounds2 = self.realBound(omega, Q, gamma, AKbot, self.k2)                  
+                        boundList.append([i, bounds[0], bounds[1], bounds2[0], bounds2[1]])      
+                else: 
+                    logging.debug("Computing exact eigenvectors")
                     self.storeInformation(subW, ABBA)
 
-                if not self.nystromEigs:
                     if self.computeBound: 
                         #omega, Q = scipy.sparse.linalg.eigsh(ABBA, min(self.k2*2, ABBA.shape[0]-1), which="LM", ncv = min(10*self.k2, ABBA.shape[0]))
                         rank = Util.rank(ABBA.todense())
@@ -120,10 +128,15 @@ class IterativeSpectralClustering(object):
                         omegaSort = numpy.flipud(numpy.sort(omega))
                     else: 
                         omega, Q = scipy.sparse.linalg.eigsh(ABBA, min(self.k2, ABBA.shape[0]-1), which="LM", ncv = min(10*self.k2, ABBA.shape[0]))
-                else:
-                    omega, Q = Nystrom.eigpsd(ABBA, self.k3)
-
-            if approx:
+                            
+            elif self.alg == "nystrom":
+                omega, Q = Nystrom.eigpsd(ABBA, self.k3)
+            elif self.alg=="exact": 
+                omega, Q = scipy.sparse.linalg.eigsh(ABBA, min(self.k1, ABBA.shape[0]-1), which="LM", ncv = min(10*self.k1, ABBA.shape[0]))
+            else:
+                raise ValueError("Invalid Algorithm: " + str(self.alg))
+                    
+            if self.alg=="IASC":
                 self.storeInformation(subW, ABBA)
             decompositionTimeList.append(time.time()-startTime)
 
@@ -153,7 +166,6 @@ class IterativeSpectralClustering(object):
             kMeansTimeList.append(time.time()-startTime)
 
             clustersList.append(clusters)
-
 
             #logging.debug("subW.shape: " + str(subW.shape))
             #logging.debug("len(clusters): " + str(len(clusters)))
@@ -237,7 +249,6 @@ class IterativeSpectralClustering(object):
         delta = pi[k-1] - gamma[k]
         
         #logging.debug((normRF, normR2, delta))
-        
         
         return normRF/delta,  normR2/delta
         

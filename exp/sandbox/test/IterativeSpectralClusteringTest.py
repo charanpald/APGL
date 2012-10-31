@@ -46,7 +46,7 @@ class IterativeSpectralClusteringTest(unittest.TestCase):
         clustersList = clusterer.clusterFromIterator(graphIterator)
 
         #Now test the Nystrom method
-        clusterer = IterativeSpectralClustering(k1, k2, nystromEigs=True)
+        clusterer = IterativeSpectralClustering(k1, k2, alg="nystrom")
         clustersList = clusterer.clusterFromIterator(graphIterator)
 
     def testClusterOnIncreasingGraphs(self):
@@ -110,7 +110,7 @@ class IterativeSpectralClusteringTest(unittest.TestCase):
 
         #Now test approximation of eigenvectors with iterator
         graphIterator = IncreasingSubgraphListIterator(graph, subgraphIndicesList)
-        clustersList2 = clusterer.clusterFromIterator(graphIterator, True)
+        clustersList2 = clusterer.clusterFromIterator(graphIterator)
 
         for i in range(len(clustersList2)):
             clusters = clustersList2[i]

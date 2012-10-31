@@ -73,7 +73,7 @@ def computeBound(A, omega, Q, omega2, Q2, k):
 
 
 k = 4
-numGraphs = 100 
+numGraphs = 10 
 nystromNs = [300, 600, 900]
 numClusterVertices = 250
 numMethods = len(nystromNs) + 2 
@@ -84,14 +84,14 @@ iterator = BoundGraphIterator(changeEdges=50, numGraphs=numGraphs, numClusterVer
 
 for W in iterator: 
     print("i="+str(i))
-    L = GraphUtils.shiftLaplacian(W)
+    L = GraphUtils.normalisedLaplacianSym(W)
     
     #print("rank=" + str(Util.rank(L.todense())))  
     
     if i == 0: 
         lastL = L
         lastOmega, lastQ = numpy.linalg.eigh(L.todense())
-        inds = numpy.flipud(numpy.argsort(lastOmega))
+        inds = numpy.argsort(lastOmega)
         lastOmega, lastQ = lastOmega[inds], lastQ[:, inds]
         initialOmega, initialQ = lastOmega[0:k], lastQ[:, 0:k]
         #Fix for weird error in EigenAdd2 later on 
@@ -99,7 +99,7 @@ for W in iterator:
     
     #Compute exact eigenvalues 
     omega, Q = numpy.linalg.eigh(L.todense())
-    inds = numpy.flipud(numpy.argsort(omega))    
+    inds = numpy.argsort(omega)
     omega, Q = omega[inds], Q[:, inds]
     omegak, Qk = omega[0:k], Q[:, 0:k]
        
@@ -107,16 +107,25 @@ for W in iterator:
     print("Running Nystrom")
     for j, nystromN in enumerate(nystromNs):  
         omega2, Q2 = Nystrom.eigpsd(L, nystromN)
-        inds = numpy.flipud(numpy.argsort(omega2))
+        inds = numpy.argsort(omega2)
         omega2, Q2 = omega2[inds], Q2[:, inds]
         omega2k, Q2k = omega2[0:k], Q2[:, 0:k]
         
         errors[i, j] = computeBound(L, omega, Q, omega2k, Q2k, k)
     
+    if i == 0: 
+        print(omega)
+        print(omega2)        
+        
+        plt.figure(0)
+        plt.plot(numpy.arange(omega.shape[0]), omega)
+        plt.plot(numpy.arange(omega2.shape[0]), omega2)
+        plt.show()    
+    
     #Incremental updates 
     print("Running Eigen-update")
     omega3, Q3 = eigenUpdate(lastL, L, lastOmega, lastQ, k)
-    inds = numpy.flipud(numpy.argsort(omega3))
+    inds = numpy.argsort(omega3)
     omega3, Q3 = omega3[inds], Q3[:, inds]
     omega3k, Q3k = omega3[0:k], Q3[:, 0:k]
     
@@ -135,15 +144,14 @@ for W in iterator:
 print(errors)
 
 plt.figure(0)
-#plt.plot(numpy.arange(errors.shape[0]), errors[:, 0], label="Nystrom m=300")
+plt.plot(numpy.arange(errors.shape[0]), errors[:, 0], label="Nystrom m=300")
 plt.plot(numpy.arange(errors.shape[0]), errors[:, 1], label="Nystrom m=600")
 plt.plot(numpy.arange(errors.shape[0]), errors[:, 2], label="Nystrom m=900")
 plt.plot(numpy.arange(errors.shape[0]), errors[:, 3], label="Eigen-update") 
-#plt.plot(numpy.arange(errors.shape[0]), errors[:, 4], label="Initial sol.")  
+#plt.plot(numpy.arange(errors.shape[0]), errors[:, 4], label="Initial sol.")
 plt.legend(loc="upper left")
 plt.xlabel("Graph no.")
 plt.ylabel("||sin(theta)||")
 
 plt.show()
-  
-
+#Result are terrible 

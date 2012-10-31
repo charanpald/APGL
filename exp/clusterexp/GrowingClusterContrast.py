@@ -6,7 +6,7 @@ import scipy
 import logging
 import sys
 import itertools
-#import matplotlib.pyplot as plt # removed untill present in python3
+import matplotlib.pyplot as plt
 from apgl.util.PathDefaults import PathDefaults
 from apgl.util.Util import Util
 from apgl.graph import *
@@ -29,13 +29,12 @@ import argparse
 args = argparse.Namespace()
 args.numLevel = 3 # including the level where all nodes are grouped
 args.numSubClustersPerLevel = 3
-args.numVerticesPerSmallestCluser = 2
+args.numVerticesPerSmallestCluser = 20
 args.maxP = 0.01
-args.startingIteration = 0
-args.endingIteration = 20
+args.startingIteration = 2
+args.endingIteration = 22
 
 # Arguments related to the algorithm
-args.nbUser = None # set to 'None' to have all users
 args.runIASC = False
 args.runExact = False
 args.runModularity = False
@@ -49,6 +48,8 @@ args.k3 = int(1.1*args.k2)  # numRowsColumns used by Nystrom
 args.exactFreq = 10
 
 args.numRepetitions = 2
+
+args.computeBound = False
 
 #=========================================================================
 #=========================================================================
@@ -75,6 +76,7 @@ parser.add_argument("--k2", type=int, help="Rank of the approximation", default=
 parser.add_argument("--k3", type=int, help="Number of row/cols used by to find the approximate eigenvalues with Nystrom approach", default=args.k3)
 parser.add_argument("--exactFreq", type=int, help="Number of iteration between each exact decomposition", default=args.exactFreq)
 parser.add_argument("--numRepetitions", type=int, help="Printed results are averaged on NUMREPETITION runs", default=args.numRepetitions)
+parser.add_argument("--computeBound", action="store_true", default=args.computeBound, help="Compute bounds on spaces angles")
 parser.parse_args(namespace=args)
 
 # miscellnious #
@@ -123,6 +125,9 @@ class GrowingContrastGraphIterator(object):
     def __iter__(self):
         return self
 
+    def next(self):
+        self.__next__()
+        
     def __next__(self):
         # new edges
         numTry = 100
@@ -170,12 +175,18 @@ def randIndex(learnedClustering, clust_size):
 numIter = len(range(args.startingIteration, args.endingIteration))
 
 logging.info("compute clusters")
-clusterer = IterativeSpectralClustering(args.k1, args.k2)
+exactClusterer = IterativeSpectralClustering(args.k1, alg="exact")
+approxClusterer = IterativeSpectralClustering(args.k1, args.k2, T=args.exactFreq, alg="IASC")
+nystromClusterer = IterativeSpectralClustering(args.k1, args.k2, k3=args.k3, T=args.exactFreq, alg="nystrom")
 ningsClusterer = NingSpectralClustering(args.k1)
-nystromClusterer = IterativeSpectralClustering(args.k1, args.k2, k3=args.k3, nystromEigs=True)
 
-clusterer.nb_iter_kmeans = 20
+exactClusterer.nb_iter_kmeans = 20
+approxClusterer.nb_iter_kmeans = 20
 nystromClusterer.nb_iter_kmeans = 20
+
+exactClusterer.computeBound = args.computeBound
+approxClusterer.computeBound = args.computeBound
+nystromClusterer.computeBound = args.computeBound
             
 def getGraphIterator():
     return itertools.islice(GrowingContrastGraphIterator(), args.startingIteration, args.endingIteration)
@@ -187,26 +198,26 @@ for r in range(args.numRepetitions):
         # run with exact eigenvalue decomposition
         logging.info("Running exact method")
         graphIterator = getGraphIterator()
-        clustersExact = clusterer.clusterFromIterator(graphIterator, False)
+        clustersExact = exactClusterer.clusterFromIterator(graphIterator)
 
     if args.runIASC:
         # run with our incremental approximation
         logging.info("Running approximate method")
         graphIterator = getGraphIterator()
-        clustListApprox = clusterer.clusterFromIterator(graphIterator, True, T=args.exactFreq)
+        clustListApprox = approxClusterer.clusterFromIterator(graphIterator)
+
+    if args.runNystrom:
+        # run with Nystrom approximation
+        logging.info("Running nystrom method")
+        graphIterator = getGraphIterator()
+        clustListNystrom = nystromClusterer.clusterFromIterator(graphIterator)
 
     if args.runNing:
         # run with Ning's incremental approximation
         logging.info("Running Nings method")
         graphIterator = getGraphIterator()
 #        clustListNings = ningsClusterer.cluster(toDenseGraphListIterator(graphIterator))
-        clustListNings = ningsClusterer.cluster(graphIterator)
-
-    if args.runNystrom:
-        # run with Nystrom approximation
-        logging.info("Running nystrom method")
-        graphIterator = getGraphIterator()
-        clustListNystrom = nystromClusterer.clusterFromIterator(graphIterator, False)
+        clustListNings = ningsClusterer.cluster(graphIterator, T=args.exactFreq)
 
     # print clusters
     if args.runExact:
@@ -303,35 +314,32 @@ else:
     numpy.savetxt(res_file, res)
     
 
-### removed until present in python3 ###
 #Now lets plot the results
-#iterations = numpy.arange(args.startingIteration, args.endingIteration)
-#plotStyles = ['ko-', 'kx-', 'k+-', 'k.-', 'k*-', 'ks-']
-#plotStyles = ['ko-', 'kx-', 'k+-', 'k.-', 'k*-', 'ks-']
-#plotStyles2 = ['ko--', 'kx--', 'k+--', 'k.--', 'k*--', 'ks--']
-#plotStyles2 = ['ko--', 'kx--', 'k+--', 'k.--', 'k*--', 'ks--']
-#plotStyles3 = ['ko:', 'kx:', 'k+:', 'k:', 'k*:', 'ks:']
+# lvl 0: 1 cluster
+# lvl 1: args.numSubClustersPerLevel clusters
+# lvl i: args.numSubClustersPerLevel^i clusters
+iterations = numpy.arange(args.startingIteration, args.endingIteration)
 
-#for lvl in range(args.numLevel):
-#    plt.hold(False)
-#    if args.runExact:
-#        plt.plot(iterations, meanClustErrExact[lvl, :], plotStyles[0], label="Exact")
-#        plt.hold(True)
-#    if args.runIASC:
-#        plt.plot(iterations, meanClustErrApprox[lvl, :], plotStyles2[0], label="IASC")
-#        plt.hold(True)
-#    if args.runNing:
-#        plt.plot(iterations, meanClustErrNings[lvl, :], plotStyles3[0], label="Ning et al.")
-#        plt.hold(True)
-#    if args.runNystrom:
-#        plt.plot(iterations, meanClustErrNystom[lvl, :], plotStyles3[0], label="Nystrom")
-#        plt.hold(True)
-#    plt.xlabel("Number of Iterations")
-#    plt.ylabel("Error")
-#    plt.legend()
-#    plt.savefig(resultsDir + "IncreasingContrastClustErrors_lvl"+ str(lvl)+"_pmax" + str(args.maxP) + "_nEigen" + str(args.k2) + ".eps")
-#    logging.info(resultsDir + "IncreasingContrastClustErrors_lvl"+ str(lvl)+"_pmax" + str(args.maxP) + "_nEigen" + str(args.k2) + ".eps")
-##    plt.show()
+for lvl in range(args.numLevel):
+    plt.hold(False)
+    if args.runExact:
+        plt.plot(iterations, meanClustErrExact[lvl, :], 'ko-', label="Exact")
+        plt.hold(True)
+    if args.runIASC:
+        plt.plot(iterations, meanClustErrApprox[lvl, :], 'rx-', label="IASC")
+        plt.hold(True)
+    if args.runNystrom:
+        plt.plot(iterations, meanClustErrNystrom[lvl, :], 'bx--', label="Nystrom")
+        plt.hold(True)
+    if args.runNing:
+        plt.plot(iterations, meanClustErrNings[lvl, :], 'gx:', label="Ning et al.")
+        plt.hold(True)
+    plt.xlabel("Number of Iterations")
+    plt.ylabel("Error")
+    plt.legend()
+    plt.savefig(resultsDir + "IncreasingContrastClustErrors_lvl"+ str(lvl)+"_pmax" + str(args.maxP) + "_nEigen" + str(args.k2) + ".eps")
+    logging.info(resultsDir + "IncreasingContrastClustErrors_lvl"+ str(lvl)+"_pmax" + str(args.maxP) + "_nEigen" + str(args.k2) + ".eps")
+#    plt.show()
 
 
 
