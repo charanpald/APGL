@@ -10,6 +10,7 @@ import scipy.linalg
 from apgl.util.Util import Util
 import scipy.cluster.vq as vq 
 from apgl.util.VqUtils import VqUtils
+from apgl.util.SparseUtils import SparseUtils
 
 class NingSpectralClustering(object):
     def __init__(self, k, T=10):
@@ -204,7 +205,9 @@ class NingSpectralClustering(object):
                 deltaW = W.copy()
                 #Vertices are removed 
                 if n > W.shape[0]:  
-                    deltaW = Util.extendArray(deltaW, lastW.shape)
+                    #deltaW = Util.extendArray(deltaW, lastW.shape)
+                    deltaW = SparseUtils.resize(deltaW, lastW.shape)
+                    
                 #Vertices added 
                 elif n < W.shape[0]: 
                     lastWInds = lastW.nonzero()
@@ -243,14 +246,13 @@ class NingSpectralClustering(object):
             decompositionTimeList.append(time.time()-startTime)
 
             # Now do actual clustering 
+            
             startTime = time.time()
             V = VqUtils.whiten(Q)
             centroids, distortion = vq.kmeans(V, self.k, iter=self.kmeansIter)
             clusters, distortion = vq.vq(V, centroids)
             clustersList.append(clusters)
             kMeansTimeList.append(time.time()-startTime)
-
-            clustersList.append(clusters)
 
             lastW = W.copy()
             iter += 1
