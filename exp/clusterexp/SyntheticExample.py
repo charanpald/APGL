@@ -85,8 +85,8 @@ ps = numpy.arange(0.05, 0.20, 0.1)
 pClust = 0.3
 
 perms = [l for l in itertools.permutations([0, 1, 2])]
-#numRepetitions = 50
-numRepetitions = 5
+numRepetitions = 50
+#numRepetitions = 1
 do_Nings = True
 numGraphs = len(ThreeClustIterator().subgraphIndicesList) 
 
@@ -134,6 +134,8 @@ for r in range(numRepetitions):
               if do_Nings:
                   meanClustErrNings[t, it, r] += GraphUtils.randIndex(clustListNings[it], indicesList)
 
+numpy.savez(resultsDir + "ThreeClustErrors.npz", meanClustErrExact, meanClustErrApprox, meanClustErrNystrom, meanClustErrNings)
+
 stdClustErrExact = meanClustErrExact.std(2)
 stdClustErrApprox = meanClustErrApprox.std(2)
 stdClustErrNystrom = meanClustErrNystrom.std(2)
@@ -170,6 +172,8 @@ else:
     res_file.write(comment + "\n")
     res = numpy.hstack((meanClustErrExact.T, meanClustErrApprox.T, meanClustErrNings.T))
     numpy.savetxt(res_file, res)
+
+
     
 #Now lets plot the results
 iterations = numpy.arange(numGraphs)
@@ -178,16 +182,18 @@ plotStyles[0] = ['ko-', 'kx-', 'k+-', 'k.-', 'k*-', 'ks-']
 plotStyles[1] = ['ko--', 'kx--', 'k+--', 'k.--', 'k*--', 'ks--']
 plotStyles[2] = ['ko:', 'kx:', 'k+:', 'k:', 'k*:', 'ks:']
 
+numMethods = 4
+
 plt.hold(True)
-for i_res in range(3):
+for i_res in range(numMethods):
     res = [meanClustErrExact, meanClustErrApprox, meanClustErrNystrom, meanClustErrNings][i_res]
     names = ["Exact", "IASC", "Nystrom", "Ning"]
     for i_p in range(len(ps)):
-        plt.plot(iterations, res[i_p, :], plotStyles[i_res][i_p], label=names[i_res] + " p=" + str(ps[i_p]))
+        plt.plot(iterations, res[i_p, :], plotStyles[i_p][i_res], label=names[i_res] + " p=" + str(ps[i_p]))
 plt.xlabel("Graph index")
 plt.ylabel("Rand Index")
+#plt.legend(loc="upper left")
 plt.savefig(resultsDir + "ThreeClustErrors.eps")
-plt.legend(loc="upper left")
 plt.show()
 
 # to run

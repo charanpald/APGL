@@ -6,6 +6,7 @@ import math
 import sys 
 import logging 
 import os.path
+import numpy.testing as nptst 
 from exp.sandbox.NingSpectralClustering import NingSpectralClustering
 from apgl.graph import *
 from apgl.generator import *
@@ -31,7 +32,7 @@ class NingSpectralClusteringTest(unittest.TestCase):
         L = graph.laplacianMatrix()
         degrees = graph.outDegreeSequence()
         D = numpy.diag(degrees)
-
+        
         lmbda1, Q1 = scipy.linalg.eig(L, D)
         lmbda1 = lmbda1.real
         Q1 = Q1.dot(numpy.diag(numpy.diag(Q1.T.dot(D).dot(Q1))**-0.5))
@@ -265,6 +266,16 @@ class NingSpectralClusteringTest(unittest.TestCase):
 
         #Seems to work, amazingly 
         #print(clustersList)
+        
+        #Try removing rows/cols
+        W2 = W[0:5, 0:5]
+        W3 = W[0:4, 0:4]
+        WList = [W, W2, W3]
+        iterator = iter(WList)
+        clustersList = clusterer.cluster(iterator)
+        
+        nptst.assert_array_equal(clustersList[0][0:5], clustersList[1])
+        nptst.assert_array_equal(clustersList[1][0:4], clustersList[2])
 
     def testDebug(self): 
         if not os.path.isfile("lmbda.npy"):

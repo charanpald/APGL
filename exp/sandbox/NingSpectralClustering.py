@@ -12,8 +12,14 @@ import scipy.cluster.vq as vq
 from apgl.util.VqUtils import VqUtils
 
 class NingSpectralClustering(object):
-    def __init__(self, k):
+    def __init__(self, k, T=10):
+        """
+        :param k: The number of clusters         
+        
+        :param T: how often one recomputes the eigenvalues.
+        """
         self.k = k
+        self.T = T
         self.kmeansIter = 20
         self.debugSave = False
         self.debugSVDiFile = 0
@@ -33,8 +39,6 @@ class NingSpectralClustering(object):
             numpy.save("i", i)
             numpy.save("j", j)
             numpy.save("deltaW", deltaW)
-
-
 
         n = W.shape[0]
         degrees = numpy.array(W.sum(0)).ravel()
@@ -167,8 +171,8 @@ class NingSpectralClustering(object):
                 continue
 
             assert deltaW[i, j] != 0
-            if deltaW[i, j] < 0:
-                logging.warn(" deltaW is usually positive (here deltaW=" +str(deltaW[i, j]) + ")")
+#            if deltaW[i, j] < 0:
+#                logging.warn(" deltaW is usually positive (here deltaW=" +str(deltaW[i, j]) + ")")
 
             #Note: update W at each iteration here
             lmbda, Q = self.incrementEigenSystem(lmbda, Q, W, i, j, deltaW[i,j])
@@ -179,8 +183,7 @@ class NingSpectralClustering(object):
 
     def cluster(self, graphIterator, T=10, verbose=False):
         """
-        Find a set of clusters using the graph and list of subgraph indices. The
-        T parameter is how often one recomputes the eigenvalues.
+        Find a set of clusters using the graph and list of subgraph indices. 
         """
         tol = 10**-6 
         clustersList = []
@@ -192,29 +195,34 @@ class NingSpectralClustering(object):
 
         for W in graphIterator:
             startTime = time.time()
-            logging.info("Graph index:" + str(iter))
+            logging.debug("Graph index:" + str(iter))
 
             startTime = time.time()
             if iter % T != 0:
-                # usefull
-                n = lastW.shape[0]
-
-                # If there are vertices added, add zero rows/cols to W
-                if lastW.shape[0] < W.shape[0]:
-#                    lastW = scipy.sparse.hstack(scipy.sparse.vstack(lastW, scipy.sparse.csr_matrix((W.shape[0]-n, n)),), scipy.sparse.csr_matrix((W.shape[1], W.shape[0]-n)))
+                # --- Figure out the similarity changes in existing edges ---
+                n = lastW.shape[0] 
+                deltaW = W.copy()
+                #Vertices are removed 
+                if n > W.shape[0]:  
+                    deltaW = Util.extendArray(deltaW, lastW.shape)
+                #Vertices added 
+                elif n < W.shape[0]: 
                     lastWInds = lastW.nonzero()
                     lastWVal = scipy.zeros(len(lastWInds[0]))
                     for i,j,k in zip(lastWInds[0], lastWInds[1], range(len(lastWInds[0]))):
                         lastWVal[k] = lastW[i,j]
                     lastW = scipy.sparse.csr_matrix((lastWVal, lastWInds), shape=W.shape)
-
-                #Figure out the similarity changes in existing edges
-                deltaW = W - lastW
+                deltaW = deltaW - lastW
                 
-                if Q.shape[0] < W.shape[0]:
+                # --- Update the decomposition ---
+                if n < W.shape[0]:
 #                    Q = numpy.r_[Q, numpy.zeros((W.shape[0]-Q.shape[0], Q.shape[1]))]
                     Q = numpy.r_[Q, numpy.zeros((W.shape[0]-Q.shape[0], Q.shape[1]))]
                 lmbda, Q = self.__updateEigenSystem(lmbda, Q, deltaW, lastW)
+                
+                # --- resize the decomposition if the graph is losing vertices ---
+                if n > W.shape[0]:
+                    Q = Q[0:W.shape[0], :]
             else:
                 logging.debug("Recomputing eigensystem")
                 D = scipy.sparse.spdiags(W.sum(0)+ tol, 0, W.shape[0], W.shape[0], format='csr')
