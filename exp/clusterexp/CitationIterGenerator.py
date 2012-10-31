@@ -132,6 +132,9 @@ class CitationIterGenerator(object):
 
                 return (month, year)
 
+            def __next__(self):
+                return(self.next())
+
             def next(self):
                 if self.currentMonth == self.endMonth and self.currentYear == self.endYear:
                     raise StopIteration
