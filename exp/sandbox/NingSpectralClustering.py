@@ -41,13 +41,13 @@ class NingSpectralClustering(object):
             numpy.save("deltaW", deltaW)
 
         n = W.shape[0]
-        degrees = numpy.sum(W, 0)
+        degrees = numpy.array(W.sum(0)).ravel()
 
         deltaDegrees = numpy.zeros(n)
         deltaDegrees[i] = deltaW
         deltaDegrees[j] = deltaW
 
-        deltaL = numpy.zeros((n, n))
+        deltaL = scipy.sparse.csr_matrix((n, n))
         deltaL[i, j] = -deltaW
         deltaL[j, i] = -deltaW
         deltaL[i, i] = deltaW
@@ -91,7 +91,8 @@ class NingSpectralClustering(object):
 
                 # --- updating deltaQ ---
                 K = -WHat
-                K[numpy.diag_indices(K.shape[1])] += (1-lmbda[s])*degreesHat
+                Kdiag = K.diagonal() + (1-lmbda[s])*degreesHat
+                K.setdiag(Kdiag)
                 h = (deltaLmbda*degrees + lmbda[s]*deltaDegrees)*Q[:, s]
                 h -= deltaL.dot(Q[:, s])
                 
@@ -100,35 +101,36 @@ class NingSpectralClustering(object):
                 #Note that K can be singular 
 
                 #Fix for weird error in pinv not converging
+                KK = K.T.dot(K).todense()
                 try:
-                    Hinv = scipy.linalg.pinv(K.T.dot(K))
-                except scipy.linalg.linalg.LinAlgError as e:
+                    Hinv = scipy.linalg.pinv(KK)
+                except scipy.linalg.linalg.LinalgError as e:
                     # Least square didn't converge 
                     # so let's try SVD
                     logging.warn(str(e) + ". using pinv2 (based on SVD decomposition)")
                     try:
-                        Hinv = scipy.linalg.pinv2(K.T.dot(K))
+                        Hinv = scipy.linalg.pinv2(KK)
                     except scipy.linalg.linalg.LinAlgError as e:
                         # SVD didn't converge 
                         # so lets compute the pseudo inverse by ourself
                         logging.warn(str(e) + ". Computing pseudo inverse by ourself (using eigh)")
                         try:
-                            localLmbda, localQ = scipy.linalg.eigh(K.T.dot(K))
+                            localLmbda, localQ = scipy.linalg.eigh(KK)
                         except scipy.linalg.linalg.LinAlgError as e:
                             # eigh didn't work 
                             # so lets add a small term to the diagonal
                             logging.warn(str(e) + ". Adding a small diagonal term to obtain the eigen-decomposition")
                             alpha = 10**-5
-                            localLmbda, localQ = scipy.linalg.eigh(K.T.dot(K)+ alpha*numpy.eye(K.shape[1]))
+                            localLmbda, localQ = scipy.linalg.eigh(KK+ alpha*numpy.eye(K.shape[1]))
                             localLmbda -= alpha
                         nonZeroInds = numpy.nonzero(localLmbda)
                         localLmbda[nonZeroInds] = 1/localLmbda[nonZeroInds]
                         Hinv = localQ.dot(localLmbda).dot(localQ.T)
                     # to test different fixes and to submit a bug-report
                     self.debugSVDiFile += 1
-                    numpy.savez("matrix_leading_to_pinv_error" + str(self.debugSVDiFile), K.T.dot(K))
+                    numpy.savez("matrix_leading_to_pinv_error" + str(self.debugSVDiFile), KK)
 
-                deltaQ[largeNeighbours] = Hinv.dot(K.T).dot(h)
+                deltaQ[largeNeighbours] = scipy.sparse.csr_matrix(Hinv).dot(K.T).dot(h)
 
                 #Compute change in same way as paper? 
                 deltaDeltaQ = scipy.linalg.norm(deltaQ[largeNeighbours] - lastDeltaQ[largeNeighbours])
@@ -159,19 +161,18 @@ class NingSpectralClustering(object):
         The deltaW is the change in edges from the current weight martrix which
         is given by W. 
         """
-        n = deltaW.shape[0]
-        lowTriInds = numpy.tril_indices(n)
-        deltaW[lowTriInds] = 0
-        changeInds = numpy.nonzero(deltaW)
+        changeInds = deltaW.nonzero()
 
         for s in range(changeInds[0].shape[0]):
             Util.printIteration(s, 10, changeInds[0].shape[0])
             i = changeInds[0][s]
             j = changeInds[1][s]
+            if i>=j: # only consider lower diagonal changes
+                continue
 
             assert deltaW[i, j] != 0
-            if deltaW[i, j] < 0:
-                logging.warn(" deltaW is usually positive (here deltaW=" +str(deltaW[i, j]) + ")")
+#            if deltaW[i, j] < 0:
+#                logging.warn(" deltaW is usually positive (here deltaW=" +str(deltaW[i, j]) + ")")
 
             #Note: update W at each iteration here
             lmbda, Q = self.incrementEigenSystem(lmbda, Q, W, i, j, deltaW[i,j])
@@ -180,13 +181,15 @@ class NingSpectralClustering(object):
         
         return lmbda, Q 
 
-    def cluster(self, graphIterator, timeIter=False):
+    def cluster(self, graphIterator, T=10, verbose=False):
         """
         Find a set of clusters using the graph and list of subgraph indices. 
         """
         tol = 10**-6 
         clustersList = []
-        timeList = []
+        decompositionTimeList = [] 
+        kMeansTimeList = [] 
+        boundList = []
 
         iter = 0 
 
@@ -194,8 +197,9 @@ class NingSpectralClustering(object):
             startTime = time.time()
             logging.debug("Graph index:" + str(iter))
 
-            if iter % self.T != 0:
-                #Figure out the similarity changes in existing edges
+            startTime = time.time()
+            if iter % T != 0:
+                # --- Figure out the similarity changes in existing edges ---
                 n = lastW.shape[0] 
                 deltaW = W.copy()
                 #Vertices are removed 
@@ -203,40 +207,55 @@ class NingSpectralClustering(object):
                     deltaW = Util.extendArray(deltaW, lastW.shape)
                 #Vertices added 
                 elif n < W.shape[0]: 
-                    deltaW[0:n, 0:n] = deltaW[0:n, 0:n] - lastW
+                    lastWInds = lastW.nonzero()
+                    lastWVal = scipy.zeros(len(lastWInds[0]))
+                    for i,j,k in zip(lastWInds[0], lastWInds[1], range(len(lastWInds[0]))):
+                        lastWVal[k] = lastW[i,j]
+                    lastW = scipy.sparse.csr_matrix((lastWVal, lastWInds), shape=W.shape)
+                deltaW = deltaW - lastW
                 
-                #If there are vertices added, add zero rows/cols to W
-                WHat = lastW.copy()
-                if n < W.shape[0]: 
-                    WHat = numpy.c_[numpy.r_[WHat, numpy.zeros((W.shape[0]-n, n))], numpy.zeros((W.shape[1], W.shape[0]-n))]                
+                # --- Update the decomposition ---
+                if n < W.shape[0]:
+#                    Q = numpy.r_[Q, numpy.zeros((W.shape[0]-Q.shape[0], Q.shape[1]))]
                     Q = numpy.r_[Q, numpy.zeros((W.shape[0]-Q.shape[0], Q.shape[1]))]
-                    
-                lmbda, Q = self.__updateEigenSystem(lmbda, Q, deltaW, WHat)
+                lmbda, Q = self.__updateEigenSystem(lmbda, Q, deltaW, lastW)
                 
-                #Added this bit 
+                # --- resize the decomposition if the graph is losing vertices ---
                 if n > W.shape[0]:
                     Q = Q[0:W.shape[0], :]
             else:
                 logging.debug("Recomputing eigensystem")
-                D = numpy.diag(numpy.sum(W, 0)) + tol*numpy.eye(W.shape[0])
+                D = scipy.sparse.spdiags(W.sum(0)+ tol, 0, W.shape[0], W.shape[0], format='csr')
                 L = D - W
-                lmbda, Q = scipy.linalg.eigh(L, D)
+                # We want to solve the generalized eigen problem $L.v = lambda.D.v$
+                # with L and D hermitians.
+                # scipy.sparse.linalg does not solve this problem actualy (it
+                # solves it, forgetting about hermitian information, from version
+                # 0.11)
+                # So we will solve $D^{-1}.L.v = lambda.v$, where $D^{-1}.L$ is
+                # no more hermitian.
+                DInv = scipy.sparse.csr_matrix(D.shape)
+                for i in range(DInv.shape[0]):
+                    DInv[i,i] = 1/D[i,i]
+                lmbda, Q = scipy.sparse.linalg.eigs(DInv.dot(L), min(self.k, L.shape[0]-1), which="LM", ncv = min(20*self.k, L.shape[0]))
                 lmbda = lmbda.real
                 Q = Q.real
-                inds = numpy.argsort(lmbda)[0:self.k]
-                lmbda, Q = Util.indEig(lmbda, Q, inds)
+            decompositionTimeList.append(time.time()-startTime)
 
             # Now do actual clustering 
+            startTime = time.time()
             V = VqUtils.whiten(Q)
             centroids, distortion = vq.kmeans(V, self.k, iter=self.kmeansIter)
             clusters, distortion = vq.vq(V, centroids)
             clustersList.append(clusters)
-            timeList.append(time.time()-startTime)
+            kMeansTimeList.append(time.time()-startTime)
+
+            clustersList.append(clusters)
 
             lastW = W.copy()
             iter += 1
 
-        if timeIter:
-            return clustersList, timeList
+        if verbose:
+            return clustersList, numpy.array((decompositionTimeList, kMeansTimeList)).T, boundList
         else:
             return clustersList

@@ -69,7 +69,7 @@ class IterativeSpectralClustering(object):
             
         return centroids 
 
-    def clusterFromIterator(self, graphListIterator, verbose=False):
+    def clusterFromIterator(self, graphListIterator, verbose=False, TLogging=None):
         """
         Find a set of clusters for the graphs given by the iterator. If verbose 
         is true the each iteration is timed and bounded the results are returned 
@@ -79,7 +79,8 @@ class IterativeSpectralClustering(object):
         positive.
         """
         clustersList = []
-        timeList = [] 
+        decompositionTimeList = [] 
+        kMeansTimeList = [] 
         boundList = []
         i = 0
 
@@ -87,11 +88,13 @@ class IterativeSpectralClustering(object):
             if __debug__:
                 Parameter.checkSymmetric(subW)
 
+            if TLogging and i % TLogging == 0:
+                logging.info("Graph index: " + str(i))
             logging.debug("Clustering graph of size " + str(subW.shape))
-            startTime = time.time()
             ABBA = GraphUtils.shiftLaplacian(subW)
 
             # --- Eigen value decomposition ---
+            startTime = time.time()
             if self.alg=="IASC": 
                 if i % self.T != 0:
                     omega, Q = self.approxUpdateEig(subW, ABBA, omega, Q)   
@@ -135,8 +138,10 @@ class IterativeSpectralClustering(object):
                     
             if self.alg=="IASC":
                 self.storeInformation(subW, ABBA)
+            decompositionTimeList.append(time.time()-startTime)
 
             # --- Kmeans ---
+            startTime = time.time()
             inds = numpy.flipud(numpy.argsort(omega))
 
             standardiser = Standardiser()
@@ -158,9 +163,9 @@ class IterativeSpectralClustering(object):
                     centroids = numpy.vstack((centroids, random_centroids))
                 centroids, distortion = vq.kmeans(V, centroids) #iter can only be 1
             clusters, distortion = vq.vq(V, centroids)
+            kMeansTimeList.append(time.time()-startTime)
 
             clustersList.append(clusters)
-            timeList.append(time.time()-startTime)
 
             #logging.debug("subW.shape: " + str(subW.shape))
             #logging.debug("len(clusters): " + str(len(clusters)))
@@ -172,7 +177,7 @@ class IterativeSpectralClustering(object):
             i += 1
 
         if verbose:
-            return clustersList, timeList, boundList
+            return clustersList, numpy.array((decompositionTimeList, kMeansTimeList)).T, boundList
         else:
             return clustersList
 

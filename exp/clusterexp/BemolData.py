@@ -68,17 +68,17 @@ def cluster():
 class BemolData:
     #===========================================
     @staticmethod
-    def getGraphIterator(dir, nb_user=-1, nb_purchases_per_it=0):
+    def getGraphIterator(dir, nb_user=None, nb_purchases_per_it=None):
         """
         * Load the Bemol data from the directory dir
-        * The dataset will only contain the $nb_user$ first users. -1 means all users.
+        * The dataset will only contain the $nb_user$ first users. None means all users.
         * $nb_purchases_per_it$ is used to split the purchases list in several
-        iterations. See DatedPurchasesGraphListIterator's documentation
+        iterations. See kperDatedPurchasesGraphListIterator's documentation
         * Do not read all the data, only the $10^n$ version of data with $n$ big
         enough.
         """
         BemolData.assert_nb_user(nb_user)
-        if nb_user == -1:
+        if nb_user == None:
             nb_user = BemolData.nb_max_user()
             
         # read data
@@ -106,10 +106,10 @@ class BemolData:
 
     #===========================================
     @staticmethod
-    def generate_data_file(dir, nb_user=-1):
+    def generate_data_file(dir, nb_user=None):
         logging.debug("nb_user: " + str(nb_user))
         BemolData.assert_nb_user(nb_user)
-        if nb_user == -1:
+        if nb_user == None:
             nb_user = BemolData.nb_max_user()
 
         # generate the file containing all the dataset
@@ -117,7 +117,7 @@ class BemolData:
         f_data_name = BemolData.get_file_name(dir, BemolData.nb_max_user())
         if not os.path.exists(f_data_name):
             logging.info("creating file " + str(f_data_name))
-            shutil.copy(BemolData.get_file_name(dir, -1), f_data_name)
+            shutil.copy(BemolData.get_file_name(dir, None), f_data_name)
 
         # other files to generate
         nb_user_to_generate = []
@@ -167,23 +167,23 @@ class BemolData:
     #===========================================
     @staticmethod
     def assert_nb_user(nb_user):
-        if nb_user > BemolData.nb_max_user():
+        if nb_user!=None and nb_user > BemolData.nb_max_user():
             raise Exception("To much requested users. They are only " + str(BemolData.nb_max_user()))
 
     #===========================================
     @staticmethod
-    def get_file_name(dir, nb_user=-1):
+    def get_file_name(dir, nb_user=None):
         BemolData.assert_nb_user(nb_user)
-        if nb_user == -1:
+        if nb_user == None:
             return dir +  "idu__idp__semaine__annee.dat.gz"
         else:
             return dir +  "idu__idp__semaine__annee__first_users" + str(BemolData.get_nb_user_to_read(nb_user)) + ".dat.gz"
 
     #===========================================
     @staticmethod
-    def get_nb_user_to_read(nb_user=-1):
+    def get_nb_user_to_read(nb_user=None):
         BemolData.assert_nb_user(nb_user)
-        if nb_user == -1:
+        if nb_user == None:
             nb_user = BemolData.nb_max_user()
         # nb_user_to_read = 10^n or nb_max_user() 
         # with    10^n <= nb_user < 10^{n+1}
@@ -215,7 +215,7 @@ class BemolData:
                  raise RGUsage(msg)
             # apply options
             dir = PathDefaults.getDataDir() + "cluster/"
-            nb_user = -1
+            nb_user = None
             log_level = logging.INFO
             for o, a in opts:
                 if o in ("-h", "--help"):

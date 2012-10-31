@@ -62,6 +62,7 @@ class Nystrom(object):
         :return V: The matrix of eigenvectors as a ndarray
         """
         if type(n) == int:
+            n = min(n, X.shape[0])
             inds = numpy.sort(numpy.random.permutation(X.shape[0])[0:n])
         else:
             inds = n 
@@ -70,7 +71,7 @@ class Nystrom(object):
         if numpy.sort(inds).shape[0] == X.shape[0] and (numpy.sort(inds) == numpy.arange(X.shape[0])).all():
             if scipy.sparse.issparse(X):
                 X = numpy.array(X.todense())
-            lmbda, V = numpy.linalg.eigh(X)
+            lmbda, V = Util.safeEigh(X)
             return lmbda, V
 
         tmp = X[inds, :] 
@@ -89,10 +90,9 @@ class Nystrom(object):
         S = A + Am12.dot(BB).dot(Am12)
         S = (S.T + S)/2
 
-        lmbda, U = numpy.linalg.eigh(S)
-          
+        lmbda, U = Util.safeEigh(S)
+
         tol = 10**-10
-        
         lmbdaN = lmbda.copy()
         lmbdaN[numpy.abs(lmbda) < tol] = 0
         lmbdaN[numpy.abs(lmbda) > tol] = lmbdaN[numpy.abs(lmbda) > tol]**-0.5

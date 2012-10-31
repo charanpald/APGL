@@ -537,6 +537,26 @@ class Util(object):
         return P, sigma, Qh
 
     @staticmethod
+    def safeEigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False, overwrite_b=False, turbo=True, eigvals=None, type=1):
+        """
+        Compute the EigenDecomposition of a hermitian matrix using scipy.linalg.eigh,
+        and if convergence fails revert to scipy.linalg.eig.
+        """
+        try:
+            return scipy.linalg.eigh(a, b=b, lower=lower, eigvals_only=eigvals_only, overwrite_a=overwrite_a, overwrite_b=overwrite_b, turbo=turbo, eigvals=eigvals) #, type=type) I do not know how to manage it
+        except:
+            if __debug__:
+                logging.warning(" scipy.linalg.eigh raised an error, scipy.linalg.eig() is used instead")
+            lmbda, q = scipy.linalg.eig(a, b=b, overwrite_a=overwrite_a, overwrite_b=overwrite_b)
+            if eigvals == None:
+                eigvals = (0, len(lmbda))
+            if eigvals_only:
+                return lmbda[eigvals[0]:eigvals[1]]
+            else :
+                return lmbda[eigvals[0]:eigvals[1]], q[eigvals[0]:eigvals[1]]
+                
+
+    @staticmethod
     def powerLawProbs(alpha, zeroVal=0.5, maxInt=100):
         """
         Generate a vector of power law probabilities such that p(x) = C x^-alpha for some
