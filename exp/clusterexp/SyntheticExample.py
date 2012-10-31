@@ -122,7 +122,7 @@ if saveResults:
             if do_Nings:
                 logging.debug("Running Nings method")
                 graphIterator = ThreeClustIterator(p, numClusters, r).getIterator()
-                clustListNings = ningsClusterer.cluster(toDenseGraphListIterator(graphIterator))
+                clustListNings = ningsClusterer.cluster(graphIterator)
     
             # computer rand index error for each iteration
             # error: proportion of pairs of vertices (x,y) s.t.
