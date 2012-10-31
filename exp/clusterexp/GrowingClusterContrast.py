@@ -78,70 +78,62 @@ class GrowingContrastGraphIterator(object):
 		return self.edgesMatrix
 
 
-
-
-#===========================================
-# cluster
-
 k1 = 9 # numCluster to learn
 k2 = 8*k1 # numEigenVector kept
+k3 = 90 
 startingIter = 3
 endIter = 23
 numIter = endIter - startingIter
 
 #Variables to choose which methods to run
-runIASC = True
-runExact = True
 runNing = False
 
-numRepetitions = 50
-#numRepetitions = 2
+#numRepetitions = 50
+numRepetitions = 2
 
-print "compute clusters"
+T = 1000 # index of iteration where exact decomposition is computed
 exactClusterer = IterativeSpectralClustering(k1, alg="exact")
-approxClusterer = IterativeSpectralClustering(k1, k2, T=1000, alg="IASC")
-ningsClusterer = NingSpectralClustering(k1)
+iascClusterer9 = IterativeSpectralClustering(k1, 9, alg="IASC", T=T)
+iascClusterer18 = IterativeSpectralClustering(k1, 18, alg="IASC", T=T)
+iascClusterer36 = IterativeSpectralClustering(k1, 36, alg="IASC", T=T)
+iascClusterer72 = IterativeSpectralClustering(k1, 72, alg="IASC", T=T)
+nystromClusterer = IterativeSpectralClustering(k1, k3=k3, alg="nystrom")
+ningsClusterer = NingSpectralClustering(k1, T=T)
 
 def getGraphIterator():
 	return itertools.islice(GrowingContrastGraphIterator(), startingIter, endIter)
 
 for r in range(numRepetitions):
-	logging.info("run " + str(r))
+	logging.debug("Run " + str(r))
 	
-	if runExact:
-		# run with exact eigenvalue decomposition
-		logging.info("Running exact method")
-		graphIterator = getGraphIterator()
-		clustersExact = exactClusterer.clusterFromIterator(graphIterator)
+	logging.info("Running exact method")
+	graphIterator = getGraphIterator()
+	clustersExact = exactClusterer.clusterFromIterator(graphIterator)
 
-	if runIASC:
-		# run with our incremental approximation
-		logging.info("Running approximate method")
-		graphIterator = getGraphIterator()
-		clustListApprox = approxClusterer.clusterFromIterator(graphIterator)
+	logging.info("Running approximate method")
+	graphIterator = getGraphIterator()
+	clustListApprox9 = iascClusterer9.clusterFromIterator(graphIterator)
+ 
+ 	graphIterator = getGraphIterator()
+	clustListApprox18 = iascClusterer18.clusterFromIterator(graphIterator)
+ 
+ 	graphIterator = getGraphIterator()
+	clustListApprox36 = iascClusterer36.clusterFromIterator(graphIterator)
+ 
+ 	graphIterator = getGraphIterator()
+	clustListApprox72 = iascClusterer72.clusterFromIterator(graphIterator)
+
+	logging.info("Running Nystrom method")
+	graphIterator = getGraphIterator()
+	clustListNystrom = nystromClusterer.clusterFromIterator(graphIterator)
 
 	if runNing:
-		# run with Ning's incremental approximation
 		logging.info("Running Nings method")
 		graphIterator = getGraphIterator()
 		clustListNings = ningsClusterer.cluster(toDenseGraphListIterator(graphIterator))
 
-	# print clusters
-	if runExact:
-		logging.info("learned clustering with exact eigenvalue decomposition")
-		for i in range(len(clustersExact)):
-			clusters = clustersExact[i]
-			print(clusters)
-	if runIASC:
-		logging.info("learned clustering with our approximation approach")
-		for i in range(len(clustListApprox)):
-			clusters = clustListApprox[i]
-			print(clusters)
-	if runNing:
-		logging.info("learned clustering with Nings approximation approach")
-		for i in range(len(clustListNings)):
-			clusters = clustListNings[i]
-			print(clusters)
+	print(clustersExact[0].shape)
+	break 
 
 	# compute error for each iteration and lvl
 	# error: proportion of pairs of vertices (x,y) s.t.
@@ -159,6 +151,8 @@ for r in range(numRepetitions):
 			
 
 	clust_size = numVertices # number of vertices per cluster
+	print(clust_size)
+ 
 	for lvl in range(_numLevel):
 
 		if runExact:
@@ -172,6 +166,8 @@ for r in range(numRepetitions):
 						same_learned_cl = clusters[v1] == clusters[v2]
 						error += same_cl != same_learned_cl
 				meanClustErrExact[lvl, it] += float(error)*2/(numVertices)/(numVertices-1)
+                       
+                       #meanClustErrExact[t, it, r] += GraphUtils.randIndex(clustListExact[it], indicesList) 
 
 		if runIASC:
 			# error with our incremental approximation
@@ -230,8 +226,6 @@ else:
 #Now lets plot the results
 iterations = numpy.arange(startingIter, endIter)
 plotStyles = ['ko-', 'kx-', 'k+-', 'k.-', 'k*-', 'ks-']
-plotStyles = ['ko-', 'kx-', 'k+-', 'k.-', 'k*-', 'ks-']
-plotStyles2 = ['ko--', 'kx--', 'k+--', 'k.--', 'k*--', 'ks--']
 plotStyles2 = ['ko--', 'kx--', 'k+--', 'k.--', 'k*--', 'ks--']
 plotStyles3 = ['ko:', 'kx:', 'k+:', 'k:', 'k*:', 'ks:']
 
@@ -249,7 +243,7 @@ for lvl in range(_numLevel):
 	plt.xlabel("Number of Iterations")
 	plt.ylabel("Error")
 	plt.savefig(resultsDir + "IncreasingContrastClustErrors_lvl"+ str(lvl)+"_pmax" + str(_maxP) + "_nEigen" + str(k2) + ".eps")
-#	plt.show()
+	plt.show()
 
 # to run
 # python -c "execfile('exp/clusterexp/GrowingClusterContrast.py')"
