@@ -18,13 +18,15 @@ numpy.set_printoptions(suppress=True, linewidth=60)
 resultsDir = PathDefaults.getOutputDir() + "cluster/"
 
 plotHIV = False
-plotBemol = True
-plotCitation = False
+plotBemol = False
+plotCitation = True
 
 BemolSubDir = "cluster_mostrare/Bemol__nbU_1000__nbPurchPerIt_10__startIt_1000__endIt_None/__k1_20__k2_80__k3_80__T_100/"
 BemolSubDir = "cluster_mostrare/Bemol__nbU_10000__nbPurchPerIt_10__startIt_30000__endIt_35000/__k1_40__k2_160__k3_160__T_100/"
 #BemolSubDir = "Bemol__nbU_1000__nbPurchPerIt_10__endIt_None/__k1_20__k2_80__k3_80__T_100/"
 #BemolSubDir = "Bemol100"
+HIVSubDir = "HIV__k1_10__k2_10__k3_500__T_10"
+CitationSubDir = "Citation__k1_10__k2_10__k3_500__T_10"
 
 # uncomment data files to read (corresponding curve will be recomputed)
 #resultsFileName4 = resultsDir + "IncreasingContrastClustErrors_pmax0.001"
@@ -86,16 +88,14 @@ class MyPlot:
             plt.xscale('log')
         if ylogscale:
             plt.yscale('log')
-#        fileName = resultsDir + self.subDirName + "/" + self.datasetName + fileNameSuffix + ".eps"
-        fileName = resultsDir + self.subDirName + "/" + fileNameSuffix + ".eps"
+        fileName = resultsDir + self.subDirName + "/" + self.datasetName + fileNameSuffix + ".eps"
         print(fileName)
         plt.savefig(fileName)
         plotInd += 1
 
     def readAll(self):
         for method in methodNames:
-#            resultsFileName = resultsDir + self.subDirName + "/" + self.datasetName + "Results" + method +  ".npz"
-            resultsFileName = resultsDir + self.subDirName + "/" + "Results" + method +  ".npz"
+            resultsFileName = resultsDir + self.subDirName + "/" + self.datasetName + "Results" + method +  ".npz"
 
             try:
                 file = open(resultsFileName, 'r')
@@ -144,18 +144,18 @@ class MyPlot:
                                  + " at iteration " + str(it) + ")")
 
 if plotHIV:
-    m = MyPlot("HIV")
+    m = MyPlot("", HIVSubDir)
     m.readAll()
     m.plotAll()
 
 if plotBemol:
-    m = MyPlot("Bemol", BemolSubDir)
+    m = MyPlot("", BemolSubDir)
     m.readAll()
     m.test()
     m.plotAll()
 
 if plotCitation:
-    m = MyPlot("Citation")
+    m = MyPlot("", CitationSubDir)
     m.readAll()
     m.plotAll()
 
