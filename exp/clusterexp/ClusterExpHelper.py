@@ -30,6 +30,7 @@ class ClusterExpHelper(object):
         self.k2 = 10 
         self.k3 = 500
         self.T = 10 
+   
 
     def getIterator(self):
         return self.getIteratorFunc()
@@ -55,9 +56,7 @@ class ClusterExpHelper(object):
             graphInfo[i, 0] = W.shape[0]
             # nb connected components
             graphInfo[i, 1] = networkx.number_connected_components(G)
-            
-            
-            
+           
         file = open(fileName, 'wb')
         numpy.savez(file, measures, timeList, graphInfo)
         logging.info("Saved file as " + fileName)
@@ -88,7 +87,7 @@ class ClusterExpHelper(object):
 
         if self.runNystrom:
             logging.info("Running nystrom method without updates")
-            clusterer = IterativeSpectralClustering(self.k1, self.k2, k3=self.k3, alg="nystrom")
+            clusterer = IterativeSpectralClustering(self.k1, k3=self.k3, alg="nystrom")
             clusterer.nb_iter_kmeans = 20
             iterator = self.getIterator()
             clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, verbose=True)
