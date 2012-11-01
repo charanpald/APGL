@@ -7,10 +7,12 @@ import sys
 import logging 
 import os.path
 import numpy.testing as nptst 
+import scipy.sparse
 from exp.sandbox.NingSpectralClustering import NingSpectralClustering
 from apgl.graph import *
 from apgl.generator import *
 from apgl.util.Util import Util 
+from exp.sandbox.GraphIterators import toSparseGraphListIterator
 
 class NingSpectralClusteringTest(unittest.TestCase):
     def setUp(self):
@@ -48,7 +50,7 @@ class NingSpectralClusteringTest(unittest.TestCase):
 
         k = 3
         clusterer = NingSpectralClustering(k)
-        lmbda2Approx, Q2Approx = clusterer.incrementEigenSystem(lmbda1, Q1, W, 5, 7, deltaW)
+        lmbda2Approx, Q2Approx = clusterer.incrementEigenSystem(lmbda1, Q1, scipy.sparse.csr_matrix(W), 5, 7, deltaW)
 
         #Compute real eigenvectors then compare against these
         Lhat = L.copy();
@@ -119,7 +121,7 @@ class NingSpectralClusteringTest(unittest.TestCase):
         deltaW = -0.5
 
         clusterer = NingSpectralClustering(k)
-        lmbda2Approx, Q2Approx = clusterer.incrementEigenSystem(lmbda1, Q1, W, 0, 4, deltaW)
+        lmbda2Approx, Q2Approx = clusterer.incrementEigenSystem(lmbda1, Q1, scipy.sparse.csr_matrix(W), 0, 4, deltaW)
         
         #Compute real eigenvectors then compare against these
         Lhat = L + numpy.outer(r, r)
@@ -189,7 +191,7 @@ class NingSpectralClusteringTest(unittest.TestCase):
         #Increase size of eigenvector - not clear how to do this 
 
         clusterer = NingSpectralClustering(k)
-        lmbda2Approx, Q2Approx = clusterer.incrementEigenSystem(lmbda1, Q1, W1hat, 4, 7, 1)
+        lmbda2Approx, Q2Approx = clusterer.incrementEigenSystem(lmbda1, Q1, scipy.sparse.csr_matrix(W1hat), 4, 7, 1)
 
         Q2Approx = Q2Approx.dot(numpy.diag(numpy.diag(Q2Approx.T.dot(Q2Approx))**-0.5))
         Q2 = Q2.dot(numpy.diag(numpy.sum(Q2**2, 0)**-0.5))
@@ -232,7 +234,7 @@ class NingSpectralClusteringTest(unittest.TestCase):
 
         k = 2
         clusterer = NingSpectralClustering(k)
-        clustersList = clusterer.cluster(graphIterator)
+        clustersList = clusterer.cluster(toSparseGraphListIterator(graphIterator))
 
         #Why are the bottom rows of Q still zero?
 
@@ -262,7 +264,7 @@ class NingSpectralClusteringTest(unittest.TestCase):
         WList.append(W[0:7, 0:7].copy())
 
         iterator = iter(WList)
-        clustersList = clusterer.cluster(iterator)
+        clustersList = clusterer.cluster(toSparseGraphListIterator(iterator))
 
         #Seems to work, amazingly 
         #print(clustersList)
@@ -272,7 +274,7 @@ class NingSpectralClusteringTest(unittest.TestCase):
         W3 = W[0:4, 0:4]
         WList = [W, W2, W3]
         iterator = iter(WList)
-        clustersList = clusterer.cluster(iterator)
+        clustersList = clusterer.cluster(toSparseGraphListIterator(iterator))
         
         nptst.assert_array_equal(clustersList[0][0:5], clustersList[1])
         nptst.assert_array_equal(clustersList[1][0:4], clustersList[2])
