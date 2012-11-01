@@ -8,6 +8,7 @@ import scipy
 import random
 from apgl.graph.DictGraph import DictGraph
 import logging
+import scipy.sparse 
 
 class MyDictionary(object):
     def __init__(self):
@@ -206,5 +207,21 @@ class toDenseGraphListIterator(object):
 
     def __next__(self):
         return numpy.array(next(self.g).todense(), numpy.float)
+        
+    next = __next__ 
+
+
+class toSparseGraphListIterator(object):
+    """
+    """
+
+    def __init__(self, graphListIterator):
+        self.g = graphListIterator
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return scipy.sparse.csr_matrix(next(self.g))
         
     next = __next__ 
