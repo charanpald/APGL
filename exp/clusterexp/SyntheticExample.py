@@ -93,7 +93,7 @@ if saveResults:
     perms = [l for l in itertools.permutations([0, 1, 2])]
     numRepetitions = 50
     #numRepetitions = 1
-    do_Nings = False
+    do_Nings = True
     
     clustErrApprox = numpy.zeros((ps.shape[0], numGraphs, numRepetitions))
     clustErrExact = numpy.zeros((ps.shape[0], numGraphs, numRepetitions))
