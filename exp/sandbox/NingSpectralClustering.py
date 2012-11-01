@@ -7,6 +7,7 @@ import numpy
 import math
 import logging
 import scipy.linalg
+import scipy.sparse.linalg 
 from apgl.util.Util import Util
 import scipy.cluster.vq as vq 
 from apgl.util.VqUtils import VqUtils
@@ -182,7 +183,7 @@ class NingSpectralClustering(object):
         
         return lmbda, Q 
 
-    def cluster(self, graphIterator, T=10, verbose=False):
+    def cluster(self, graphIterator, verbose=False):
         """
         Find a set of clusters using the graph and list of subgraph indices. 
         """
@@ -199,7 +200,7 @@ class NingSpectralClustering(object):
             logging.debug("Graph index:" + str(iter))
 
             startTime = time.time()
-            if iter % T != 0:
+            if iter % self.T != 0:
                 # --- Figure out the similarity changes in existing edges ---
                 n = lastW.shape[0] 
                 deltaW = W.copy()
