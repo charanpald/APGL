@@ -126,7 +126,7 @@ class GrowingContrastGraphIterator(object):
         return self
 
     def next(self):
-        self.__next__()
+        return self.__next__()
         
     def __next__(self):
         # new edges
@@ -150,7 +150,6 @@ class GrowingContrastGraphIterator(object):
         return self.edgesMatrix
 
 
-
 #=========================================================================
 #=========================================================================
 # usefull
@@ -165,7 +164,6 @@ def randIndex(learnedClustering, clust_size):
             same_learned_cl = learnedClustering[v1] == learnedClustering[v2]
             error += same_cl != same_learned_cl
     return(error*2/(numVertices)/(numVertices-1))
-
 
 #=========================================================================
 #=========================================================================
