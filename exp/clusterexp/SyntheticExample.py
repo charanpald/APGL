@@ -74,10 +74,37 @@ class ThreeClustIterator(object):
 ps = numpy.arange(0.1, 0.21, 0.1)
 #ps = numpy.arange(0.05, 0.20, 0.1)  
 numGraphs = len(ThreeClustIterator().subgraphIndicesList) 
-saveResults = True 
+saveResults = False 
 
 resultsDir = PathDefaults.getOutputDir() + "cluster/"
 fileName = resultsDir + "ThreeClustErrors.npz"
+
+
+#Plot spectrums of largest graphs 
+"""  
+iterator = ThreeClustIterator(0.1).getIterator()
+for W in iterator: 
+    if W.shape[0] == 180: 
+        L = GraphUtils.shiftLaplacian(W)
+        u, V = numpy.linalg.eig(L.todense())
+        u = numpy.flipud(numpy.sort(u))
+        
+        print(u)
+        plt.plot(numpy.arange(u.shape[0]), u)
+
+iterator = ThreeClustIterator(0.2).getIterator()
+plt.figure(10)
+for W in iterator: 
+    if W.shape[0] == 180: 
+        L = GraphUtils.shiftLaplacian(W)
+        u, V = numpy.linalg.eig(L.todense())
+        u = numpy.flipud(numpy.sort(u))
+        
+        print(u)
+        plt.plot(numpy.arange(u.shape[0]), u)
+
+plt.show()
+"""
   
 if saveResults: 
     numClusters = 3
@@ -173,14 +200,17 @@ else:
     numMethods = 4
     
     plt.hold(True)
-    for i_res in range(numMethods):
-        res = [meanClustErrExact, meanClustErrApprox, meanClustErrNystrom, meanClustErrNings][i_res]
-        names = ["Exact", "IASC", "Nystrom", "Ning"]
-        for i_p in range(len(ps)):
-            plt.plot(iterations, res[i_p, :], plotStyles[i_p][i_res], label=names[i_res] + " p=" + str(ps[i_p]))
-    plt.xlabel("Graph index")
-    plt.ylabel("Rand Index")
-    #plt.legend(loc="upper left")
+    for i_p in range(len(ps)):
+        for i_res in range(numMethods):
+            res = [meanClustErrExact, meanClustErrApprox, meanClustErrNystrom, meanClustErrNings][i_res]
+            resStd = [stdClustErrExact, stdClustErrApprox, stdClustErrNystrom, stdClustErrNings][i_res]
+            names = ["Exact", "IASC", "Nystrom", "Ning"]
+            
+            plt.figure(i_p)
+            plt.plot(iterations, res[i_p, :], plotStyles[0][i_res], label=names[i_res])
+            plt.xlabel("Graph index")
+            plt.ylabel("Rand Index")
+            plt.legend(loc="upper left")
     plt.savefig(resultsDir + "ThreeClustErrors.eps")
     plt.show()
 
