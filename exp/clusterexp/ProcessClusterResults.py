@@ -19,7 +19,7 @@ resultsDir = PathDefaults.getOutputDir() + "cluster/"
 
 plotHIV = False
 plotBemol = False
-plotCitation = True
+plotCitation = False
 
 BemolSubDir = "cluster_mostrare/Bemol__nbU_1000__nbPurchPerIt_10__startIt_1000__endIt_None/__k1_20__k2_80__k3_80__T_100/"
 BemolSubDir = "cluster_mostrare/Bemol__nbU_10000__nbPurchPerIt_10__startIt_30000__endIt_35000/__k1_40__k2_160__k3_160__T_100/"
@@ -29,8 +29,8 @@ HIVSubDir = "HIV__k1_10__k2_10__k3_500__T_10"
 CitationSubDir = "Citation__k1_10__k2_10__k3_500__T_10"
 
 # uncomment data files to read (corresponding curve will be recomputed)
-#resultsFileName4 = resultsDir + "IncreasingContrastClustErrors_pmax0.001"
-#resultsFileName5 = resultsDir + "ThreeClustErrors.dat"
+resultsFileName4 = resultsDir + "IncreasingContrastClustErrors_pmax0.01"
+
 
 maxPoints = 100             # number of points (dot, square, ...) on curves
 startingIteration = 0000    # for HIV, Bemol and Citation data, iteration number of the first data
@@ -182,12 +182,6 @@ if 'resultsFileName4' in locals():
         resIncreasing[k2] = numpy.loadtxt(file)
     logging.info("Loaded files " + resultsFileName4)
 
-#Load 3ClustErrors
-if 'resultsFileName5' in locals():
-    file = open(resultsFileName5, 'r')
-    file.readline()
-    res3clust = numpy.loadtxt(file)
-    logging.info("Loaded files " + resultsFileName5)
 
 #==========================================================================
 #==========================================================================
@@ -227,39 +221,6 @@ if 'resultsFileName4' in locals():
     plt.legend(legend)
     plt.savefig(resultsDir + "IncreasingContrastClustErrors_lvl2_paper.eps")
 
-#plot 3clust results
-if 'resultsFileName5' in locals():
-    numClusters = 3
-    startClusterSize = 20
-    endClusterSize = 60
-    clusterStep = 5
-
-    numVertices = numClusters*numpy.arange(startClusterSize, endClusterSize+1, clusterStep)
-    numVertices = numpy.hstack((numVertices,numClusters*numpy.arange(endClusterSize-clusterStep, startClusterSize-1, -clusterStep)))
-    ps = numpy.arange(0.05, 0.20, 0.05)
-#    self.iterations
-
-    plt.figure(plotInd)
-    plotInd += 1
-    fig = plt.subplot(111)
-    plt.hold(True)
-    # for the legend
-#    plt.plot(self.iterations, res3clust[:,len(ps)], "k--", self.iterations, res3clust[:, 0], "k-", self.iterations, res3clust[:,2*len(ps)], "k:")
-    plt.plot(res3clust[:,len(ps)], "k--", res3clust[:, 0], "k-", res3clust[:,2*len(ps)], "k:")
-    for i_p in range(len(ps)):
-#        plt.plot(self.iterations, res3clust[:, i_p], plotStyles1[i_p], self.iterations, res3clust[:, len(ps)+i_p], plotStyles2[i_p], self.iterations, res3clust[:, 2*len(ps)+i_p], plotStyles3[i_p])
-        plt.plot(res3clust[:, i_p], plotStyles1[i_p], res3clust[:, len(ps)+i_p], plotStyles2[i_p], res3clust[:, 2*len(ps)+i_p], plotStyles3[i_p])
-    plt.hold(False)
-    plt.xlabel("Number of Vertices")
-    from matplotlib.ticker import IndexLocator, FixedFormatter
-    tickLocator = IndexLocator(1, 0)
-    tickFormatter = FixedFormatter([str(i) for i in numVertices])
-    fig.xaxis.set_major_locator(tickLocator)
-    fig.xaxis.set_major_formatter(tickFormatter)
-#    plt.axis.set_ticklabels(numVertices)
-    plt.ylabel("Rand Index")
-    plt.legend(("IASC", "Exact", "Ning et al."), loc="upper left")
-    plt.savefig(resultsDir + "ThreeClustErrors.eps")
 
 plt.show()
 
