@@ -72,14 +72,14 @@ numpy.random.seed(21)
 # printing options #
 #logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format='%(levelname)s (%(asctime)s):%(message)s')
 #logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 numpy.set_printoptions(suppress=True, linewidth=60)
 numpy.seterr("raise", under="ignore")
 
 
 
 # print args #
-logging.info("Running on Bemol")
+logging.info("Running on HIV")
 logging.info("Data params:")
 keys = list(vars(dataArgs).keys())
 keys.sort()
