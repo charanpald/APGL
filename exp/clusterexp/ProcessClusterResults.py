@@ -164,14 +164,6 @@ if plotCitation:
 #==========================================================================
 #==========================================================================
 
-#Load static clustering results
-if 'resultsFileName2' in locals():
-    file = open(resultsFileName2, 'r')
-    arrayDict = numpy.load(file)
-    logging.info("Loaded file " + resultsFileName2)
-
-    staticModularities = arrayDict["arr_0"]
-    staticKwayNormalisedCuts = arrayDict["arr_1"]
 
 #Load IncreasingContrastClustErrors
 if 'resultsFileName4' in locals():
