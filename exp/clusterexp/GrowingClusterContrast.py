@@ -152,7 +152,7 @@ class GrowingContrastGraphIterator(object):
 
 #=========================================================================
 #=========================================================================
-# usefull
+# useful
 #=========================================================================
 #=========================================================================
 def randIndex(learnedClustering, clust_size):
@@ -163,7 +163,8 @@ def randIndex(learnedClustering, clust_size):
             same_cl = (v1 // clust_size) == (v2 // clust_size)
             same_learned_cl = learnedClustering[v1] == learnedClustering[v2]
             error += same_cl != same_learned_cl
-    return(error*2/(numVertices)/(numVertices-1))
+    
+    return (float(error)*2/(numVertices)/(numVertices-1))
 
 #=========================================================================
 #=========================================================================
@@ -175,8 +176,8 @@ numIter = len(range(args.startingIteration, args.endingIteration))
 logging.info("compute clusters")
 exactClusterer = IterativeSpectralClustering(args.k1, alg="exact")
 approxClusterer = IterativeSpectralClustering(args.k1, args.k2, T=args.exactFreq, alg="IASC")
-nystromClusterer = IterativeSpectralClustering(args.k1, args.k2, k3=args.k3, T=args.exactFreq, alg="nystrom")
-ningsClusterer = NingSpectralClustering(args.k1)
+nystromClusterer = IterativeSpectralClustering(args.k1, k3=args.k3, alg="nystrom")
+ningsClusterer = NingSpectralClustering(args.k1, T=args.exactFreq)
 
 exactClusterer.nb_iter_kmeans = 20
 approxClusterer.nb_iter_kmeans = 20
@@ -215,7 +216,7 @@ for r in range(args.numRepetitions):
         logging.info("Running Nings method")
         graphIterator = getGraphIterator()
 #        clustListNings = ningsClusterer.cluster(toDenseGraphListIterator(graphIterator))
-        clustListNings = ningsClusterer.cluster(graphIterator, T=args.exactFreq)
+        clustListNings = ningsClusterer.cluster(graphIterator)
 
     # print clusters
     if args.runExact:
@@ -310,6 +311,7 @@ else:
     res_file.write("# error for exact_lvl0 exact_lvl1 exact_lvl2 IASC_lvl0 IASC_lvl1 IASC_lvl2 nings_lvl0 nings_lvl1 nings_lvl2 Nystrom_lvl0 Nystrom_lvl1 Nystrom_lvl2\n".encode('utf-8'))
     res = numpy.hstack((meanClustErrExact.T, meanClustErrApprox.T, meanClustErrNings.T, meanClustErrNystrom.T))
     numpy.savetxt(res_file, res)
+    logging.debug("Wrote " + file_name)
     
 
 #Now lets plot the results
@@ -336,7 +338,7 @@ for lvl in range(args.numLevel):
     plt.ylabel("Error")
     plt.legend()
     plt.savefig(resultsDir + "IncreasingContrastClustErrors_lvl"+ str(lvl)+"_pmax" + str(args.maxP) + "_nEigen" + str(args.k2) + ".eps")
-    logging.info(resultsDir + "IncreasingContrastClustErrors_lvl"+ str(lvl)+"_pmax" + str(args.maxP) + "_nEigen" + str(args.k2) + ".eps")
+    logging.debug(resultsDir + "IncreasingContrastClustErrors_lvl"+ str(lvl)+"_pmax" + str(args.maxP) + "_nEigen" + str(args.k2) + ".eps")
 #    plt.show()
 
 
