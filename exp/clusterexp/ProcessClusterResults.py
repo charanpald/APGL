@@ -179,9 +179,9 @@ if 'resultsFileName4' in locals():
 #==========================================================================
 #==========================================================================
 
-plotStyles1 = ['ko-', 'kx-', 'k+-', 'k.-', 'k*-', 'ks-', 'k-']
-plotStyles2 = ['ro--', 'rx--', 'r+--', 'r.--', 'r*--', 'rs--']
-plotStyles3 = ['bo:', 'bx:', 'b+:', 'b.:', 'b*:', 'bs:']
+plotStyles1 = ['k.-', 'kx-', 'k+-', 'ko-', 'k*-', 'ks-', 'k-']
+plotStyles2 = ['r.--', 'rx--', 'r+--', 'ro--', 'r*--', 'rs--']
+plotStyles3 = ['b.:', 'bx:', 'b+:', 'bo:', 'b*:', 'bs:']
 
 #plot IncreasingContrast results
 numLevel = 3
@@ -191,7 +191,7 @@ startingIteration = 2
 if 'resultsFileName4' in locals():
     iterations = numpy.arange(startingIteration, startingIteration+resIncreasing[9].shape[0])
 
-    plt.figure(plotInd)
+    fig = plt.figure(plotInd)
     plotInd += 1
     legend = []
     # IASC
@@ -210,8 +210,9 @@ if 'resultsFileName4' in locals():
     
     plt.plot(iterations, resIncreasing[9][:, numLevel*2+printedLevel], plotStyles1[0])
     legend.append("Ning")
-    #plt.ylim(0.15,0.30)
-    plt.xlabel("Graph no.")
+
+    plt.xlim(2, 22)
+    plt.xlabel("Graph index")
     plt.ylabel("Rand Index")
     plt.legend(legend)
     plt.savefig(resultsDir + "IncreasingContrastClustErrors_lvl2_paper.eps")
