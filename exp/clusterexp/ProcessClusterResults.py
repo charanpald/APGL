@@ -186,7 +186,7 @@ plotStyles3 = ['bo:', 'bx:', 'b+:', 'b.:', 'b*:', 'bs:']
 #plot IncreasingContrast results
 numLevel = 3
 printedLevel = 2 # in [0, 1, ... , numLevel-1]
-startingIteration = 5
+startingIteration = 2
 
 if 'resultsFileName4' in locals():
     iterations = numpy.arange(startingIteration, startingIteration+resIncreasing[9].shape[0])
@@ -207,7 +207,10 @@ if 'resultsFileName4' in locals():
     # Exact
     plt.plot(iterations, resIncreasing[9][:, numLevel*0+printedLevel], plotStyles1[6])
     legend.append("Exact")
-    plt.ylim(0.15,0.30)
+    
+    plt.plot(iterations, resIncreasing[9][:, numLevel*2+printedLevel], plotStyles1[0])
+    legend.append("Ning")
+    #plt.ylim(0.15,0.30)
     plt.xlabel("Graph no.")
     plt.ylabel("Rand Index")
     plt.legend(legend)
