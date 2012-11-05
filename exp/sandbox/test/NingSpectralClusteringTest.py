@@ -278,6 +278,9 @@ class NingSpectralClusteringTest(unittest.TestCase):
         
         nptst.assert_array_equal(clustersList[0][0:5], clustersList[1])
         nptst.assert_array_equal(clustersList[1][0:4], clustersList[2])
+        
+        #Make sure 1st clustering (without updates) is correct 
+        print(W)
 
     def testDebug(self): 
         if not os.path.isfile("lmbda.npy"):
