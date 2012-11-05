@@ -12,6 +12,7 @@ from apgl.util.Util import Util
 import scipy.cluster.vq as vq 
 from apgl.util.VqUtils import VqUtils
 from apgl.util.SparseUtils import SparseUtils
+from apgl.graph import GraphUtils 
 
 class NingSpectralClustering(object):
     def __init__(self, k, T=10):
@@ -25,6 +26,7 @@ class NingSpectralClustering(object):
         self.kmeansIter = 20
         self.debugSave = False
         self.debugSVDiFile = 0
+        self.seed = 21
 
     def incrementEigenSystem(self, lmbda, Q, W, i, j, deltaW):
         """
@@ -89,7 +91,13 @@ class NingSpectralClustering(object):
                 
                 d = numpy.sum(QHat[:, s]*degreesHat*deltaQ[largeNeighbours])
 #                e = deltaW*(qi*deltaQi + qj*deltaQj)
-                deltaLmbda = deltaW*(a+b)/(1+c+d)
+
+                #It's not specified what to do when 1+c+d==0, so we just break 
+                if abs(1+c+d) < tol: 
+                    logging.warn("Encountered zero value of 1+c+d, breaking")
+                    break
+                else: 
+                    deltaLmbda = deltaW*(a+b)/(1+c+d)
 
                 # --- updating deltaQ ---
                 K = -WHat
@@ -192,6 +200,7 @@ class NingSpectralClustering(object):
         decompositionTimeList = [] 
         kMeansTimeList = [] 
         boundList = []
+        numpy.random.seed(self.seed)
 
         iter = 0 
 
@@ -229,8 +238,6 @@ class NingSpectralClustering(object):
                     Q = Q[0:W.shape[0], :]
             else:
                 logging.debug("Recomputing eigensystem")
-                D = scipy.sparse.spdiags(W.sum(0)+ tol, 0, W.shape[0], W.shape[0], format='csr')
-                L = D - W
                 # We want to solve the generalized eigen problem $L.v = lambda.D.v$
                 # with L and D hermitians.
                 # scipy.sparse.linalg does not solve this problem actualy (it
@@ -238,10 +245,9 @@ class NingSpectralClustering(object):
                 # 0.11)
                 # So we will solve $D^{-1}.L.v = lambda.v$, where $D^{-1}.L$ is
                 # no more hermitian.
-                DInv = scipy.sparse.csr_matrix(D.shape)
-                for i in range(DInv.shape[0]):
-                    DInv[i,i] = 1/D[i,i]
-                lmbda, Q = scipy.sparse.linalg.eigs(DInv.dot(L), min(self.k, L.shape[0]-1), which="LM", ncv = min(20*self.k, L.shape[0]))
+                L = GraphUtils.normalisedLaplacianRw(W) 
+                lmbda, Q = scipy.sparse.linalg.eigs(L, min(self.k, L.shape[0]-1), which="LM", ncv = min(20*self.k, L.shape[0]), v0=numpy.random.rand(L.shape[0]))
+                
                 lmbda = lmbda.real
                 Q = Q.real
             decompositionTimeList.append(time.time()-startTime)
