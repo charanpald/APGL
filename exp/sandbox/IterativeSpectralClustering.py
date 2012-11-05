@@ -21,7 +21,7 @@ from apgl.util.VqUtils import VqUtils
 from apgl.util.Util import Util
 
 class IterativeSpectralClustering(object):
-    def __init__(self, k1, k2=20, k3=100, alg="exact", T=10):
+    def __init__(self, k1, k2=20, k3=100, alg="exact", T=10, computeBound=False):
         """
         Intialise this object with integer k1 which is the number of clusters to
         find, and k2 which is the maximum rank of the approximation of the shift
@@ -55,7 +55,7 @@ class IterativeSpectralClustering(object):
 
         self.nb_iter_kmeans = 100
         self.alg = alg
-        self.computeBound = False 
+        self.computeBound = computeBound 
 
     def findCentroids(self, V, clusters):
         """
