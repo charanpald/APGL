@@ -23,47 +23,58 @@ numpy.random.seed(21)
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 numpy.set_printoptions(suppress=True, linewidth=200, precision=3)
        
-iterator = BoundGraphIterator()
-
-for W in iterator: 
-    L = GraphUtils.shiftLaplacian(W)
-    u, V = numpy.linalg.eig(L.todense())
-    u = numpy.flipud(numpy.sort(u))
-    
-    #print(u)
-
 k1 = 3
 k2 = 3
 logging.debug("k=" + str(k1))
+numRepetitions = 50
+numGraphs = 80
 
-iterator = BoundGraphIterator()
+saveResults = False 
+resultsDir = PathDefaults.getOutputDir() + "cluster/"
+fileName = resultsDir + "ErrorBoundTheorem44.npy"
 
-clusterer = IterativeSpectralClustering(k1, k2)
-clusterer.nb_iter_kmeans = 20
-clusterer.computeBound = True 
-logging.debug("Starting clustering")
-clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, verbose=True, T=100)
-boundList = numpy.array(boundList)
-print(boundList)
+if saveResults: 
+    errors = numpy.zeros((numGraphs, numRepetitions))  
+    allBoundLists = numpy.zeros((numRepetitions, numGraphs-1, 5))
+    
+    for r in range(numRepetitions): 
+        iterator = BoundGraphIterator(numGraphs=numGraphs)
+        
+        clusterer = IterativeSpectralClustering(k1, k2, T=100, computeBound=True, alg="IASC")
+        clusterer.nb_iter_kmeans = 20
+        logging.debug("Starting clustering")
+        clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, verbose=True)
+        allBoundLists[r, :, :] = numpy.array(boundList)
+        
+        
+        for i in range(len(clusterList)): 
+            errors[i, r] = GraphUtils.randIndex(clusterList[i], iterator.realClustering)
+            
+    print(allBoundLists.mean(0))
+    
+    numpy.save(fileName, allBoundLists)
+    logging.debug("Saved results as " + fileName)
+else: 
+    allBoundLists = numpy.load(fileName) 
+    boundList = allBoundLists.mean(0)
+    stdBoundList = allBoundLists.std(0)
+    stdBoundList[:, 0] = boundList[:, 0]
+    
+    print(boundList)
+    print(stdBoundList)
 
-errors = numpy.zeros(len(clusterList))
-
-for i in range(len(clusterList)): 
-    errors[i] = GraphUtils.randIndex(clusterList[i], iterator.realClustering)
-
-
-plt.figure(0)
-plt.plot(boundList[:, 0], boundList[:, 1], label="frobenius approx")
-plt.plot(boundList[:, 0], boundList[:, 2], label="2-norm approx")
-plt.plot(boundList[:, 0], boundList[:, 3], label="frobenius precise")
-plt.plot(boundList[:, 0], boundList[:, 4], label="2-norm precise")
-plt.xlabel("Graph no.")
-plt.ylabel("||sin(theta)||")
-plt.legend(loc="upper left")
-
-#plt.figure(1)
-#plt.plot(numpy.arange(errors.shape[0]), errors)
-plt.show()
+    plt.figure(0)
+    plt.plot(boundList[:, 0], boundList[:, 1], label="frobenius approx")
+    plt.plot(boundList[:, 0], boundList[:, 2], label="2-norm approx")
+    plt.plot(boundList[:, 0], boundList[:, 3], label="frobenius precise")
+    plt.plot(boundList[:, 0], boundList[:, 4], label="2-norm precise")
+    plt.xlabel("Graph no.")
+    plt.ylabel("||sin(theta)||")
+    plt.legend(loc="upper left")
+    
+    #plt.figure(1)
+    #plt.plot(numpy.arange(errors.shape[0]), errors)
+    plt.show()
 
 
 
