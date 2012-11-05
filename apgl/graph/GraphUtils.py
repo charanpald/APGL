@@ -148,16 +148,21 @@ class GraphUtils(object):
         Give a scipy sparse csr matrix W, compute the shifted Laplacian matrix,
         which is defined as I + D^-0.5 W D^-0.5 where D is a diagonal matrix of
         degrees. For vertices of degree zero, the corresponding row/col of the
-        Laplacian is zero with a 1 at the diagonal. The eigenvalues of the shift
+        Laplacian is zero with a 0 at the diagonal. The eigenvalues of the shift
         Laplacian are between 0 and 2.
         """
         if not scipy.sparse.isspmatrix_csr(W):
             raise ValueError("W is not a csr matrix")
 
         d = numpy.array(W.sum(0)).ravel()
-        d = d + numpy.array(d==0, numpy.int)
-        D = scipy.sparse.spdiags(d**-0.5, 0, d.shape[0], d.shape[0], format='csr')
-        Lhat = scipy.sparse.eye(W.shape[0], W.shape[0], format='csr') + D.dot(W).dot(D)
+        d[d!=0] = d[d!=0]**-0.5
+        D = scipy.sparse.spdiags(d, 0, d.shape[0], d.shape[0], format='csr')
+        
+        i = numpy.zeros(W.shape[0])
+        i[d!=0] = 1
+        I = scipy.sparse.spdiags(i, 0, i.shape[0], i.shape[0], format='csr')
+        
+        Lhat = I + D.dot(W).dot(D)
         return Lhat
         
     @staticmethod 
@@ -166,17 +171,42 @@ class GraphUtils(object):
         Give a scipy sparse csr matrix W, compute the normalised Laplacian matrix,
         which is defined as I - D^-0.5 W D^-0.5 where D is a diagonal matrix of
         degrees. For vertices of degree zero, the corresponding row/col of the
-        Laplacian is zero with a 1 at the diagonal. The eigenvalues of the 
+        Laplacian is zero with a 0 at the diagonal. The eigenvalues of the 
         Laplacian are between 0 and 2.
         """
         if not scipy.sparse.isspmatrix_csr(W):
             raise ValueError("W is not a csr matrix")
 
         d = numpy.array(W.sum(0)).ravel()
-        d = d + numpy.array(d==0, numpy.int)
-        D = scipy.sparse.spdiags(d**-0.5, 0, d.shape[0], d.shape[0], format='csr')
-        Lhat = scipy.sparse.eye(W.shape[0], W.shape[0], format='csr') - D.dot(W).dot(D)
+        d[d!=0] = d[d!=0]**-0.5
+        D = scipy.sparse.spdiags(d, 0, d.shape[0], d.shape[0], format='csr')
+        
+        i = numpy.zeros(W.shape[0])
+        i[d!=0] = 1
+        I = scipy.sparse.spdiags(i, 0, i.shape[0], i.shape[0], format='csr')
+        
+        Lhat = I - D.dot(W).dot(D)
         return Lhat        
+    
+    @staticmethod 
+    def normalisedLaplacianRw(W): 
+        """
+        Compute the random walk Laplacian matrix given by D^-1 L where L is the 
+        unnormalised Laplacian. 
+        """
+        if not scipy.sparse.isspmatrix_csr(W):
+            raise ValueError("W is not a csr matrix")
+            
+        d = numpy.array(W.sum(0)).ravel()
+        d[d!=0] = d[d!=0]**-1
+        D = scipy.sparse.spdiags(d, 0, d.shape[0], d.shape[0], format='csr')
+        
+        i = numpy.zeros(W.shape[0])
+        i[d!=0] = 1
+        I = scipy.sparse.spdiags(i, 0, i.shape[0], i.shape[0], format='csr')
+        
+        Lhat = I - D.dot(W)
+        return Lhat  
         
     
     @staticmethod

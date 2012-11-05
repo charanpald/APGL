@@ -9,6 +9,7 @@ from apgl.generator.BarabasiAlbertGenerator import BarabasiAlbertGenerator
 import unittest
 import numpy
 import scipy.sparse
+import numpy.testing as nptst
 
 class AbstractMatrixGraphTest(unittest.TestCase):
     def setUp(self):
@@ -188,8 +189,10 @@ class AbstractMatrixGraphTest(unittest.TestCase):
 
         tol = 10**-6
         self.assertTrue(numpy.linalg.norm(L - L2) < tol)
+        
 
-    def normalisedLaplacianSym(self):
+        
+    def testNormalisedLaplacianSym(self):
         numVertices = 10
         numFeatures = 0
 
@@ -208,8 +211,47 @@ class AbstractMatrixGraphTest(unittest.TestCase):
         L2 = graph.normalisedLaplacianSym()
 
         tol = 10**-6
+        self.assertTrue(numpy.linalg.norm(L + L2 - 2*numpy.eye(numVertices)) < tol)
+
+        #Test zero rows/cols 
+        W = scipy.sparse.csr_matrix((5, 5))
+        W[1, 0] = 1
+        W[0, 1] = 1
+        L = GraphUtils.normalisedLaplacianSym(W)
+        
+        for i in range(2, 5): 
+            self.assertEquals(L[i, i], 0)
+
+
+    def testNormalisedLaplacianRw(self):
+        numVertices = 10
+        numFeatures = 0
+
+        vList = VertexList(numVertices, numFeatures)
+        graph = SparseGraph(vList)
+
+        ell = 2
+        m = 2
+        generator = BarabasiAlbertGenerator(ell, m)
+        graph = generator.generate(graph)
+
+        k = 10
+        W = graph.getSparseWeightMatrix()
+        L = GraphUtils.normalisedLaplacianRw(W)
+
+        L2 = graph.normalisedLaplacianRw()
+
+        tol = 10**-6
         self.assertTrue(numpy.linalg.norm(L - L2) < tol)
 
+        #Test zero rows/cols 
+        W = scipy.sparse.csr_matrix((5, 5))
+        W[1, 0] = 1
+        W[0, 1] = 1
+        L = GraphUtils.normalisedLaplacianRw(W)
+        
+        for i in range(2, 5): 
+            self.assertEquals(L[i, i], 0)
 
     def testRandIndex(self): 
         clustering1 = numpy.array([1, 1, 1, 2, 2, 2])
