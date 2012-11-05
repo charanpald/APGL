@@ -51,10 +51,10 @@ class ClusterExpHelper(object):
         algoParser = argparse.ArgumentParser(description="", add_help=add_help)
         for method in ["runIASC", "runExact", "runModularity", "runNystrom", "runNing"]:
             algoParser.add_argument("--" + method, action="store_true", default=defaultAlgoArgs.__getattribute__(method))
-        algoParser.add_argument("--k1", type=int, help="Number of clusers", default=defaultAlgoArgs.k1)
-        algoParser.add_argument("--k2", type=int, help="Rank of the approximation", default=defaultAlgoArgs.k2)
+        algoParser.add_argument("--k1", type=int, help="Number of clusters", default=defaultAlgoArgs.k1)
+        algoParser.add_argument("--k2", type=int, help="Rank of the approximation for IASC", default=defaultAlgoArgs.k2)
         algoParser.add_argument("--k3", type=int, help="Number of row/cols used by to find the approximate eigenvalues with Nystrom approach", default=defaultAlgoArgs.k3)
-        algoParser.add_argument("--T", type=int, help="The exact decomposition is recomputed any T-ith iteration", default=defaultAlgoArgs.T)
+        algoParser.add_argument("--T", type=int, help="The exact decomposition is recomputed every T-th iteration for IASC and Ning", default=defaultAlgoArgs.T)
         algoParser.add_argument("--computeBound", action="store_true", default=defaultAlgoArgs.computeBound, help="Compute bounds on spaces angles")
         
         return(algoParser)
@@ -86,7 +86,7 @@ class ClusterExpHelper(object):
     def extendResultsDir(self, middle = None):
         if middle == None:
             middle = ""
-        self.resultsDir += middle + "__k1_" + str(self.algoArgs.k1) + "__k2_" + str(self.algoArgs.k2) + "__k3_" + str(self.algoArgs.k3) + "__T_" + str(self.algoArgs.T) + "/"
+        self.resultsDir += middle + "/"
 
     def printAlgoArgs(self):
         logging.info("Algo params")
@@ -122,7 +122,7 @@ class ClusterExpHelper(object):
            
         file = open(fileName, 'wb')
         numpy.savez(file, measures, timeList, graphInfo)
-        logging.info("Saved file as " + fileName)
+        logging.debug("Saved file as " + fileName)
 
     def runExperiment(self):
         """
@@ -138,7 +138,7 @@ class ClusterExpHelper(object):
             iterator = self.getIterator()
             clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, verbose=True, TLogging=TLogging)
 
-            resultsFileName = self.resultsDir + "ResultsIASC.npz"
+            resultsFileName = self.resultsDir + "ResultsIASC_k1=" + str(self.algoArgs.k1) + "_k2=" + str(self.algoArgs.k2) + "_T=" + str(self.algoArgs.T) + ".npz"
             self.recordResults(clusterList, timeList, resultsFileName)
 
         if self.algoArgs.runExact:
@@ -148,19 +148,19 @@ class ClusterExpHelper(object):
             iterator = self.getIterator()
             clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, verbose=True, TLogging=TLogging)
 
-            resultsFileName = self.resultsDir + "ResultsExact.npz"
+            resultsFileName = self.resultsDir + "ResultsExact_k1=" + str(self.algoArgs.k1) + ".npz"
             self.recordResults(clusterList, timeList, resultsFileName)
 
         if self.algoArgs.runNystrom:
-            logging.info("Running nystrom method without updates")
+            logging.info("Running nystrom method")
 
-            clusterer = IterativeSpectralClustering(self.algoArgs.k1, self.algoArgs.k2, k3=self.algoArgs.k3, alg="nystrom")
+            clusterer = IterativeSpectralClustering(self.algoArgs.k1, k3=self.algoArgs.k3, alg="nystrom")
             clusterer.nb_iter_kmeans = 20
             clusterer.computeBound = self.algoArgs.computeBound
             iterator = self.getIterator()
             clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, verbose=True, TLogging=TLogging)
 
-            resultsFileName = self.resultsDir + "ResultsNystrom.npz"
+            resultsFileName = self.resultsDir + "ResultsNystrom_k1="+ str(self.algoArgs.k1) + "_k3=" + str(self.algoArgs.k3) + ".npz"
             self.recordResults(clusterList, timeList, resultsFileName)
 
         if self.algoArgs.runModularity: 
@@ -168,18 +168,18 @@ class ClusterExpHelper(object):
             clusterer = IterativeModularityClustering(self.algoArgs.k1)
             iterator = self.getIterator()
 
-            clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, verbose=True, T=self.algoArgs.T)
+            clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, verbose=True)
 
-            resultsFileName = self.resultsDir + "ResultsModularity.npz"
+            resultsFileName = self.resultsDir + "ResultsModularity_k1=" + str(self.algoArgs.k1) + ".npz"
             self.recordResults(clusterList, timeList, resultsFileName)
 
         if self.algoArgs.runNing:
             logging.info("Running Nings method")
             iterator = self.getIterator()
-            clusterer = NingSpectralClustering(self.algoArgs.k1)
-            clusterList, timeList, boundList = clusterer.cluster(iterator, verbose=True, T=self.algoArgs.T)
+            clusterer = NingSpectralClustering(self.algoArgs.k1, T=self.algoArgs.T)
+            clusterList, timeList, boundList = clusterer.cluster(iterator, verbose=True)
 
-            resultsFileName = self.resultsDir + "ResultsNing.npz"
+            resultsFileName = self.resultsDir + "ResultsNing_k1=" + str(self.algoArgs.k1) + "_T=" + str(self.algoArgs.T) + ".npz"
             self.recordResults(clusterList, timeList, resultsFileName)
 
         logging.info("All done: see you around!")
