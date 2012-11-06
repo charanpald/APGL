@@ -21,7 +21,7 @@ class BoundGraphIterator(object):
         clusterList = []
         for i in range(numClusters):  
             cluster = SparseGraph(GeneralVertexList(numClusterVertices))
-            cluster = generator.generate(cluster)
+            cluster = generator.generate2(cluster)
             clusterList.append(cluster)
             
             self.realClustering[numClusterVertices*i:(i+1)*numClusterVertices] = i
