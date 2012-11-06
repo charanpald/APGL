@@ -64,8 +64,11 @@ class Nystrom(object):
         if type(n) == int:
             n = min(n, X.shape[0])
             inds = numpy.sort(numpy.random.permutation(X.shape[0])[0:n])
-        else:
+        elif type(n) == numpy.ndarray:
             inds = n 
+        else: 
+            raise ValueError("Invalid n value: " + str(n))
+            
         invInds = numpy.setdiff1d(numpy.arange(X.shape[0]), inds)
 
         if numpy.sort(inds).shape[0] == X.shape[0] and (numpy.sort(inds) == numpy.arange(X.shape[0])).all():
