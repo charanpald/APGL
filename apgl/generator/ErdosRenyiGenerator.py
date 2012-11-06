@@ -79,6 +79,30 @@ class ErdosRenyiGenerator(AbstractGraphGenerator):
         graph.setWeightMatrix(W)
             
         return graph
+        
+    def generate2(self, graph, requireEmpty=True): 
+        """
+        An alternative way of generating random edges which might work better 
+        than generate. 
+        """
+        Parameter.checkClass(graph, AbstractMatrixGraph)
+        if requireEmpty and graph.getNumEdges()!= 0:
+            raise ValueError("Graph must have no edges")
+            
+        numVertices = graph.getNumVertices()
+        W = numpy.random.rand(numVertices, numVertices) < self.p
+        W = numpy.array(W, numpy.int)
+        
+        if graph.isUndirected():
+            diagW = numpy.diag(W)
+            W = numpy.triu(W, 1)
+            W = W + W.T
+  
+        
+        graph.setWeightMatrix(scipy.sparse.csr_matrix(W, dtype=numpy.float))
+            
+        return graph
+        
             
     def clusteringCoefficient(self):
         '''

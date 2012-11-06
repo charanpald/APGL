@@ -11,9 +11,11 @@ from apgl.generator.ErdosRenyiGenerator import ErdosRenyiGenerator
 import unittest
 import logging
 import apgl
+import numpy 
 
 class ErdoRenyiGeneratorTest(unittest.TestCase):
     def setUp(self):    
+        numpy.set_printoptions(suppress=True, linewidth=200, precision=5)
         self.numVertices = 10; 
         self.numFeatures = 2; 
         
@@ -122,6 +124,15 @@ class ErdoRenyiGeneratorTest(unittest.TestCase):
         ax.set_xticklabels([])
         ax.set_yticklabels([])
         #matplotlib.pyplot.show()
+
+    def testGenerate2(self): 
+        numVertices = 20
+        graph = SparseGraph(GeneralVertexList(numVertices))
+        p = 0.2
+        generator = ErdosRenyiGenerator(p)
+        graph = generator.generate(graph)
+        
+        self.assertTrue((graph.getNumEdges() - p*numVertices*numVertices/2) < 8)
 
 
     def testErdosRenyiGenerations(self):
