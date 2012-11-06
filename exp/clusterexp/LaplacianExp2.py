@@ -67,7 +67,7 @@ def computeBound(A, omega, Q, omega2, Q2, k):
                 delta = abs(i-j)      
     
     #print(lmbda, L2)
-    print("normR=" + str(normR), "delta="+ str(delta))
+    print("normR=" + str(normR), "delta="+ str(delta), "bound="+str(normR/delta))
     
     return normR/delta
 
@@ -79,9 +79,9 @@ numClusterVertices = 250
 numMethods = len(nystromNs) + 2 
 errors = numpy.zeros((numGraphs, numMethods)) 
 
-numRepetitions = 20 
+numRepetitions = 2 
 
-saveResults = True
+saveResults = False
 resultsDir = PathDefaults.getOutputDir() + "cluster/"
 fileName = resultsDir + "ErrorBoundNystrom.npy"
 
@@ -105,7 +105,7 @@ if saveResults:
             
             #Compute exact eigenvalues 
             omega, Q = numpy.linalg.eigh(L.todense())
-            inds = numpy.argsort(lastOmega)
+            inds = numpy.flipud(numpy.argsort(omega))
             omega, Q = omega[inds], Q[:, inds]
             omegak, Qk = omega[0:k], Q[:, 0:k]
                
@@ -153,7 +153,8 @@ if saveResults:
     numpy.save(fileName, errors)
     logging.debug("Saved results as " + fileName)
 else: 
-    errors = numpy.load(fileName)    
+    errors = numpy.load(fileName)   
+    print(errors)
     
     plt.figure(0)
     #plt.plot(numpy.arange(errors.shape[0]), errors[:, 0], label="Nystrom m=300")
