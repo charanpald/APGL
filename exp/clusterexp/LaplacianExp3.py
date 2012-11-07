@@ -21,9 +21,9 @@ from exp.sandbox.EigenUpdater import EigenUpdater
 from apgl.graph import SparseGraph 
 from exp.clusterexp.FowlkesExp import createDataset 
 
-numpy.random.seed(21)
+numpy.random.seed(22)
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-numpy.set_printoptions(suppress=True, linewidth=200, precision=5)
+numpy.set_printoptions(suppress=True, linewidth=200, precision=5, threshold=100000)
 
 def computeBound(A, omega, Q, omega2, Q2, k):
     """
@@ -51,6 +51,13 @@ def computeBound(A, omega, Q, omega2, Q2, k):
     return normR/delta
 
 
+def computeInnerProd(Qk, Q2k):
+    """
+    Basically just compute ||Q.T Q2.T||_F^2. 
+    """
+    return (numpy.linalg.norm(Qk.T.dot(Q2k))**2)/float(Qk.shape[1])
+    
+
 k = 4
 numGraphs = 100 
 numClusterVertices = 250
@@ -67,21 +74,23 @@ nystromNs = numpy.arange(200, 1000, 50)
 
 #Same plots with Fowlkes dataset 
 #There is no eigengap in this case so bound does poorly 
-#W = scipy.sparse.csr_matrix(createDataset())
-#nystromNs = numpy.arange(20, 151, 10) 
-#k = 2
+W = scipy.sparse.csr_matrix(createDataset(sigma=1.5))
+nystromNs = numpy.arange(20, 151, 10) 
+k = 2
 
 errors = numpy.zeros((len(nystromNs), numMethods))  
+innerProds = numpy.zeros((len(nystromNs), numMethods))  
 
 L = GraphUtils.shiftLaplacian(W)
 L2 = GraphUtils.normalisedLaplacianSym(W)
+
+print(L2.todense())
 
 #Find connected components 
 graph = SparseGraph(GeneralVertexList(W.shape[0]))
 graph.setWeightMatrix(W)
 components = graph.findConnectedComponents()
 print(len(components)) 
-
 
 #Compute exact eigenvalues 
 omega, Q = numpy.linalg.eigh(L.todense())
@@ -90,15 +99,18 @@ omega, Q = omega[inds], Q[:, inds]
 omegak, Qk = omega[0:k], Q[:, 0:k]    
 
 print(omega)
+print(Q)
 
 omegaHat, Qhat = numpy.linalg.eigh(L2.todense())
 inds = numpy.argsort(omegaHat)
 omegaHat, Qhat = omegaHat[inds], Qhat[:, inds]
 omegaHatk, Qhatk = omegaHat[0:k], Qhat[:, 0:k] 
 
-print(omegaHat)
+
+print(computeInnerProd(Qk, Qhatk))
 
 for i, nystromN in enumerate(nystromNs):
+    print(nystromN)
     #omega2, Q2 = numpy.linalg.eigh(L.todense())
     omega2, Q2 = Nystrom.eigpsd(L, int(nystromN))
     inds = numpy.flipud(numpy.argsort(omega2))
@@ -106,17 +118,20 @@ for i, nystromN in enumerate(nystromNs):
     omega2k, Q2k = omega2[0:k], Q2[:, 0:k]
 
     errors[i, 0] = computeBound(L, omega, Q, omega2k, Q2k, k)
+    innerProds[i, 0] = computeInnerProd(Qk, Q2k)
     
-    omega2, Q2 = numpy.linalg.eigh(L2.todense())
-    #omega2, Q2 = Nystrom.eigpsd(L2, int(nystromN))
+    #omega2, Q2 = numpy.linalg.eigh(L2.todense())
+    omega2, Q2 = Nystrom.eigpsd(L2, int(nystromN))
     inds = numpy.argsort(omega2)
     omega2, Q2 = omega2[inds], Q2[:, inds]
     omega2k, Q2k = omega2[0:k], Q2[:, 0:k]
-    #print(omega2)
+    print(omega2)
 
     errors[i, 1] = computeBound(L2, omegaHat, Qhat, omega2k, Q2k, k)
+    innerProds[i, 1] = computeInnerProd(Qhatk, Q2k)
 
 print(errors)
+print(innerProds)
 
 plt.figure(0)
 plt.plot(numpy.arange(omega.shape[0]), omega, label="Shift Laplacian")
@@ -125,12 +140,10 @@ plt.legend()
 
 plt.figure(1)    
 #plt.plot(nystromNs, errors[:, 0], label="Shift Laplacian")
-plt.plot(nystromNs, errors[:, 1], label="Normalised Laplacian")
+plt.plot(nystromNs, innerProds[:, 0], label="Normalised Laplacian")
 plt.xlabel("Columns")
 plt.ylabel("||sin(theta)||")
 plt.legend()
 plt.show()
 
-#TODO: Look at 2nd eigenvector and angle with real one
-#
-    
+#Can't seem to get good results by taking smallest eigenvectors of Laplacian 
