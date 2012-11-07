@@ -12,12 +12,11 @@ from exp.sandbox.Nystrom import Nystrom
 
 numpy.set_printoptions(suppress=True, linewidth=200, precision=3)
 
-def createDataset(): 
+def createDataset(sigma=0.2, radius=5, R=1): 
     numVertices = 150 
     X = numpy.zeros((numVertices, 2))
     
     #Create circle 
-    radius = 5 
     noise = 0.3
     angles = numpy.random.rand(100)*2*numpy.pi
     X[0:100, 0] = radius*numpy.sin(angles)
@@ -26,8 +25,7 @@ def createDataset():
     X[0:100, :] += numpy.random.randn(100, 2)*noise 
     
     #Create blob 
-    R = 1 
-    centre = numpy.array([5-R, 0])
+    centre = numpy.array([radius-R, 0])
     X[100:, :] = centre + numpy.random.randn(50, 2)*noise 
     
     #plt.figure(0)
@@ -35,7 +33,6 @@ def createDataset():
     #plt.scatter(X[100:, 0], X[100:, 1], c="b")
     
     #Compute weight matrix 
-    sigma = 0.2 
     W = numpy.zeros((numVertices, numVertices))
     
     for i in range(numVertices): 
