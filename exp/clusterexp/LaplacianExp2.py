@@ -79,7 +79,7 @@ numClusterVertices = 250
 numMethods = len(nystromNs) + 2 
 errors = numpy.zeros((numGraphs, numMethods)) 
 
-numRepetitions = 2 
+numRepetitions = 20 
 
 saveResults = False
 resultsDir = PathDefaults.getOutputDir() + "cluster/"
