@@ -17,7 +17,7 @@ numpy.set_printoptions(suppress=True, linewidth=60)
 
 resultsDir = PathDefaults.getOutputDir() + "cluster/"
 
-plotHIV = False
+plotHIV = True
 plotBemol = False
 plotCitation = False
 
@@ -25,11 +25,11 @@ BemolSubDir = "cluster_mostrare/Bemol__nbU_1000__nbPurchPerIt_10__startIt_1000__
 BemolSubDir = "cluster_mostrare/Bemol__nbU_10000__nbPurchPerIt_10__startIt_30000__endIt_35000/__k1_40__k2_160__k3_160__T_100/"
 #BemolSubDir = "Bemol__nbU_1000__nbPurchPerIt_10__endIt_None/__k1_20__k2_80__k3_80__T_100/"
 #BemolSubDir = "Bemol100"
-HIVSubDir = "HIV__k1_10__k2_10__k3_500__T_10"
+HIVSubDir = "HIV"
 CitationSubDir = "Citation__k1_10__k2_10__k3_500__T_10"
 
 # uncomment data files to read (corresponding curve will be recomputed)
-resultsFileName4 = resultsDir + "IncreasingContrastClustErrors_pmax0.01"
+#resultsFileName4 = resultsDir + "IncreasingContrastClustErrors_pmax0.01"
 
 
 maxPoints = 100             # number of points (dot, square, ...) on curves
@@ -39,48 +39,51 @@ startingIteration = 0000    # for HIV, Bemol and Citation data, iteration number
 #==========================================================================
 #==========================================================================
 
-#methodNames = ["IASC", "Exact", "Modularity", "Ning"]
-#labelNames = ["IASC", "Exact", "Modularity", "Ning et al."]
-#plotStyles = ['ko--', 'kx-', 'k+--', 'k.--']
-#methodNames = ["IASC", "Exact", "Nystrom"]
-#labelNames = ["IASC", "Exact", "Nystrom"]
-#colorPlotStyles = ['r', 'k', 'b']
-#linePlotStyles = ['--', '-', '--']
-#pointPlotStyles = ['o', 'x', '.']
-methodNames = ["IASC", "Exact", "Ning", "Nystrom"]
-labelNames = ["IASC", "Exact", "Ning et al.", "Nystrom"]
-colorPlotStyles = ['r', 'k', 'g', 'b']
+plotStyles1 = ['k.-', 'kx-', 'k+-', 'ko-', 'k*-', 'ks-', 'k-', 'kp-', 'k*-']
+plotStyles2 = ['r.--', 'rx--', 'r+--', 'ro--', 'r*--', 'rs--']
+plotStyles3 = ['b.:', 'bx:', 'b+:', 'bo:', 'b*:', 'bs:']
+
+
+colorPlotStyles = ['r', 'k', 'g', 'b', 'y', 'm', 'c']
 linePlotStyles = ['--', '-', '--', '--']
 pointPlotStyles = ['o', 'x', '+', '.']
 plotInd = 0
 
 class MyPlot:
-    def __init__(self, datasetName, subDirName):
+    def __init__(self, datasetName, subDirName, k1, k2s, k3s):
         self.datasetName = datasetName
         self.subDirName = subDirName
         self.measuresList = []
         self.times = []
         self.iterations = []
         self.graphInfosList = []
+        
+        self.k1 = k1 
+        self.k2s = k2s 
+        self.k3s = k3s
+        self.T = 10         
+        
+        self.methodNames = ["IASC", "Exact", "Ning", "Nystrom"]
+        self.labelNames = []
        
     def plotOne(self, data, title, fileNameSuffix, numCol=None, minRow=0, maxRow=None, loc="lower right", xlogscale=False, ylogscale=False):
         global plotInd
         plt.figure(plotInd)
-        for i in range(len(methodNames)):
+        for i in range(len(self.labelNames)):
             if len(data[i]) != 0:
                 # manage old time reporting
                 localNumCol = numCol
                 if len(data[i].shape) == 1 or data[i].shape[1] == 1:
                     localNumCol=None
                 dataToPrint = data[i][minRow:maxRow,localNumCol]
-                plt.plot(self.iterations[i][minRow:maxRow], dataToPrint, colorPlotStyles[i] + linePlotStyles[i])
+                plt.plot(self.iterations[i][minRow:maxRow], dataToPrint, plotStyles1[i])
                 if len(dataToPrint) <= maxPoints:
-                    plt.plot(self.iterations[i][minRow:maxRow], dataToPrint, colorPlotStyles[i] + pointPlotStyles[i])
+                    plt.plot(self.iterations[i][minRow:maxRow], dataToPrint, plotStyles1[i])
                 else:
                     plt.plot(list(itertools.islice(self.iterations[i][minRow:maxRow],0,None,data[i].size/maxPoints))
                              , list(itertools.islice(dataToPrint,0,None,data[i].size/maxPoints))
                              , colorPlotStyles[i] + pointPlotStyles[i])
-                plt.plot(self.iterations[i][minRow], dataToPrint[0], colorPlotStyles[i] + linePlotStyles[i] + pointPlotStyles[i], label=labelNames[i])
+                plt.plot(self.iterations[i][minRow], dataToPrint[0], plotStyles1[i], label=self.labelNames[i])
         plt.xlabel("Graph no.")
         plt.ylabel(title)
         plt.legend(loc=loc)
@@ -94,24 +97,43 @@ class MyPlot:
         plotInd += 1
 
     def readAll(self):
-        for method in methodNames:
-            resultsFileName = resultsDir + self.subDirName + "/" + self.datasetName + "Results" + method +  ".npz"
+        for method in self.methodNames:
+            
+            if method == "Exact": 
+                resultsFileName = resultsDir + self.subDirName + "/" + self.datasetName + "ResultsExact_k1=" + str(self.k1) + ".npz"
+                self.readFile(resultsFileName) 
+                self.labelNames.append("Exact")
+            elif method == "IASC": 
+                for k2 in self.k2s: 
+                    resultsFileName = resultsDir + self.subDirName + "/" + self.datasetName + "ResultsIASC_k1=" + str(self.k1) + "_k2=" + str(k2) + "_T=" + str(self.T) + ".npz"
+                    self.readFile(resultsFileName)
+                    self.labelNames.append("IASC k2="+str(k2))
+            elif method == "Nystrom": 
+                for k3 in self.k3s: 
+                    resultsFileName = resultsDir + self.subDirName + "/" + self.datasetName + "ResultsNystrom_k1="+ str(self.k1) + "_k3=" + str(k3) + ".npz"
+                    self.readFile(resultsFileName) 
+                    self.labelNames.append("Nystrom m="+str(k3))
+            elif method == "Ning": 
+                resultsFileName = resultsDir + self.subDirName + "/" + self.datasetName + "ResultsNing_k1=" + str(self.k1) + "_T=" + str(self.T) + ".npz" 
+                self.readFile(resultsFileName) 
+                self.labelNames.append("Ning")
 
-            try:
-                file = open(resultsFileName, 'r')
-                arrayDict = numpy.load(file)
-            except:
-                self.measuresList.append(numpy.array([]))
-                self.times.append([])
-                self.iterations.append(numpy.array([]))
-                self.graphInfosList.append([])
-                logging.warning(" file " + resultsFileName + " is empty")
-            else:
-                self.measuresList.append(arrayDict["arr_0"])
-                self.times.append(arrayDict["arr_1"])
-                self.graphInfosList.append(arrayDict["arr_2"])
-                self.iterations.append(numpy.arange(startingIteration, startingIteration+arrayDict["arr_0"].shape[0]))
-                logging.info(" Loaded file " + resultsFileName)
+    def readFile(self, resultsFileName): 
+        try:
+            file = open(resultsFileName, 'r')
+            arrayDict = numpy.load(file)
+        except:
+            self.measuresList.append(numpy.array([]))
+            self.times.append([])
+            self.iterations.append(numpy.array([]))
+            self.graphInfosList.append([])
+            logging.warning(" file " + resultsFileName + " is empty")
+        else:
+            self.measuresList.append(arrayDict["arr_0"])
+            self.times.append(arrayDict["arr_1"])
+            self.graphInfosList.append(arrayDict["arr_2"])
+            self.iterations.append(numpy.arange(startingIteration, startingIteration+arrayDict["arr_0"].shape[0]))
+            logging.info("Loaded file " + resultsFileName)
 
     def plotAll(self):
         self.plotOne(self.measuresList, "Modularity", "Modularities", numCol=0)
@@ -144,7 +166,11 @@ class MyPlot:
                                  + " at iteration " + str(it) + ")")
 
 if plotHIV:
-    m = MyPlot("", HIVSubDir)
+    k1 = 25
+    k2s = [100, 200, 500]
+    k3s = [100, 200, 500, 1000]    
+        
+    m = MyPlot("", HIVSubDir, k1, k2s, k3s)
     m.readAll()
     m.plotAll()
 
@@ -179,9 +205,7 @@ if 'resultsFileName4' in locals():
 #==========================================================================
 #==========================================================================
 
-plotStyles1 = ['k.-', 'kx-', 'k+-', 'ko-', 'k*-', 'ks-', 'k-']
-plotStyles2 = ['r.--', 'rx--', 'r+--', 'ro--', 'r*--', 'rs--']
-plotStyles3 = ['b.:', 'bx:', 'b+:', 'bo:', 'b*:', 'bs:']
+
 
 #plot IncreasingContrast results
 numLevel = 3
