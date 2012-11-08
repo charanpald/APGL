@@ -7,7 +7,8 @@ from apgl.graph.DictGraph import DictGraph
 
 class CitationIterGenerator(object):
     """
-    A class to load the high energy physics date and generate an iterator.
+    A class to load the high energy physics data and generate an iterator. The 
+    dataset is found in http://snap.stanford.edu/data/cit-HepTh.html
     """
     def __init__(self):
         dataDir = PathDefaults.getDataDir() + "cluster/"
@@ -107,7 +108,7 @@ class CitationIterGenerator(object):
                 self.W = graph.getSparseWeightMatrix().tocsr()
                 self.vertexNames = numpy.array(graph.getAllVertexIds(), numpy.int)
 
-                self.minGraphSize = 50
+                self.minGraphSize = 500
 
                 self.currentVertexIds = numpy.array([], numpy.int)
                 self.currentMonth = startMonth
