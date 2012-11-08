@@ -1123,6 +1123,8 @@ class AbstractMatrixGraph(AbstractSingleGraph):
 
         :returns: A list of vertices connected to the input one via a path in the graph.
         """
+        Parameter.checkIndex(root, 0, self.size)        
+        
         toVisit = set()
         visited = set()
 
