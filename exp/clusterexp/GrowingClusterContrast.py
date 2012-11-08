@@ -1,4 +1,4 @@
-"""
+-k2"""
 Generate a synthetic sequence of graphs, and then cluster.
 """
 import numpy
@@ -341,5 +341,5 @@ for lvl in range(args.numLevel):
     logging.debug(resultsDir + "IncreasingContrastClustErrors_lvl"+ str(lvl)+"_pmax" + str(args.maxP) + "_nEigen" + str(args.k2) + ".eps")
 #    plt.show()
 
-
-
+#Run with 
+# python exp/clusterexp/GrowingClusterContrast.py --runIASC --runExact --runNystrom --runNing -k2=9 -k3=9 --numRepetitions=50
