@@ -10,10 +10,8 @@ import itertools
 import logging
 import numpy
 import argparse
-from apgl.util.PathDefaults import PathDefaults
 from exp.clusterexp.ClusterExpHelper import ClusterExpHelper
 from exp.clusterexp.CitationIterGenerator import CitationIterGenerator 
-
 
 #=========================================================================
 #=========================================================================
@@ -22,7 +20,7 @@ from exp.clusterexp.CitationIterGenerator import CitationIterGenerator
 #=========================================================================
 # Arguments related to the dataset
 dataArgs = argparse.Namespace()
-dataArgs.startingIteration = 10
+dataArgs.startingIteration = 0
 dataArgs.endingIteration = 20 # set to 'None' to have all iterations
 dataArgs.stepSize = 1
 
@@ -35,13 +33,9 @@ defaultAlgoArgs = argparse.Namespace()
 #defaultAlgoArgs.runNystrom = True
 #defaultAlgoArgs.runNing = True
 
-#defaultAlgoArgs.k1 = 5
-#defaultAlgoArgs.k2 = 10
-#defaultAlgoArgs.k3 = 15
-
 #=========================================================================
 #=========================================================================
-# usefull
+# useful
 #=========================================================================
 #=========================================================================
 # val should be a string at the beginning
@@ -75,29 +69,22 @@ if dataArgs.help:
 dataArgs.extendedDirName = ""
 dataArgs.extendedDirName += "Citation"
 
-
 # seed #
 numpy.random.seed(21)
 
 # printing options #
 #logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format='%(levelname)s (%(asctime)s):%(message)s')
-#logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 numpy.set_printoptions(suppress=True, linewidth=60)
 numpy.seterr("raise", under="ignore")
 
-
-
 # print args #
-logging.info("Running on Bemol")
+logging.info("Running on Citation")
 logging.info("Data params:")
 keys = list(vars(dataArgs).keys())
 keys.sort()
 for key in keys:
     logging.info("    " + str(key) + ": " + str(dataArgs.__getattribute__(key)))
-
-
-
 
 #=========================================================================
 #=========================================================================
@@ -117,17 +104,18 @@ for W in iter:
 
 logging.info("Total graphs in sequence: " + str(numGraphs))
 
-
 #=========================================================================
 #=========================================================================
 # run
 #=========================================================================
 #=========================================================================
 logging.info("Creating the exp-runner")
-clusterExpHelper = ClusterExpHelper(getIterator, numGraphs, remainingArgs, defaultAlgoArgs)
+clusterExpHelper = ClusterExpHelper(getIterator, numGraphs, remainingArgs, defaultAlgoArgs, dataArgs.extendedDirName)
+clusterExpHelper.algoArgs.k1 = 25
+clusterExpHelper.algoArgs.k2s = [100, 200, 500]
+clusterExpHelper.algoArgs.k3s = [500, 1000, 1500]
 clusterExpHelper.printAlgoArgs()
 
-clusterExpHelper.extendResultsDir(dataArgs.extendedDirName)
 #    os.makedirs(resultsDir, exist_ok=True) # for python 3.2
 try:
     os.makedirs(clusterExpHelper.resultsDir)
