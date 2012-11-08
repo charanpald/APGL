@@ -129,10 +129,10 @@ logging.info("number of iterations: " + str(numGraphs))
 #=========================================================================
 logging.info("Creating the exp-runner")
 clusterExpHelper = ClusterExpHelper(getIterator, numGraphs, remainingArgs, defaultAlgoArgs, dataArgs.extendedDirName)
-clusterExpHelper.printAlgoArgs()
 clusterExpHelper.algoArgs.k1 = 25
 clusterExpHelper.algoArgs.k2s = [100, 200, 500]
 clusterExpHelper.algoArgs.k3s = [100, 200, 500, 1000]
+clusterExpHelper.printAlgoArgs()
 #    os.makedirs(resultsDir, exist_ok=True) # for python 3.2
 try:
     os.makedirs(clusterExpHelper.resultsDir)
