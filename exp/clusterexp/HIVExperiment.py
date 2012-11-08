@@ -96,6 +96,7 @@ sGraphContact = sGraphContact.union(sGraphInfect)
 graph = sGraphContact
 
 #Find max component
+#Create a graph starting from the oldest point in the largest component 
 components = graph.findConnectedComponents()
 graph = graph.subgraph(list(components[0]))
 logging.debug(graph)
@@ -103,6 +104,8 @@ logging.debug(graph)
 detectionIndex = fInds["detectDate"]
 vertexArray = graph.getVertexList().getVertices()
 detections = vertexArray[:, detectionIndex]
+
+firstVertex = numpy.argmin(detections)
 
 dayList = list(range(int(numpy.min(detections)), int(numpy.max(detections)), dataArgs.daysInMonth*dataArgs.monthStep))
 dayList.append(numpy.max(detections))
@@ -113,6 +116,13 @@ subgraphIndicesList = []
 for i in dayList:
     logging.info("Date: " + str(DateUtils.getDateStrFromDay(i, dataArgs.startYear)))
     subgraphIndices = numpy.nonzero(detections <= i)[0]
+    
+    #Check subgraphIndices are sorted 
+    subgraphIndices = numpy.sort(subgraphIndices)
+    currentSubgraph = graph.subgraph(subgraphIndices)
+    compIndices = currentSubgraph.depthFirstSearch(list(subgraphIndices).index(firstVertex))
+    subgraphIndices =  subgraphIndices[compIndices]
+    
     if subgraphIndices.shape[0] >= dataArgs.minGraphSize: 
         subgraphIndicesList.append(subgraphIndices)
 
@@ -131,7 +141,8 @@ logging.info("Creating the exp-runner")
 clusterExpHelper = ClusterExpHelper(getIterator, numGraphs, remainingArgs, defaultAlgoArgs, dataArgs.extendedDirName)
 clusterExpHelper.algoArgs.k1 = 25
 clusterExpHelper.algoArgs.k2s = [100, 200, 500]
-clusterExpHelper.algoArgs.k3s = [100, 200, 500, 1000]
+clusterExpHelper.algoArgs.k3s = [100, 200, 500, 1000, 1500]
+#clusterExpHelper.algoArgs.k3s = [1500]
 clusterExpHelper.printAlgoArgs()
 #    os.makedirs(resultsDir, exist_ok=True) # for python 3.2
 try:
