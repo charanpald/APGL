@@ -285,7 +285,7 @@ class NingSpectralClusteringTest(unittest.TestCase):
         #Make sure 1st clustering (without updates) is correct 
         L = GraphUtils.normalisedLaplacianRw(scipy.sparse.csr_matrix(W))
         numpy.random.seed(21)
-        lmbda, Q = scipy.sparse.linalg.eigs(L, min(k, L.shape[0]-1), which="LM", ncv = min(20*k, L.shape[0]), v0=numpy.random.rand(L.shape[0]))
+        lmbda, Q = scipy.sparse.linalg.eigs(L, min(k, L.shape[0]-1), which="SM", ncv = min(20*k, L.shape[0]), v0=numpy.random.rand(L.shape[0]))
 
         
         V = VqUtils.whiten(Q)

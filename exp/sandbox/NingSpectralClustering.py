@@ -246,7 +246,7 @@ class NingSpectralClustering(object):
                 # So we will solve $D^{-1}.L.v = lambda.v$, where $D^{-1}.L$ is
                 # no more hermitian.
                 L = GraphUtils.normalisedLaplacianRw(W) 
-                lmbda, Q = scipy.sparse.linalg.eigs(L, min(self.k, L.shape[0]-1), which="LM", ncv = min(20*self.k, L.shape[0]), v0=numpy.random.rand(L.shape[0]))
+                lmbda, Q = scipy.sparse.linalg.eigs(L, min(self.k, L.shape[0]-1), which="SM", ncv = min(20*self.k, L.shape[0]), v0=numpy.random.rand(L.shape[0]))
                 
                 lmbda = lmbda.real
                 Q = Q.real
