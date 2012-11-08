@@ -17,19 +17,19 @@ numpy.set_printoptions(suppress=True, linewidth=60)
 
 resultsDir = PathDefaults.getOutputDir() + "cluster/"
 
-plotHIV = True
+plotHIV = False
 plotBemol = False
-plotCitation = False
+plotCitation = True
 
 BemolSubDir = "cluster_mostrare/Bemol__nbU_1000__nbPurchPerIt_10__startIt_1000__endIt_None/__k1_20__k2_80__k3_80__T_100/"
 BemolSubDir = "cluster_mostrare/Bemol__nbU_10000__nbPurchPerIt_10__startIt_30000__endIt_35000/__k1_40__k2_160__k3_160__T_100/"
 #BemolSubDir = "Bemol__nbU_1000__nbPurchPerIt_10__endIt_None/__k1_20__k2_80__k3_80__T_100/"
 #BemolSubDir = "Bemol100"
 HIVSubDir = "HIV"
-CitationSubDir = "Citation__k1_10__k2_10__k3_500__T_10"
+CitationSubDir = "Citation"
 
 # uncomment data files to read (corresponding curve will be recomputed)
-#resultsFileName4 = resultsDir + "IncreasingContrastClustErrors_pmax0.01"
+#increasingClustFileName = resultsDir + "IncreasingContrastClustErrors_pmax0.01"
 
 
 maxPoints = 100             # number of points (dot, square, ...) on curves
@@ -39,7 +39,7 @@ startingIteration = 0000    # for HIV, Bemol and Citation data, iteration number
 #==========================================================================
 #==========================================================================
 
-plotStyles1 = ['k.-', 'kx-', 'k+-', 'ko-', 'k*-', 'ks-', 'k-', 'kp-', 'k*-']
+plotStyles1 = ['k-', 'k--', 'k-.', 'b-', 'b--', 'b-.', 'g-', 'g--', 'g-.', 'r-', 'r--', 'r-.']
 plotStyles2 = ['r.--', 'rx--', 'r+--', 'ro--', 'r*--', 'rs--']
 plotStyles3 = ['b.:', 'bx:', 'b+:', 'bo:', 'b*:', 'bs:']
 
@@ -66,7 +66,7 @@ class MyPlot:
         self.methodNames = ["IASC", "Exact", "Ning", "Nystrom"]
         self.labelNames = []
        
-    def plotOne(self, data, title, fileNameSuffix, numCol=None, minRow=0, maxRow=None, loc="lower right", xlogscale=False, ylogscale=False):
+    def plotOne(self, data, title, fileNameSuffix, numCol=None, minRow=0, maxRow=None, loc="lower right", xlogscale=False, ylogscale=False, samePlot=False):
         global plotInd
         plt.figure(plotInd)
         for i in range(len(self.labelNames)):
@@ -76,23 +76,27 @@ class MyPlot:
                 if len(data[i].shape) == 1 or data[i].shape[1] == 1:
                     localNumCol=None
                 dataToPrint = data[i][minRow:maxRow,localNumCol]
-                plt.plot(self.iterations[i][minRow:maxRow], dataToPrint, plotStyles1[i])
-                if len(dataToPrint) <= maxPoints:
-                    plt.plot(self.iterations[i][minRow:maxRow], dataToPrint, plotStyles1[i])
-                else:
-                    plt.plot(list(itertools.islice(self.iterations[i][minRow:maxRow],0,None,data[i].size/maxPoints))
-                             , list(itertools.islice(dataToPrint,0,None,data[i].size/maxPoints))
-                             , colorPlotStyles[i] + pointPlotStyles[i])
-                plt.plot(self.iterations[i][minRow], dataToPrint[0], plotStyles1[i], label=self.labelNames[i])
+                #plt.plot(self.iterations[i][minRow:maxRow], dataToPrint, plotStyles1[i])
+                #if len(dataToPrint) <= maxPoints:
+                #    plt.plot(self.iterations[i][minRow:maxRow], dataToPrint, plotStyles1[i])
+                #else:
+                #    plt.plot(list(itertools.islice(self.iterations[i][minRow:maxRow],0,None,data[i].size/maxPoints))
+                #             , list(itertools.islice(dataToPrint,0,None,data[i].size/maxPoints))
+                #             , plotStyles1[i])
+                if not samePlot: 
+                    plt.plot(self.iterations[i][minRow:maxRow], dataToPrint, plotStyles1[i], label=self.labelNames[i])
+                else: 
+                    plt.plot(self.iterations[i][minRow:maxRow], dataToPrint, plotStyles1[0], label=self.labelNames[i])
         plt.xlabel("Graph no.")
         plt.ylabel(title)
-        plt.legend(loc=loc)
+        if not samePlot: 
+            plt.legend(loc=loc, ncol=2)
         if xlogscale:
             plt.xscale('log')
         if ylogscale:
             plt.yscale('log')
         fileName = resultsDir + self.subDirName + "/" + self.datasetName + fileNameSuffix + ".eps"
-        print(fileName)
+        logging.debug("Saved " + fileName)
         plt.savefig(fileName)
         plotInd += 1
 
@@ -107,12 +111,12 @@ class MyPlot:
                 for k2 in self.k2s: 
                     resultsFileName = resultsDir + self.subDirName + "/" + self.datasetName + "ResultsIASC_k1=" + str(self.k1) + "_k2=" + str(k2) + "_T=" + str(self.T) + ".npz"
                     self.readFile(resultsFileName)
-                    self.labelNames.append("IASC k2="+str(k2))
+                    self.labelNames.append("IASC "+str(k2))
             elif method == "Nystrom": 
                 for k3 in self.k3s: 
                     resultsFileName = resultsDir + self.subDirName + "/" + self.datasetName + "ResultsNystrom_k1="+ str(self.k1) + "_k3=" + str(k3) + ".npz"
                     self.readFile(resultsFileName) 
-                    self.labelNames.append("Nystrom m="+str(k3))
+                    self.labelNames.append("Nyst "+str(k3))
             elif method == "Ning": 
                 resultsFileName = resultsDir + self.subDirName + "/" + self.datasetName + "ResultsNing_k1=" + str(self.k1) + "_T=" + str(self.T) + ".npz" 
                 self.readFile(resultsFileName) 
@@ -136,13 +140,13 @@ class MyPlot:
             logging.info("Loaded file " + resultsFileName)
 
     def plotAll(self):
-        self.plotOne(self.measuresList, "Modularity", "Modularities", numCol=0)
-        self.plotOne(self.measuresList, "k-way normalised cut", "KWayNormCut", numCol=1)
+        self.plotOne(self.measuresList, "Modularity", "Modularities", numCol=0, loc="lower left")
+        self.plotOne(self.measuresList, "k-way normalised cut", "KWayNormCut", numCol=1, loc="upper left")
 #        self.plotOne(self.measuresList, "k-way normalised cut", "KWayNormCut_zoom", numCol=1, maxRow=400, loc="upper right")
         self.plotOne(self.times, "Computation time", "Time", numCol=0, loc="upper left")
         self.plotOne(self.times, "Computation time", "Time-log", numCol=0, loc="upper left", xlogscale=False, ylogscale=True)
-        self.plotOne(self.graphInfosList, "Nb nodes", "graph_size", numCol=0, loc="lower right")
-        self.plotOne(self.graphInfosList, "Nb connected components", "ConnectedComponents", numCol=1, loc="upper right")
+        self.plotOne(self.graphInfosList, "Nb nodes", "graph_size", numCol=0, loc="lower right", samePlot=True)
+        self.plotOne(self.graphInfosList, "Nb connected components", "ConnectedComponents", numCol=1, loc="upper right", samePlot=True)
 
     def test(self):
         logging.warning(" test expect IASC being the first method and Exact the second one")
@@ -168,20 +172,28 @@ class MyPlot:
 if plotHIV:
     k1 = 25
     k2s = [100, 200, 500]
-    k3s = [100, 200, 500, 1000]    
+    k3s = [1000, 1500]    
         
     m = MyPlot("", HIVSubDir, k1, k2s, k3s)
     m.readAll()
     m.plotAll()
 
 if plotBemol:
-    m = MyPlot("", BemolSubDir)
+    k1 = 25
+    k2s = [100, 200, 500]
+    k3s = [1000, 1500]      
+    
+    m = MyPlot("", BemolSubDir, k1, k2s, k3s)
     m.readAll()
     m.test()
     m.plotAll()
 
 if plotCitation:
-    m = MyPlot("", CitationSubDir)
+    k1 = 25
+    k2s = [100, 200, 500]
+    k3s = [1000, 1500]        
+    
+    m = MyPlot("", CitationSubDir, k1, k2s, k3s)
     m.readAll()
     m.plotAll()
 
@@ -192,7 +204,7 @@ if plotCitation:
 
 
 #Load IncreasingContrastClustErrors
-if 'resultsFileName4' in locals():
+if 'increasingClustFileName' in locals():
     resIncreasing = {}
     for k2 in [9,18,36,72]:
         file = open(resultsFileName4 + "_nEigen" + str(k2) + ".dat", 'r')
