@@ -35,22 +35,30 @@ class SparseGraph(AbstractMatrixGraph):
 
         :param W: an empty sparse matrix of the same size as vList, or None to create the default one.
         """
-        Parameter.checkClass(vList, AbstractVertexList)
         Parameter.checkBoolean(undirected)
-        if W != None and not (sparse.issparse(W) and W.getnnz()==0 and W.shape == (vList.getNumVertices(), vList.getNumVertices())):
-            raise ValueError("Input argument W must be None or empty sparse matrix of size " + str(vList.getNumVertices()) )
-
-        self.vList = vList
+        
+        if isinstance(vList, AbstractVertexList):
+            self.vList = vList
+        elif type(vList) == int: 
+            self.vList = GeneralVertexList(vList)
+        else: 
+            raise ValueError("Invalid vList parameter: " + str(vList))
+          
+        if W != None and not (sparse.issparse(W) and W.shape == (self.vList.getNumVertices(), self.vList.getNumVertices())):
+            raise ValueError("Input argument W must be None or sparse matrix of size " + str(self.vList.getNumVertices()) )          
+          
         self.undirected = undirected
 
         #Terrible hack alert:  can't create a zero size sparse matrix, so we settle
         #for one of size 1. Better is to create a new class. 
-        if vList.getNumVertices() == 0 and W == None:
+        if self.vList.getNumVertices() == 0 and W == None:
             self.W = sparse.csr_matrix((1, 1))
         elif W == None:
-            self.W = sparse.csr_matrix((vList.getNumVertices(), vList.getNumVertices()))
+            self.W = sparse.csr_matrix((self.vList.getNumVertices(), self.vList.getNumVertices()))
         else:
             self.W = W 
+            #The next line is for error checking mainly 
+            self.setWeightMatrix(W)
         
     def neighbours(self, vertexIndex):
         """
