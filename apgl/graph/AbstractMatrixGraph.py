@@ -1129,7 +1129,7 @@ class AbstractMatrixGraph(AbstractSingleGraph):
         visited = set()
 
         toVisit.add(root)
-        edges = self.getAllDirEdges()
+        #adjacencyList, weights = self.adjacencyList()
 
         while len(toVisit) != 0:
             v = toVisit.pop()
@@ -1137,7 +1137,8 @@ class AbstractMatrixGraph(AbstractSingleGraph):
             if v not in visited:
                 visited.add(v)
 
-            neighbours = edges[edges[:, 0]==v, 1]
+            neighbours = self.neighbours(v)
+            #neighbours = adjacencyList[v]
             toVisit = toVisit.union(set(neighbours).difference(visited))
 
         return list(visited)
