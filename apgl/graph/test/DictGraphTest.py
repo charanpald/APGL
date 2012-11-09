@@ -426,6 +426,8 @@ class DictGraphTest(unittest.TestCase):
         graph.addEdge(0, 3)
         graph.addEdge(1, 2)
         graph.addEdge(2, 3)
+        graph.setVertex(0, "abc")
+        graph.setVertex(3, "cde")
 
         self.assertEquals(graph.getNumEdges(), 5)
 
@@ -436,10 +438,13 @@ class DictGraphTest(unittest.TestCase):
         self.assertEquals(subgraph.getEdge(0, 1), 1)
         self.assertEquals(subgraph.getEdge(0, 2), 1)
         self.assertEquals(subgraph.getEdge(1, 2), 1)
+        self.assertEquals(subgraph.getVertex(0), "abc")
 
         #Check the original graph is fine
         self.assertEquals(graph.getNumVertices(), 4)
         self.assertEquals(graph.getNumEdges(), 5)
+        self.assertEquals(graph.getVertex(0), "abc")
+        self.assertEquals(graph.getVertex(3), "cde")
 
         #Now a quick test for directed graphs
         graph = DictGraph(False)

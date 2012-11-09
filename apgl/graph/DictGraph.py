@@ -287,6 +287,8 @@ class DictGraph(AbstractSingleGraph):
                 subgraph.__touchVertex(vertexId)
                 subgraph.adjacencies[vertexId] = self.adjacencies[vertexId].copy()
 
+            subgraph.vertices[vertexId] = self.vertices[vertexId]
+
         deleteIdList = []
 
         #Now remove the elements in the adjacencies:
