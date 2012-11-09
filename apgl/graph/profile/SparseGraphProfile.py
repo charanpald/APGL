@@ -6,7 +6,7 @@ from apgl.graph import *
 from apgl.generator import * 
 from apgl.util import *
 
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 class SparseGraphProfile(object):
     def __init__(self):
@@ -17,9 +17,14 @@ class SparseGraphProfile(object):
         graph = SparseGraph(vList, W=W)
         p = 0.4
         generator = ErdosRenyiGenerator(p)
-
-        
         self.graph = generator.generate(graph)
+        
+        logging.debug("Creating graph2")
+        p = 0.1        
+        generator = ErdosRenyiGenerator(p)
+        numVertices = 5000 
+        self.graph2 = SparseGraph(numVertices)
+        self.graph2 = generator.generate(self.graph2)
 
     def profileSubgraph(self):
         numVertices = 500
@@ -133,11 +138,15 @@ class SparseGraphProfile(object):
     def profileFindTrees(self):
         #Need a way to generate random trees 
         pass 
+    
+    def profileDepthFirstSearch(self): 
+        vertexId = 0 
+        ProfileUtils.profile('self.graph2.depthFirstSearch(vertexId)', globals(), locals())
 
 profiler = SparseGraphProfile()
 #profiler.profileSubgraph()
 #profiler.profileDiameter()
-profiler.profileDijkstrasAlgorithm()
+profiler.profileDepthFirstSearch() #1.37
 #profiler.profileFitPowerLaw()
 #profiler.profileSparseMatrices()
 #profiler.profileOutDegreeSequence()
