@@ -153,6 +153,8 @@ class GraphUtils(object):
         """
         if not scipy.sparse.isspmatrix_csr(W):
             raise ValueError("W is not a csr matrix")
+            
+        W = scipy.sparse.csr_matrix(W, dtype=numpy.float)
 
         d = numpy.array(W.sum(0)).ravel()
         d[d!=0] = d[d!=0]**-0.5
