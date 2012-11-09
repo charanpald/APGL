@@ -99,7 +99,12 @@ class CitationIterGenerator(object):
         self.graph = SparseGraph(vList, W=W)
         logging.debug(self.graph)
         
-
+        #Now pick the max component 
+        components = self.graph.findConnectedComponents()
+        self.graph = self.graph.subgraph(components[0])
+        
+        logging.debug("Largest component graph: " + str(self.graph))
+        
     def getIterator(self):
         """
         Return an iterator which outputs the citation graph for each month. Note
@@ -108,6 +113,7 @@ class CitationIterGenerator(object):
         self.minGraphSize = 500
         vertexArray = self.graph.getVertexList().getVertices()
         dates = vertexArray[:, 0]
+        firstVertex = numpy.argmin(dates)
         
         daysInMonth = 30 
         monthStep = 1
@@ -119,6 +125,14 @@ class CitationIterGenerator(object):
         #Generate subgraph indices list 
         for i in dayList:
             subgraphIndices = numpy.nonzero(dates <= i)[0]
+            
+            #Check subgraphIndices are sorted 
+            subgraphIndices = numpy.sort(subgraphIndices)
+            currentSubgraph = self.graph.subgraph(subgraphIndices)
+            compIndices = currentSubgraph.depthFirstSearch(list(subgraphIndices).index(firstVertex))
+            subgraphIndices =  subgraphIndices[compIndices]        
+            
+            print(subgraphIndices.shape[0])
             
             if subgraphIndices.shape[0] >= self.minGraphSize: 
                 subgraphIndicesList.append(subgraphIndices)
