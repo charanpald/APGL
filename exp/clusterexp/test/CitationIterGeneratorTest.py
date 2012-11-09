@@ -121,8 +121,8 @@ class  CitationIterGeneratorTest(unittest.TestCase):
             vertices[vertex2] = 0
 
         #It says there are 352807 edges in paper and 27770 vertices
-        self.assertEquals(len(edges), 352808)
-        self.assertEquals(len(vertices), 27771)
+        self.assertEquals(len(edges), 352807)
+        self.assertEquals(len(vertices), 27770)
         
 if __name__ == '__main__':
     unittest.main()
