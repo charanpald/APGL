@@ -23,8 +23,8 @@ import argparse
 #=========================================================================
 # Arguments related to the dataset
 dataArgs = argparse.Namespace()
-dataArgs.nbUser = 1000 # set to 'None' to have all users
-dataArgs.nbPurchasesPerIt = 10 # set to 'None' to take all the purchases
+dataArgs.nbUser = 10000 # set to 'None' to have all users
+dataArgs.nbPurchasesPerIt = 50 # set to 'None' to take all the purchases
                                       # per date
 dataArgs.startingIteration = 0
 dataArgs.endingIteration = None # set to 'None' to have all iterations
@@ -79,26 +79,16 @@ if dataArgs.help:
     helpParser.print_help()
     exit()
 
-dataArgs.extendedDirName = ""
-dataArgs.extendedDirName += "Bemol"
-dataArgs.extendedDirName += "__nbU_" + str(dataArgs.nbUser)
-dataArgs.extendedDirName += "__nbPurchPerIt_" + str(dataArgs.nbPurchasesPerIt)
-dataArgs.extendedDirName += "__startIt_" + str(dataArgs.startingIteration)
-dataArgs.extendedDirName += "__endIt_" + str(dataArgs.endingIteration)
-dataArgs.extendedDirName += "/"
-
+dataArgs.extendedDirName = "Bemol/"
 
 # seed #
 numpy.random.seed(21)
 
 # printing options #
 #logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format='%(levelname)s (%(asctime)s):%(message)s')
-#logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 numpy.set_printoptions(suppress=True, linewidth=60)
 numpy.seterr("raise", under="ignore")
-
-
 
 # print args #
 logging.info("Running on Bemol")
@@ -107,8 +97,6 @@ keys = list(vars(dataArgs).keys())
 keys.sort()
 for key in keys:
     logging.info("    " + str(key) + ": " + str(dataArgs.__getattribute__(key)))
-
-
 
 
 #=========================================================================
@@ -135,11 +123,16 @@ logging.info("number of iterations: " + str(numGraphs))
 # run
 #=========================================================================
 #=========================================================================
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logging.info("Creating the exp-runner")
-clusterExpHelper = ClusterExpHelper(getIterator, numGraphs, remainingArgs, defaultAlgoArgs)
+clusterExpHelper = ClusterExpHelper(getIterator, numGraphs, remainingArgs, defaultAlgoArgs, dataArgs.extendedDirName)
+clusterExpHelper = ClusterExpHelper(getIterator, numGraphs, remainingArgs, defaultAlgoArgs, dataArgs.extendedDirName)
+clusterExpHelper.algoArgs.k1 = 50
+clusterExpHelper.algoArgs.k2s = [100, 200, 500]
+clusterExpHelper.algoArgs.k3s = [500, 1000, 1500]
+
 clusterExpHelper.printAlgoArgs()
 
-clusterExpHelper.extendResultsDir(dataArgs.extendedDirName)
 #    os.makedirs(resultsDir, exist_ok=True) # for python 3.2
 try:
     os.makedirs(clusterExpHelper.resultsDir)
