@@ -18,7 +18,9 @@ class SparseUtils(object):
             return False 
         if (A.data != B.data).any():
             return False
-        if (A.indices != B.indices).any():
+        if hasattr(A, 'indices')  and hasattr(B, 'indices')  and (A.indices != B.indices).any():
+            return False
+        if hasattr(A, 'rows')  and hasattr(B, 'rows')  and (A.rows != B.rows).any():
             return False
 
         return True
