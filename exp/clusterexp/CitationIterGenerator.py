@@ -1,9 +1,11 @@
 import datetime
 import numpy
 import logging 
-import itertools
 from apgl.util.PathDefaults import PathDefaults
 from apgl.graph.DictGraph import DictGraph
+from apgl.graph import SparseGraph, VertexList 
+from exp.sandbox.GraphIterators import IncreasingSubgraphListIterator
+from apgl.util.SparseUtils import SparseUtils 
 
 class CitationIterGenerator(object):
     """
@@ -27,11 +29,14 @@ class CitationIterGenerator(object):
             (vertex1, sep, vertex2) = line.partition("\t")
             vertex1 = vertex1.strip()
             vertex2 = vertex2.strip()
-            edges.append([int("1" + vertex1), int("1" + vertex2)])
+            edges.append([vertex1, vertex2])
+            
+            #if vertex1 == vertex2: 
+            #    print(vertex1)
 
         file.close()
-        edges = numpy.array(edges, numpy.int)
-        logging.info("Loaded edge file " + str(edgesFilename) + " with " + str(edges.shape[0]) + " edges")
+
+        logging.info("Loaded edge file " + str(edgesFilename) + " with " + str(len(edges)) + " edges")
 
         #Keep an edge graph 
         graph = DictGraph(False)
@@ -44,135 +49,79 @@ class CitationIterGenerator(object):
         #as the key and the value is a list of vertex ids. For each month we include
         #all papers uploaded that month and those directed cited by those uploads. 
         vertexIds = {}
+        startDate = datetime.date(1990, 1, 1)
 
         file = open(dateFilename, 'r')
         file.readline()
-        ind = 0
+        numLines = 0 
+        subgraphIds = []
 
         for line in file:
             (id, sep, date) = line.partition("\t")
             id = id.strip()
-            dt = datetime.datetime.strptime(date.strip(), "%Y-%m-%d")
-            intId = int("1" + id)
+            date = date.strip()
+            
 
-            if (dt.month, dt.year) not in vertexIds:
-                vertexIds[(dt.month, dt.year)] = [intId]
-            else:
-                vertexIds[(dt.month, dt.year)].append(intId)
+            inputDate = datetime.datetime.strptime(date.strip(), "%Y-%m-%d")
+            inputDate = inputDate.date()
 
-            if intId in edgeVertexSet:
-                vertexIds[(dt.month, dt.year)].extend(graph.neighbours(intId))
-            ind += 1
-
+            if graph.vertexExists(id):
+                tDelta = inputDate - startDate
+                            
+                graph.vertices[id] = tDelta.days 
+                subgraphIds.append(id)
+                
+                #If a paper cites another, it must have been written before 
+                #the citing paper - enforce this rule. 
+                for neighbour in graph.neighbours(id): 
+                    if graph.getVertex(neighbour) == None: 
+                        graph.setVertex(neighbour, tDelta.days) 
+                        subgraphIds.append(neighbour)
+                    elif tDelta.days < graph.getVertex(neighbour): 
+                        graph.setVertex(neighbour, tDelta.days) 
+                        
+            numLines += 1 
+            
         file.close()
-        logging.info("Loaded date file " + str(dateFilename) + " with " + str(ind) + " dates")
+        
+        subgraphIds = set(subgraphIds)
+        graph = graph.subgraph(list(subgraphIds))
+        logging.debug(graph)
+        logging.info("Loaded date file " + str(dateFilename) + " with " + str(len(subgraphIds)) + " dates and " + str(numLines) + " lines")
 
-        self.vertexIds = vertexIds
-
-        graph = DictGraph()
-        graph.addEdges(edges)
-        logging.info("Created undirected citation graph with " + str(graph.getNumEdges()) + " edges and " + str(graph.getNumVertices()) + " vertices")
-        self.graph = graph
-        self.edges = edges
-
-        self.endYear = -1
-        self.endMonth = -1
-        self.startYear = 3000
-        self.startMonth = 13
-
-        for (month, year) in vertexIds.keys():
-            if (month <= self.startMonth and year <= self.startYear) or year < self.startYear:
-                self.startMonth = month
-                self.startYear = year
-
-            if (month >= self.endMonth and year >= self.endYear) or year > self.endYear:
-                self.endMonth = month
-                self.endYear = year
-
-        logging.info("Starting date: " + str((self.startMonth, self.startYear)))
-        logging.info("Ending date: " + str((self.endMonth, self.endYear)))
+        W = graph.getSparseWeightMatrix()
+        W = W + W.T
+        
+        vList = VertexList(W.shape[0], 1)
+        vList.setVertices(numpy.array([graph.getVertices(graph.getAllVertexIds())]).T)
+        
+        #Note: we have 16 self edges and some two-way citations so this graph has fewer edges than the directed one 
+        self.graph = SparseGraph(vList, W=W)
+        logging.debug(self.graph)
+        
 
     def getIterator(self):
         """
         Return an iterator which outputs the citation graph for each month. Note
         that the graphs are undirected but we make them directed.
         """
-        class CitationIterator():
-            def __init__(self, graph, vertexIds, startMonth, startYear, endMonth, endYear):
-                """
-                We start counting at startMonth,startYear and end counting at endMonth, endYear
-                """
-                self.graph = graph
-                self.vertexIds = vertexIds
+        self.minGraphSize = 500
+        vertexArray = self.graph.getVertexList().getVertices()
+        dates = vertexArray[:, 0]
+        
+        daysInMonth = 30 
+        monthStep = 1
+        dayList = range(int(numpy.min(dates)), int(numpy.max(dates)), daysInMonth*monthStep)
+        dayList.append(numpy.max(dates))
+        
+        subgraphIndicesList = []
 
-                self.W = graph.getSparseWeightMatrix().tocsr()
-                self.vertexNames = numpy.array(graph.getAllVertexIds(), numpy.int)
-
-                self.minGraphSize = 500
-
-                self.currentVertexIds = numpy.array([], numpy.int)
-                self.currentMonth = startMonth
-                self.currentYear = startYear
-
-                self.lastSubgraphInds = numpy.array([])
-
-                #We increment the end time to make the termination check easier
-                (self.endMonth, self.endYear) = self.incrementMonth(endMonth, endYear)
-
-            def __iter__(self):
-                return self
-
-            def incrementMonth(self, month, year):
-                """
-                Increment the month and year by 1 month and return new values.
-                """
-                month += 1
-                if month == 13:
-                    month = 1
-                    year += 1
-
-                return (month, year)
-
-            def __next__(self):
-                return(self.next())
-
-            def next(self):
-                if self.currentMonth == self.endMonth and self.currentYear == self.endYear:
-                    raise StopIteration
-                else:
-                    subgraphSize = 0
-
-                    while subgraphSize < self.minGraphSize:
-                        newVertexIds = numpy.intersect1d(self.vertexIds[(self.currentMonth, self.currentYear)], self.vertexNames)
-                        self.currentVertexIds = numpy.union1d(self.currentVertexIds, newVertexIds)
-                        (self.currentMonth, self.currentYear) = self.incrementMonth(self.currentMonth, self.currentYear)
-
-                        #We need to make sure the order of vertexIds is consistent
-                        sortedInds = numpy.argsort(self.vertexNames)
-                        sortedVertexNames = self.vertexNames[sortedInds]
-
-                        currentVertexInds = numpy.searchsorted(sortedVertexNames, self.currentVertexIds)
-                        subgraphInds = sortedInds[currentVertexInds]
-                        subgraphSize = subgraphInds.shape[0]
-
-                        #Just make sure we add new indices at the end
-                        additionalInds = numpy.setdiff1d(subgraphInds, self.lastSubgraphInds)
-                        subgraphInds = numpy.r_[self.lastSubgraphInds, additionalInds]
-
-                    self.lastSubgraphInds = subgraphInds
-
-                    subW = self.W[subgraphInds, :][:, subgraphInds]
-                    return subW
-
-        #Note: creating an undirected graph
-        iterator = CitationIterator(self.graph, self.vertexIds, self.startMonth, self.startYear, self.endMonth, self.endYear)
-
-        #Check how many vertices have dates
-        #vertexIdsDate = numpy.array([])
-        #for k in self.vertexIds.keys():
-        #    vertexIdsDate = numpy.union1d(vertexIdsDate, self.vertexIds[k])
-
-        #vertexIds = numpy.array(graph.getAllVertexIds(), numpy.int)
-        #vertexIdsDate = numpy.array(self.vertexIds.keys(), numpy.int)
-
-        return iterator
+        #Generate subgraph indices list 
+        for i in dayList:
+            subgraphIndices = numpy.nonzero(dates <= i)[0]
+            
+            if subgraphIndices.shape[0] >= self.minGraphSize: 
+                subgraphIndicesList.append(subgraphIndices)
+                
+        iterator = IncreasingSubgraphListIterator(self.graph, subgraphIndicesList)
+        return iterator 
