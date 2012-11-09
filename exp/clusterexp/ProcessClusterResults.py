@@ -19,7 +19,7 @@ resultsDir = PathDefaults.getOutputDir() + "cluster/"
 
 plotHIV = False
 plotBemol = False
-plotCitation = True
+plotCitation = False
 
 BemolSubDir = "cluster_mostrare/Bemol__nbU_1000__nbPurchPerIt_10__startIt_1000__endIt_None/__k1_20__k2_80__k3_80__T_100/"
 BemolSubDir = "cluster_mostrare/Bemol__nbU_10000__nbPurchPerIt_10__startIt_30000__endIt_35000/__k1_40__k2_160__k3_160__T_100/"
@@ -29,7 +29,7 @@ HIVSubDir = "HIV"
 CitationSubDir = "Citation"
 
 # uncomment data files to read (corresponding curve will be recomputed)
-#increasingClustFileName = resultsDir + "IncreasingContrastClustErrors_pmax0.01"
+increasingClustFileName = resultsDir + "IncreasingContrastClustErrors_pmax0.01"
 
 
 maxPoints = 100             # number of points (dot, square, ...) on curves
@@ -207,10 +207,10 @@ if plotCitation:
 if 'increasingClustFileName' in locals():
     resIncreasing = {}
     for k2 in [9,18,36,72]:
-        file = open(resultsFileName4 + "_nEigen" + str(k2) + ".dat", 'r')
+        file = open(increasingClustFileName + "_nEigen" + str(k2) + ".dat", 'r')
         file.readline()
         resIncreasing[k2] = numpy.loadtxt(file)
-    logging.info("Loaded files " + resultsFileName4)
+    logging.info("Loaded files " + increasingClustFileName)
 
 
 #==========================================================================
@@ -224,7 +224,7 @@ numLevel = 3
 printedLevel = 2 # in [0, 1, ... , numLevel-1]
 startingIteration = 2
 
-if 'resultsFileName4' in locals():
+if 'increasingClustFileName' in locals():
     iterations = numpy.arange(startingIteration, startingIteration+resIncreasing[9].shape[0])
 
     fig = plt.figure(plotInd)
