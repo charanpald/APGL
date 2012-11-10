@@ -132,7 +132,7 @@ class IterativeSpectralClustering(object):
             elif self.alg == "nystrom":
                 omega, Q = Nystrom.eigpsd(ABBA, self.k3)
             elif self.alg=="exact": 
-                omega, Q = scipy.sparse.linalg.eigsh(ABBA, min(self.k1, ABBA.shape[0]-1), which="LM", ncv = min(10*self.k1, ABBA.shape[0]))
+                omega, Q = scipy.sparse.linalg.eigsh(ABBA, min(self.k1, ABBA.shape[0]-1), which="LM", ncv = min(12*self.k1, ABBA.shape[0]))
             else:
                 raise ValueError("Invalid Algorithm: " + str(self.alg))
                     
