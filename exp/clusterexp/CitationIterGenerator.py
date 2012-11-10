@@ -12,7 +12,7 @@ class CitationIterGenerator(object):
     A class to load the high energy physics data and generate an iterator. The 
     dataset is found in http://snap.stanford.edu/data/cit-HepTh.html
     """
-    def __init__(self):
+    def __init__(self, minGraphSize=500, maxGraphSize=None):
         dataDir = PathDefaults.getDataDir() + "cluster/"
         edgesFilename = dataDir + "Cit-HepTh.txt"
         dateFilename = dataDir + "Cit-HepTh-dates.txt"
@@ -105,19 +105,22 @@ class CitationIterGenerator(object):
         
         logging.debug("Largest component graph: " + str(self.graph))
         
+        self.minGraphSize = minGraphSize
+        self.maxGraphSize = maxGraphSize 
+        self.monthStep = 1
+        
     def getIterator(self):
         """
         Return an iterator which outputs the citation graph for each month. Note
         that the graphs are undirected but we make them directed.
         """
-        self.minGraphSize = 500
+        
         vertexArray = self.graph.getVertexList().getVertices()
         dates = vertexArray[:, 0]
         firstVertex = numpy.argmin(dates)
         
         daysInMonth = 30 
-        monthStep = 1
-        dayList = range(int(numpy.min(dates)), int(numpy.max(dates)), daysInMonth*monthStep)
+        dayList = range(int(numpy.min(dates)), int(numpy.max(dates)), daysInMonth*self.monthStep)
         dayList.append(numpy.max(dates))
         
         subgraphIndicesList = []
@@ -131,6 +134,9 @@ class CitationIterGenerator(object):
             currentSubgraph = self.graph.subgraph(subgraphIndices)
             compIndices = currentSubgraph.depthFirstSearch(list(subgraphIndices).index(firstVertex))
             subgraphIndices =  subgraphIndices[compIndices]        
+            
+            if self.maxGraphSize != None and subgraphIndices.shape[0] > self.maxGraphSize: 
+                break 
             
             print(subgraphIndices.shape[0])
             
