@@ -21,7 +21,7 @@ from exp.clusterexp.CitationIterGenerator import CitationIterGenerator
 # Arguments related to the dataset
 dataArgs = argparse.Namespace()
 dataArgs.startingIteration = 0
-dataArgs.endingIteration = 50 # set to 'None' to have all iterations
+dataArgs.endingIteration = None # set to 'None' to have all iterations
 dataArgs.stepSize = 1
 
 # Arguments related to the algorithm
@@ -111,6 +111,7 @@ logging.info("Total graphs in sequence: " + str(numGraphs))
 #=========================================================================
 logging.info("Creating the exp-runner")
 clusterExpHelper = ClusterExpHelper(getIterator, numGraphs, remainingArgs, defaultAlgoArgs, dataArgs.extendedDirName)
+clusterExpHelper.algoArgs.T = 20 
 clusterExpHelper.algoArgs.k1 = 50
 clusterExpHelper.algoArgs.k2s = [100, 200, 500]
 clusterExpHelper.algoArgs.k3s = [500, 1000, 1500]
