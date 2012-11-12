@@ -107,7 +107,7 @@ class DatedPurchasesGraphListIterator(object):
             self.dictUser.index(user)
             self.dictProd.index(prod)
         self.backgroundGraph = DictGraph(False) # directed
-        self.W = scipy.sparse.lil_matrix((len(self.dictUser), len(self.dictUser)), dtype='int16')
+        self.W = scipy.sparse.csr_matrix((len(self.dictUser), len(self.dictUser)), dtype='int16')
         self.usefullEdges = numpy.array([])
 
     def __iter__(self):
@@ -143,7 +143,7 @@ class DatedPurchasesGraphListIterator(object):
         self.usefullEdges = numpy.r_[self.usefullEdges, newUsefullEdges]
         
         if W_has_changed:
-          return self.W.tocsr()[self.usefullEdges,:][:,self.usefullEdges]
+          return self.W[self.usefullEdges,:][:,self.usefullEdges]
         else:
           return next(self)
     next = __next__ 
