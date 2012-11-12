@@ -1,7 +1,6 @@
 """
 Compare our clustering method and that of Ning et al. on the HIV data.
 """
-
 import os
 import sys
 import errno
@@ -10,10 +9,7 @@ import numpy
 from apgl.graph import *
 from exp.clusterexp.ClusterExpHelper import ClusterExpHelper
 import argparse
-from exp.viroscopy.HIVGraphReader import HIVGraphReader
-from apgl.util.DateUtils import DateUtils
-from exp.sandbox.GraphIterators import IncreasingSubgraphListIterator
-
+from exp.clusterexp.HIVIterGenerator import HIVIterGenerator
 
 #=========================================================================
 #=========================================================================
@@ -22,8 +18,6 @@ from exp.sandbox.GraphIterators import IncreasingSubgraphListIterator
 #=========================================================================
 # Arguments related to the dataset
 dataArgs = argparse.Namespace()
-dataArgs.startYear = 1900
-dataArgs.daysInMonth = 30
 dataArgs.monthStep = 1
 dataArgs.minGraphSize = 500
 
@@ -54,7 +48,6 @@ if dataArgs.help:
 dataArgs.extendedDirName = ""
 dataArgs.extendedDirName += "HIV"
 
-
 # seed #
 numpy.random.seed(21)
 
@@ -64,8 +57,6 @@ numpy.random.seed(21)
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 numpy.set_printoptions(suppress=True, linewidth=60)
 numpy.seterr("raise", under="ignore")
-
-
 
 # print args #
 logging.info("Running on HIV")
@@ -81,56 +72,9 @@ for key in keys:
 # data
 #=========================================================================
 #=========================================================================
-#Start off with the HIV data 
-hivReader = HIVGraphReader()
-graph = hivReader.readHIVGraph()
-fInds = hivReader.getIndicatorFeatureIndices()
-
-#The set of edges indexed by zeros is the contact graph
-#The ones indexed by 1 is the infection graph
-edgeTypeIndex1 = 0
-edgeTypeIndex2 = 1
-sGraphContact = graph.getSparseGraph(edgeTypeIndex1)
-sGraphInfect = graph.getSparseGraph(edgeTypeIndex2)
-sGraphContact = sGraphContact.union(sGraphInfect)
-graph = sGraphContact
-
-#Find max component
-#Create a graph starting from the oldest point in the largest component 
-components = graph.findConnectedComponents()
-graph = graph.subgraph(list(components[0]))
-logging.debug(graph)
-
-detectionIndex = fInds["detectDate"]
-vertexArray = graph.getVertexList().getVertices()
-detections = vertexArray[:, detectionIndex]
-
-firstVertex = numpy.argmin(detections)
-
-dayList = list(range(int(numpy.min(detections)), int(numpy.max(detections)), dataArgs.daysInMonth*dataArgs.monthStep))
-dayList.append(numpy.max(detections))
-
-subgraphIndicesList = []
-
-#Generate subgraph indices list 
-for i in dayList:
-    logging.info("Date: " + str(DateUtils.getDateStrFromDay(i, dataArgs.startYear)))
-    subgraphIndices = numpy.nonzero(detections <= i)[0]
-    
-    #Check subgraphIndices are sorted 
-    subgraphIndices = numpy.sort(subgraphIndices)
-    currentSubgraph = graph.subgraph(subgraphIndices)
-    compIndices = currentSubgraph.depthFirstSearch(list(subgraphIndices).index(firstVertex))
-    subgraphIndices =  subgraphIndices[compIndices]
-    
-    if subgraphIndices.shape[0] >= dataArgs.minGraphSize: 
-        subgraphIndicesList.append(subgraphIndices)
-
-def getIterator():
-    return IncreasingSubgraphListIterator(graph, subgraphIndicesList)
-    
-numGraphs = len(subgraphIndicesList)
-logging.info("number of iterations: " + str(numGraphs))
+generator = HIVIterGenerator(dataArgs.minGraphSize, dataArgs.monthStep)
+numGraphs = generator.getNumGraphs()
+logging.info("Total graphs in sequence: " + str(numGraphs))
 
 #=========================================================================
 #=========================================================================
@@ -138,7 +82,7 @@ logging.info("number of iterations: " + str(numGraphs))
 #=========================================================================
 #=========================================================================
 logging.info("Creating the exp-runner")
-clusterExpHelper = ClusterExpHelper(getIterator, numGraphs, remainingArgs, defaultAlgoArgs, dataArgs.extendedDirName)
+clusterExpHelper = ClusterExpHelper(generator.getIterator, numGraphs, remainingArgs, defaultAlgoArgs, dataArgs.extendedDirName)
 clusterExpHelper.algoArgs.k1 = 25
 clusterExpHelper.algoArgs.k2s = [100, 200, 500]
 clusterExpHelper.algoArgs.k3s = [100, 200, 500, 1000, 1500]
