@@ -43,12 +43,9 @@ class CitationIterGenerator(object):
         graph.addEdges(edges)
         logging.info("Created directed citation graph with " + str(graph.getNumEdges()) + " edges and " + str(graph.getNumVertices()) + " vertices")
 
-        edgeVertexSet = set(graph.getAllVertexIds())
-
         #Read in the dates articles appear in a dict which used the year and month
         #as the key and the value is a list of vertex ids. For each month we include
         #all papers uploaded that month and those directed cited by those uploads. 
-        vertexIds = {}
         startDate = datetime.date(1990, 1, 1)
 
         file = open(dateFilename, 'r')
