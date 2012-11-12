@@ -19,7 +19,7 @@ resultsDir = PathDefaults.getOutputDir() + "cluster/"
 
 plotHIV = False
 plotBemol = False
-plotCitation = False
+plotCitation = True
 
 BemolSubDir = "cluster_mostrare/Bemol__nbU_1000__nbPurchPerIt_10__startIt_1000__endIt_None/__k1_20__k2_80__k3_80__T_100/"
 BemolSubDir = "cluster_mostrare/Bemol__nbU_10000__nbPurchPerIt_10__startIt_30000__endIt_35000/__k1_40__k2_160__k3_160__T_100/"
@@ -29,7 +29,7 @@ HIVSubDir = "HIV"
 CitationSubDir = "Citation"
 
 # uncomment data files to read (corresponding curve will be recomputed)
-increasingClustFileName = resultsDir + "IncreasingContrastClustErrors_pmax0.01"
+#increasingClustFileName = resultsDir + "IncreasingContrastClustErrors_pmax0.01"
 
 
 maxPoints = 100             # number of points (dot, square, ...) on curves
@@ -50,7 +50,7 @@ pointPlotStyles = ['o', 'x', '+', '.']
 plotInd = 0
 
 class MyPlot:
-    def __init__(self, datasetName, subDirName, k1, k2s, k3s):
+    def __init__(self, datasetName, subDirName, k1, k2s, k3s, T=10):
         self.datasetName = datasetName
         self.subDirName = subDirName
         self.measuresList = []
@@ -61,7 +61,7 @@ class MyPlot:
         self.k1 = k1 
         self.k2s = k2s 
         self.k3s = k3s
-        self.T = 10         
+        self.T = T         
         
         self.methodNames = ["IASC", "Exact", "Ning", "Nystrom"]
         self.labelNames = []
@@ -137,7 +137,7 @@ class MyPlot:
             self.times.append(arrayDict["arr_1"])
             self.graphInfosList.append(arrayDict["arr_2"])
             self.iterations.append(numpy.arange(startingIteration, startingIteration+arrayDict["arr_0"].shape[0]))
-            logging.info("Loaded file " + resultsFileName)
+            logging.debug("Loaded file " + resultsFileName)
 
     def plotAll(self):
         self.plotOne(self.measuresList, "Modularity", "Modularities", numCol=0, loc="lower left")
@@ -189,11 +189,12 @@ if plotBemol:
     m.plotAll()
 
 if plotCitation:
-    k1 = 25
+    T = 20
+    k1 = 50
     k2s = [100, 200, 500]
-    k3s = [1000, 1500]        
+    k3s = [500, 1000, 1500]       
     
-    m = MyPlot("", CitationSubDir, k1, k2s, k3s)
+    m = MyPlot("", CitationSubDir, k1, k2s, k3s, T)
     m.readAll()
     m.plotAll()
 
