@@ -12,7 +12,6 @@ from apgl.graph import *
 from apgl.util.PathDefaults import PathDefaults
 from exp.clusterexp.ClusterExpHelper import ClusterExpHelper
 from exp.clusterexp.BemolData import BemolData
-from apgl.util.Parameter import Parameter
 import argparse
 
 
@@ -26,9 +25,9 @@ dataArgs = argparse.Namespace()
 dataArgs.nbUser = 10000 # set to 'None' to have all users
 dataArgs.nbPurchasesPerIt = 50 # set to 'None' to take all the purchases
                                       # per date
-dataArgs.startingIteration = 0
+dataArgs.startingIteration = 20
 dataArgs.endingIteration = None # set to 'None' to have all iterations
-dataArgs.stepSize = 1
+dataArgs.stepSize = 20
 
 
 # Arguments related to the algorithm
