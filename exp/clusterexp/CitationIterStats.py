@@ -16,6 +16,11 @@ import scipy.sparse.linalg
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
+plotCitation = True
+plotBemol = False 
+plotHIV = False 
+
+
 maxGraphSize = 3000 
 generator = CitationIterGenerator(maxGraphSize=maxGraphSize)
 iterator = generator.getIterator()
@@ -34,12 +39,14 @@ omegaDiff = numpy.diff(omega)
 
 print(omegaDiff)
 
-plt.figure(0)
+plotInd = 0 
+plt.figure(plotInd)
 plt.plot(numpy.arange(omega.shape[0]), omega)
 plt.xlabel("Eigenvalue index")
 plt.ylabel("Eigenvalue")
+plotInd += 1 
 
-plt.figure(1)
+plt.figure(plotInd)
 plt.plot(numpy.arange(omegaDiff.shape[0]), omegaDiff)
 plt.xlabel("Eigenvalue index")
 plt.ylabel("Eigenvalue diff")
