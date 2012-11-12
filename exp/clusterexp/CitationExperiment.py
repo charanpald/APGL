@@ -113,7 +113,7 @@ logging.info("Creating the exp-runner")
 clusterExpHelper = ClusterExpHelper(getIterator, numGraphs, remainingArgs, defaultAlgoArgs, dataArgs.extendedDirName)
 clusterExpHelper.algoArgs.T = 20 
 clusterExpHelper.algoArgs.k1 = 50
-clusterExpHelper.algoArgs.k2s = [100, 200, 500]
+clusterExpHelper.algoArgs.k2s = [50, 100, 200, 500]
 clusterExpHelper.algoArgs.k3s = [500, 1000, 1500]
 clusterExpHelper.printAlgoArgs()
 
