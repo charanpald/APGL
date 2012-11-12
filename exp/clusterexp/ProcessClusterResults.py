@@ -21,10 +21,7 @@ plotHIV = False
 plotBemol = False
 plotCitation = True
 
-BemolSubDir = "cluster_mostrare/Bemol__nbU_1000__nbPurchPerIt_10__startIt_1000__endIt_None/__k1_20__k2_80__k3_80__T_100/"
-BemolSubDir = "cluster_mostrare/Bemol__nbU_10000__nbPurchPerIt_10__startIt_30000__endIt_35000/__k1_40__k2_160__k3_160__T_100/"
-#BemolSubDir = "Bemol__nbU_1000__nbPurchPerIt_10__endIt_None/__k1_20__k2_80__k3_80__T_100/"
-#BemolSubDir = "Bemol100"
+BemolSubDir = "Bemol"
 HIVSubDir = "HIV"
 CitationSubDir = "Citation"
 
@@ -40,7 +37,7 @@ startingIteration = 0000    # for HIV, Bemol and Citation data, iteration number
 #==========================================================================
 
 plotStyles1 = ['k-', 'k--', 'k-.', 'b-', 'b--', 'b-.', 'g-', 'g--', 'g-.', 'r-', 'r--', 'r-.']
-plotStyles2 = ['r.--', 'rx--', 'r+--', 'ro--', 'r*--', 'rs--']
+plotStyles2 = ['k-', 'k--', 'k-.', 'r-', 'g-', 'b-', 'b--', 'b-.', 'g-', 'g--', 'g-.', 'r-', 'r--', 'r-.']
 plotStyles3 = ['b.:', 'bx:', 'b+:', 'bo:', 'b*:', 'bs:']
 
 
@@ -84,7 +81,7 @@ class MyPlot:
                 #             , list(itertools.islice(dataToPrint,0,None,data[i].size/maxPoints))
                 #             , plotStyles1[i])
                 if not samePlot: 
-                    plt.plot(self.iterations[i][minRow:maxRow], dataToPrint, plotStyles1[i], label=self.labelNames[i])
+                    plt.plot(self.iterations[i][minRow:maxRow], dataToPrint, plotStyles2[i], label=self.labelNames[i])
                 else: 
                     plt.plot(self.iterations[i][minRow:maxRow], dataToPrint, plotStyles1[0], label=self.labelNames[i])
         plt.xlabel("Graph no.")
@@ -134,19 +131,21 @@ class MyPlot:
             logging.warning(" file " + resultsFileName + " is empty")
         else:
             self.measuresList.append(arrayDict["arr_0"])
-            self.times.append(arrayDict["arr_1"])
+            self.times.append(arrayDict["arr_1"].cumsum(0))
             self.graphInfosList.append(arrayDict["arr_2"])
             self.iterations.append(numpy.arange(startingIteration, startingIteration+arrayDict["arr_0"].shape[0]))
             logging.debug("Loaded file " + resultsFileName)
 
     def plotAll(self):
-        self.plotOne(self.measuresList, "Modularity", "Modularities", numCol=0, loc="lower left")
-        self.plotOne(self.measuresList, "k-way normalised cut", "KWayNormCut", numCol=1, loc="upper left")
+        self.plotOne(self.measuresList, "Modularity", "Modularities", numCol=0, loc="upper right")
+        self.plotOne(self.measuresList, "k-way normalised cut", "KWayNormCut", numCol=1, loc="center right")
 #        self.plotOne(self.measuresList, "k-way normalised cut", "KWayNormCut_zoom", numCol=1, maxRow=400, loc="upper right")
-        self.plotOne(self.times, "Computation time", "Time", numCol=0, loc="upper left")
-        self.plotOne(self.times, "Computation time", "Time-log", numCol=0, loc="upper left", xlogscale=False, ylogscale=True)
+        self.plotOne(self.times, "Cumulative computation time (s)", "Time", numCol=0, loc="upper left")
+        self.plotOne(self.times, "Cumulative computation time (s)", "Time-log", numCol=0, loc="upper left", xlogscale=False, ylogscale=True)
         self.plotOne(self.graphInfosList, "Nb nodes", "graph_size", numCol=0, loc="lower right", samePlot=True)
         self.plotOne(self.graphInfosList, "Nb connected components", "ConnectedComponents", numCol=1, loc="upper right", samePlot=True)
+        
+        #print(numpy.c_[numpy.arange(self.graphInfosList[0].shape[0]), self.graphInfosList[0]])
 
     def test(self):
         logging.warning(" test expect IASC being the first method and Exact the second one")
