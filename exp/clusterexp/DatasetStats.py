@@ -18,17 +18,21 @@ import scipy.sparse.linalg
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
-plotHIV = False 
+plotHIV = True 
 plotCitation = False
-plotBemol = True 
+plotBemol = False 
 
 if plotHIV: 
     generator = HIVIterGenerator()
     iterator = generator.getIterator()
+    
+    resultsDir = PathDefaults.getOutputDir() + "cluster/HIV/Stats/"
 if plotCitation: 
     maxGraphSize = 3000 
     generator = CitationIterGenerator(maxGraphSize=maxGraphSize)
     iterator = generator.getIterator()
+    
+    resultsDir = PathDefaults.getOutputDir() + "cluster/Citation/Stats/"
 if plotBemol: 
     dataDir = PathDefaults.getDataDir() + "cluster/"
     nbUser = 10000 # set to 'None' to have all users
@@ -39,13 +43,12 @@ if plotBemol:
     stepSize = 10    
     
     iterator = itertools.islice(BemolData.getGraphIterator(dataDir, nbUser, nbPurchasesPerIt), startingIteration, endingIteration, stepSize)
-    
+    resultsDir = PathDefaults.getOutputDir() + "cluster/Bemol/Stats/"
     #Appears to be 10 components 
 
 subgraphIndicesList = []
 for W in iterator: 
     subgraphIndicesList.append(range(W.shape[0])) 
-
 
 #Try to find number of clusters at end of sequence by looking at eigengap 
 k = 2000
@@ -61,12 +64,14 @@ plt.figure(plotInd)
 plt.plot(numpy.arange(omega.shape[0]), omega)
 plt.xlabel("Eigenvalue index")
 plt.ylabel("Eigenvalue")
+plt.savefig(resultsDir + "Spectrum.eps")
 plotInd+=1 
 
 plt.figure(plotInd)
 plt.plot(numpy.arange(omegaDiff.shape[0]), omegaDiff)
 plt.xlabel("Eigenvalue index")
 plt.ylabel("Eigenvalue diff")
+plt.savefig(resultsDir + "SpectrumDiff.eps")
 plotInd +=1 
 
 #No obvious number of clusters and there are many edges 
@@ -80,6 +85,7 @@ plt.figure(plotInd)
 plt.plot(numpy.arange(statsMatrix.shape[0]), statsMatrix[:, graphStats.numVerticesIndex])
 plt.xlabel("Graph index")
 plt.ylabel("Num vertices")
+plt.savefig(resultsDir + "Vertices.eps")
 plotInd+=1 
 
 
@@ -87,6 +93,7 @@ plt.figure(plotInd)
 plt.plot(numpy.arange(statsMatrix.shape[0]), statsMatrix[:, graphStats.numEdgesIndex])
 plt.xlabel("Graph index")
 plt.ylabel("Num edges")
+plt.savefig(resultsDir + "Edges.eps")
 plotInd+=1 
 
 plt.figure(plotInd)
@@ -99,6 +106,7 @@ plt.figure(plotInd)
 plt.plot(numpy.arange(statsMatrix.shape[0]), statsMatrix[:, graphStats.numComponentsIndex])
 plt.xlabel("Graph index")
 plt.ylabel("Num components")
+plt.savefig(resultsDir + "Components.eps")
 plotInd+=1 
 
 plt.show()
