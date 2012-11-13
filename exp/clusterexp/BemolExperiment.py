@@ -17,6 +17,8 @@ import argparse
 if __debug__: 
     raise RuntimeError("Must run python with -O flag")
 
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+
 #=========================================================================
 #=========================================================================
 # arguments (overwritten by the command line)
@@ -27,10 +29,9 @@ dataArgs = argparse.Namespace()
 dataArgs.nbUser = 10000 # set to 'None' to have all users
 dataArgs.nbPurchasesPerIt = 50 # set to 'None' to take all the purchases
                                       # per date
-dataArgs.startingIteration = 20
+dataArgs.startingIteration = 100
 dataArgs.endingIteration = None # set to 'None' to have all iterations
-dataArgs.stepSize = 20
-
+dataArgs.stepSize = 30
 
 # Arguments related to the algorithm
 # If one arg is not set, default from ClusterExpHelper.py is used
@@ -86,8 +87,6 @@ dataArgs.extendedDirName = "Bemol/"
 numpy.random.seed(21)
 
 # printing options #
-#logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format='%(levelname)s (%(asctime)s):%(message)s')
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 numpy.set_printoptions(suppress=True, linewidth=60)
 numpy.seterr("raise", under="ignore")
 
@@ -99,7 +98,6 @@ keys.sort()
 for key in keys:
     logging.info("    " + str(key) + ": " + str(dataArgs.__getattribute__(key)))
 
-
 #=========================================================================
 #=========================================================================
 # data
@@ -109,14 +107,14 @@ dataDir = PathDefaults.getDataDir() + "cluster/"
 def getIterator():
     return itertools.islice(BemolData.getGraphIterator(dataDir, dataArgs.nbUser, dataArgs.nbPurchasesPerIt), dataArgs.startingIteration, dataArgs.endingIteration, dataArgs.stepSize)
 
-logging.info("Computing the number of iteration")
+logging.info("Computing the number of iterations")
 numGraphs = 0
 for W in getIterator():
     numGraphs += 1
 #    logging.info(str(numGraphs) + "\t" + str(W.shape))
 #    if __debug__:
 #        Parameter.checkSymmetric(W)
-logging.info("number of iterations: " + str(numGraphs))
+logging.info("Number of iterations: " + str(numGraphs))
 
 
 #=========================================================================
@@ -124,9 +122,8 @@ logging.info("number of iterations: " + str(numGraphs))
 # run
 #=========================================================================
 #=========================================================================
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+
 logging.info("Creating the exp-runner")
-clusterExpHelper = ClusterExpHelper(getIterator, numGraphs, remainingArgs, defaultAlgoArgs, dataArgs.extendedDirName)
 clusterExpHelper = ClusterExpHelper(getIterator, numGraphs, remainingArgs, defaultAlgoArgs, dataArgs.extendedDirName)
 clusterExpHelper.algoArgs.T = 20 
 clusterExpHelper.algoArgs.k1 = 50
