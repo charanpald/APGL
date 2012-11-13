@@ -88,7 +88,7 @@ class IterativeSpectralClustering(object):
                 Parameter.checkSymmetric(subW)
 
             if TLogging and i % TLogging == 0:
-                logging.info("Graph index: " + str(i))
+                logging.debug("Graph index: " + str(i))
             logging.debug("Clustering graph of size " + str(subW.shape))
             ABBA = GraphUtils.shiftLaplacian(subW)
 
