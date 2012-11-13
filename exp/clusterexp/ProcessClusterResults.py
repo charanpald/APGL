@@ -17,9 +17,9 @@ numpy.set_printoptions(suppress=True, linewidth=60)
 
 resultsDir = PathDefaults.getOutputDir() + "cluster/"
 
-plotHIV = False
+plotHIV = True
 plotBemol = False
-plotCitation = True
+plotCitation = False
 
 BemolSubDir = "Bemol"
 HIVSubDir = "HIV"
@@ -178,7 +178,7 @@ if plotHIV:
     m.plotAll()
 
 if plotBemol:
-    k1 = 25
+    k1 = 50
     k2s = [100, 200, 500]
     k3s = [1000, 1500]      
     
@@ -190,7 +190,7 @@ if plotBemol:
 if plotCitation:
     T = 20
     k1 = 50
-    k2s = [100, 200, 500]
+    k2s = [50, 100, 200, 500]
     k3s = [500, 1000, 1500]       
     
     m = MyPlot("", CitationSubDir, k1, k2s, k3s, T)
