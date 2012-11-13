@@ -16,7 +16,6 @@ from apgl.data.Standardiser import Standardiser
 from apgl.graph.GraphUtils import GraphUtils
 from apgl.util.Parameter import Parameter
 from apgl.util.ProfileUtils import ProfileUtils
-from apgl.util.SparseUtils import SparseUtils
 from apgl.util.VqUtils import VqUtils
 from apgl.util.Util import Util
 
@@ -51,7 +50,7 @@ class IterativeSpectralClustering(object):
         self.k3 = k3
         self.T = T
         
-        logging.debug("IterativeSpectralClustering(" + str((k1, k2, k3, T)) + ")")
+        logging.debug("IterativeSpectralClustering(" + str((k1, k2, k3, T)) + ") with algorithm " + alg)
 
         self.nb_iter_kmeans = 100
         self.alg = alg
@@ -135,11 +134,12 @@ class IterativeSpectralClustering(object):
                 omega, Q = scipy.sparse.linalg.eigsh(ABBA, min(self.k1, ABBA.shape[0]-1), which="LM", ncv = min(15*self.k1, ABBA.shape[0]))
             else:
                 raise ValueError("Invalid Algorithm: " + str(self.alg))
-                    
+
+            decompositionTimeList.append(time.time()-startTime)                  
+                  
             if self.alg=="IASC":
                 self.storeInformation(subW, ABBA)
-            decompositionTimeList.append(time.time()-startTime)
-
+            
             # --- Kmeans ---
             startTime = time.time()
             inds = numpy.flipud(numpy.argsort(omega))
