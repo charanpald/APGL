@@ -116,7 +116,7 @@ class DatedPurchasesGraphListIterator(object):
     def __next__(self):
         # next group of purchases (StopIteration is raised here)
         purchases_sublist = next(self.group_by_iterator)
-        logging.debug(" nb purchases: " + str(len(purchases_sublist)))
+        #logging.debug(" nb purchases: " + str(len(purchases_sublist)))
 
         # to check that the group really induces new edges
         W_has_changed = False
