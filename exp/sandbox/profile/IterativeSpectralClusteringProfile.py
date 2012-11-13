@@ -12,6 +12,9 @@ from exp.clusterexp.BemolData import BemolData
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
+if __debug__: 
+    raise RuntimeError("Must run python with -O flag")
+
 class IterativeSpectralClusteringProfile(object):
     def __init__(self):
         numVertices = 1000
@@ -26,22 +29,30 @@ class IterativeSpectralClusteringProfile(object):
             subgraphIndicesList.append(range(i))
 
         k1 = 5
-        k2 = 20 
+        k2 = 100 
 
         self.graph = graph
         self.subgraphIndicesList = subgraphIndicesList
-        self.clusterer = IterativeSpectralClustering(k1, k2)
+        self.clusterer = IterativeSpectralClustering(k1, k2, T=10, alg="IASC")
 
 
     def profileClusterFromIterator(self):
         iterator = IncreasingSubgraphListIterator(self.graph, self.subgraphIndicesList)
         dataDir = PathDefaults.getDataDir() + "cluster/"
         #iterator = getBemolGraphIterator(dataDir)
-
-        ProfileUtils.profile('self.clusterer.clusterFromIterator(iterator)', globals(), locals())
+        
+        def run(): 
+            clusterList, timeList, boundList = self.clusterer.clusterFromIterator(iterator, verbose=True)
+            print(timeList.cumsum(0))
+            
+        ProfileUtils.profile('run()', globals(), locals())
 
 profiler = IterativeSpectralClusteringProfile()
 profiler.profileClusterFromIterator() #19.7 
 
+"""
+If we set k2 = 50 vs k2=100, the former is slower due to the ARPACK eigenvalue 
+solver. Weird. 
+"""
 
 # python -c "execfile('exp/sandbox/profile/IterativeSpectralClusteringProfile.py')"
