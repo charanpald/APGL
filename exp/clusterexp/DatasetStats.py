@@ -46,11 +46,13 @@ subgraphIndicesList = []
 for W in iterator: 
     subgraphIndicesList.append(range(W.shape[0])) 
 
+
 #Try to find number of clusters at end of sequence by looking at eigengap 
 k = 2000
 L = GraphUtils.normalisedLaplacianSym(W)
+
 logging.debug("Computing eigenvalues")
-omega, Q = scipy.sparse.linalg.eigsh(L, min(k, L.shape[0]-1), which="SM", ncv = min(10*k, L.shape[0]))
+omega, Q = scipy.sparse.linalg.eigsh(L, min(k, L.shape[0]-1), which="SM", ncv = min(20*k, L.shape[0]))
 
 omegaDiff = numpy.diff(omega)
 
@@ -78,6 +80,13 @@ plt.figure(plotInd)
 plt.plot(numpy.arange(statsMatrix.shape[0]), statsMatrix[:, graphStats.numVerticesIndex])
 plt.xlabel("Graph index")
 plt.ylabel("Num vertices")
+plotInd+=1 
+
+
+plt.figure(plotInd)
+plt.plot(numpy.arange(statsMatrix.shape[0]), statsMatrix[:, graphStats.numEdgesIndex])
+plt.xlabel("Graph index")
+plt.ylabel("Num edges")
 plotInd+=1 
 
 plt.figure(plotInd)

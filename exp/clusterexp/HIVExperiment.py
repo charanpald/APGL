@@ -11,6 +11,9 @@ from exp.clusterexp.ClusterExpHelper import ClusterExpHelper
 import argparse
 from exp.clusterexp.HIVIterGenerator import HIVIterGenerator
 
+if __debug__: 
+    raise RuntimeError("Must run python with -O flag")
+
 #=========================================================================
 #=========================================================================
 # arguments (overwritten by the command line)

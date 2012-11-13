@@ -13,6 +13,9 @@ import argparse
 from exp.clusterexp.ClusterExpHelper import ClusterExpHelper
 from exp.clusterexp.CitationIterGenerator import CitationIterGenerator 
 
+if __debug__: 
+    raise RuntimeError("Must run python with -O flag")
+
 #=========================================================================
 #=========================================================================
 # arguments (overwritten by the command line)

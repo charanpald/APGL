@@ -14,6 +14,8 @@ from exp.clusterexp.ClusterExpHelper import ClusterExpHelper
 from exp.clusterexp.BemolData import BemolData
 import argparse
 
+if __debug__: 
+    raise RuntimeError("Must run python with -O flag")
 
 #=========================================================================
 #=========================================================================
