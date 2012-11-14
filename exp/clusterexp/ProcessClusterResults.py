@@ -17,8 +17,8 @@ numpy.set_printoptions(suppress=True, linewidth=60)
 
 resultsDir = PathDefaults.getOutputDir() + "cluster/"
 
-plotHIV = True
-plotBemol = False
+plotHIV = False
+plotBemol = True
 plotCitation = False
 
 BemolSubDir = "Bemol"
@@ -37,12 +37,12 @@ startingIteration = 0000    # for HIV, Bemol and Citation data, iteration number
 #==========================================================================
 
 plotStyles1 = ['k-', 'k--', 'k-.', 'b-', 'b--', 'b-.', 'g-', 'g--', 'g-.', 'r-', 'r--', 'r-.']
-plotStyles2 = ['k-', 'k--', 'k-.', 'r-', 'g-', 'b-', 'b--', 'b-.', 'g-', 'g--', 'g-.', 'r-', 'r--', 'r-.']
+plotStyles2 = ['k-', 'k--', 'k-.', 'r--', 'r-', 'g-', 'b-', 'b--', 'b-.', 'g--', 'g--', 'g-.', 'r-', 'r--', 'r-.']
 plotStyles3 = ['b.:', 'bx:', 'b+:', 'bo:', 'b*:', 'bs:']
 
 
-colorPlotStyles = ['r', 'k', 'g', 'b', 'y', 'm', 'c']
-linePlotStyles = ['--', '-', '--', '--']
+colourPlotStyles = ['k', 'r', 'g', 'b', 'y', 'm', 'c']
+linePlotStyles = ['-', '--', '-.', ':']
 pointPlotStyles = ['o', 'x', '+', '.']
 plotInd = 0
 
@@ -62,6 +62,7 @@ class MyPlot:
         
         self.methodNames = ["IASC", "Exact", "Ning", "Nystrom"]
         self.labelNames = []
+        self.plotStyles = []
        
     def plotOne(self, data, title, fileNameSuffix, numCol=None, minRow=0, maxRow=None, loc="lower right", xlogscale=False, ylogscale=False, samePlot=False):
         global plotInd
@@ -81,7 +82,7 @@ class MyPlot:
                 #             , list(itertools.islice(dataToPrint,0,None,data[i].size/maxPoints))
                 #             , plotStyles1[i])
                 if not samePlot: 
-                    plt.plot(self.iterations[i][minRow:maxRow], dataToPrint, plotStyles2[i], label=self.labelNames[i])
+                    plt.plot(self.iterations[i][minRow:maxRow], dataToPrint, self.plotStyles[i], label=self.labelNames[i])
                 else: 
                     plt.plot(self.iterations[i][minRow:maxRow], dataToPrint, plotStyles1[0], label=self.labelNames[i])
         plt.xlabel("Graph no.")
@@ -98,26 +99,30 @@ class MyPlot:
         plotInd += 1
 
     def readAll(self):
-        for method in self.methodNames:
+        for i, method in enumerate(self.methodNames):
             
             if method == "Exact": 
                 resultsFileName = resultsDir + self.subDirName + "/" + self.datasetName + "ResultsExact_k1=" + str(self.k1) + ".npz"
                 self.readFile(resultsFileName) 
                 self.labelNames.append("Exact")
+                self.plotStyles.append(colourPlotStyles[i] + linePlotStyles[0])
             elif method == "IASC": 
-                for k2 in self.k2s: 
+                for j, k2 in enumerate(self.k2s): 
                     resultsFileName = resultsDir + self.subDirName + "/" + self.datasetName + "ResultsIASC_k1=" + str(self.k1) + "_k2=" + str(k2) + "_T=" + str(self.T) + ".npz"
                     self.readFile(resultsFileName)
                     self.labelNames.append("IASC "+str(k2))
+                    self.plotStyles.append(colourPlotStyles[i] + linePlotStyles[j])
             elif method == "Nystrom": 
-                for k3 in self.k3s: 
+                for j, k3 in enumerate(self.k3s): 
                     resultsFileName = resultsDir + self.subDirName + "/" + self.datasetName + "ResultsNystrom_k1="+ str(self.k1) + "_k3=" + str(k3) + ".npz"
                     self.readFile(resultsFileName) 
                     self.labelNames.append("Nyst "+str(k3))
+                    self.plotStyles.append(colourPlotStyles[i] + linePlotStyles[j])
             elif method == "Ning": 
                 resultsFileName = resultsDir + self.subDirName + "/" + self.datasetName + "ResultsNing_k1=" + str(self.k1) + "_T=" + str(self.T) + ".npz" 
                 self.readFile(resultsFileName) 
                 self.labelNames.append("Ning")
+                self.plotStyles.append(colourPlotStyles[i] + linePlotStyles[0])
 
     def readFile(self, resultsFileName): 
         try:
@@ -170,7 +175,7 @@ class MyPlot:
 
 if plotHIV:
     k1 = 25
-    k2s = [100, 200, 500]
+    k2s = [25, 50, 100]
     k3s = [1000, 1500]    
         
     m = MyPlot("", HIVSubDir, k1, k2s, k3s)
@@ -178,11 +183,12 @@ if plotHIV:
     m.plotAll()
 
 if plotBemol:
+    T = 20
     k1 = 50
-    k2s = [100, 200, 500]
-    k3s = [1000, 1500]      
+    k2s = [50, 100, 200, 500]
+    k3s = [500, 1000, 1500]      
     
-    m = MyPlot("", BemolSubDir, k1, k2s, k3s)
+    m = MyPlot("", BemolSubDir, k1, k2s, k3s, T)
     m.readAll()
     m.test()
     m.plotAll()
