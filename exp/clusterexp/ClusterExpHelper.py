@@ -97,8 +97,10 @@ class ClusterExpHelper(object):
         measures = numpy.zeros((self.numGraphs, numMeasures))
         numGraphInfo = 2
         graphInfo =  numpy.zeros((self.numGraphs, numGraphInfo))
+        logging.debug("Computing cluster measures")
 
         for i in range(self.numGraphs):
+            logging.debug("Iteration " + str(i) + " of " + str(self.numGraphs))
             W = next(iterator)
             G = networkx.Graph(W)
             measures[i, 0] = GraphUtils.modularity(W, clusterList[i])
