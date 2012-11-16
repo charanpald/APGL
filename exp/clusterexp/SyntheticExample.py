@@ -74,7 +74,7 @@ class ThreeClustIterator(object):
 ps = numpy.arange(0.1, 0.21, 0.1)
 #ps = numpy.arange(0.05, 0.20, 0.1)  
 numGraphs = len(ThreeClustIterator().subgraphIndicesList) 
-saveResults = False 
+saveResults = True 
 
 resultsDir = PathDefaults.getOutputDir() + "cluster/"
 fileName = resultsDir + "ThreeClustErrors.npz"
@@ -105,24 +105,27 @@ for W in iterator:
 
 plt.show()
 """
-  
+ 
+k2s = [3, 6, 12, 24]
+ 
 if saveResults: 
     numClusters = 3
     k1 = numClusters
-    k2 = 20
+    
     k3 = 90
     T = 8 # index of iteration where exact decomposition is computed
     exactClusterer = IterativeSpectralClustering(k1, alg="exact")
-    iascClusterer = IterativeSpectralClustering(k1, k2, alg="IASC", T=T)
+    iascClusterers = []
+    for k2 in k2s: 
+        iascClusterers.append(IterativeSpectralClustering(k1, k2, alg="IASC", T=T)) 
     nystromClusterer = IterativeSpectralClustering(k1, k3=k3, alg="nystrom")
     ningsClusterer = NingSpectralClustering(k1, T=T)
     
-    perms = [l for l in itertools.permutations([0, 1, 2])]
     numRepetitions = 50
-    #numRepetitions = 1
+    #numRepetitions = 2
     do_Nings = True
     
-    clustErrApprox = numpy.zeros((ps.shape[0], numGraphs, numRepetitions))
+    clustErrApprox = numpy.zeros((ps.shape[0], numGraphs, numRepetitions, len(k2s)))
     clustErrExact = numpy.zeros((ps.shape[0], numGraphs, numRepetitions))
     clustErrNings = numpy.zeros((ps.shape[0], numGraphs, numRepetitions))
     clustErrNystrom = numpy.zeros((ps.shape[0], numGraphs, numRepetitions))
@@ -139,8 +142,10 @@ if saveResults:
             clustListExact = exactClusterer.clusterFromIterator(graphIterator, False)
             
             logging.debug("Running approximate method")
-            graphIterator = ThreeClustIterator(p, numClusters, r).getIterator()
-            clustListApprox = iascClusterer.clusterFromIterator(graphIterator, False)
+            clustListApprox = []
+            for i in range(len(k2s)): 
+                graphIterator = ThreeClustIterator(p, numClusters, r).getIterator()
+                clustListApprox.append(iascClusterers[i].clusterFromIterator(graphIterator, False)) 
             
             logging.debug("Running Nystrom method")
             graphIterator = ThreeClustIterator(p, numClusters, r).getIterator()
@@ -157,9 +162,10 @@ if saveResults:
             for it in range(len(ThreeClustIterator().subgraphIndicesList)):
                   indicesList = ThreeClustIterator().subgraphIndicesList[it]
                   numUsedVertices = len(indicesList)
-    
-                  clustErrApprox[t, it, r] += GraphUtils.randIndex(clustListExact[it], indicesList)
-                  clustErrExact[t, it, r] += GraphUtils.randIndex(clustListApprox[it], indicesList)
+                  
+                  for i in range(len(k2s)): 
+                      clustErrApprox[t, it, r, i] += GraphUtils.randIndex(clustListApprox[i][it], indicesList)
+                  clustErrExact[t, it, r] += GraphUtils.randIndex(clustListExact[it], indicesList)
                   clustErrNystrom[t, it, r] += GraphUtils.randIndex(clustListNystrom[it], indicesList)
                   if do_Nings:
                       clustErrNings[t, it, r] += GraphUtils.randIndex(clustListNings[it], indicesList)
@@ -170,13 +176,13 @@ else:
     errors = numpy.load(fileName)
     clustErrApprox, clustErrExact, clustErrNystrom, clustErrNings = errors["arr_0"], errors["arr_1"], errors["arr_2"], errors["arr_3"]
     
-    meanClustErrExact = clustErrApprox.mean(2)
-    meanClustErrApprox = clustErrExact.mean(2)
+    meanClustErrExact = clustErrExact.mean(2)
+    meanClustErrApprox = clustErrApprox.mean(2)
     meanClustErrNystrom = clustErrNystrom.mean(2)
     meanClustErrNings = clustErrNings.mean(2)
     
-    stdClustErrExact = clustErrApprox.std(2)
-    stdClustErrApprox = clustErrExact.std(2)
+    stdClustErrExact = clustErrExact.std(2)
+    stdClustErrApprox = clustErrApprox.std(2)
     stdClustErrNystrom = clustErrNystrom.std(2)
     stdClustErrNings = clustErrNings.std(2)
     
@@ -197,15 +203,23 @@ else:
     plotStyles[1] = ['ko--', 'kx--', 'k+--', 'k.--', 'k*--', 'ks--']
     plotStyles[2] = ['ko:', 'kx:', 'k+:', 'k:', 'k*:', 'ks:']
     
-    numMethods = 4
+    numMethods = 3+len(k2s)
     
     plt.hold(True)
     for i_p in range(len(ps)):
         for i_res in range(numMethods):
-            res = [meanClustErrExact, meanClustErrApprox, meanClustErrNystrom, meanClustErrNings][i_res]
-            resStd = [stdClustErrExact, stdClustErrApprox, stdClustErrNystrom, stdClustErrNings][i_res]
-            names = ["Exact", "IASC", "Nystrom", "Ning"]
+            res = [] 
+            names = []
+            print(meanClustErrApprox.shape)
+            for i in range(meanClustErrApprox.shape[2]): 
+                res.append(meanClustErrApprox[:, :, i])
+                names.append("IASC " + str(k2s[i]))
+            res.extend([meanClustErrExact, meanClustErrNystrom, meanClustErrNings][i_res]) 
+            resStd = [stdClustErrExact, stdClustErrNystrom, stdClustErrNings][i_res]
+            names.extend(["Exact", "Nystrom", "Ning"])
             
+            print(res)
+        
             plt.figure(i_p)
             plt.plot(iterations, res[i_p, :], plotStyles[0][i_res], label=names[i_res])
             plt.ylim(0.33, 0.44)
