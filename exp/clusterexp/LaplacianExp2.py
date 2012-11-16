@@ -155,12 +155,13 @@ if saveResults:
 else: 
     errors = numpy.load(fileName)   
     print(errors)
+    plotStyles1 = ['k-', 'k--', 'k-.', 'b-', 'b--', 'b-.', 'g-', 'g--', 'g-.', 'r-', 'r--', 'r-.']    
     
     plt.figure(0)
     #plt.plot(numpy.arange(errors.shape[0]), errors[:, 0], label="Nystrom m=300")
-    plt.plot(numpy.arange(errors.shape[0]), errors[:, 1], label="Nystrom m=600")
-    plt.plot(numpy.arange(errors.shape[0]), errors[:, 2], label="Nystrom m=900")
-    plt.plot(numpy.arange(errors.shape[0]), errors[:, 3], label="Eigen-update") 
+    plt.plot(numpy.arange(errors.shape[0]), errors[:, 1], plotStyles1[0], label="Nystrom m=600")
+    plt.plot(numpy.arange(errors.shape[0]), errors[:, 2], plotStyles1[1], label="Nystrom m=900")
+    plt.plot(numpy.arange(errors.shape[0]), errors[:, 3], plotStyles1[2], label="Eigen-update") 
     #plt.plot(numpy.arange(errors.shape[0]), errors[:, 4], label="Initial sol.")
     plt.legend(loc="upper left")
     plt.xlabel("Graph no.")

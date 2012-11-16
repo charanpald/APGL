@@ -74,7 +74,7 @@ class ThreeClustIterator(object):
 ps = numpy.arange(0.1, 0.21, 0.1)
 #ps = numpy.arange(0.05, 0.20, 0.1)  
 numGraphs = len(ThreeClustIterator().subgraphIndicesList) 
-saveResults = True 
+saveResults = False 
 
 resultsDir = PathDefaults.getOutputDir() + "cluster/"
 fileName = resultsDir + "ThreeClustErrors.npz"
@@ -198,30 +198,35 @@ else:
     
     #Now lets plot the results
     iterations = numpy.arange(numGraphs)
-    plotStyles = {}
-    plotStyles[0] = ['ko-', 'kx-', 'k+-', 'k.-', 'k*-', 'ks-']
-    plotStyles[1] = ['ko--', 'kx--', 'k+--', 'k.--', 'k*--', 'ks--']
-    plotStyles[2] = ['ko:', 'kx:', 'k+:', 'k:', 'k*:', 'ks:']
+
+    colourPlotStyles = ['k', 'r', 'g', 'b', 'y', 'm', 'c']
+    linePlotStyles = ['-', '--', '-.', ':']
+    pointPlotStyles = ['o', 'x', '+', '.']
     
     numMethods = 3+len(k2s)
+    
+    resultMeans = [] 
+    resultStds = []
+    names = []
+    plotStyles = []
+    for i in range(meanClustErrApprox.shape[2]): 
+        resultMeans.append(meanClustErrApprox[:, :, i])
+        resultStds.append(stdClustErrApprox[:, :, i])
+        names.append("IASC " + str(k2s[i]))
+        plotStyles.append(colourPlotStyles[0] + linePlotStyles[i])
+    resultMeans.extend([meanClustErrExact, meanClustErrNings, meanClustErrNystrom]) 
+    resultStds.extend([stdClustErrExact, stdClustErrNings, stdClustErrNystrom]) 
+    names.extend(["Exact", "Ning", "Nystrom"])
+    for i in range(3): 
+        plotStyles.append(colourPlotStyles[i+1] + linePlotStyles[0])
     
     plt.hold(True)
     for i_p in range(len(ps)):
         for i_res in range(numMethods):
-            res = [] 
-            names = []
-            print(meanClustErrApprox.shape)
-            for i in range(meanClustErrApprox.shape[2]): 
-                res.append(meanClustErrApprox[:, :, i])
-                names.append("IASC " + str(k2s[i]))
-            res.extend([meanClustErrExact, meanClustErrNystrom, meanClustErrNings][i_res]) 
-            resStd = [stdClustErrExact, stdClustErrNystrom, stdClustErrNings][i_res]
-            names.extend(["Exact", "Nystrom", "Ning"])
-            
-            print(res)
+            res = resultMeans[i_res]
         
             plt.figure(i_p)
-            plt.plot(iterations, res[i_p, :], plotStyles[0][i_res], label=names[i_res])
+            plt.plot(iterations, res[i_p, :], plotStyles[i_res], label=names[i_res])
             plt.ylim(0.33, 0.44)
             plt.xlabel("Graph index")
             plt.ylabel("Rand Index")

@@ -60,14 +60,15 @@ else:
     stdBoundList = allBoundLists.std(0)
     stdBoundList[:, 0] = boundList[:, 0]
     
+    plotStyles1 = ['k-', 'k--', 'k-.', 'k:', 'b--', 'b-.', 'g-', 'g--', 'g-.', 'r-', 'r--', 'r-.']    
     print(boundList)
     print(stdBoundList)
 
     plt.figure(0)
-    plt.plot(boundList[:, 0], boundList[:, 1], label="frobenius approx")
-    plt.plot(boundList[:, 0], boundList[:, 2], label="2-norm approx")
-    plt.plot(boundList[:, 0], boundList[:, 3], label="frobenius precise")
-    plt.plot(boundList[:, 0], boundList[:, 4], label="2-norm precise")
+    plt.plot(boundList[:, 0], boundList[:, 1], plotStyles1[0], label="Frobenius approx")
+    plt.plot(boundList[:, 0], boundList[:, 2], plotStyles1[1], label="2-norm approx")
+    plt.plot(boundList[:, 0], boundList[:, 3], plotStyles1[2], label="Frobenius precise")
+    plt.plot(boundList[:, 0], boundList[:, 4], plotStyles1[3], label="2-norm precise")
     plt.xlabel("Graph no.")
     plt.ylabel("||sin(theta)||")
     plt.legend(loc="upper left")
