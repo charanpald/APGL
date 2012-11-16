@@ -13,12 +13,12 @@ from apgl.util.PathDefaults import PathDefaults
 
 numpy.random.seed(21)
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-numpy.set_printoptions(suppress=True, linewidth=60)
+numpy.set_printoptions(suppress=True, linewidth=60, threshold=50000)
 
 resultsDir = PathDefaults.getOutputDir() + "cluster/"
 
 plotHIV = False
-plotBemol = True
+plotBemol = False
 plotCitation = False
 
 BemolSubDir = "Bemol"
@@ -26,7 +26,7 @@ HIVSubDir = "HIV"
 CitationSubDir = "Citation"
 
 # uncomment data files to read (corresponding curve will be recomputed)
-#increasingClustFileName = resultsDir + "IncreasingContrastClustErrors_pmax0.01"
+increasingClustFileName = resultsDir + "IncreasingContrastClustErrors_pmax0.01"
 
 
 maxPoints = 100             # number of points (dot, square, ...) on curves
@@ -143,14 +143,14 @@ class MyPlot:
 
     def plotAll(self):
         self.plotOne(self.measuresList, "Modularity", "Modularities", numCol=0, loc="upper right")
-        self.plotOne(self.measuresList, "k-way normalised cut", "KWayNormCut", numCol=1, loc="center right")
+        self.plotOne(self.measuresList, "k-way normalised cut", "KWayNormCut", numCol=1, loc="upper left")
 #        self.plotOne(self.measuresList, "k-way normalised cut", "KWayNormCut_zoom", numCol=1, maxRow=400, loc="upper right")
         self.plotOne(self.times, "Cumulative computation time (s)", "Time", numCol=0, loc="upper left")
         self.plotOne(self.times, "Cumulative computation time (s)", "Time-log", numCol=0, loc="upper left", xlogscale=False, ylogscale=True)
         self.plotOne(self.graphInfosList, "Nb nodes", "graph_size", numCol=0, loc="lower right", samePlot=True)
         self.plotOne(self.graphInfosList, "Nb connected components", "ConnectedComponents", numCol=1, loc="upper right", samePlot=True)
         
-        #print(numpy.c_[numpy.arange(self.graphInfosList[0].shape[0]), self.graphInfosList[0]])
+        print(numpy.c_[numpy.arange(self.times[1].shape[0]), self.times[1]])
 
     def test(self):
         logging.warning(" test expect IASC being the first method and Exact the second one")
@@ -186,7 +186,7 @@ if plotBemol:
     T = 20
     k1 = 50
     k2s = [50, 100, 200, 500]
-    k3s = [500, 1000, 1500]      
+    k3s = [1000, 2000, 5000]      
     
     m = MyPlot("", BemolSubDir, k1, k2s, k3s, T)
     m.readAll()
@@ -197,7 +197,7 @@ if plotCitation:
     T = 20
     k1 = 50
     k2s = [50, 100, 200, 500]
-    k3s = [500, 1000, 1500]       
+    k3s = [1000, 2000, 5000]       
     
     m = MyPlot("", CitationSubDir, k1, k2s, k3s, T)
     m.readAll()
@@ -239,19 +239,22 @@ if 'increasingClustFileName' in locals():
     # IASC
     k2s = [9, 18, 72]
     for (k2,i) in zip(k2s, range(len(k2s))):
-        plt.plot(iterations, resIncreasing[k2][:, numLevel+printedLevel], plotStyles2[i])
+        plt.plot(iterations, resIncreasing[k2][:, numLevel+printedLevel], colourPlotStyles[0] + linePlotStyles[i])
         legend.append("IASC " + str(k2))
+    
+    # Exact
+    plt.plot(iterations, resIncreasing[9][:, numLevel*0+printedLevel], colourPlotStyles[1] + linePlotStyles[0])
+    legend.append("Exact")
+    
+    plt.plot(iterations, resIncreasing[9][:, numLevel*2+printedLevel], colourPlotStyles[2] + linePlotStyles[0])
+    legend.append("Ning")
+    
     # Nystrom
     k2s = [9, 18, 72]
     for (k2,i) in zip(k2s, range(len(k2s))):
-        plt.plot(iterations, resIncreasing[k2][:, numLevel*3+printedLevel], plotStyles3[i])
+        plt.plot(iterations, resIncreasing[k2][:, numLevel*3+printedLevel], colourPlotStyles[3] + linePlotStyles[i])
         legend.append("Nystrom " + str(k2))
-    # Exact
-    plt.plot(iterations, resIncreasing[9][:, numLevel*0+printedLevel], plotStyles1[6])
-    legend.append("Exact")
-    
-    plt.plot(iterations, resIncreasing[9][:, numLevel*2+printedLevel], plotStyles1[0])
-    legend.append("Ning")
+
 
     plt.xlim(2, 22)
     plt.xlabel("Graph index")
