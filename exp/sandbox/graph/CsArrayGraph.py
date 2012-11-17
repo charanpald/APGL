@@ -46,7 +46,7 @@ class CsArrayGraph(AbstractMatrixGraph):
         """
         Return the weight matrix as a numpy array. 
         """
-        return self.W
+        return self.W.toarray()
 
     def neighbours(self, vertexIndex):
         """
@@ -56,7 +56,7 @@ class CsArrayGraph(AbstractMatrixGraph):
         :type vertexIndex: :class:`int`
         """
         Parameter.checkIndex(vertexIndex, 0, self.vList.getNumVertices())
-        nonZeroIndices =  sppy.nonzero(self.W[vertexIndex, :])
+        nonZeroIndices =  self.W[vertexIndex, :].nonzero()
         neighbourIndices = nonZeroIndices[0]
         
         return neighbourIndices
@@ -91,7 +91,7 @@ class CsArrayGraph(AbstractMatrixGraph):
         degrees = numpy.zeros(self.W.shape[0], dtype=numpy.int32)
 
         for i in range(0, self.W.shape[0]):
-            degrees[i] = numpy.sum(self.W[i, :] != 0)
+            degrees[i] = self.W[i, :].getnnz()
 
         return degrees
 
@@ -102,7 +102,7 @@ class CsArrayGraph(AbstractMatrixGraph):
         degrees = numpy.zeros(self.W.shape[0], dtype=numpy.int32)
 
         for i in range(0, self.W.shape[0]):
-            degrees[i] = numpy.sum(self.W[:, i] != 0)
+            degrees[i] = self.W[:, i].getnnz()
 
         return degrees 
 
@@ -277,8 +277,7 @@ class CsArrayGraph(AbstractMatrixGraph):
         """
         Removes all edges from this graph. 
         """
-        self.W = self.W*0
-        self.W.compress()
+        self.W.setZero()
 
     undirected = None
     vList = None
