@@ -157,6 +157,9 @@ class GeneralVertexList(AbstractVertexList):
         vList.V = V
 
         return vList
+    
+    def __len__(self): 
+        return len(self.V)
 
     V = None
     ext = '.gvl'

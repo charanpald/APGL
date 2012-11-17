@@ -218,6 +218,9 @@ class VertexList(AbstractVertexList):
         """
         self.V[ind] =  value
 
+    def __len__(self): 
+        return len(self.V)
+
     V = None
     ext = ".nvl"
     
