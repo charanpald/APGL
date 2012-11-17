@@ -19,30 +19,33 @@ class SparseGraph(AbstractMatrixGraph):
     non-zero edges can be added. Uses scipy.sparse for the underlying matrix
     representation. 
     '''
-    def __init__(self, vList, undirected=True, W=None):
+    def __init__(self, vertices, undirected=True, W=None, dtype=numpy.float):
         """
-        Create a SparseGraph with a given AbstractVertexList, and specify whether 
-        it is directed. One can optionally pass in an empty sparse matrix W which
-        is used as the weight matrix of the graph. Different kinds of sparse matrix
-        can impact the speed of various operations. The currently supported sparse
-        matrix types are: lil_matrix, csr_matrix, csc_matrix and dok_matrix. 
+        Create a SparseGraph with a given AbstractVertexList or number of 
+        vertices, and specify whether it is directed. One can optionally pass 
+        in a sparse matrix W which is used as the weight matrix of the 
+        graph. Different kinds of sparse matrix can impact the speed of various
+        operations. The currently supported sparse matrix types are: lil_matrix, 
+        csr_matrix, csc_matrix and dok_matrix. The default sparse matrix is 
+        csr_matrix. 
 
-        :param vList: the initial set of vertices as a AbstractVertexList object.
-        :type vList: :class:`apgl.graph.AbstractVertexList`
+        :param vertices: the initial set of vertices as a AbstractVertexList object, or an int to specify the number of vertices in which case vertices are stored in a GeneralVertexList.  
         
         :param undirected: a boolean variable to indicate if the graph is undirected.
         :type undirected: :class:`boolean`
 
-        :param W: an empty sparse matrix of the same size as vList, or None to create the default one.
+        :param W: a square sparse matrix of the same size as the number of vertices, or None to create the default one.
+        
+        :param dtype: the data type of the sparse matrix if W is not specified. 
         """
         Parameter.checkBoolean(undirected)
         
-        if isinstance(vList, AbstractVertexList):
-            self.vList = vList
-        elif type(vList) == int: 
-            self.vList = GeneralVertexList(vList)
+        if isinstance(vertices, AbstractVertexList):
+            self.vList = vertices
+        elif isinstance(vertices, int): 
+            self.vList = GeneralVertexList(vertices)
         else: 
-            raise ValueError("Invalid vList parameter: " + str(vList))
+            raise ValueError("Invalid vList parameter: " + str(vertices))
           
         if W != None and not (sparse.issparse(W) and W.shape == (self.vList.getNumVertices(), self.vList.getNumVertices())):
             raise ValueError("Input argument W must be None or sparse matrix of size " + str(self.vList.getNumVertices()) )          
@@ -52,9 +55,9 @@ class SparseGraph(AbstractMatrixGraph):
         #Terrible hack alert:  can't create a zero size sparse matrix, so we settle
         #for one of size 1. Better is to create a new class. 
         if self.vList.getNumVertices() == 0 and W == None:
-            self.W = sparse.csr_matrix((1, 1))
+            self.W = sparse.csr_matrix((1, 1), dtype=dtype)
         elif W == None:
-            self.W = sparse.csr_matrix((self.vList.getNumVertices(), self.vList.getNumVertices()))
+            self.W = sparse.csr_matrix((self.vList.getNumVertices(), self.vList.getNumVertices()), dtype=dtype)
         else:
             self.W = W 
             #The next line is for error checking mainly 

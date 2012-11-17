@@ -5,26 +5,46 @@ from apgl.graph.AbstractMatrixGraph import AbstractMatrixGraph
 from apgl.graph.AbstractVertexList import AbstractVertexList 
 from apgl.util.Parameter import Parameter
 from apgl.util.SparseUtils import SparseUtils
+from apgl.graph import GeneralVertexList 
 
 class DenseGraph(AbstractMatrixGraph):
-    def __init__(self, vertexList, undirected=True, dtype=numpy.float):
+    def __init__(self, vertices, undirected=True, W=None, dtype=numpy.float):
         """
-        Create a DenseGraph with a given AbstractVertexList, and specify whether directed.
+        Create a DenseGraph with a given AbstractVertexList or number of 
+        vertices, and specify whether it is directed. One can optionally pass 
+        in a numpy array W which is used as the weight matrix of the 
+        graph. 
 
-        :param vList: the initial set of vertices as a AbstractVertexList object.
-        :type vList: :class:`apgl.graph.AbstractVertexList`
-
+        :param vertices: the initial set of vertices as a AbstractVertexList object, or an int to specify the number of vertices in which case vertices are stored in a GeneralVertexList.  
+        
         :param undirected: a boolean variable to indicate if the graph is undirected.
         :type undirected: :class:`boolean`
 
-        :param dtype: the data type for the weight matrix, e.g numpy.int8.
+        :param W: a numpy array of the same size as vertices, or None to create the default one.
+        
+        :param dtype: the data type of the weight matrix if W is not specified e.g numpy.int8. 
         """
-        Parameter.checkClass(vertexList, AbstractVertexList)
         Parameter.checkBoolean(undirected)
 
-        self.vList = vertexList
-        self.W = numpy.zeros((vertexList.getNumVertices(), vertexList.getNumVertices()), dtype)
+        if isinstance(vertices, AbstractVertexList):
+            self.vList = vertices
+        elif isinstance(vertices, int): 
+            self.vList = GeneralVertexList(vertices)
+        else: 
+            raise ValueError("Invalid vList parameter: " + str(vertices))
+          
+        if W != None and not (isinstance(W, numpy.ndarray) and W.shape == (len(self.vList), len(self.vList))):
+            raise ValueError("Input argument W must be None or numpy array of size " + str(len(self.vList)))          
+          
         self.undirected = undirected
+
+        if W == None:
+            self.W = numpy.zeros((len(self.vList), len(self.vList)), dtype=dtype)
+        else:
+            self.W = W 
+            #The next line is for error checking mainly 
+            self.setWeightMatrix(W)
+
 
     def getNumEdges(self):
         """

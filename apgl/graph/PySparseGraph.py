@@ -6,6 +6,7 @@ from apgl.util.Parameter import Parameter
 from apgl.util.PySparseUtils import PySparseUtils
 from pysparse import spmatrix
 from pysparse.sparse.pysparseMatrix import PysparseMatrix
+from apgl.graph import GeneralVertexList 
 
 
 class PySparseGraph(AbstractMatrixGraph):
@@ -16,28 +17,46 @@ class PySparseGraph(AbstractMatrixGraph):
     non-zero edges can be added.  Uses Pysparse as the underlying matrix
     representation.
     '''
-    def __init__(self, vList, undirected=True, sizeHint=1000):
+    def __init__(self, vertices, undirected=True, W=None, sizeHint=1000):
         """
-        Create a PySparseGraph with a given AbstractVertexList, and specify whether
-        it is directed. 
+        Create a PySparseGraph with a given AbstractVertexList or number of 
+        vertices, and specify whether it is directed. One can optionally pass 
+        in a sparse matrix W which is used as the weight matrix of the 
+        graph. Different kinds of sparse matrix can impact the speed of various
+        operations. The currently supported sparse matrix types are: ll_mat. 
 
-        :param vList: the initial set of vertices as a AbstractVertexList object.
-        :type vList: :class:`apgl.graph.AbstractVertexList`
-
+        :param vertices: the initial set of vertices as a AbstractVertexList object, or an int to specify the number of vertices in which case vertices are stored in a GeneralVertexList.  
+        
         :param undirected: a boolean variable to indicate if the graph is undirected.
         :type undirected: :class:`boolean`
+
+        :param W: a square sparse matrix of the same size as the number of vertices, or None to create the default one.
 
         :param sizeHint: the expected number of edges in the graph for efficient memory usage.
         :type sizeHint: :class:`int`
         """
-        Parameter.checkClass(vList, AbstractVertexList)
         Parameter.checkBoolean(undirected)
 
-        self.vList = vList
+        if isinstance(vertices, AbstractVertexList):
+            self.vList = vertices
+        elif isinstance(vertices, int): 
+            self.vList = GeneralVertexList(vertices)
+        else: 
+            raise ValueError("Invalid vList parameter: " + str(vertices))
+          
+        if W != None and not (isinstance(W, spmatrix.LLMatType) and W.shape == (len(self.vList), len(self.vList))):
+            raise ValueError("Input argument W must be None or spmatrix.ll_mat of size " + str(len(self.vList)))          
+          
         self.undirected = undirected
 
-        #Should use ll_mat_sym for undirected graphs but it has several unimplemented methods 
-        self.W = spmatrix.ll_mat(vList.getNumVertices(), vList.getNumVertices(), sizeHint)
+        if W == None:
+            #Should use ll_mat_sym for undirected graphs but it has several unimplemented methods 
+            self.W = spmatrix.ll_mat(len(self.vList), len(self.vList), sizeHint)
+        else:
+            self.W = W 
+            #The next line is for error checking mainly 
+            self.setWeightMatrix(W)
+
 
     def neighbours(self, vertexIndex):
         """
@@ -261,7 +280,7 @@ class PySparseGraph(AbstractMatrixGraph):
         if type(W) == numpy.ndarray:         
             rowInds, colInds = numpy.nonzero(W)
             self.W.put(W[(rowInds, colInds)], rowInds, colInds)
-        elif sparse.issparse(W): 
+        elif isinstance(W, spmatrix.LLMatType): 
             self.setWeightMatrixSparse(W)
         else: 
             raise ValueError("Invalid matrix type: " + str(type(W)))
@@ -391,19 +410,33 @@ class PySparseGraph(AbstractMatrixGraph):
 
         :param W:  The weight matrix to use. 
         """
-        if not sparse.issparse(W):
+        if not isinstance(W, spmatrix.LLMatType) and not sparse.issparse(W):
             raise ValueError("Input must be a sparse matrix, not " + str(type(W)))
 
         if W.shape != (self.vList.getNumVertices(), self.vList.getNumVertices()):
             raise ValueError("Weight matrix has wrong shape : " + str(W.shape))
-
-        if self.undirected and (W - W.transpose()).nonzero()[0].shape[0]:
-            raise ValueError("Weight matrix of undirected graph must be symmetric")
         
-        self.W = spmatrix.ll_mat(W.shape[0], W.shape[0], W.getnnz())
-        rowInds, colInds = W.nonzero()
+        try: 
+            self.W = spmatrix.ll_mat(W.shape[0], W.shape[0], W.getnnz())
+        except AttributeError: 
+            self.W = spmatrix.ll_mat(W.shape[0], W.shape[0], W.nnz)
+      
+        if isinstance(W, spmatrix.LLMatType): 
+            #Warning: no check for symmetric matrix 
+            #if self.undirected:
+            #    raise ValueError("Weight matrix of undirected graph must be symmetric")
         
-        for i in range(rowInds.shape[0]):
-            self.W[int(rowInds[i]), int(colInds[i])] = W[rowInds[i], colInds[i]]
+            items = W.items()
+            
+            for inds, val in items:
+                self.W[inds[0], inds[1]] = val
+        else: 
+            if self.undirected and (W - W.transpose()).nonzero()[0].shape[0]:
+                raise ValueError("Weight matrix of undirected graph must be symmetric")
+            
+            rowInds, colInds = W.nonzero()
+                  
+            for i in range(rowInds.shape[0]):
+                self.W[int(rowInds[i]), int(colInds[i])] = W[int(rowInds[i]), int(colInds[i])]
         
         
