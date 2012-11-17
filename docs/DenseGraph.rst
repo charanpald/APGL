@@ -1,34 +1,29 @@
 DenseGraph
 ===========
 
-A graph who edges are represented by a dense (non-sparse) weight matrix, and is otherwise similar to SparseGraph. The following is a very simple example of how to use DenseGraph:
+A graph who edges are represented by a dense (numpy.ndarray) weight matrix, and is otherwise similar to SparseGraph. The following is a very simple example of how to use DenseGraph:
 
 ::
 
-	from apgl.graph import * 
+	from apgl.graph import DenseGraph 
 	import numpy 
 	
 	numVertices = 10
-	numFeatures = 3
-	vList = VertexList(numVertices, numFeatures)
-	vertices = numpy.random.rand(numVertices, numFeatures)
-	vList.setVertices(vertices)
 
-	graph = DenseGraph(vList)
-	graph.addEdge(0, 1)
-	graph.addEdge(0, 2)
-	graph.addEdge(0, 3)
-	graph.addEdge(2, 1)
-	graph.addEdge(2, 5)
-	graph.addEdge(2, 6)
-	graph.addEdge(6, 9)
+	graph = DenseGraph(numVertices)
+	graph[0, 2] = 1 
+	graph[0, 3] = 1 
+	graph[2, 1] = 1 
+	graph[2, 5] = 1 
+	graph[2, 6] = 1 
+	graph[6, 9] = 1 
 	
-	#Note can also use the notation e.g. graph[0,1] = 1 to create an edge
-
-	subgraph = graph.subgraph([0,1,2,3])	
+	subgraph = graph.subgraph([0,1,2,3])
 	
-The code creates a new VertexList object with 10 vertices and 3 features, and fills each vertex with random numbers. The VertexList object is then used to create a DenseGraph, after which edges are added and a subgraph is extracted using vertices 0, 1, 2, and 3. Notice that non-vector vertices 
-can be added to a DenseGraph using the GeneralVertexList class in the constructor. 
+	graph.vlist[0] = "abc" 
+	graph.vlist[1] =  123	
+	
+The code creates a new DenseGraph with 10 vertices, after which edges are added and a subgraph is extracted using vertices 0, 1, 2, and 3. Notice that numpy.array vertices can be added to a DenseGraph using the VertexList class in the constructor.  Finally, the first and second vertices are initialised with "abc" and 123 respectively
 
 Methods 
 -------
