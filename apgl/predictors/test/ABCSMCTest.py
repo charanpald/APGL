@@ -68,7 +68,7 @@ class ABCParameters(object):
         return params
     
 
-    def purtubationKernel(self, theta):
+    def perturbationKernel(self, theta):
         """
         Take a theta and perturb it a bit
         """
@@ -78,14 +78,18 @@ class ABCParameters(object):
         newTheta[1] = numpy.random.randn()*variance + theta[1]
         return newTheta
 
-    def purtubationKernelDensity(self, theta, newTheta):
+    def perturbationKernelDensity(self, theta, newTheta):
         variance = 0.02
         p = scipy.stats.norm.pdf(newTheta[0], loc=theta[0], scale=variance)
         p *= scipy.stats.norm.pdf(newTheta[1], loc=theta[1], scale=variance)
         return p
 
+theta = numpy.array([0.7, 0.5])
+abcMetrics = ABCMetrics(theta)
 
-
+def createNormalModel(t):
+    model = NormalModel(abcMetrics)
+    return model
 
 class ABCSMCTest(unittest.TestCase):
     def setUp(self):
@@ -100,10 +104,6 @@ class ABCSMCTest(unittest.TestCase):
         posteriorSampleSize = 20
 
         #Lets get an empirical estimate of Sprime
-        theta = numpy.array([0.7, 0.5])
-
-
-        abcMetrics = ABCMetrics(theta)
         model = NormalModel(abcMetrics)
         model.setMu(theta[0])
         model.setSigma(theta[1])
@@ -113,14 +113,9 @@ class ABCSMCTest(unittest.TestCase):
 
         thetaDir = PathDefaults.getTempDir()
         
-        def createNormalModel(t):
-            model = NormalModel(abcMetrics)
-            return model
-
         abcSMC = ABCSMC(epsilonArray, createNormalModel, abcParams, thetaDir)
         abcSMC.setPosteriorSampleSize(posteriorSampleSize)
         thetasArray = abcSMC.run()
-        
         thetasArray = numpy.array(thetasArray)
 
         meanTheta = numpy.mean(thetasArray, 0)
