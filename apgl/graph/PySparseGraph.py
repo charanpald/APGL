@@ -4,7 +4,7 @@ from apgl.graph.AbstractMatrixGraph import AbstractMatrixGraph
 from apgl.graph.AbstractVertexList import AbstractVertexList
 from apgl.util.Parameter import Parameter
 from apgl.util.PySparseUtils import PySparseUtils
-from pysparse import spmatrix
+
 from pysparse.sparse.pysparseMatrix import PysparseMatrix
 from apgl.graph import GeneralVertexList 
 
@@ -36,6 +36,11 @@ class PySparseGraph(AbstractMatrixGraph):
         :type sizeHint: :class:`int`
         """
         Parameter.checkBoolean(undirected)
+        
+        try: 
+            from pysparse import spmatrix
+        except ImportError:
+            raise 
 
         if isinstance(vertices, AbstractVertexList):
             self.vList = vertices
