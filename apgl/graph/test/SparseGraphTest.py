@@ -59,6 +59,13 @@ class SparseGraphTest(unittest.TestCase, MatrixGraphTest):
         #Test just specifying number of vertices 
         graph = SparseGraph(numVertices)
         self.assertEquals(graph.size, numVertices)
+        
+        #Try creating a sparse matrix of dtype int 
+        graph = SparseGraph(numVertices, dtype=numpy.int)
+        self.assertEquals(graph.W.dtype, numpy.int)
+        graph[0, 0] = 1.2 
+        
+        self.assertEquals(graph[0, 0], 1)
 
     def testNativeAdjacencyMatrix(self):
         numVertices = 10 

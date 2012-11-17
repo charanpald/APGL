@@ -4,7 +4,9 @@ from apgl.graph.VertexList import VertexList
 from apgl.util import *
 import unittest
 import apgl
-import scipy.sparse as sparse 
+import scipy.sparse 
+import numpy 
+from pysparse import spmatrix
 
 try: 
     from apgl.graph.PySparseGraph import PySparseGraph
@@ -31,6 +33,38 @@ class PySparseGraphTest(unittest.TestCase, MatrixGraphTest):
         graph = PySparseGraph(vList)
 
         self.assertRaises(ValueError, PySparseGraph, [])
+        self.assertRaises(ValueError, PySparseGraph, vList, 1)
+        self.assertRaises(ValueError, PySparseGraph, vList, True, 1)
+
+        #Now test invalid values of W
+        W = scipy.sparse.csr_matrix((numVertices, numVertices))
+        self.assertRaises(ValueError, PySparseGraph, vList, True, W)
+
+        W = numpy.zeros((numVertices+1, numVertices))
+        self.assertRaises(ValueError, PySparseGraph, vList, True, W)
+
+        W = numpy.zeros((numVertices, numVertices))
+        W[0, 1] = 1
+        self.assertRaises(ValueError, PySparseGraph, vList, True, W)
+
+        W = spmatrix.ll_mat(numVertices, numVertices)
+        graph = PySparseGraph(vList, W=W)
+
+        self.assertTrue(isinstance(W, spmatrix.LLMatType))
+        
+        #Test intialising with non-empty graph 
+        numVertices = 10 
+        W = spmatrix.ll_mat(numVertices, numVertices)
+        W[1, 0] = 1.1 
+        W[0, 1] = 1.1 
+        graph = PySparseGraph(numVertices, W=W)
+        
+        self.assertEquals(graph[1, 0], 1.1)
+        
+        #Test just specifying number of vertices 
+        graph = PySparseGraph(numVertices)
+        self.assertEquals(graph.size, numVertices)
+        
         
     def testSetWeightMatrixSparse(self): 
         numVertices = 10
@@ -40,7 +74,7 @@ class PySparseGraphTest(unittest.TestCase, MatrixGraphTest):
         graph = self.GraphType(vList)
         graph[0, 1] = 1
         
-        W = sparse.lil_matrix((numVertices, numVertices))
+        W = scipy.sparse.lil_matrix((numVertices, numVertices))
         
         W[2, 1] = 1 
         W[1, 2] = 1 
