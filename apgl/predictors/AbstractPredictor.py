@@ -12,7 +12,7 @@ import logging
 import gc
 import itertools 
 import multiprocessing 
-from sklearn import linear_model 
+
 
 
 #Start with some functions used for multiprocessing 
@@ -593,6 +593,10 @@ class AbstractPredictor(object):
         :param paramDict: A dictionary index by the method name and with value as an array of values
         :type X: :class:`dict`
         """ 
+        try: 
+            from sklearn import linear_model 
+        except ImportError: 
+            raise
         
         gridSize = [] 
         gridInds = [] 

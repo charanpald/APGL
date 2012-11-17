@@ -6,10 +6,11 @@ import unittest
 import apgl
 import scipy.sparse 
 import numpy 
-from pysparse import spmatrix
+
 
 try: 
     from apgl.graph.PySparseGraph import PySparseGraph
+    from pysparse import spmatrix
 except ImportError:
     pass 
 

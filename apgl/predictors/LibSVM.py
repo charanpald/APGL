@@ -5,13 +5,14 @@ from apgl.util.Evaluator import Evaluator
 import numpy
 import scipy
 import scipy.sparse
-import sklearn.metrics
+
 
 
 class LibSVM(AbstractPredictor):
     def __init__(self, kernel='linear', kernelParam=0.1, C=1.0, cost=0.5, type="C_SVC", processes=None, epsilon=0.001):
         try:
             from sklearn.svm import SVC 
+            import sklearn.metrics
         except ImportError:
             raise 
             
