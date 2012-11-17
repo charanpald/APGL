@@ -5,6 +5,13 @@ This project develops a simple, fast and easy to use Python graph library using 
 
 Changelog 
 ---------
+Changes in version 0.7.2: 
+
+* Constructors for graph classes accept a size and weight matrix. 
+* len property for vertex lists 
+* Optimisation of depth first search, and ABCSMC 
+* Lots of bug fixes and other improvements 
+
 Changes in version 0.7.1: 
 
 * Pickling of graphs 

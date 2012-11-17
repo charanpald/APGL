@@ -17,6 +17,10 @@ Another Python Graph Library is a simple, fast and easy to use graph library. Th
 * Machine learning features - data preprocessing, kernels, PCA, KCCA, ABC, TreeRank.
 * Unit tested using the Python unittest framework
 
+News
+----
+* 17/11/12 - Version 0.7.2 released, see https://github.com/charanpald/APGL for the changelog. 
+
 Downloading
 -----------
 Download for Windows, Linux or Mac OS using: 
@@ -62,7 +66,7 @@ A short introduction to the main features of the library is available in the PDF
     >>> from apgl.graph import GeneralVertexList, SparseGraph 
     >>> import numpy 
     >>> numVertices = 5
-    >>> graph = SparseGraph(GeneralVertexList(numVertices))
+    >>> graph = SparseGraph(numVertices)
     >>> graph[0,1] = 1
     >>> graph[0,2] = 3
     >>> graph[1,2] = 0.1
@@ -84,7 +88,7 @@ A short introduction to the main features of the library is available in the PDF
     >>> print(graph)
     SparseGraph: vertices 5, edges 4, undirected, vertex list type: GeneralVertexList
 
-The :doc:`SparseGraph` is initialised as an undirected graph with :doc:`GeneralVertexList`, which stores the labels on vertices and can take any values as the vertex labels. Edges are added between vertices (0, 1), (0, 2), (1, 2) and (3, 4). Following, the first and second vertices (indexed by 0 and 1 respectively) are initialised with "abc" and 123 respectively, and we then compute some properties over the resulting graph. 
+The :doc:`SparseGraph` is initialised as an undirected graph with 5 vertices of which the labels are stored in :doc:`GeneralVertexList`. Edges are added between vertices (0, 1), (0, 2), (1, 2) and (3, 4). Following, the first and second vertices (indexed by 0 and 1 respectively) are initialised with "abc" and 123 respectively, and we then compute some properties over the resulting graph. 
 
 To learn more consult the reference documentation: 
 
