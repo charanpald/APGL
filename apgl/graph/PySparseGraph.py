@@ -9,6 +9,9 @@ from pysparse.sparse.pysparseMatrix import PysparseMatrix
 from apgl.graph import GeneralVertexList 
 
 
+from pysparse import spmatrix
+
+
 class PySparseGraph(AbstractMatrixGraph):
     '''
     Represents a graph, which can be directed or undirected, and has weights
@@ -36,11 +39,6 @@ class PySparseGraph(AbstractMatrixGraph):
         :type sizeHint: :class:`int`
         """
         Parameter.checkBoolean(undirected)
-        
-        try: 
-            from pysparse import spmatrix
-        except ImportError:
-            raise 
 
         if isinstance(vertices, AbstractVertexList):
             self.vList = vertices
@@ -174,6 +172,7 @@ class PySparseGraph(AbstractMatrixGraph):
         """
         Return the adjacency matrix in sparse format.
         """
+
         A = spmatrix.ll_mat(self.vList.getNumVertices(), self.vList.getNumVertices())
 
         nonzeros = PySparseUtils.nonzero(self.W)
@@ -414,7 +413,8 @@ class PySparseGraph(AbstractMatrixGraph):
         non-zero edges.
 
         :param W:  The weight matrix to use. 
-        """
+        """      
+        
         if not isinstance(W, spmatrix.LLMatType) and not sparse.issparse(W):
             raise ValueError("Input must be a sparse matrix, not " + str(type(W)))
 

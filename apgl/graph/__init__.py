@@ -6,11 +6,9 @@ from apgl.graph.VertexList import VertexList
 from apgl.graph.GraphUtils import GraphUtils
 from apgl.graph.GraphStatistics import GraphStatistics
 
-"""
 #Optional modules are tried and ignored if not present 
 try:
     from apgl.graph.PySparseGraph import PySparseGraph
 except ImportError as error:
-    print(error)
-from apgl.graph.SparseMultiGraph import SparseMultiGraph
-"""
+    pass
+

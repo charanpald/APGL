@@ -5,7 +5,7 @@ from apgl.util.Evaluator import Evaluator
 import numpy
 import scipy
 import scipy.sparse
-
+import sklearn 
 
 
 class LibSVM(AbstractPredictor):

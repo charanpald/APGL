@@ -9,13 +9,16 @@ import logging
 import numpy
 import apgl
 import sys 
-from apgl.predictors.LibSVM import LibSVM 
 from apgl.predictors.AbstractPredictor import computeTestError, computeIdealPenalty, computeBootstrapError
 from apgl.data.ExamplesGenerator import ExamplesGenerator 
 from apgl.util.Evaluator import Evaluator
 from apgl.util.Sampling import Sampling
 from apgl.data.Standardiser import Standardiser
 
+try: 
+    from apgl.predictors.LibSVM import LibSVM 
+except ImportError:
+    pass 
 
 @apgl.skipIf(not apgl.checkImport('sklearn'), 'Module svm is required')
 class LibSVMTest(unittest.TestCase):
