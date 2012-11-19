@@ -18,9 +18,9 @@ import scipy.sparse.linalg
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
-plotHIV = True 
+plotHIV = False 
 plotCitation = False
-plotBemol = False 
+plotBemol = True 
 
 if plotHIV: 
     generator = HIVIterGenerator()
@@ -35,10 +35,10 @@ if plotCitation:
     resultsDir = PathDefaults.getOutputDir() + "cluster/Citation/Stats/"
 if plotBemol: 
     dataDir = PathDefaults.getDataDir() + "cluster/"
-    nbUser = 10000 # set to 'None' to have all users
+    nbUser = 20000 # set to 'None' to have all users
     nbPurchasesPerIt = 50 # set to 'None' to take all the purchases
                                           # per date
-    startingIteration = 20
+    startingIteration = 0
     endingIteration = None # set to 'None' to have all iterations
     stepSize = 10    
     
@@ -48,6 +48,7 @@ if plotBemol:
 
 subgraphIndicesList = []
 for W in iterator: 
+    logging.debug("Graph size " + str(W.shape[0]))
     subgraphIndicesList.append(range(W.shape[0])) 
 
 #Try to find number of clusters at end of sequence by looking at eigengap 
