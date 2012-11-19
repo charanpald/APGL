@@ -95,7 +95,7 @@ class BemolData:
                     vals = list(map(int, line.split()))
                     if dict_user.index(vals[0]) < nb_user:
                         purchasesList.append(vals)
-                logging.info(" file read")
+                logging.info("File read " + f_data_name)
     
                 # graph iterator
                 graphIterator = DatedPurchasesGraphListIterator(purchasesList, nb_purchases_per_it)
