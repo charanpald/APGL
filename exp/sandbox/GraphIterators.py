@@ -7,8 +7,10 @@ import numpy
 import scipy
 import random
 from apgl.graph.DictGraph import DictGraph
+from apgl.graph import SparseGraph
 import logging
 import scipy.sparse 
+import scipy.sparse.csgraph
 
 class MyDictionary(object):
     def __init__(self):
@@ -223,5 +225,36 @@ class toSparseGraphListIterator(object):
 
     def __next__(self):
         return scipy.sparse.csr_matrix(next(self.g))
+        
+    next = __next__ 
+    
+class MaxComponentsIterator(object): 
+    def __init__(self, graphIterator, maxComponents):
+        """
+        Takes a graph iterator and emit the 1st graph when the number of components 
+        exceeds the value minComponents. 
+        """
+        self.graphIterator = graphIterator
+        self.maxComponents = maxComponents
+        self.emit = False 
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        
+        if self.emit == False: 
+            for W in self.graphIterator: 
+                graph = SparseGraph(W.shape[0], W=W)
+                numComponents = len(graph.findConnectedComponents())
+                print("graph size = " + str(graph.size) + " num components = " + str(numComponents))
+                
+                #if numComponents < self.maxComponents: 
+                #    self.emit = True 
+                #    break 
+        else:
+            W = self.graphIterator.next()           
+            
+        return W
         
     next = __next__ 
