@@ -257,7 +257,7 @@ if 'increasingClustFileName' in locals():
 
 
     plt.xlim(2, 22)
-    plt.xlabel("Graph index")
+    plt.xlabel("Graph no.")
     plt.ylabel("Rand Index")
     plt.legend(legend)
     plt.savefig(resultsDir + "IncreasingContrastClustErrors_lvl2_paper.eps")
