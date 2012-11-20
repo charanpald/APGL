@@ -51,29 +51,33 @@ for W in iterator:
     logging.debug("Graph size " + str(W.shape[0]))
     subgraphIndicesList.append(range(W.shape[0])) 
 
-#Try to find number of clusters at end of sequence by looking at eigengap 
-k = 2000
-L = GraphUtils.normalisedLaplacianSym(W)
-
-logging.debug("Computing eigenvalues")
-omega, Q = scipy.sparse.linalg.eigsh(L, min(k, L.shape[0]-1), which="SM", ncv = min(20*k, L.shape[0]))
-
-omegaDiff = numpy.diff(omega)
-
 plotInd = 0 
-plt.figure(plotInd)
-plt.plot(numpy.arange(omega.shape[0]), omega)
-plt.xlabel("Eigenvalue index")
-plt.ylabel("Eigenvalue")
-plt.savefig(resultsDir + "Spectrum.eps")
-plotInd+=1 
+findEigs = False
 
-plt.figure(plotInd)
-plt.plot(numpy.arange(omegaDiff.shape[0]), omegaDiff)
-plt.xlabel("Eigenvalue index")
-plt.ylabel("Eigenvalue diff")
-plt.savefig(resultsDir + "SpectrumDiff.eps")
-plotInd +=1 
+#Try to find number of clusters at end of sequence by looking at eigengap 
+if findEigs: 
+    k = 2
+    L = GraphUtils.normalisedLaplacianSym(W)
+    
+    logging.debug("Computing eigenvalues")
+    omega, Q = scipy.sparse.linalg.eigsh(L, min(k, L.shape[0]-1), which="SM", ncv = min(20*k, L.shape[0]))
+    
+    omegaDiff = numpy.diff(omega)
+    
+    
+    plt.figure(plotInd)
+    plt.plot(numpy.arange(omega.shape[0]), omega)
+    plt.xlabel("Eigenvalue index")
+    plt.ylabel("Eigenvalue")
+    plt.savefig(resultsDir + "Spectrum.eps")
+    plotInd+=1 
+    
+    plt.figure(plotInd)
+    plt.plot(numpy.arange(omegaDiff.shape[0]), omegaDiff)
+    plt.xlabel("Eigenvalue index")
+    plt.ylabel("Eigenvalue diff")
+    plt.savefig(resultsDir + "SpectrumDiff.eps")
+    plotInd +=1 
 
 #No obvious number of clusters and there are many edges 
 graph = SparseGraph(W.shape[0], W=W)
@@ -81,6 +85,8 @@ graph = SparseGraph(W.shape[0], W=W)
 logging.debug("Computing graph statistics")
 graphStats = GraphStatistics()
 statsMatrix = graphStats.sequenceScalarStats(graph, subgraphIndicesList, slowStats=False)
+
+numpy.save(resultsDir + "GraphStats", statsMatrix)
 
 plt.figure(plotInd)
 plt.plot(numpy.arange(statsMatrix.shape[0]), statsMatrix[:, graphStats.numVerticesIndex])
