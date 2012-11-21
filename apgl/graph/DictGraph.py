@@ -3,6 +3,7 @@ import numpy
 import scipy.sparse 
 from apgl.graph.AbstractSingleGraph import AbstractSingleGraph
 
+
 class DictGraph(AbstractSingleGraph):
     """
     A graph with nodes stored in a dictionary. In particular the graph data structure is a
@@ -205,14 +206,25 @@ class DictGraph(AbstractSingleGraph):
         return self.__populateWeightMatrix(W)
 
 
-    def getSparseWeightMatrix(self):
+    def getSparseWeightMatrix(self, format="lil"):
         """
         Returns a weight matrix representation of the graph as a scipy sparse 
-        lil_matrix. The indices in the matrix correspond to the keys returned by
+        lil_matrix by default. The indices in the matrix correspond to the keys returned by
         getAllVertexIds.
         """
         W = scipy.sparse.lil_matrix((self.getNumVertices(), self.getNumVertices()))
-        return self.__populateWeightMatrix(W)
+        W = self.__populateWeightMatrix(W)
+        
+        if format=="lil": 
+            pass 
+        elif format=="csr": 
+            W.tocsr()
+        elif format=="csc": 
+            W.tocsc()
+        else:
+            raise ValueError("Invalid format: " + format)
+            
+        return W 
 
     def __populateWeightMatrix(self, W):
         """
@@ -381,6 +393,19 @@ class DictGraph(AbstractSingleGraph):
                 if vertexId in self.adjacencies[vertexId2]: 
                     del self.adjacencies[vertexId2][vertexId]
 
+    def toSparseGraph(self): 
+        """
+        Convert the current graph to a SparseGraph. Currently, vertex labels 
+        are not converted. 
+        """
+        from apgl.graph import SparseGraph        
+        
+        W = self.getSparseWeightMatrix(format="csr")
+        graph = SparseGraph(W.shape[0], W=W, undirected=self.undirected)
+        
+        return graph 
+        
+    
     vertices = None 
     adjacencies = None 
     undirected = None

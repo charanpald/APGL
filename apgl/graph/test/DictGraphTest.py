@@ -602,6 +602,24 @@ class DictGraphTest(unittest.TestCase):
 
         self.assertTrue(graph.getAllVertexIds() == [1, 3, 4])
         self.assertTrue(graph.getAllEdges() == [(3, 4)])
+        
+    def testToSparseGraph(self): 
+        graph = DictGraph()
+        graph.addEdge(0, 1)
+        graph.addEdge(0, 2)
+        graph.addEdge(0, 3)
+        graph.addEdge(1, 2)
+        graph.addEdge(2, 3)
+        graph.addEdge(3, 4)
+        
+        graph2 = graph.toSparseGraph()
+        
+        self.assertEquals(graph2[0, 1], 1)
+        self.assertEquals(graph2[0, 2], 1)
+        self.assertEquals(graph2[0, 3], 1)
+        self.assertEquals(graph2[2, 1], 1)
+        self.assertEquals(graph2[2, 3], 1)
+        self.assertEquals(graph2[3, 4], 1)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
