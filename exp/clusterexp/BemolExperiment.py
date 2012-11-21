@@ -12,6 +12,7 @@ from apgl.graph import *
 from apgl.util.PathDefaults import PathDefaults
 from exp.clusterexp.ClusterExpHelper import ClusterExpHelper
 from exp.clusterexp.BemolData import BemolData
+from exp.sandbox.GraphIterators import MaxComponentsIterator
 import argparse
 
 if __debug__: 
@@ -29,9 +30,9 @@ dataArgs = argparse.Namespace()
 dataArgs.nbUser = 10000 # set to 'None' to have all users
 dataArgs.nbPurchasesPerIt = 50 # set to 'None' to take all the purchases
                                       # per date
-dataArgs.startingIteration = 100
+dataArgs.startingIteration = 0
 dataArgs.endingIteration = None # set to 'None' to have all iterations
-dataArgs.stepSize = 30
+dataArgs.stepSize = 30 #This is the step in the number of weeks 
 
 # Arguments related to the algorithm
 # If one arg is not set, default from ClusterExpHelper.py is used
@@ -104,8 +105,12 @@ for key in keys:
 #=========================================================================
 #=========================================================================
 dataDir = PathDefaults.getDataDir() + "cluster/"
+maxComponents = 50 
+
 def getIterator():
-    return itertools.islice(BemolData.getGraphIterator(dataDir, dataArgs.nbUser, dataArgs.nbPurchasesPerIt), dataArgs.startingIteration, dataArgs.endingIteration, dataArgs.stepSize)
+    bemolIterator = BemolData.getGraphIterator(dataDir, dataArgs.nbUser, dataArgs.nbPurchasesPerIt)
+    bemolIterator = MaxComponentsIterator(bemolIterator, maxComponents)
+    return itertools.islice(bemolIterator, dataArgs.startingIteration, dataArgs.endingIteration, dataArgs.stepSize)
 
 logging.info("Computing the number of iterations")
 numGraphs = 0
