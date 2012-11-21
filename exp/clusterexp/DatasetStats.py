@@ -45,9 +45,9 @@ if plotBemol:
         dataDir = PathDefaults.getDataDir() + "cluster/"
         
         nbUser = 20000 # set to 'None' to have all users
-        nbPurchasesPerIt = 50 # set to 'None' to take all the purchases per date
-        startingIteration = 3000
-        endingIteration = 5000 # set to 'None' to have all iterations
+        nbPurchasesPerIt = 100 # set to 'None' to take all the purchases per date
+        startingIteration = 1000
+        endingIteration = None # set to 'None' to have all iterations
         stepSize = 30    
         
         return itertools.islice(BemolData.getGraphIterator(dataDir, nbUser, nbPurchasesPerIt), startingIteration, endingIteration, stepSize)

@@ -27,10 +27,10 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 #=========================================================================
 # Arguments related to the dataset
 dataArgs = argparse.Namespace()
-dataArgs.nbUser = 10000 # set to 'None' to have all users
-dataArgs.nbPurchasesPerIt = 50 # set to 'None' to take all the purchases
+dataArgs.nbUser = 20000 # set to 'None' to have all users
+dataArgs.nbPurchasesPerIt = 100 # set to 'None' to take all the purchases
                                       # per date
-dataArgs.startingIteration = 0
+dataArgs.startingIteration = 1000
 dataArgs.endingIteration = None # set to 'None' to have all iterations
 dataArgs.stepSize = 30 #This is the step in the number of weeks 
 
@@ -105,11 +105,9 @@ for key in keys:
 #=========================================================================
 #=========================================================================
 dataDir = PathDefaults.getDataDir() + "cluster/"
-maxComponents = 50 
 
 def getIterator():
     bemolIterator = BemolData.getGraphIterator(dataDir, dataArgs.nbUser, dataArgs.nbPurchasesPerIt)
-    bemolIterator = MaxComponentsIterator(bemolIterator, maxComponents)
     return itertools.islice(bemolIterator, dataArgs.startingIteration, dataArgs.endingIteration, dataArgs.stepSize)
 
 logging.info("Computing the number of iterations")
