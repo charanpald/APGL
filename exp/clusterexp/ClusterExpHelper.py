@@ -102,7 +102,7 @@ class ClusterExpHelper(object):
         for i in range(self.numGraphs):
             logging.debug("Iteration " + str(i) + " of " + str(self.numGraphs))
             W = next(iterator)
-            G = networkx.Graph(W)
+            #G = networkx.Graph(W)
             measures[i, 0] = GraphUtils.modularity(W, clusterList[i])
             measures[i, 1] = GraphUtils.kwayNormalisedCut(W, clusterList[i])
             # nb clust
@@ -110,7 +110,7 @@ class ClusterExpHelper(object):
             # graph size
             graphInfo[i, 0] = W.shape[0]
             # nb connected components
-            graphInfo[i, 1] = networkx.number_connected_components(G)
+            #graphInfo[i, 1] = networkx.number_connected_components(G)
            
         numpy.savez(fileName, measures, timeList, graphInfo)
         logging.debug("Saved file as " + fileName)
