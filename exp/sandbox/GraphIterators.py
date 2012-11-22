@@ -232,7 +232,9 @@ class MaxComponentsIterator(object):
     def __init__(self, graphIterator, maxComponents):
         """
         Takes a graph iterator and emit the 1st graph when the number of components 
-        exceeds the value minComponents. 
+        get smaller than the value maxComponents.
+        
+        Could also be obtained through "filter"
         """
         self.graphIterator = graphIterator
         self.maxComponents = maxComponents
@@ -243,15 +245,18 @@ class MaxComponentsIterator(object):
 
     def __next__(self):
         
-        if self.emit == False: 
-            for W in self.graphIterator: 
+        if self.emit == False:
+            # We need a "do while" loop here to manage situations where self.graphIterator is already exhausted
+            while True:
+                W = next(self.graphIterator)
                 graph = SparseGraph(W.shape[0], W=W)
                 numComponents = len(graph.findConnectedComponents())
-                print("graph size = " + str(graph.size) + " num components = " + str(numComponents))
+                if __debug__:
+                    logging.debug("graph size = " + str(graph.size) + " num components = " + str(numComponents))
                 
-                #if numComponents < self.maxComponents: 
-                #    self.emit = True 
-                #    break 
+                if numComponents < self.maxComponents: 
+#                    self.emit = True 
+                    break
         else:
             W = self.graphIterator.next()           
             
