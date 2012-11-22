@@ -16,17 +16,19 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 numpy.set_printoptions(suppress=True, linewidth=60, threshold=50000)
 
 resultsDir = PathDefaults.getOutputDir() + "cluster/"
+#resultsDir = PathDefaults.getOutputDir() + "cluster/cluster_mostrare/"
 
 plotHIV = False
-plotBemol = False
+plotBemol = True
 plotCitation = False
 
 BemolSubDir = "Bemol"
+BemolSubDir = "Bemol_nbU=1000_nbPurchPerIt=50_startIt=400_endIt=None_maxComponents=None"
 HIVSubDir = "HIV"
 CitationSubDir = "Citation"
 
 # uncomment data files to read (corresponding curve will be recomputed)
-increasingClustFileName = resultsDir + "IncreasingContrastClustErrors_pmax0.01"
+#increasingClustFileName = resultsDir + "IncreasingContrastClustErrors_pmax0.01"
 
 
 maxPoints = 100             # number of points (dot, square, ...) on curves
@@ -42,8 +44,8 @@ plotStyles3 = ['b.:', 'bx:', 'b+:', 'bo:', 'b*:', 'bs:']
 
 
 colourPlotStyles = ['k', 'r', 'g', 'b', 'y', 'm', 'c']
-linePlotStyles = ['-', '--', '-.', ':']
-pointPlotStyles = ['o', 'x', '+', '.']
+linePlotStyles = ['-', '--', '-.', ':', '-', '--', '-.', ':']
+pointPlotStyles = ['o', 'x', '+', '.', 'o', 'x', '+', '.']
 plotInd = 0
 
 class MyPlot:
@@ -63,6 +65,7 @@ class MyPlot:
         self.methodNames = ["IASC", "Exact", "Ning", "Nystrom"]
         self.labelNames = []
         self.plotStyles = []
+        self.plotLineWidths = []
        
     def plotOne(self, data, title, fileNameSuffix, numCol=None, minRow=0, maxRow=None, loc="lower right", xlogscale=False, ylogscale=False, samePlot=False):
         global plotInd
@@ -82,9 +85,9 @@ class MyPlot:
                 #             , list(itertools.islice(dataToPrint,0,None,data[i].size/maxPoints))
                 #             , plotStyles1[i])
                 if not samePlot: 
-                    plt.plot(self.iterations[i][minRow:maxRow], dataToPrint, self.plotStyles[i], label=self.labelNames[i])
+                    plt.plot(self.iterations[i][minRow:maxRow], dataToPrint, self.plotStyles[i], linewidth=self.plotLineWidths[i], label=self.labelNames[i])
                 else: 
-                    plt.plot(self.iterations[i][minRow:maxRow], dataToPrint, plotStyles1[0], label=self.labelNames[i])
+                    plt.plot(self.iterations[i][minRow:maxRow], dataToPrint, plotStyles1[0], linewidth=self.plotLineWidths[i], label=self.labelNames[i])
         plt.xlabel("Graph no.")
         plt.ylabel(title)
         if not samePlot: 
@@ -93,6 +96,7 @@ class MyPlot:
             plt.xscale('log')
         if ylogscale:
             plt.yscale('log')
+        plt.grid(True)
         fileName = resultsDir + self.subDirName + "/" + self.datasetName + fileNameSuffix + ".eps"
         logging.debug("Saved " + fileName)
         plt.savefig(fileName)
@@ -106,34 +110,47 @@ class MyPlot:
                 self.readFile(resultsFileName) 
                 self.labelNames.append("Exact")
                 self.plotStyles.append(colourPlotStyles[i] + linePlotStyles[0])
+                self.plotLineWidths.append(1)
             elif method == "IASC": 
                 for j, k2 in enumerate(self.k2s): 
                     resultsFileName = resultsDir + self.subDirName + "/" + self.datasetName + "ResultsIASC_k1=" + str(self.k1) + "_k2=" + str(k2) + "_T=" + str(self.T) + ".npz"
                     self.readFile(resultsFileName)
                     self.labelNames.append("IASC "+str(k2))
                     self.plotStyles.append(colourPlotStyles[i] + linePlotStyles[j])
+                    # When there is not enough line style, one uses different linewidths
+                    if len(self.k2s) > 4:
+                        self.plotLineWidths.append(1 + (1-j//4)*2)
+                    else:
+                        self.plotLineWidths.append(1)
             elif method == "Nystrom": 
                 for j, k3 in enumerate(self.k3s): 
                     resultsFileName = resultsDir + self.subDirName + "/" + self.datasetName + "ResultsNystrom_k1="+ str(self.k1) + "_k3=" + str(k3) + ".npz"
                     self.readFile(resultsFileName) 
                     self.labelNames.append("Nyst "+str(k3))
                     self.plotStyles.append(colourPlotStyles[i] + linePlotStyles[j])
+                    # When there is not enough line style, one uses different linewidths
+                    if len(self.k3s) > 4:
+                        self.plotLineWidths.append(1 + (1-j//4)*2)
+                    else:
+                        self.plotLineWidths.append(1)
             elif method == "Ning": 
                 resultsFileName = resultsDir + self.subDirName + "/" + self.datasetName + "ResultsNing_k1=" + str(self.k1) + "_T=" + str(self.T) + ".npz" 
                 self.readFile(resultsFileName) 
                 self.labelNames.append("Ning")
                 self.plotStyles.append(colourPlotStyles[i] + linePlotStyles[0])
+                self.plotLineWidths.append(1)
+                
 
     def readFile(self, resultsFileName): 
         try:
-            file = open(resultsFileName, 'r')
-            arrayDict = numpy.load(file)
-        except:
+            arrayDict = numpy.load(resultsFileName)
+        except Exception as e:
             self.measuresList.append(numpy.array([]))
             self.times.append([])
             self.iterations.append(numpy.array([]))
             self.graphInfosList.append([])
-            logging.warning(" file " + resultsFileName + " is empty")
+            logging.warning(" pb with file " + resultsFileName)
+            logging.warning(str(e))
         else:
             self.measuresList.append(arrayDict["arr_0"])
             self.times.append(arrayDict["arr_1"].cumsum(0))
@@ -150,7 +167,7 @@ class MyPlot:
         self.plotOne(self.graphInfosList, "Nb nodes", "graph_size", numCol=0, loc="lower right", samePlot=True)
         self.plotOne(self.graphInfosList, "Nb connected components", "ConnectedComponents", numCol=1, loc="upper right", samePlot=True)
         
-        print(numpy.c_[numpy.arange(self.times[1].shape[0]), self.times[1]])
+        print(numpy.c_[numpy.arange(len(self.times[1])), self.times[1]])
 
     def test(self):
         logging.warning(" test expect IASC being the first method and Exact the second one")
@@ -183,10 +200,10 @@ if plotHIV:
     m.plotAll()
 
 if plotBemol:
-    T = 20
-    k1 = 50
-    k2s = [50, 100, 200, 500]
-    k3s = [1000, 2000, 5000]      
+    T = 10
+    k1 = 30
+    k2s = [30, 60, 100, 200]
+    k3s = [30, 60, 100, 200, 400]
     
     m = MyPlot("", BemolSubDir, k1, k2s, k3s, T)
     m.readAll()
@@ -238,7 +255,7 @@ if 'increasingClustFileName' in locals():
     legend = []
     # IASC
     k2s = [9, 18, 72]
-    for (k2,i) in zip(k2s, range(len(k2s))):
+    for i, k2 in enumerate(k2s):
         plt.plot(iterations, resIncreasing[k2][:, numLevel+printedLevel], colourPlotStyles[0] + linePlotStyles[i])
         legend.append("IASC " + str(k2))
     
@@ -251,7 +268,7 @@ if 'increasingClustFileName' in locals():
     
     # Nystrom
     k2s = [9, 18, 72]
-    for (k2,i) in zip(k2s, range(len(k2s))):
+    for i, k2 in enumerate(k2s):
         plt.plot(iterations, resIncreasing[k2][:, numLevel*3+printedLevel], colourPlotStyles[3] + linePlotStyles[i])
         legend.append("Nystrom " + str(k2))
 
