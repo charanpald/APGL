@@ -34,29 +34,39 @@ class ClusterExpHelper(object):
     defaultAlgoArgs.computeBound = False
 
     @staticmethod
-    def newDefaultAlgoArgs(defaultAlgoArgs=None):
-        defaultAlgoArgs_ = copy(ClusterExpHelper.defaultAlgoArgs)
-        if defaultAlgoArgs:
-            for key, val in vars(defaultAlgoArgs).items():
-                defaultAlgoArgs_.__setattr__(key, val) 
-        
-        return(defaultAlgoArgs_)
+    # update parameters with those from the user
+    def updateParams(params, update=None):
+        if update:
+            for key, val in vars(update).items():
+                params.__setattr__(key, val) 
+    
+    @staticmethod
+    # merge default algoParameters from the class with those from the user
+    def newAlgoParams(algoArgs=None):
+        algoArgs_ = copy(ClusterExpHelper.defaultAlgoArgs)
+        ClusterExpHelper.updateParams(algoArgs_, algoArgs)
+        return(algoArgs_)
     
     @staticmethod
     def newAlgoParser(defaultAlgoArgs=None, add_help=False):
         # default algorithm args
-        defaultAlgoArgs = ClusterExpHelper.newDefaultAlgoArgs(defaultAlgoArgs)
+        defaultAlgoArgs = ClusterExpHelper.newAlgoParams(defaultAlgoArgs)
         
         # define parser
         algoParser = argparse.ArgumentParser(description="", add_help=add_help)
         for method in ["runIASC", "runExact", "runModularity", "runNystrom", "runNing"]:
             algoParser.add_argument("--" + method, action="store_true", default=defaultAlgoArgs.__getattribute__(method))
-        
+        algoParser.add_argument("--k1", type=int, help="Number of clusters to construct at each iteration (default: %(default)s)", default=defaultAlgoArgs.k1)
+        algoParser.add_argument("--k2s", nargs="+", type=int, help="Rank of the approximated laplacian matrix (default: %(default)s)", default=defaultAlgoArgs.k2s)
+        algoParser.add_argument("--k3s", nargs="+", type=int, help="Number of rows/columns used by the Nystrom approach (default: %(default)s)", default=defaultAlgoArgs.k3s)
+        algoParser.add_argument("--T", type=int, help="The exact decomposition is recomputed any T-th iteration (default: %(default)s)", default=defaultAlgoArgs.T)
+
         return(algoParser)
     
     def __init__(self, iteratorFunc, numGraphs, cmdLine=None, defaultAlgoArgs = None, dirName=""):
-        # Default values for variables to choose which methods to run
-        self.algoArgs = copy(self.__class__.defaultAlgoArgs)
+        # Parameters to choose which methods to run
+        # Obtained merging default parameters from the class with those from the user
+        self.algoArgs = ClusterExpHelper.newAlgoParams(defaultAlgoArgs)
         
         # Variables related to the dataset
         self.getIteratorFunc = iteratorFunc
@@ -65,14 +75,15 @@ class ClusterExpHelper(object):
         # basic resultsDir
         self.resultsDir = PathDefaults.getOutputDir() + "cluster/" + dirName + "/"
 
-        # read params from command line
-        self.readAlgoParams(cmdLine, defaultAlgoArgs)
+        # update algoParams from command line
+        self.readAlgoParams(cmdLine)
 
+    # update current algoArgs with values from user and then from command line
     def readAlgoParams(self, cmdLine=None, defaultAlgoArgs=None):
-        # update current algorithm args
-        self.algoArgs = self.__class__.newDefaultAlgoArgs(self.algoArgs)
+        # update current algoArgs with values from the user
+        self.__class__.updateParams(defaultAlgoArgs)
         
-        # define parser
+        # define parser, current values of algoArgs are used as default
         algoParser = self.__class__.newAlgoParser(self.algoArgs, True)
 
         # parse
