@@ -60,11 +60,11 @@ class IterativeSpectralClustering(object):
         """
         Take an array of clusters and find the centroids using V.
         """
-        k = numpy.unique(clusters).shape[0]
-        centroids = numpy.zeros((k, V.shape[1]))
-
-        for i in range(k):
-            centroids[i, :] = numpy.mean(V[clusters==i, :], 0)
+        labels = numpy.unique(clusters)
+        centroids = numpy.zeros((labels.shape[0], V.shape[1]))
+        
+        for i, lbl in enumerate(labels):
+            centroids[i, :] = numpy.mean(V[clusters==lbl, :], 0)
             
         return centroids 
 
