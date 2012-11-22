@@ -9,7 +9,7 @@ logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 class GraphStatisticsProfile:
     def __init__(self):
-        numVertices = 1000
+        numVertices = 5000
         numFeatures = 0
         vList = VertexList(numVertices, numFeatures)
         graph = SparseGraph(vList)
@@ -21,11 +21,11 @@ class GraphStatisticsProfile:
         self.statistics = GraphStatistics()
 
     def profileScalarStatistics(self):
-        ProfileUtils.profile('self.statistics.scalarStatistics(self.graph)', globals(), locals())
+        ProfileUtils.profile('self.statistics.scalarStatistics(self.graph, slowStats=False)', globals(), locals())
 
     def profileVectorStatistics(self):
         ProfileUtils.profile('self.statistics.vectorStatistics(self.graph)', globals(), locals())
 
 profiler = GraphStatisticsProfile()
-#profiler.profileScalarStatistics()
-profiler.profileVectorStatistics()
+profiler.profileScalarStatistics()
+#profiler.profileVectorStatistics()

@@ -2327,3 +2327,19 @@ class MatrixGraphTest():
         
         for i in range(numVertices): 
             nptst.assert_array_equal(graph.getVertex(i), newGraph.getVertex(i))
+            
+    def testToDictGraph(self): 
+        dictGraph = self.graph.toDictGraph() 
+        
+        edges = self.graph.getAllEdges()
+            
+        for i in range(edges.shape[0]): 
+            self.assertEquals(dictGraph[edges[i, 0], edges[i, 1]], self.graph[edges[i, 0], edges[i, 1]])
+        
+        dictGraph2 = self.graph2.toDictGraph() 
+        
+        edges2 = self.graph2.getAllEdges()
+            
+        for i in range(edges2.shape[0]): 
+            self.assertEquals(dictGraph2[edges2[i, 0], edges2[i, 1]], self.graph[edges2[i, 0], edges2[i, 1]])
+        

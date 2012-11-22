@@ -14,6 +14,7 @@ from apgl.util.Parameter import Parameter
 from apgl.graph.AbstractSingleGraph import AbstractSingleGraph
 from apgl.graph.VertexList import VertexList
 from apgl.graph.GeneralVertexList import GeneralVertexList
+from apgl.graph.DictGraph import DictGraph
 
 class AbstractMatrixGraph(AbstractSingleGraph):
     """
@@ -1322,6 +1323,19 @@ class AbstractMatrixGraph(AbstractSingleGraph):
         
         os.remove(tempFile.name)
         os.remove(outFile.name)
+
+    def toDictGraph(self): 
+        """
+        Convert to a DictGraph object. Currently ignores vertex labels.
+        
+        :return graph: A DictGraph object.
+        """
+        edges = self.getAllEdges() 
+        values = self.getEdgeValues(edges)
+        graph = DictGraph(self.undirected)
+        graph.addEdges(edges, values)
+        
+        return graph 
 
     vList = None
     undirected = None
