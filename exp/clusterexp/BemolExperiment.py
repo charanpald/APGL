@@ -44,11 +44,11 @@ defaultAlgoArgs = argparse.Namespace()
 #defaultAlgoArgs.runNystrom = True
 #defaultAlgoArgs.runNing = True
 
-defaultAlgoArgs.k1 = 30
-defaultAlgoArgs.k2s = [30, 60, 100, 200]
-defaultAlgoArgs.k3s = [30, 60, 100, 200, 400]
+defaultAlgoArgs.k1 = 100
+defaultAlgoArgs.k2s = [100, 200, 500]
+defaultAlgoArgs.k3s = [500, 1000, 2000, 5000]
 
-defaultAlgoArgs.T = 10 
+defaultAlgoArgs.T = 20 
 
 #=========================================================================
 #=========================================================================
@@ -86,8 +86,8 @@ if dataArgs.help:
     helpParser.print_help()
     exit()
 
-dataArgs.extendedDirName = "Bemol/"
-#dataArgs.extendedDirName = "Bemol_nbU=" + str(dataArgs.nbUser) + "_nbPurchPerIt=" + str(dataArgs.nbPurchasesPerIt) + "_startIt=" + str(dataArgs.startingIteration) + "_endIt=" + str(dataArgs.endingIteration) + "_maxComponents=" + str(dataArgs.maxComponents) + "/"
+#dataArgs.extendedDirName = "Bemol/"
+dataArgs.extendedDirName = "Bemol_nbU=" + str(dataArgs.nbUser) + "_nbPurchPerIt=" + str(dataArgs.nbPurchasesPerIt) + "_startIt=" + str(dataArgs.startingIteration) + "_endIt=" + str(dataArgs.endingIteration) + "_maxComponents=" + str(dataArgs.maxComponents) + "/"
 
 # seed #
 numpy.random.seed(21)
