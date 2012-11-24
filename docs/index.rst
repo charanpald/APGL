@@ -46,7 +46,7 @@ If installing from source unzip the apgl-x.y.z.tar.gz file and then run setup.py
 
 	python setup.py install 
 
-In order to test the library (recommended), using the following commands in python 
+In order to test the library (recommended), use the following commands in python 
 
 ::
 
