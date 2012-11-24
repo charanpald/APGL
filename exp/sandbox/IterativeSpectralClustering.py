@@ -20,7 +20,7 @@ from apgl.util.VqUtils import VqUtils
 from apgl.util.Util import Util
 
 class IterativeSpectralClustering(object):
-    def __init__(self, k1, k2=20, k3=100, alg="exact", T=10, computeBound=False):
+    def __init__(self, k1, k2=20, k3=100, alg="exact", T=10, computeBound=False, logStep=1):
         """
         Intialise this object with integer k1 which is the number of clusters to
         find, and k2 which is the maximum rank of the approximation of the shift
@@ -55,6 +55,7 @@ class IterativeSpectralClustering(object):
         self.nb_iter_kmeans = 100
         self.alg = alg
         self.computeBound = computeBound 
+        self.logStep = logStep
 
     def findCentroids(self, V, clusters):
         """
@@ -68,7 +69,7 @@ class IterativeSpectralClustering(object):
             
         return centroids 
 
-    def clusterFromIterator(self, graphListIterator, verbose=False, TLogging=None):
+    def clusterFromIterator(self, graphListIterator, verbose=False):
         """
         Find a set of clusters for the graphs given by the iterator. If verbose 
         is true the each iteration is timed and bounded the results are returned 
@@ -87,7 +88,7 @@ class IterativeSpectralClustering(object):
             if __debug__:
                 Parameter.checkSymmetric(subW)
 
-            if TLogging and i % TLogging == 0:
+            if self.logStep and i % self.logStep == 0:
                 logging.debug("Graph index: " + str(i))
             logging.debug("Clustering graph of size " + str(subW.shape))
             ABBA = GraphUtils.shiftLaplacian(subW)
