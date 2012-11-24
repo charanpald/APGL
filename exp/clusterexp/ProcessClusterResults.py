@@ -18,8 +18,8 @@ numpy.set_printoptions(suppress=True, linewidth=60, threshold=50000)
 resultsDir = PathDefaults.getOutputDir() + "cluster/"
 #resultsDir = PathDefaults.getOutputDir() + "cluster/cluster_mostrare/"
 
-plotHIV = False
-plotBemol = True
+plotHIV = True
+plotBemol = False
 plotCitation = False
 
 BemolSubDir = "Bemol"
@@ -164,10 +164,10 @@ class MyPlot:
 #        self.plotOne(self.measuresList, "k-way normalised cut", "KWayNormCut_zoom", numCol=1, maxRow=400, loc="upper right")
         self.plotOne(self.times, "Cumulative computation time (s)", "Time", numCol=0, loc="upper left")
         self.plotOne(self.times, "Cumulative computation time (s)", "Time-log", numCol=0, loc="upper left", xlogscale=False, ylogscale=True)
-        self.plotOne(self.graphInfosList, "Nb nodes", "graph_size", numCol=0, loc="lower right", samePlot=True)
-        self.plotOne(self.graphInfosList, "Nb connected components", "ConnectedComponents", numCol=1, loc="upper right", samePlot=True)
+        #self.plotOne(self.graphInfosList, "Nb nodes", "graph_size", numCol=0, loc="lower right", samePlot=True)
+        #self.plotOne(self.graphInfosList, "Nb connected components", "ConnectedComponents", numCol=1, loc="upper right", samePlot=True)
         
-        print(numpy.c_[numpy.arange(len(self.times[1])), self.times[1]])
+        #print(numpy.c_[numpy.arange(len(self.times[1])), self.times[1]])
 
     def test(self):
         logging.warning(" test expect IASC being the first method and Exact the second one")
