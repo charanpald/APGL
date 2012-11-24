@@ -117,14 +117,14 @@ def getIterator():
         bemolIterator = MaxComponentsIterator(bemolIterator, dataArgs.maxComponents)
     return itertools.islice(bemolIterator, dataArgs.startingIteration, dataArgs.endingIteration, dataArgs.stepSize)
 
-logging.info("Computing the number of iterations")
-numGraphs = 0
-for W in getIterator():
-    numGraphs += 1
+#logging.info("Computing the number of iterations")
+#numGraphs = 0
+#for W in getIterator():
+#    numGraphs += 1
 #    logging.info(str(numGraphs) + "\t" + str(W.shape))
 #    if __debug__:
 #        Parameter.checkSymmetric(W)
-logging.info("Number of iterations: " + str(numGraphs))
+#logging.info("Number of iterations: " + str(numGraphs))
 
 
 #=========================================================================
@@ -134,7 +134,7 @@ logging.info("Number of iterations: " + str(numGraphs))
 #=========================================================================
 
 logging.info("Creating the exp-runner")
-clusterExpHelper = ClusterExpHelper(getIterator, numGraphs, remainingArgs, defaultAlgoArgs, dataArgs.extendedDirName)
+clusterExpHelper = ClusterExpHelper(getIterator, remainingArgs, defaultAlgoArgs, dataArgs.extendedDirName)
 clusterExpHelper.printAlgoArgs()
 
 #    os.makedirs(resultsDir, exist_ok=True) # for python 3.2

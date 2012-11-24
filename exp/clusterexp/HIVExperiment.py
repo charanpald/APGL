@@ -85,7 +85,7 @@ logging.info("Total graphs in sequence: " + str(numGraphs))
 #=========================================================================
 #=========================================================================
 logging.info("Creating the exp-runner")
-clusterExpHelper = ClusterExpHelper(generator.getIterator, numGraphs, remainingArgs, defaultAlgoArgs, dataArgs.extendedDirName)
+clusterExpHelper = ClusterExpHelper(generator.getIterator, remainingArgs, defaultAlgoArgs, dataArgs.extendedDirName)
 clusterExpHelper.algoArgs.k1 = 25
 clusterExpHelper.algoArgs.k2s = [25, 50, 100, 200]
 clusterExpHelper.algoArgs.k3s = [100, 200, 500, 1000, 1500]

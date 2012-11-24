@@ -12,6 +12,7 @@ from exp.sandbox.IterativeModularityClustering import IterativeModularityCluster
 from exp.sandbox.GraphIterators import toDenseGraphListIterator
 import networkx
 import argparse
+from apgl.util import Util
 
 class ClusterExpHelper(object):
     # priority for default args
@@ -63,14 +64,16 @@ class ClusterExpHelper(object):
 
         return(algoParser)
     
-    def __init__(self, iteratorFunc, numGraphs, cmdLine=None, defaultAlgoArgs = None, dirName=""):
+    def __init__(self, iteratorFunc, cmdLine=None, defaultAlgoArgs = None, dirName=""):
         # Parameters to choose which methods to run
         # Obtained merging default parameters from the class with those from the user
         self.algoArgs = ClusterExpHelper.newAlgoParams(defaultAlgoArgs)
         
         # Variables related to the dataset
         self.getIteratorFunc = iteratorFunc
-        self.numGraphs = numGraphs
+        
+        #How often to print output 
+        self.logStep = 10
 
         # basic resultsDir
         self.resultsDir = PathDefaults.getOutputDir() + "cluster/" + dirName + "/"
@@ -104,25 +107,27 @@ class ClusterExpHelper(object):
         Save results for a particular clustering
         """
         iterator = self.getIterator()
-        numMeasures = 3
-        measures = numpy.zeros((self.numGraphs, numMeasures))
-        numGraphInfo = 2
-        graphInfo =  numpy.zeros((self.numGraphs, numGraphInfo))
+        measures = []
+        graphInfo =  []
         logging.debug("Computing cluster measures")
 
-        for i in range(self.numGraphs):
-            logging.debug("Iteration " + str(i) + " of " + str(self.numGraphs))
+        for i in range(len(clusterList)):
+            Util.printIteration(i, self.logStep, len(clusterList))
             W = next(iterator)
             #G = networkx.Graph(W)
-            measures[i, 0] = GraphUtils.modularity(W, clusterList[i])
-            measures[i, 1] = GraphUtils.kwayNormalisedCut(W, clusterList[i])
-            # nb clust
-            measures[i, 2] = len(numpy.unique(clusterList[i]))
+            #Store modularity, k-way normalised cut, and cluster size 
+            currentMeasures = [GraphUtils.modularity(W, clusterList[i]), GraphUtils.kwayNormalisedCut(W, clusterList[i]), len(numpy.unique(clusterList[i]))] 
+            measures.append(currentMeasures) 
+
             # graph size
-            graphInfo[i, 0] = W.shape[0]
+            currentGraphInfo = [W.shape[0]]
+            graphInfo.append(currentGraphInfo)
             # nb connected components
             #graphInfo[i, 1] = networkx.number_connected_components(G)
-           
+        
+        measures = numpy.array(measures)
+        graphInfo = numpy.array(graphInfo)
+        
         numpy.savez(fileName, measures, timeList, graphInfo)
         logging.debug("Saved file as " + fileName)
 
@@ -130,28 +135,27 @@ class ClusterExpHelper(object):
         """
         Run the selected clustering experiments and save results
         """
-        TLogging = max(self.numGraphs // 100, 1)
         
         if self.algoArgs.runIASC:
             logging.debug("Running approximate method")
             
             for k2 in self.algoArgs.k2s: 
                 logging.debug("k2=" + str(k2))
-                clusterer = IterativeSpectralClustering(self.algoArgs.k1, k2=k2, T=self.algoArgs.T, alg="IASC")
+                clusterer = IterativeSpectralClustering(self.algoArgs.k1, k2=k2, T=self.algoArgs.T, alg="IASC", logStep=self.logStep)
                 clusterer.nb_iter_kmeans = 20
                 clusterer.computeBound = self.algoArgs.computeBound
                 iterator = self.getIterator()
-                clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, verbose=True, TLogging=TLogging)
+                clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, verbose=True)
     
                 resultsFileName = self.resultsDir + "ResultsIASC_k1=" + str(self.algoArgs.k1) + "_k2=" + str(k2) + "_T=" + str(self.algoArgs.T) + ".npz"
                 self.recordResults(clusterList, timeList, resultsFileName)
 
         if self.algoArgs.runExact:
             logging.debug("Running exact method")
-            clusterer = IterativeSpectralClustering(self.algoArgs.k1, alg="exact")
+            clusterer = IterativeSpectralClustering(self.algoArgs.k1, alg="exact", logStep=self.logStep)
             clusterer.nb_iter_kmeans = 20
             iterator = self.getIterator()
-            clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, verbose=True, TLogging=TLogging)
+            clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, verbose=True)
 
             resultsFileName = self.resultsDir + "ResultsExact_k1=" + str(self.algoArgs.k1) + ".npz"
             self.recordResults(clusterList, timeList, resultsFileName)
@@ -161,11 +165,11 @@ class ClusterExpHelper(object):
             
             for k3 in self.algoArgs.k3s: 
                 logging.debug("k3=" + str(k3))
-                clusterer = IterativeSpectralClustering(self.algoArgs.k1, k3=k3, alg="nystrom")
+                clusterer = IterativeSpectralClustering(self.algoArgs.k1, k3=k3, alg="nystrom", logStep=self.logStep)
                 clusterer.nb_iter_kmeans = 20
                 clusterer.computeBound = self.algoArgs.computeBound
                 iterator = self.getIterator()
-                clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, verbose=True, TLogging=TLogging)
+                clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, verbose=True)
     
                 resultsFileName = self.resultsDir + "ResultsNystrom_k1="+ str(self.algoArgs.k1) + "_k3=" + str(k3) + ".npz"
                 self.recordResults(clusterList, timeList, resultsFileName)
