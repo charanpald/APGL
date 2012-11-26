@@ -6,6 +6,7 @@ import numpy.testing as nptst
 import sys 
 import logging
 import scipy.sparse 
+from apgl.graph import GraphUtils 
 
 class ClusterBoundTest(unittest.TestCase):
     def setUp(self):
@@ -15,21 +16,61 @@ class ClusterBoundTest(unittest.TestCase):
 
     def testEigWeight(self):
         tol = 10**-3
-
-        W = numpy.random.rand(10, 10)
+        
+        n = 100
+        W = numpy.random.rand(n, n)
         W = W.dot(W.T)
         w, U = numpy.linalg.eig(W)
         
         W = scipy.sparse.csr_matrix(W)
         
-        k = 3 
+        k = 4 
         m = 5 
         lmbda, V = EfficientNystrom.eigWeight(W, m, k)
-        WHat = V.dot(numpy.diag(lmbda)).dot(V.T)
+        
+
+        MHat = V.dot(numpy.diag(lmbda)).dot(V.T)
+        
+        I = scipy.sparse.eye(n, n)
+        L = GraphUtils.normalisedLaplacianSym(W) 
+        M = I - L 
         
         #print(V)
-        print(lmbda.shape)
-        #self.assertTrue(numpy.linalg.norm(W - WHat) < tol)        
+        numpy.linalg.norm(M.todense() - MHat)
+        #print(numpy.linalg.norm(M.todense()))
+        #self.assertTrue(numpy.linalg.norm(W - WHat) < tol)
+        
+        #For fixed k, increasing m should improve approximation but not always 
+        lastError = 10        
+        
+        for m in range(k+1, n+1, 10): 
+            lmbda, V = EfficientNystrom.eigWeight(W, m, k)
+            #print(V)
+            MHat = V.dot(numpy.diag(lmbda)).dot(V.T)
+        
+            
+            error = numpy.linalg.norm(M.todense() - MHat)
+            
+            self.assertTrue(error <= lastError)
+            lastError = error 
+
+    def testOrthogonalise(self): 
+        n = 20
+        k = 10
+        U = numpy.random.rand(n, k)
+        lmbda = numpy.random.rand(k)
+        
+        lmbdaTilde, UTilde = EfficientNystrom.orthogonalise(lmbda, U)
+        
+        A = (U*lmbda).dot(U.T)
+        A2 = (UTilde*lmbdaTilde).dot(UTilde.T)
+        
+        tol = 10**-6 
+        self.assertTrue(numpy.linalg.norm(A - A2) < tol) 
+        
+        self.assertTrue(numpy.linalg.norm(UTilde.T.dot(UTilde) - numpy.eye(k)) < tol) 
+        
+        print(lmbdaTilde)
 
 if __name__ == '__main__':
     unittest.main()
