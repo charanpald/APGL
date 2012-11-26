@@ -27,12 +27,12 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 #=========================================================================
 # Arguments related to the dataset
 dataArgs = argparse.Namespace()
-dataArgs.nbUser = 20000 # set to 'None' to have all users
+dataArgs.nbUser = 10000 # set to 'None' to have all users
 dataArgs.nbPurchasesPerIt = 100 # set to 'None' to take all the purchases
                                       # per date
-dataArgs.startingIteration = 1000
-dataArgs.endingIteration = None # set to 'None' to have all iterations
-dataArgs.stepSize = 30 #This is the step in the number of weeks 
+dataArgs.startingIteration = 3700
+dataArgs.endingIteration = 3800 # set to 'None' to have all iterations
+dataArgs.stepSize = 1 #This is the step in the number of weeks 
 dataArgs.maxComponents = None
 
 # Arguments related to the algorithm
