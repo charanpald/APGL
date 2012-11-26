@@ -18,6 +18,7 @@ from apgl.util.Parameter import Parameter
 from apgl.util.ProfileUtils import ProfileUtils
 from apgl.util.VqUtils import VqUtils
 from apgl.util.Util import Util
+from exp.sandbox.EfficientNystrom import EfficientNystrom
 
 class IterativeSpectralClustering(object):
     def __init__(self, k1, k2=20, k3=100, alg="exact", T=10, computeBound=False, logStep=1):
@@ -33,7 +34,7 @@ class IterativeSpectralClustering(object):
         
         :param k3: The number of columns to sample for Nystrom approximation 
         
-        :param alg: The algorithm to use: "exact", "IASC", or "nystrom" clustering
+        :param alg: The algorithm to use: "exact", "IASC", "nystrom" or "efficientNystrom" clustering
         
         :param T: The number of iterations before eigenvectors are recomputed in IASC 
         """
@@ -42,7 +43,7 @@ class IterativeSpectralClustering(object):
         Parameter.checkInt(k3, 1, float('inf'))
         Parameter.checkInt(T, 1, float('inf'))
         
-        if alg not in ["exact", "IASC", "nystrom"]: 
+        if alg not in ["exact", "IASC", "nystrom", "efficientNystrom"]: 
             raise ValueError("Invalid algorithm : " + str(alg))
 
         self.k1 = k1
@@ -91,7 +92,8 @@ class IterativeSpectralClustering(object):
             if self.logStep and i % self.logStep == 0:
                 logging.debug("Graph index: " + str(i))
             logging.debug("Clustering graph of size " + str(subW.shape))
-            ABBA = GraphUtils.shiftLaplacian(subW)
+            if self.alg!="efficientNystrom": 
+                ABBA = GraphUtils.shiftLaplacian(subW)
 
             # --- Eigen value decomposition ---
             startTime = time.time()
@@ -133,6 +135,8 @@ class IterativeSpectralClustering(object):
                 omega, Q = Nystrom.eigpsd(ABBA, self.k3)
             elif self.alg=="exact": 
                 omega, Q = scipy.sparse.linalg.eigsh(ABBA, min(self.k1, ABBA.shape[0]-1), which="LM", ncv = min(15*self.k1, ABBA.shape[0]))
+            elif self.alg == "efficientNystrom":
+                omega, Q = EfficientNystrom.eigWeight(subW, self.k3, self.k1)
             else:
                 raise ValueError("Invalid Algorithm: " + str(self.alg))
 

@@ -23,6 +23,7 @@ class ClusterExpHelper(object):
     defaultAlgoArgs.runIASC = False
     defaultAlgoArgs.runExact = False
     defaultAlgoArgs.runNystrom = False
+    defaultAlgoArgs.runEfficientNystrom = False
     defaultAlgoArgs.runNing = False
     defaultAlgoArgs.runModularity = False
 
@@ -55,7 +56,7 @@ class ClusterExpHelper(object):
         
         # define parser
         algoParser = argparse.ArgumentParser(description="", add_help=add_help)
-        for method in ["runIASC", "runExact", "runModularity", "runNystrom", "runNing"]:
+        for method in ["runIASC", "runExact", "runModularity", "runNystrom", "runEfficientNystrom", "runNing"]:
             algoParser.add_argument("--" + method, action="store_true", default=defaultAlgoArgs.__getattribute__(method))
         algoParser.add_argument("--k1", type=int, help="Number of clusters to construct at each iteration (default: %(default)s)", default=defaultAlgoArgs.k1)
         algoParser.add_argument("--k2s", nargs="+", type=int, help="Rank of the approximated laplacian matrix (default: %(default)s)", default=defaultAlgoArgs.k2s)
@@ -161,7 +162,7 @@ class ClusterExpHelper(object):
             self.recordResults(clusterList, timeList, resultsFileName)
 
         if self.algoArgs.runNystrom:
-            logging.debug("Running nystrom method")
+            logging.debug("Running Nystrom method")
             
             for k3 in self.algoArgs.k3s: 
                 logging.debug("k3=" + str(k3))
@@ -172,6 +173,20 @@ class ClusterExpHelper(object):
                 clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, verbose=True)
     
                 resultsFileName = self.resultsDir + "ResultsNystrom_k1="+ str(self.algoArgs.k1) + "_k3=" + str(k3) + ".npz"
+                self.recordResults(clusterList, timeList, resultsFileName)
+                
+        if self.algoArgs.runEfficientNystrom:
+            logging.debug("Running efficient Nystrom method")
+            
+            for k3 in self.algoArgs.k3s: 
+                logging.debug("k3=" + str(k3))
+                clusterer = IterativeSpectralClustering(self.algoArgs.k1, k3=k3, alg="efficientNystrom", logStep=self.logStep)
+                clusterer.nb_iter_kmeans = 20
+                clusterer.computeBound = self.algoArgs.computeBound
+                iterator = self.getIterator()
+                clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, verbose=True)
+    
+                resultsFileName = self.resultsDir + "ResultsEfficientNystrom_k1="+ str(self.algoArgs.k1) + "_k3=" + str(k3) + ".npz"
                 self.recordResults(clusterList, timeList, resultsFileName)
 
         if self.algoArgs.runModularity: 

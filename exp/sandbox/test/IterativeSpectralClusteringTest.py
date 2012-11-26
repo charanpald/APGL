@@ -46,7 +46,13 @@ class IterativeSpectralClusteringTest(unittest.TestCase):
         clustersList = clusterer.clusterFromIterator(graphIterator)
 
         #Now test the Nystrom method
-        clusterer = IterativeSpectralClustering(k1, k2, alg="nystrom")
+        graphIterator = IncreasingSubgraphListIterator(graph, subgraphIndicesList)
+        clusterer = IterativeSpectralClustering(k1, alg="nystrom")
+        clustersList = clusterer.clusterFromIterator(graphIterator)
+        
+        #Test efficient Nystrom method 
+        graphIterator = IncreasingSubgraphListIterator(graph, subgraphIndicesList)
+        clusterer = IterativeSpectralClustering(k1, alg="efficientNystrom")
         clustersList = clusterer.clusterFromIterator(graphIterator)
 
     def testClusterOnIncreasingGraphs(self):
@@ -182,6 +188,20 @@ class IterativeSpectralClusteringTest(unittest.TestCase):
 
         tol = 10**-6
         self.assertTrue(numpy.linalg.norm(centroids - centroids2) < tol)
+
+    def testEfficientNystrom(self): 
+        numVertices = 50
+        graph = SparseGraph(GeneralVertexList(numVertices))
+
+        ell = 2 
+        m = 2 
+        generator = BarabasiAlbertGenerator(ell, m)
+        graph = generator.generate(graph)
+
+        indices = numpy.random.permutation(numVertices)
+        subgraphIndicesList = [indices[0:5], indices]
+
+        graphIterator = IncreasingSubgraphListIterator(graph, subgraphIndicesList)
 
 if __name__ == '__main__':
 #    increasingSubgraphListIteratorTestCase = IterativeSpectralClusteringTest('testIncreasingSubgraphListIterator')
