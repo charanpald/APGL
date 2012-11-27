@@ -70,7 +70,7 @@ class ClusterBoundTest(unittest.TestCase):
         
         self.assertTrue(numpy.linalg.norm(UTilde.T.dot(UTilde) - numpy.eye(k)) < tol) 
         
-        print(lmbdaTilde)
+        #print(lmbdaTilde)
 
 if __name__ == '__main__':
     unittest.main()
