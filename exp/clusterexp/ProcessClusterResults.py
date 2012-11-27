@@ -18,17 +18,17 @@ numpy.set_printoptions(suppress=True, linewidth=60, threshold=50000)
 resultsDir = PathDefaults.getOutputDir() + "cluster/"
 #resultsDir = PathDefaults.getOutputDir() + "cluster/cluster_mostrare/"
 
-plotHIV = True
+plotHIV = False
 plotBemol = False
 plotCitation = False
 
 BemolSubDir = "Bemol"
-BemolSubDir = "Bemol_nbU=1000_nbPurchPerIt=50_startIt=400_endIt=None_maxComponents=None"
+BemolSubDir = "Bemol_nbU=10000_nbPurchPerIt=100_startIt=3700_endIt=3800_maxComponents=None"
 HIVSubDir = "HIV"
 CitationSubDir = "Citation"
 
 # uncomment data files to read (corresponding curve will be recomputed)
-#increasingClustFileName = resultsDir + "IncreasingContrastClustErrors_pmax0.01"
+increasingClustFileName = resultsDir + "IncreasingContrastClustErrors_pmax0.01"
 
 
 maxPoints = 100             # number of points (dot, square, ...) on curves
@@ -156,7 +156,7 @@ class MyPlot:
             self.times.append(arrayDict["arr_1"].cumsum(0))
             self.graphInfosList.append(arrayDict["arr_2"])
             self.iterations.append(numpy.arange(startingIteration, startingIteration+arrayDict["arr_0"].shape[0]))
-            logging.debug("Loaded file " + resultsFileName)
+            logging.debug("Loaded " + resultsFileName)
 
     def plotAll(self):
         self.plotOne(self.measuresList, "Modularity", "Modularities", numCol=0, loc="upper right")
@@ -167,7 +167,7 @@ class MyPlot:
         #self.plotOne(self.graphInfosList, "Nb nodes", "graph_size", numCol=0, loc="lower right", samePlot=True)
         #self.plotOne(self.graphInfosList, "Nb connected components", "ConnectedComponents", numCol=1, loc="upper right", samePlot=True)
         
-        #print(numpy.c_[numpy.arange(len(self.times[1])), self.times[1]])
+        #print(numpy.c_[numpy.arange(len(self.times[3])), self.times[3]])
 
     def test(self):
         logging.warning(" test expect IASC being the first method and Exact the second one")
@@ -200,10 +200,10 @@ if plotHIV:
     m.plotAll()
 
 if plotBemol:
-    T = 10
-    k1 = 30
-    k2s = [30, 60, 100, 200]
-    k3s = [30, 60, 100, 200, 400]
+    T = 20
+    k1 = 100
+    k2s = [100, 200, 500]
+    k3s = [1000, 2000, 5000]
     
     m = MyPlot("", BemolSubDir, k1, k2s, k3s, T)
     m.readAll()
@@ -274,6 +274,7 @@ if 'increasingClustFileName' in locals():
 
 
     plt.xlim(2, 22)
+    plt.grid(True)
     plt.xlabel("Graph no.")
     plt.ylabel("Rand Index")
     plt.legend(legend)
