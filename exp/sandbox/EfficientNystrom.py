@@ -51,6 +51,10 @@ class EfficientNystrom(object):
         
         Q = W[:, inds].dot(B)
         dHat = numpy.array((Q.dot(Lmbda).dot(Q.sum(0).transpose()))).ravel()
+        #Note that W[:, inds] may have all zero rows (even when full W doesn't) and hence
+        #Q can have zero columns meaning dHat can have zero elements and DHat is no longer valid. 
+        #There is no answer to this in the paper 
+        
         DHat = scipy.sparse.spdiags(dHat**-0.5, 0, dHat.shape[0], dHat.shape[0], format='csr')
                 
         U = DHat.dot(Q)
