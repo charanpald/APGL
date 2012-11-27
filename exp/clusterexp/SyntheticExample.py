@@ -228,6 +228,7 @@ else:
             plt.figure(i_p)
             plt.plot(iterations, res[i_p, :], plotStyles[i_res], label=names[i_res])
             plt.ylim(0.33, 0.44)
+            plt.grid(True)
             plt.xlabel("Graph no.")
             plt.ylabel("Rand Index")
             plt.legend(loc="upper left")
