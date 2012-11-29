@@ -22,7 +22,7 @@ plotHIV = False
 plotCitation = False
 plotBemol = True 
 
-saveResults = True 
+saveResults = False 
 findEigs = False
 
 if plotHIV: 
@@ -35,7 +35,7 @@ if plotHIV:
 if plotCitation: 
     
     def getIterator(): 
-        maxGraphSize = 3000 
+        maxGraphSize = None 
         generator = CitationIterGenerator(maxGraphSize=maxGraphSize)
         return generator.getIterator()
     
@@ -44,19 +44,19 @@ if plotBemol:
     def getIterator(): 
         dataDir = PathDefaults.getDataDir() + "cluster/"
         
-        nbUser = 20000 # set to 'None' to have all users
-        nbPurchasesPerIt = 100 # set to 'None' to take all the purchases per date
-        startingIteration = 1000
-        endingIteration = None # set to 'None' to have all iterations
-        stepSize = 30    
+        nbUser = 10000 # set to 'None' to have all users
+        nbPurchasesPerIt = 500 # set to 'None' to take all the purchases per date
+        startingIteration = 300
+        endingIteration = 600 # set to 'None' to have all iterations
+        stepSize = 1    
         
         return itertools.islice(BemolData.getGraphIterator(dataDir, nbUser, nbPurchasesPerIt), startingIteration, endingIteration, stepSize)
     resultsDir = PathDefaults.getOutputDir() + "cluster/Bemol/Stats/"
 
 if saveResults: 
     if not os.path.exists(resultsDir): 
-       logging.warn("Directory did not exist: " + resultsDir + ", creating ...")
-       os.mkdir(resultsDir)
+       logging.warn("Directory did not exist: " + resultsDir + ", created.")
+       os.makedirs(resultsDir)
        
     iterator = getIterator()
     
@@ -117,6 +117,8 @@ else:
     plt.savefig(resultsDir + "Vertices.eps")
     plotInd+=1 
     
+
+    print(statsMatrix[:, graphStats.numEdgesIndex])    
     
     plt.figure(plotInd)
     plt.plot(numpy.arange(statsMatrix.shape[0]), statsMatrix[:, graphStats.numEdgesIndex])
@@ -136,6 +138,13 @@ else:
     plt.xlabel("Graph index")
     plt.ylabel("Num components")
     plt.savefig(resultsDir + "Components.eps")
+    plotInd+=1 
+    
+    plt.figure(plotInd)
+    plt.plot(numpy.arange(statsMatrix.shape[0]), statsMatrix[:, graphStats.meanDegreeIndex])
+    plt.xlabel("Graph index")
+    plt.ylabel("Mean degree")
+    plt.savefig(resultsDir + "MeanDegrees.eps")
     plotInd+=1 
     
     plt.show()
