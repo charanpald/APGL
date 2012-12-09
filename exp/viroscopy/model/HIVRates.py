@@ -369,15 +369,17 @@ class HIVRates():
             #Corresponds to 2 bisexual women 
             return 0.0 
 
-    """
-    Compute the detection rate of an infected which depends on the entire population.
-    """
+
     def randomDetectionRates(self, infectedList, t, seed=21):
+        """
+        Compute the detection rate of an infected which depends on the entire population.
+        In this case it's randDetectRate/|I_t|. 
+        """
         detectionRates = numpy.zeros(len(infectedList))
         state = numpy.random.get_state()
         numpy.random.seed(seed)
         inds = numpy.random.permutation(len(infectedList))[0:self.maxDetects]
-        detectionRates[inds] = self.randDetectRate
+        detectionRates[inds] = self.randDetectRate #/len(infectedList)
         numpy.random.set_state(state)
         return detectionRates
 
@@ -409,7 +411,7 @@ class HIVRates():
 
                 for ind in detectedNeighbours:
                     if underCT[ind]:
-                        ctRates[i] += self.ctRatePerPerson
+                        ctRates[i] = self.ctRatePerPerson
                 #This is slower for some reason
                 #ctRates[i] = numpy.sum(underCT[neighbours]) * self.ctRatePerPerson
         else:
@@ -420,15 +422,17 @@ class HIVRates():
                     for ind in neighbours:
                         if self.graph.vlist.V[ind, HIVVertices.stateIndex] == HIVVertices.infected:
                             i = numpy.searchsorted(infectedArray, ind)
-                            ctRates[infectedArrInds[i]] += self.ctRatePerPerson
+                            ctRates[infectedArrInds[i]] = self.ctRatePerPerson
 
         assert (ctRates >= numpy.zeros(len(infectedList))).all()
 
         #Only maxDetects can be tested at once 
+        """
         state = numpy.random.get_state()
         numpy.random.seed(seed)
         inds = numpy.random.permutation(len(infectedList))[self.maxDetects:]
         ctRates[inds] = 0
         numpy.random.set_state(state)
+        """
 
         return ctRates
