@@ -209,18 +209,28 @@ class DictGraph(AbstractSingleGraph):
     def getSparseWeightMatrix(self, format="lil"):
         """
         Returns a weight matrix representation of the graph as a scipy sparse 
-        lil_matrix by default. The indices in the matrix correspond to the keys returned by
-        getAllVertexIds.
-        """
-        W = scipy.sparse.lil_matrix((self.getNumVertices(), self.getNumVertices()))
-        W = self.__populateWeightMatrix(W)
+        lil_matrix by default. The indices in the matrix correspond to the keys 
+        returned by getAllVertexIds. Available formats are: lil for scipy.sparse.lil_matrix, 
+        csr for scipy.sparse.csr_matrix, csc for scipy.sparse.csc_matrix, and 
+        pysparse for pysparse's ll_mat. 
         
+        :param format: The format of the sparse matrix. 
+        """
         if format=="lil": 
-            pass 
+            W = scipy.sparse.lil_matrix((self.size, self.size))
+            W = self.__populateWeightMatrix(W) 
         elif format=="csr": 
-            W.tocsr()
-        elif format=="csc": 
-            W.tocsc()
+            W = scipy.sparse.lil_matrix((self.size, self.size))
+            W = self.__populateWeightMatrix(W)
+            W = W.tocsr()
+        elif format=="csc":
+            W = scipy.sparse.lil_matrix((self.size, self.size))
+            W = self.__populateWeightMatrix(W)
+            W = W.tocsc()
+        elif format=="pysparse": 
+            from pysparse import spmatrix
+            W = spmatrix.ll_mat(self.size, self.size)
+            W = self.__populateWeightMatrix(W)
         else:
             raise ValueError("Invalid format: " + format)
             
@@ -404,7 +414,18 @@ class DictGraph(AbstractSingleGraph):
         graph = SparseGraph(W.shape[0], W=W, undirected=self.undirected)
         
         return graph 
+
+    def toPySparseGraph(self): 
+        """
+        Convert the current graph to a PySparseGraph. Currently, vertex labels 
+        are not converted. 
+        """
+        from apgl.graph import PySparseGraph        
         
+        W = self.getSparseWeightMatrix(format="pysparse")
+        graph = PySparseGraph(W.shape[0], W=W, undirected=self.undirected)
+        
+        return graph         
     
     vertices = None 
     adjacencies = None 
