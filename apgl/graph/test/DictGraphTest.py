@@ -621,6 +621,39 @@ class DictGraphTest(unittest.TestCase):
         self.assertEquals(graph2[2, 3], 1)
         self.assertEquals(graph2[3, 4], 1)
 
+    def testDepthFirstSearch(self):
+        graph = DictGraph()
+        graph.addEdge(0, 1)
+        graph.addEdge(1, 2)
+        graph.addEdge(1, 3)
+        graph.addEdge(2, 6)
+        graph.addEdge(4, 5)
+
+        self.assertEquals(graph.depthFirstSearch(0), [0,1,2,6,3])
+        self.assertEquals(graph.depthFirstSearch(1), [1,0,2,6,3])
+        self.assertEquals(graph.depthFirstSearch(6), [6,2,1,0,3])
+        self.assertEquals(graph.depthFirstSearch(4), [4, 5])
+        self.assertEquals(graph.depthFirstSearch(5), [5, 4])
+
+    def testBreadthFirstSearch(self):
+        graph = DictGraph()
+        graph.addEdge(0, 1)
+        graph.addEdge(0, 7)
+        graph.addEdge(7, 8)
+        graph.addEdge(7, 9)
+        graph.addEdge(1, 2)
+        graph.addEdge(1, 3)
+        graph.addEdge(2, 6)
+        graph.addEdge(4, 5)
+
+        self.assertEquals(graph.breadthFirstSearch(0), [0,1, 7,2,3,8,9,6])
+        self.assertEquals(graph.breadthFirstSearch(1), [1,0,2,3,7,6,8,9])
+        self.assertEquals(graph.breadthFirstSearch(6), [6, 2,1,0,3,7,8,9])
+        self.assertEquals(graph.breadthFirstSearch(4), [4, 5])
+        self.assertEquals(graph.breadthFirstSearch(5), [5, 4])
+        self.assertEquals(graph.breadthFirstSearch(7), [7, 0, 8, 9, 1, 2, 3, 6])    
+
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
