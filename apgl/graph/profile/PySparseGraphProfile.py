@@ -10,14 +10,18 @@ logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 class PySparseGraphProfile(object):
     def __init__(self):
-        numVertices = 1000
-        numFeatures = 0
-        vList = VertexList(numVertices, numFeatures)
-        graph = PySparseGraph(vList)
-        p = 0.4
-        generator = ErdosRenyiGenerator(p)
+        numVertices = 5000
 
-        self.graph = generator.generate(graph)
+        self.graph = PySparseGraph(numVertices)
+        
+        numEdges = 100000
+        edges = numpy.zeros((numEdges, 2))
+        edges[:, 0] = numpy.random.randint(0, numVertices, numEdges)
+        edges[:, 1] = numpy.random.randint(0, numVertices, numEdges)
+        
+        self.graph.addEdges(edges)
+        
+        
 
     def profileDijkstrasAlgorithm(self):
         n = 10
@@ -33,7 +37,10 @@ class PySparseGraphProfile(object):
 
     def profileGetWeightMatrix(self):
         ProfileUtils.profile('self.graph.getWeightMatrix()', globals(), locals())
+        
+    def profileConnectedComponents(self):
+        ProfileUtils.profile('self.graph.findConnectedComponents()', globals(), locals())
 
 profiler = PySparseGraphProfile()
-profiler.profileDijkstrasAlgorithm()
+profiler.profileConnectedComponents()
 #Takes 24.8
