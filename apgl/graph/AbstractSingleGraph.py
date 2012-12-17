@@ -5,8 +5,10 @@ Created on 30 Jun 2009
 '''
 
 import numpy 
+from collections import deque 
 from apgl.util.Util import Util
 from apgl.graph.AbstractGraph import AbstractGraph
+
 
 class AbstractSingleGraph(AbstractGraph):
     """
@@ -188,7 +190,7 @@ class AbstractSingleGraph(AbstractGraph):
 
         while len(vertexIds) != 0:
             currentVertex = vertexIds.pop()
-            currentComponent = self.depthFirstSearch(currentVertex)
+            currentComponent = sorted(self.depthFirstSearch(currentVertex))
             components.append(currentComponent)
             vertexIds = vertexIds.difference(currentComponent)
 
@@ -265,5 +267,66 @@ class AbstractSingleGraph(AbstractGraph):
             output += ", directed"
         return output
         
-    
+    def depthFirstSearch(self, root):
+        """
+        Depth first search starting from a particular vertex. Returns a list of 
+        connected vertices in the order they were found. 
+
+        :param root: The index of the root vertex.
+        :type root: :class:`int`
+
+        :returns: A list of vertices connected to the input one via a path in the graph.
+        """    
+        currentPath = [root]
+        visited = set()
+        searchPath = [] 
+
+        while len(currentPath) != 0:
+            currentVertex = currentPath[-1]
+
+            if currentVertex not in visited:
+                visited.add(currentVertex)
+                searchPath.append(currentVertex)
+
+            neighbours = self.neighbours(currentVertex)            
+            unvisited = (set(neighbours).difference(visited))
+            
+            if len(unvisited) != 0: 
+                currentPath.append(unvisited.pop())
+            else: 
+                currentPath.pop()
+
+        return searchPath
+
+    def breadthFirstSearch(self, root):
+        """
+        Breadth first search starting from a particular vertex. Returns a list of 
+        connected vertices in the order they were found. 
+
+        :param root: The index of the root vertex.
+        :type root: :class:`int`
+
+        :returns: A list of vertices connected to the input one via a path in the graph.
+        """    
+        toVisit = deque([root])
+        toVisitSet = set([root])
+        visited = set()
+        searchPath = [] 
+
+        while len(toVisit) != 0:
+            currentVertex = toVisit.popleft()
+
+            if currentVertex not in visited:
+                visited.add(currentVertex)
+                searchPath.append(currentVertex)
+
+            neighbours = self.neighbours(currentVertex)
+            
+            unvisited = set(neighbours).difference(visited)
+            unvisited = unvisited.difference(toVisitSet)  
+            
+            toVisitSet.update(unvisited)
+            toVisit.extend(sorted(unvisited))
+            
+        return searchPath
     
