@@ -465,6 +465,20 @@ class SparseGraph(AbstractMatrixGraph):
         else:
             return L.toarray()
 
+    def toCsr(self): 
+        """
+        Convert the internal matrix representation to csr format (compressed sparse row)
+        in order to improve the efficiency of certain operations. 
+        """
+        self.W = self.W.tocsr()
+        
+    def toCsc(self): 
+        """
+        Convert the internal matrix representation to csc format (compressed sparse column)
+        in order to improve the efficiency of certain operations. 
+        """
+        self.W = self.W.tocsc()
+
     #Class data 
     W = None
     vList = None
