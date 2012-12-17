@@ -808,12 +808,36 @@ class MatrixGraphTest():
         graph.addEdge(2, 6)
         graph.addEdge(4, 5)
 
-        self.assertEquals(graph.depthFirstSearch(0), [0,1,2,3,6])
-        self.assertEquals(graph.depthFirstSearch(1), [0,1,2,3,6])
-        self.assertEquals(graph.depthFirstSearch(6), [0,1,2,3,6])
+        self.assertEquals(graph.depthFirstSearch(0), [0,1,2,6,3])
+        self.assertEquals(graph.depthFirstSearch(1), [1,0,2,6,3])
+        self.assertEquals(graph.depthFirstSearch(6), [6,2,1,0,3])
         self.assertEquals(graph.depthFirstSearch(4), [4, 5])
-        self.assertEquals(graph.depthFirstSearch(5), [4, 5])
+        self.assertEquals(graph.depthFirstSearch(5), [5, 4])
         self.assertEquals(graph.depthFirstSearch(7), [7])
+        
+
+    def testBreadthFirstSearch(self):
+        numVertices = 10
+        numFeatures = 0
+        vList = VertexList(numVertices, numFeatures)
+
+        graph = self.GraphType(vList)
+        graph.addEdge(0, 1)
+        graph.addEdge(0, 7)
+        graph.addEdge(7, 8)
+        graph.addEdge(7, 9)
+        graph.addEdge(1, 2)
+        graph.addEdge(1, 3)
+        graph.addEdge(2, 6)
+        graph.addEdge(4, 5)
+
+        self.assertEquals(graph.breadthFirstSearch(0), [0,1, 7,2,3,8,9,6])
+        self.assertEquals(graph.breadthFirstSearch(1), [1,0,2,3,7,6,8,9])
+        self.assertEquals(graph.breadthFirstSearch(6), [6, 2,1,0,3,7,8,9])
+        self.assertEquals(graph.breadthFirstSearch(4), [4, 5])
+        self.assertEquals(graph.breadthFirstSearch(5), [5, 4])
+        self.assertEquals(graph.breadthFirstSearch(7), [7, 0, 8, 9, 1, 2, 3, 6])        
+        
 
     def testDiameter(self):
         numVertices = 10

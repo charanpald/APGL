@@ -7,6 +7,7 @@ import os.path
 import tempfile 
 import base64 
 import shutil 
+import Queue 
 
 import apgl
 from apgl.util.Util import Util
@@ -1085,7 +1086,7 @@ class AbstractMatrixGraph(AbstractSingleGraph):
         #Find all vertices with in-degree 0
         for i in range(0, self.getNumVertices()):
             if self.neighbourOf(i).shape[0] == 0:
-                trees.append(self.depthFirstSearch(i))
+                trees.append(sorted(self.depthFirstSearch(i)))
 
         sortedIndices = numpy.array([len(x) for x in trees]).argsort()
         sortedTrees = []
@@ -1116,8 +1117,8 @@ class AbstractMatrixGraph(AbstractSingleGraph):
 
     def depthFirstSearch(self, root):
         """
-        Depth first search starting from a particular vertex, based on the code found
-        in Wikipedia. Returns the set of connected vertices.
+        Depth first search starting from a particular vertex. Returns a list of 
+        connected vertices in the order they were found. 
 
         :param root: The index of the root vertex.
         :type root: :class:`int`
@@ -1126,23 +1127,58 @@ class AbstractMatrixGraph(AbstractSingleGraph):
         """
         Parameter.checkIndex(root, 0, self.size)        
         
-        toVisit = set()
+        currentPath = [root]
         visited = set()
+        searchPath = [] 
 
-        toVisit.add(root)
+        while len(currentPath) != 0:
+            currentVertex = currentPath[-1]
+
+            if currentVertex not in visited:
+                visited.add(currentVertex)
+                searchPath.append(currentVertex)
+
+            neighbours = self.neighbours(currentVertex)            
+            unvisited = (set(neighbours).difference(visited))
+            
+            if len(unvisited) != 0: 
+                currentPath.append(unvisited.pop())
+            else: 
+                currentPath.pop()
+
+        return searchPath
+
+    def breadthFirstSearch(self, root):
+        """
+        Breadth first search starting from a particular vertex. Returns a list of 
+        connected vertices in the order they were found. 
+
+        :param root: The index of the root vertex.
+        :type root: :class:`int`
+
+        :returns: A list of vertices connected to the input one via a path in the graph.
+        """
+        Parameter.checkIndex(root, 0, self.size)        
+        
+        toVisit = [root]
+        visited = set()
+        searchPath = [] 
+
         #adjacencyList, weights = self.adjacencyList()
 
         while len(toVisit) != 0:
-            v = toVisit.pop()
+            currentVertex = toVisit.pop(0)
 
-            if v not in visited:
-                visited.add(v)
+            if currentVertex not in visited:
+                visited.add(currentVertex)
+                searchPath.append(currentVertex)
 
-            neighbours = self.neighbours(v)
-            #neighbours = adjacencyList[v]
-            toVisit = toVisit.union(set(neighbours).difference(visited))
+            neighbours = self.neighbours(currentVertex)
+            
+            unvisited = sorted(set(neighbours).difference(visited))
+            toVisit.extend(list(unvisited))
 
-        return list(visited)
+        return searchPath
 
     def getAllEdges(self):
         """
