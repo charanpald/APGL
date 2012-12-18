@@ -98,6 +98,7 @@ class GraphStatistics(object):
         if graph.isUndirected():
             logging.debug("Finding connected components")
             subComponents = graph.findConnectedComponents()
+            logging.debug("Done")
             statsArray[self.numComponentsIndex] = len(subComponents)
             
             nonSingletonSubComponents = [c for c in subComponents if len(c) > 1]
