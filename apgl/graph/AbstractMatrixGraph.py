@@ -282,7 +282,7 @@ class AbstractMatrixGraph(AbstractSingleGraph):
             output += ", undirected"
         else:
             output += ", directed"
-        output += ", vertex list type: " +  str(self.vList.__class__.__name__)
+        output += ", vertex storage " +  str(self.vList.__class__.__name__)
         return output
 
 
