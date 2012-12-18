@@ -66,6 +66,17 @@ class SparseGraphTest(unittest.TestCase, MatrixGraphTest):
         graph[0, 0] = 1.2 
         
         self.assertEquals(graph[0, 0], 1)
+        
+        
+        #Test the different sparse matrix formats 
+        graph = SparseGraph(numVertices, frmt="lil")
+        self.assertEquals(type(graph.W), scipy.sparse.lil_matrix)
+        
+        graph = SparseGraph(numVertices, frmt="csr")
+        self.assertEquals(type(graph.W), scipy.sparse.csr_matrix)
+        
+        graph = SparseGraph(numVertices, frmt="csc")
+        self.assertEquals(type(graph.W), scipy.sparse.csc_matrix)
 
     def testNativeAdjacencyMatrix(self):
         numVertices = 10 

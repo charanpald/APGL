@@ -19,7 +19,7 @@ class SparseGraph(AbstractMatrixGraph):
     non-zero edges can be added. Uses scipy.sparse for the underlying matrix
     representation. 
     '''
-    def __init__(self, vertices, undirected=True, W=None, dtype=numpy.float):
+    def __init__(self, vertices, undirected=True, W=None, dtype=numpy.float, frmt="csr"):
         """
         Create a SparseGraph with a given AbstractVertexList or number of 
         vertices, and specify whether it is directed. One can optionally pass 
@@ -37,6 +37,8 @@ class SparseGraph(AbstractMatrixGraph):
         :param W: a square sparse matrix of the same size as the number of vertices, or None to create the default one.
         
         :param dtype: the data type of the sparse matrix if W is not specified. 
+        
+        :param frmt: the format of the sparse matrix: lil, csr or csc if W is not specified 
         """
         Parameter.checkBoolean(undirected)
         
@@ -52,12 +54,21 @@ class SparseGraph(AbstractMatrixGraph):
           
         self.undirected = undirected
 
+        if frmt=="lil": 
+            matrix = sparse.lil_matrix
+        elif frmt=="csr": 
+            matrix = sparse.csr_matrix
+        elif frmt=="csc": 
+            matrix = sparse.csc_matrix   
+        else: 
+            raise ValueError("Invalid sparse matrix format: " + frmt)
+            
         #Terrible hack alert:  can't create a zero size sparse matrix, so we settle
         #for one of size 1. Better is to create a new class. 
         if self.vList.getNumVertices() == 0 and W == None:
-            self.W = sparse.csr_matrix((1, 1), dtype=dtype)
+            self.W = matrix((1, 1), dtype=dtype)
         elif W == None:
-            self.W = sparse.csr_matrix((self.vList.getNumVertices(), self.vList.getNumVertices()), dtype=dtype)
+            self.W = matrix((self.vList.getNumVertices(), self.vList.getNumVertices()), dtype=dtype)
         else:
             self.W = W 
             #The next line is for error checking mainly 
@@ -478,6 +489,11 @@ class SparseGraph(AbstractMatrixGraph):
         in order to improve the efficiency of certain operations. 
         """
         self.W = self.W.tocsc()
+
+    def __str__(self):
+        output= super(SparseGraph, self).__str__()
+        output += ", edge storage " + str(type(self.W))
+        return output
 
     #Class data 
     W = None
