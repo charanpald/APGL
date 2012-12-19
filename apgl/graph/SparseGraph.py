@@ -326,7 +326,11 @@ class SparseGraph(AbstractMatrixGraph):
         """
         :returns: the adjacency matrix in the native sparse format.
         """
-        self.W.eliminate_zeros()
+        try: 
+            self.W.eliminate_zeros()
+        except AttributeError: 
+            pass 
+        
         A = self.W/self.W
         return A
 
