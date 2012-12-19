@@ -7,6 +7,7 @@ import sys
 from apgl.graph.VertexList import VertexList
 from apgl.graph.SparseGraph import SparseGraph
 from apgl.graph.GraphStatistics import GraphStatistics
+from apgl.graph import DictGraph 
 from apgl.generator.ErdosRenyiGenerator import ErdosRenyiGenerator
 
 class  GraphStatisticsTest(unittest.TestCase):
@@ -144,6 +145,13 @@ class  GraphStatisticsTest(unittest.TestCase):
         self.assertEquals(statsArray[growthStatistics.numTreesIndex], -1)
         self.assertEquals(statsArray[growthStatistics.numNonSingletonTreesIndex], -1)
 
+    def testScalaraStatistics(self): 
+        numVertices = 10
+        graph = DictGraph(numVertices)
+        graph.addEdge(0, 1)
+
+        growthStatistics = GraphStatistics()
+        statsArray = growthStatistics.scalarStatistics(graph, False)
 
     def testSequenceScalarStats(self):
         numFeatures = 1

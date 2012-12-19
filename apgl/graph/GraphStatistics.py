@@ -7,7 +7,9 @@ import logging
 from apgl.util.Util import Util
 from apgl.util.Parameter import Parameter 
 from apgl.graph.GraphUtils import GraphUtils
+from apgl.graph.AbstractSingleGraph import AbstractSingleGraph
 from apgl.graph.AbstractMatrixGraph import AbstractMatrixGraph
+ 
 
 class GraphStatistics(object):
     def __init__(self):
@@ -85,7 +87,7 @@ class GraphStatistics(object):
         as scalar values. Return results as a vector.
         """
         #This method is a bit of a mess 
-        Parameter.checkClass(graph, AbstractMatrixGraph)
+        Parameter.checkClass(graph, AbstractSingleGraph)
         Parameter.checkBoolean(slowStats)
         Parameter.checkBoolean(treeStats)
         
