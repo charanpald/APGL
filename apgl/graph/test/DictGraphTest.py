@@ -1,10 +1,19 @@
 from apgl.graph.DictGraph import DictGraph
+from apgl.util.Util import Util 
 import unittest
 import numpy 
+import numpy.testing as nptst
 
 class DictGraphTest(unittest.TestCase):
     def setUp(self):
-        pass
+        self.graph = DictGraph()
+        self.graph.addEdge(0, 1, 1)
+        self.graph.addEdge(1, 3, 1)
+        self.graph.addEdge(0, 2, 2)
+        self.graph.addEdge(2, 3, 5)
+        self.graph.addEdge(0, 4, 1)
+        self.graph.addEdge(3, 4, 1)
+        self.graph.setVertex(5, None)
 
     def testInit(self):
         dictGraph = DictGraph()
@@ -653,7 +662,131 @@ class DictGraphTest(unittest.TestCase):
         self.assertEquals(graph.breadthFirstSearch(5), [5, 4])
         self.assertEquals(graph.breadthFirstSearch(7), [7, 0, 8, 9, 1, 2, 3, 6])    
 
+    def testDegreeSequence(self): 
+        graph = DictGraph() 
+        graph.setVertex("a", 10)
+        graph["b", "c"] = 1
+        graph["b", "d"] = 1
+        graph["d", "e"] = 1
+        graph["e", "e"] = 1
+                
+        nptst.assert_array_equal(graph.degreeSequence(), [0, 1, 2, 3, 2])
 
+    def testGetNumDirEdges(self):
+        graph = DictGraph()
+        graph.addEdge(0, 1, 0.1)
+        graph.addEdge(1, 2, 0.1)
+
+        self.assertTrue(graph.getNumDirEdges() == 4)
+        graph.addEdge(1, 1)
+        self.assertTrue(graph.getNumDirEdges() == 5)
+
+        graph = DictGraph(False)
+        graph.addEdge(0, 1)
+        graph.addEdge(1, 2)
+
+        self.assertTrue(graph.getNumDirEdges() == 2)
+        graph.addEdge(1, 1)
+        self.assertTrue(graph.getNumDirEdges() == 3)
+
+    def testDijkstrasAlgorithm(self):
+        graph = DictGraph()
+
+        graph.addEdge(0, 1, 1)
+        graph.addEdge(1, 2, 1)
+        graph.addEdge(1, 3, 1)
+        graph.addEdge(2, 4, 1)
+        graph.setVertex(4, 1)
+
+        self.assertTrue((graph.dijkstrasAlgorithm(0) == numpy.array([0, 1, 2, 2, 3])).all())
+        self.assertTrue((graph.dijkstrasAlgorithm(1) == numpy.array([1, 0, 1, 1, 2])).all())
+        self.assertTrue((graph.dijkstrasAlgorithm(2) == numpy.array([2, 1, 0, 2, 1])).all())
+        self.assertTrue((graph.dijkstrasAlgorithm(3) == numpy.array([2, 1, 2, 0, 3])).all())
+        self.assertTrue((graph.dijkstrasAlgorithm(4) == numpy.array([3, 2, 1, 3, 0])).all())
+
+        
+        #Test a graph which has an isolated node
+        graph = DictGraph()
+        graph.setVertex(5, 1)
+
+        graph.addEdge(0, 1, 1)
+        graph.addEdge(1, 2, 1)
+        graph.addEdge(1, 3, 1)
+
+        self.assertTrue((graph.dijkstrasAlgorithm(0) == numpy.array([0, 1, 2, 2, numpy.inf])).all())
+        print(graph.dijkstrasAlgorithm(5))
+
+        #Test a graph in a ring
+        graph = DictGraph()
+
+        graph.addEdge(0, 1, 1)
+        graph.addEdge(1, 2, 1)
+        graph.addEdge(2, 3, 1)
+        graph.addEdge(3, 4, 1)
+        graph.addEdge(4, 0, 1)
+
+        self.assertTrue((graph.dijkstrasAlgorithm(0) == numpy.array([0, 1, 2, 2, 1])).all())
+        
+        #Try case in which vertex ids are not numbers 
+        graph = DictGraph()
+
+        graph.addEdge("a", "b", 1)
+        graph.addEdge("b", "c", 1)
+        graph.addEdge("b", "d", 1)
+        graph.addEdge("c", "e", 1)
+
+        inds = Util.argsort(graph.getAllVertexIds())
+        self.assertTrue((graph.dijkstrasAlgorithm("a")[inds] == numpy.array([0, 1, 2, 2, 3])).all())
+        self.assertTrue((graph.dijkstrasAlgorithm("b")[inds] == numpy.array([1, 0, 1, 1, 2])).all())
+        self.assertTrue((graph.dijkstrasAlgorithm("c")[inds] == numpy.array([2, 1, 0, 2, 1])).all())
+        self.assertTrue((graph.dijkstrasAlgorithm("d")[inds] == numpy.array([2, 1, 2, 0, 3])).all())
+        self.assertTrue((graph.dijkstrasAlgorithm("e")[inds] == numpy.array([3, 2, 1, 3, 0])).all())
+
+    def testAdjacencyList(self): 
+        graph = DictGraph()
+        graph.addEdge("a", "b", 1)
+        graph.addEdge("b", "c", 1)
+        graph.addEdge("b", "d", 1)
+        graph.addEdge("c", "e", 1)
+        graph.setVertex("f", 1)
+ 
+        neighbourIndices, neighbourWeights = graph.adjacencyList()   
+        print(neighbourIndices)
+        print(neighbourWeights)
+        
+        vertexIds = graph.getAllVertexIds()
+        
+        for i in range(len(neighbourIndices)): 
+            for k, j in enumerate(neighbourIndices[i]): 
+                self.assertTrue(graph.edgeExists(vertexIds[i], vertexIds[j]))  
+                self.assertEquals(graph[vertexIds[i], vertexIds[j]], neighbourWeights[i][k])
+         
+    def testFindAllDistances(self):
+        P = self.graph.findAllDistances()
+
+        P2 = numpy.zeros((self.graph.size, self.graph.size))
+        P2[0, :] = numpy.array([0, 1, 2, 2, 1, numpy.inf])
+        P2[1, :] = numpy.array([1, 0, 3, 1, 2, numpy.inf])
+        P2[2, :] = numpy.array([2, 3, 0, 4, 3, numpy.inf])
+        P2[3, :] = numpy.array([2, 1, 4, 0, 1, numpy.inf])
+        P2[4, :] = numpy.array([1, 2, 3, 1, 0, numpy.inf])
+        P2[5, :] = numpy.array([numpy.inf, numpy.inf, numpy.inf, numpy.inf, numpy.inf, 0])
+
+        self.assertTrue((P == P2).all())
+
+        #Now test the directed graph
+        P = self.graph2.findAllDistances()
+
+        P2 = numpy.zeros((self.graph.size, self.graph.size))
+        P2[0, :] = numpy.array([0, 1, 2, 2, 1, numpy.inf])
+        P2[1, :] = numpy.array([numpy.inf, 0, numpy.inf, 1, 2, numpy.inf])
+        P2[2, :] = numpy.array([numpy.inf, numpy.inf, 0, 5, 6, numpy.inf])
+        P2[3, :] = numpy.array([numpy.inf, numpy.inf, numpy.inf, 0, 1, numpy.inf])
+        P2[4, :] = numpy.array([numpy.inf, numpy.inf, numpy.inf, numpy.inf, 0, numpy.inf])
+        P2[5, :] = numpy.array([numpy.inf, numpy.inf, numpy.inf, numpy.inf, numpy.inf, 0])
+
+        self.assertTrue((P == P2).all())
+         
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

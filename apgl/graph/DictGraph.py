@@ -1,5 +1,6 @@
 
 import numpy
+import heapq
 import scipy.sparse 
 from apgl.graph.AbstractSingleGraph import AbstractSingleGraph
 
@@ -426,6 +427,132 @@ class DictGraph(AbstractSingleGraph):
         graph = PySparseGraph(W.shape[0], W=W, undirected=self.undirected)
         
         return graph         
+
+    def degreeSequence(self):
+        """
+        :returns: a vector of the degrees (including self edges) for each vertex for an undirected graph.
+        """
+        if not self.isUndirected():
+            raise ValueError("degreeSequence is only for undirected graphs")
+
+        degSequence = self.outDegreeSequence()[0]
+
+        #A very slow method of adding diagonal entries
+        for j, i in enumerate(self.getAllVertexIds()):
+            if self.getEdge(i, i) != None:
+                degSequence[j] += 1
+
+        return degSequence 
+
+    def getNumDirEdges(self):
+        """
+        :returns: the number of edges, taking this graph as a directed graph.
+        """
+        i = 0 
+        for v in self.adjacencies.keys(): 
+            i += len(self.adjacencies[v])
+        
+        return i
+
+    def dijkstrasAlgorithm(self, vertexId, neighbourLists=None):
+        """
+        Run Dijkstras Algorithm on the graph for a given source vertex. Returns
+        an array with the distance to all vertices (including itself).
+
+        :param vertexId: the index of the source vertex.
+
+        :returns: An array whose ith element is the distance to vertex i. 
+        """
+        if neighbourLists!=None:
+            neighbourIndices, neighbourWeights = neighbourLists
+
+            if len(neighbourIndices) != self.getNumVertices() or len(neighbourWeights) != self.getNumVertices():
+                raise ValueError("Adjacency lists must be of same size as graph")
+        else:
+            neighbourIndices, neighbourWeights = self.adjacencyList()
+
+        previous = numpy.zeros(self.size)
+        distance = numpy.ones((self.size, 2))*numpy.inf
+        distance[self.getAllVertexIds().index(vertexId), 0] = 0
+        distance[:, 1] = numpy.arange(self.size)
+        distance = distance.tolist()
+        heapq.heapify(distance)
+
+        #Dictionary of the tuples indexed by the vertex index
+        distanceDict = {}
+        for i in distance:
+            distanceDict[i[1]] = i
+        INVALID = -1
+
+        distanceArray = numpy.ones(self.size)*numpy.inf
+        notVisited = numpy.ones(self.size, numpy.bool)
+
+        while len(distanceDict) != 0:
+            minVertexIndex = INVALID
+            while minVertexIndex == INVALID:
+                (minVertexDistance, minVertexIndex) = heapq.heappop(distance)
+
+            distanceArray[minVertexIndex] = minVertexDistance
+            del(distanceDict[minVertexIndex])
+            notVisited[minVertexIndex] = False 
+            if  minVertexDistance == numpy.inf:
+                break
+
+            minVertexIndex = int(minVertexIndex)
+            cols = numpy.array(neighbourIndices[minVertexIndex])
+            weights = numpy.array(neighbourWeights[minVertexIndex])
+            #updateDistances(cols, weights, minVertexDistance, distanceDict, previous, distanceArray)
+
+            newDistances = weights + minVertexDistance
+            print(cols)
+            isBetter = numpy.logical_and(newDistances < distanceArray[cols], notVisited[cols])
+
+            for i in range(cols[isBetter].shape[0]):
+                j = cols[isBetter][i]
+                distanceDict[j][1] = INVALID
+                distanceDict[j] = [newDistances[isBetter][i], j]
+                heapq.heappush(distance, distanceDict[j])
+                distanceArray[j] = newDistances[isBetter][i]
+
+        return distanceArray
+
+    def adjacencyList(self):
+        """
+        Returns an adjacency list representation L of the graph, in which L[i]
+        is the list of all neighbour *indices* of vertex index i. Furthermore, the method 
+        returns W in which W[i] which is the corresponding set of weights. In essence, 
+        this method is a way to map vertex ids to indices. 
+
+        :returns L: A list whose ith element is a list of neighbours for vertex i.
+        :returns W: A list whose ith element is a list of neighbour weights for vertex i.
+        """
+        neighbourIndices = []
+        neighbourWeights = []
+        vertexIds = self.getAllVertexIds()
+        
+        for i in vertexIds:
+            neighbours = map(vertexIds.index, self.adjacencies[i].keys())
+            neighbourIndices.append(neighbours)
+            neighbourWeights.append(self.adjacencies[i].values())
+
+        return neighbourIndices, neighbourWeights
+
+    def findAllDistances(self, useWeights=True):
+        """
+        Use the repeated calls to Dijkstra'  algorithm to find the shortest path 
+        between all pairs of vertices. Note that the shortest path of a vertex 
+        to itself is always zero. Returns a matrix whose ij th entry is the
+        shortest path between vertices i and j.
+
+        :returns:  A matrix of shortest paths between all vertices.
+        """
+        neighbourLists = self.adjacencyList()
+        P = numpy.zeros((self.size, self.size))
+
+        for i, vertexId in enumerate(self.getAllVertexIds()):
+            P[i, :] = self.dijkstrasAlgorithm(vertexId, neighbourLists)
+
+        return P 
     
     vertices = None 
     adjacencies = None 
