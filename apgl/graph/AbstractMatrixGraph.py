@@ -995,7 +995,7 @@ class AbstractMatrixGraph(AbstractSingleGraph):
         """
 
         neighbourLists = self.adjacencyList(useWeights)
-        P = numpy.zeros((self.getNumVertices(), self.getNumVertices()))
+        P = numpy.zeros((self.size, self.size))
 
         for i in range(self.getNumVertices()):
             P[i, :] = self.dijkstrasAlgorithm(i, neighbourLists)
