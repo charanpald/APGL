@@ -1,5 +1,5 @@
 
-from apgl.graph.CsArrayGraph import CsArrayGraph
+from exp.sandbox.graph.CsArrayGraph import CsArrayGraph
 from apgl.graph.VertexList import VertexList
 from apgl.util import *
 from apgl.graph.test.MatrixGraphTest import MatrixGraphTest
@@ -22,6 +22,10 @@ class CsArrayGraphTest(unittest.TestCase, MatrixGraphTest):
 
         graph = CsArrayGraph(vList, dtype=numpy.int16)
         self.assertEquals(graph.weightMatrixDType(), numpy.int16)
+        
+        #Test just specifying number of vertices 
+        graph = CsArrayGraph(numVertices)
+        self.assertEquals(graph.size, numVertices)
         
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

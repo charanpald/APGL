@@ -3,28 +3,33 @@ import scipy.io
 import numpy
 import sppy 
 from apgl.graph.AbstractMatrixGraph import AbstractMatrixGraph
-from apgl.graph.AbstractVertexList import AbstractVertexList 
+from apgl.graph.AbstractVertexList import AbstractVertexList
+from apgl.graph import GeneralVertexList  
 from apgl.util.Parameter import Parameter
 from apgl.util.SparseUtils import SparseUtils
 
 class CsArrayGraph(AbstractMatrixGraph):
-    def __init__(self, vertexList, undirected=True, dtype=numpy.float):
+    def __init__(self, vertices, undirected=True, dtype=numpy.float):
         """
         Create a sparse graph using sppy csarray with a given AbstractVertexList, and specify whether directed.
 
-        :param vList: the initial set of vertices as a AbstractVertexList object.
-        :type vList: :class:`apgl.graph.AbstractVertexList`
-
+        :param vertices: the initial set of vertices as a AbstractVertexList object, or an int to specify the number of vertices in which case vertices are stored in a GeneralVertexList.  
+        
         :param undirected: a boolean variable to indicate if the graph is undirected.
         :type undirected: :class:`boolean`
 
         :param dtype: the data type for the weight matrix, e.g numpy.int8.
         """
-        Parameter.checkClass(vertexList, AbstractVertexList)
         Parameter.checkBoolean(undirected)
 
-        self.vList = vertexList
-        self.W = sppy.csarray((vertexList.getNumVertices(), vertexList.getNumVertices()), dtype)
+        if isinstance(vertices, AbstractVertexList):
+            self.vList = vertices
+        elif isinstance(vertices, int): 
+            self.vList = GeneralVertexList(vertices)
+        else: 
+            raise ValueError("Invalid vList parameter: " + str(vertices))
+
+        self.W = sppy.csarray((self.vList.getNumVertices(), self.vList.getNumVertices()), dtype)
         self.undirected = undirected
 
     def getNumEdges(self):
