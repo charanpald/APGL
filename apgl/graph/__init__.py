@@ -5,6 +5,8 @@ from apgl.graph.DictGraph import DictGraph
 from apgl.graph.VertexList import VertexList
 from apgl.graph.GraphUtils import GraphUtils
 from apgl.graph.GraphStatistics import GraphStatistics
+from apgl.graph.AbstractSingleGraph import AbstractSingleGraph
+from apgl.graph.AbstractMatrixGraph import AbstractMatrixGraph
 
 #Optional modules are tried and ignored if not present 
 try:
