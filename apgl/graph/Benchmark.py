@@ -45,7 +45,7 @@ def generateEdges():
     edgeList = [] 
     
     density = 0.01 
-    numVertices = numpy.array([200, 500, 1000]) 
+    numVertices = numpy.array([100, 200, 500]) 
     
     for i in numVertices:  
         numEdges = (i**2) * density
@@ -63,62 +63,74 @@ def generateEdges():
 def benchmark(edgeList): 
     iterator = GraphIterator(100)
     numGraphTypes = iterator.getNumGraphs() 
-    addEdgesTimeArray = numpy.zeros((len(edgeList), numGraphTypes)) 
-    neighbourTimeArray = numpy.zeros((len(edgeList), numGraphTypes)) 
-    depthTimeArray = numpy.zeros((len(edgeList), numGraphTypes)) 
-    breadthTimeArray = numpy.zeros((len(edgeList), numGraphTypes)) 
-    componentsTimeArray = numpy.zeros((len(edgeList), numGraphTypes)) 
+    numMeasures = 6 
+    timeArray = numpy.zeros((len(edgeList), numGraphTypes, numMeasures)) 
     i = 0 
+    
     
     for numVertices, edges in edgeList: 
         print("Timing graphs of size " + str(numVertices) + " with " + str(edges.shape[0]) + " edges")
         
         iterator = GraphIterator(numVertices)
         j = 0 
-                
+        
         for graph in iterator:
+            measureInd = 0            
+            
             print("Add edges benchmark on " + str(graph))    
             startTime = time.clock()
             graph.addEdges(edges)      
-            addEdgesTimeArray[i, j] =  time.clock() - startTime
+            timeArray[i, j, measureInd] =  time.clock() - startTime
+            measureInd += 1 
                        
             vertexIds = graph.getAllVertexIds()            
             
             print("Neighbours benchmark on " + str(graph))    
             startTime = time.clock()
-            for k in range(100): 
+            for k in range(80): 
                 graph.neighbours(vertexIds[k])      
-            neighbourTimeArray[i, j] =  time.clock() - startTime
+            timeArray[i, j, measureInd] =  time.clock() - startTime
+            measureInd += 1
             
             print("Depth first search benchmark on " + str(graph))    
             startTime = time.clock()
             for k in range(5): 
                 graph.depthFirstSearch(vertexIds[k])      
-            depthTimeArray[i, j] =  time.clock() - startTime     
+            timeArray[i, j, measureInd] =  time.clock() - startTime
+            measureInd += 1
             
             print("Breadth first search benchmark on " + str(graph))    
             startTime = time.clock()
             for k in range(5): 
                 graph.breadthFirstSearch(vertexIds[k])      
-            breadthTimeArray[i, j] =  time.clock() - startTime     
+            timeArray[i, j, measureInd] =  time.clock() - startTime   
+            measureInd += 1
             
             print("Find components benchmark on " + str(graph))    
             startTime = time.clock()
             graph.findConnectedComponents()      
-            componentsTimeArray[i, j] =  time.clock() - startTime               
+            timeArray[i, j, measureInd] =  time.clock() - startTime  
+            measureInd += 1             
+            
+            print("Degree sequence benchmark on " + str(graph))    
+            startTime = time.clock()
+            for k in range(10): 
+                graph.degreeSequence()      
+            timeArray[i, j, measureInd] =  time.clock() - startTime  
+            measureInd += 1              
             
             j += 1
             
         i +=1 
             
-    return addEdgesTimeArray, neighbourTimeArray, depthTimeArray, breadthTimeArray, componentsTimeArray 
+    return timeArray 
     
 edgeList = generateEdges() 
 #timeArray = benchmarkAddEdges(edgeList)
-addEdgesTimeArray, neighbourTimeArray, depthTimeArray, breadthTimeArray, componentsTimeArray  = benchmark(edgeList)
+timeArray  = benchmark(edgeList)
 
-print(addEdgesTimeArray)
-print(neighbourTimeArray)
-print(depthTimeArray)
-print(breadthTimeArray)
-print(componentsTimeArray)
+for i in range(timeArray.shape[2]): 
+    print(timeArray[:, :, i])
+
+
+#subgraph, degree sequence, 
