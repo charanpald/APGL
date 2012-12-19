@@ -6,6 +6,7 @@ import numpy
 import logging 
 import time 
 from apgl.graph import DenseGraph, SparseGraph, PySparseGraph, DictGraph 
+from exp.sandbox.graph.CsArrayGraph import CsArrayGraph
 
 numpy.set_printoptions(suppress=True, precision=3)
 
@@ -23,6 +24,7 @@ class GraphIterator:
         self.graphList.append(SparseGraph(numVertices, frmt="csc"))
         self.graphList.append(SparseGraph(numVertices, frmt="csr"))
         self.graphList.append(PySparseGraph(numVertices))
+        self.graphList.append(CsArrayGraph(numVertices))
         self.graphList.append(DictGraph())
 
         self.i = 0 
@@ -79,7 +81,8 @@ def benchmark(edgeList):
             
             print("Add edges benchmark on " + str(graph))    
             startTime = time.clock()
-            graph.addEdges(edges)      
+            for m in range(10): 
+                graph.addEdges(edges)      
             timeArray[i, j, measureInd] =  time.clock() - startTime
             measureInd += 1 
                        
@@ -87,8 +90,9 @@ def benchmark(edgeList):
             
             print("Neighbours benchmark on " + str(graph))    
             startTime = time.clock()
-            for k in range(80): 
-                graph.neighbours(vertexIds[k])      
+            for m in range(100): 
+                for k in range(50): 
+                    graph.neighbours(vertexIds[k])      
             timeArray[i, j, measureInd] =  time.clock() - startTime
             measureInd += 1
             
@@ -114,7 +118,7 @@ def benchmark(edgeList):
             
             print("Degree sequence benchmark on " + str(graph))    
             startTime = time.clock()
-            for k in range(10): 
+            for k in range(100): 
                 graph.degreeSequence()      
             timeArray[i, j, measureInd] =  time.clock() - startTime  
             measureInd += 1              
