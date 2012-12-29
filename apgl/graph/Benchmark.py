@@ -5,10 +5,11 @@ graph types.
 import numpy 
 import logging 
 import time 
+import networkx 
 from apgl.graph import DenseGraph, SparseGraph, PySparseGraph, DictGraph 
 from exp.sandbox.graph.CsArrayGraph import CsArrayGraph
 
-numpy.set_printoptions(suppress=True, precision=3)
+numpy.set_printoptions(suppress=True, precision=4)
 
 class GraphIterator:
     def __init__(self, numVertices, sparseOnly=False, numEdges=0): 
@@ -20,11 +21,11 @@ class GraphIterator:
         if not self.sparseOnly: 
             self.graphList.append(DenseGraph(numVertices))
 
-        self.graphList.append(SparseGraph(numVertices, frmt="lil"))
-        self.graphList.append(SparseGraph(numVertices, frmt="csc"))
-        self.graphList.append(SparseGraph(numVertices, frmt="csr"))
+        #self.graphList.append(SparseGraph(numVertices, frmt="lil"))
+        #self.graphList.append(SparseGraph(numVertices, frmt="csc"))
+        #self.graphList.append(SparseGraph(numVertices, frmt="csr"))
         self.graphList.append(PySparseGraph(numVertices))
-        self.graphList.append(CsArrayGraph(numVertices))
+        #self.graphList.append(CsArrayGraph(numVertices))
         self.graphList.append(DictGraph())
 
         self.i = 0 
@@ -47,7 +48,7 @@ def generateEdges():
     edgeList = [] 
     
     density = 0.01 
-    numVertices = numpy.array([100, 200, 500]) 
+    numVertices = numpy.array([100, 200, 500, 1000]) 
     
     for i in numVertices:  
         numEdges = (i**2) * density
@@ -69,6 +70,7 @@ def benchmark(edgeList):
     timeArray = numpy.zeros((len(edgeList), numGraphTypes, numMeasures)) 
     i = 0 
     
+    nxGraph = networkx.Graph()
     
     for numVertices, edges in edgeList: 
         print("Timing graphs of size " + str(numVertices) + " with " + str(edges.shape[0]) + " edges")
@@ -85,7 +87,7 @@ def benchmark(edgeList):
                 graph.addEdges(edges)      
             timeArray[i, j, measureInd] =  time.clock() - startTime
             measureInd += 1 
-                       
+            
             vertexIds = graph.getAllVertexIds()            
             
             print("Neighbours benchmark on " + str(graph))    
