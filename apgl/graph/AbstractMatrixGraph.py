@@ -7,7 +7,11 @@ import os.path
 import tempfile 
 import base64 
 import shutil 
-import Queue 
+#Fix for Python3 renaming of Queue 
+try: 
+    import Queue 
+except ImportError: 
+    import queue 
 
 import apgl
 from apgl.util.Util import Util
