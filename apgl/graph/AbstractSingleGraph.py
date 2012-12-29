@@ -246,17 +246,20 @@ class AbstractSingleGraph(AbstractGraph):
         newGraph = igraph.Graph(self.getNumVertices(), directed= not self.isUndirected())
 
         #Add all vertices 
-        newGraph.vs["label"] = self.getVertices(range(self.getNumVertices()))
+        newGraph.vs["label"] = self.getVertices(self.getAllVertexIds())
 
+        vertices = self.getAllVertexIds()
         allEdges = self.getAllEdges()
+        
 
-        for i in range(allEdges.shape[0]):
-            edgeVal = self.getEdge(allEdges[i, 0], allEdges[i, 1])
-            newGraph.add_edges((int(allEdges[i, 0]), int(allEdges[i, 1])))
-            newGraph.es[i]["value"] = edgeVal
+        for i in range(len(allEdges)):
+            vertexId1 = vertices.index(allEdges[i, 0])
+            vertexId2 = vertices.index(allEdges[i, 1])            
+            
+            newGraph.add_edge(vertexId1, vertexId2)
+            newGraph.es[i]["value"] = self.getEdge(allEdges[i, 0], allEdges[i, 1])
 
         return newGraph
-
 
     def __str__(self):
         output = str(self.__class__.__name__) + ": "
