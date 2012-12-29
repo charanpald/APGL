@@ -2356,14 +2356,16 @@ class MatrixGraphTest():
         dictGraph = self.graph.toDictGraph() 
         
         edges = self.graph.getAllEdges()
-            
+        edges = numpy.array(edges, numpy.int)
+        
+
         for i in range(edges.shape[0]): 
-            self.assertEquals(dictGraph[edges[i, 0], edges[i, 1]], self.graph[edges[i, 0], edges[i, 1]])
+            self.assertEquals(dictGraph[edges[i, 0], edges[i, 1]], self.graph[int(edges[i, 0]), int(edges[i, 1])])
         
         dictGraph2 = self.graph2.toDictGraph() 
         
         edges2 = self.graph2.getAllEdges()
             
         for i in range(edges2.shape[0]): 
-            self.assertEquals(dictGraph2[edges2[i, 0], edges2[i, 1]], self.graph[edges2[i, 0], edges2[i, 1]])
+            self.assertEquals(dictGraph2[edges2[i, 0], edges2[i, 1]], self.graph[int(edges2[i, 0]), int(edges2[i, 1])])
         
