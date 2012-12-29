@@ -19,6 +19,7 @@ Another Python Graph Library is a simple, fast and easy to use graph library. Th
 
 News
 ----
+* 29/12/12 - Version 0.7.3 released. This is the final release I will personally make as I no longer have sufficient time to work on this project, and there are very good alternatives. If anyone is interested in developing the code (available at https://github.com/charanpald/APGL), please contact me. 
 * 17/11/12 - Version 0.7.2 released, see https://github.com/charanpald/APGL for the changelog. 
 
 Downloading
