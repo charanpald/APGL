@@ -5,6 +5,13 @@ This project develops a simple, fast and easy to use Python graph library using 
 
 Changelog 
 ---------
+Changes in version 0.7.3: 
+
+* DictGraph - toSparseGraph, added depth and breadth first search, degree sequence, num directed edges, dijkstra's algorithm, adjacency list, and find all distances.
+* Matrix graphs - toDictGraph, fixed depth and added breadth first searches 
+* SparseGraph - toCsc, toCsr, specify sparse matrix format in constructor
+* Other minor changes 
+
 Changes in version 0.7.2: 
 
 * Constructors for graph classes accept a size and weight matrix. 
@@ -25,20 +32,6 @@ Changes in version 0.7:
 * Sampling returns tuple of ndarrays 
 * Other minor changes and documentation improvements 
 
-Changes in version 0.6.10: 
-
-* Bootstrap and shuffle split sampling in Sampling class 
-* Some refactoring for predictor wrappers 
-* Fix for error with ErdosRenyi with DenseGraph
-* Documentation improvements. 
-* Fix for setting weight matrix for DenseGraph
-
-Changes in version 0.6.9: 
-
-* Erdos Renyi generator works with sparse graphs 
-* SparseGraph Laplacian matrix methods return scipy.sparse matrices 
-* Updated LibSVM wrapper 
-* Other minor changes
 
 Additional Information
 ----------------------
