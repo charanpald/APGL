@@ -471,19 +471,24 @@ class DictGraph(AbstractSingleGraph):
         else:
             neighbourIndices, neighbourWeights = self.adjacencyList()
 
+        
+        vertexIds = self.getAllVertexIds()        
+        
         previous = numpy.zeros(self.size)
+        #This is an array of distances so far with first col as distance, and 2nd cols 
         distance = numpy.ones((self.size, 2))*numpy.inf
-        distance[self.getAllVertexIds().index(vertexId), 0] = 0
+        distance[vertexIds.index(vertexId), 0] = 0
         distance[:, 1] = numpy.arange(self.size)
         distance = distance.tolist()
         heapq.heapify(distance)
 
-        #Dictionary of the tuples indexed by the vertex index
+        #Dictionary of the tuples indexed by the vertex index returned at the end 
         distanceDict = {}
         for i in distance:
             distanceDict[i[1]] = i
         INVALID = -1
-
+        
+        #distanceArray is distance for each vertex 
         distanceArray = numpy.ones(self.size)*numpy.inf
         notVisited = numpy.ones(self.size, numpy.bool)
 
@@ -502,9 +507,12 @@ class DictGraph(AbstractSingleGraph):
             cols = numpy.array(neighbourIndices[minVertexIndex])
             weights = numpy.array(neighbourWeights[minVertexIndex])
             #updateDistances(cols, weights, minVertexDistance, distanceDict, previous, distanceArray)
+            
+            #If no neighbours then move onto next vertex 
+            if cols.size == 0: 
+                break 
 
             newDistances = weights + minVertexDistance
-            print(cols)
             isBetter = numpy.logical_and(newDistances < distanceArray[cols], notVisited[cols])
 
             for i in range(cols[isBetter].shape[0]):
@@ -531,9 +539,9 @@ class DictGraph(AbstractSingleGraph):
         vertexIds = self.getAllVertexIds()
         
         for i in vertexIds:
-            neighbours = map(vertexIds.index, self.adjacencies[i].keys())
+            neighbours = list(map(vertexIds.index, self.adjacencies[i].keys()))
             neighbourIndices.append(neighbours)
-            neighbourWeights.append(self.adjacencies[i].values())
+            neighbourWeights.append(list(self.adjacencies[i].values()))
 
         return neighbourIndices, neighbourWeights
 
@@ -553,7 +561,38 @@ class DictGraph(AbstractSingleGraph):
             P[i, :] = self.dijkstrasAlgorithm(vertexId, neighbourLists)
 
         return P 
-    
+
+    def toIGraph(self):
+        """
+        Convert this graph into a igraph Graph object, which requires igraph to be
+        installed. Edge values are stored under the "value" index. Vertices
+        are stored as indices with a "label" value being the corresponding vertex value.
+
+        :returns:  An igraph Graph object.
+        """
+        try:
+            import igraph
+        except ImportError:
+            raise ImportError("toIGraph() requires igraph")
+
+        newGraph = igraph.Graph(self.getNumVertices(), directed= not self.isUndirected())
+
+        #Add all vertices 
+        newGraph.vs["label"] = self.getVertices(self.getAllVertexIds())
+
+        vertices = self.getAllVertexIds()
+        allEdges = self.getAllEdges()
+        
+
+        for i in range(len(allEdges)):
+            vertexId1 = vertices.index(allEdges[i][0])
+            vertexId2 = vertices.index(allEdges[i][1])            
+            
+            newGraph.add_edge(vertexId1, vertexId2)
+            newGraph.es[i]["value"] = self.getEdge(allEdges[i][0], allEdges[i][1])
+
+        return newGraph
+
     vertices = None 
     adjacencies = None 
     undirected = None
