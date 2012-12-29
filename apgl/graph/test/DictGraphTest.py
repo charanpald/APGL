@@ -2,6 +2,7 @@ from apgl.graph.DictGraph import DictGraph
 from apgl.util.Util import Util 
 import unittest
 import numpy 
+import logging
 import numpy.testing as nptst
 
 class DictGraphTest(unittest.TestCase):
@@ -14,6 +15,15 @@ class DictGraphTest(unittest.TestCase):
         self.graph.addEdge(0, 4, 1)
         self.graph.addEdge(3, 4, 1)
         self.graph.setVertex(5, None)
+        
+        self.graph2 = DictGraph(False)
+        self.graph2.addEdge(0, 1, 1)
+        self.graph2.addEdge(1, 3, 1)
+        self.graph2.addEdge(0, 2, 2)
+        self.graph2.addEdge(2, 3, 5)
+        self.graph2.addEdge(0, 4, 1)
+        self.graph2.addEdge(3, 4, 1)
+        self.graph2.setVertex(5, 1)
 
     def testInit(self):
         dictGraph = DictGraph()
@@ -714,7 +724,6 @@ class DictGraphTest(unittest.TestCase):
         graph.addEdge(1, 3, 1)
 
         self.assertTrue((graph.dijkstrasAlgorithm(0) == numpy.array([0, 1, 2, 2, numpy.inf])).all())
-        print(graph.dijkstrasAlgorithm(5))
 
         #Test a graph in a ring
         graph = DictGraph()
@@ -751,11 +760,9 @@ class DictGraphTest(unittest.TestCase):
         graph.setVertex("f", 1)
  
         neighbourIndices, neighbourWeights = graph.adjacencyList()   
-        print(neighbourIndices)
-        print(neighbourWeights)
-        
+ 
         vertexIds = graph.getAllVertexIds()
-        
+
         for i in range(len(neighbourIndices)): 
             for k, j in enumerate(neighbourIndices[i]): 
                 self.assertTrue(graph.edgeExists(vertexIds[i], vertexIds[j]))  
@@ -786,7 +793,25 @@ class DictGraphTest(unittest.TestCase):
         P2[5, :] = numpy.array([numpy.inf, numpy.inf, numpy.inf, numpy.inf, numpy.inf, 0])
 
         self.assertTrue((P == P2).all())
-         
+
+    def testToIGraph(self): 
+        try:
+            import igraph
+        except ImportError as error:
+            logging.debug(error)
+            return        
+        
+        graph = DictGraph()
+        
+        graph["a", "b"] = 1
+        graph["b", "c"] = 2
+        
+        ig = graph.toIGraph()
+        
+        self.assertEquals(len(ig.vs), 3) 
+        self.assertEquals(ig[0, 2], 1) 
+        self.assertEquals(ig[1, 2], 1)
+        
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
