@@ -194,8 +194,20 @@ def articleGroupsGraph():
     plt.bar(xs[0:30], ys[0:30])
     plt.xlabel("Component size")
     plt.show() 
-   
+
+def fullCoauthorGraph(): 
+    fileName = path + "coauthorsGraph"
+    graph = igraph.Graph()
+    graph = graph.Read_Edgelist(fileName)
+    graph = graph.as_undirected()
+    print(igraph.summary(graph))
+
+    graphStats = GraphStatistics()
+    statsArray = graphStats.scalarStatistics(graph, slowStats=False)    
+    print(graphStats.strScalarStatsArray(statsArray))
+
 #contactsGraph()
 #groupsGraph() 
 #articlesGraph()
-articleGroupsGraph()
+#articleGroupsGraph()
+fullCoauthorGraph() 
