@@ -166,6 +166,7 @@ else:
     plt.legend(loc="upper left")
     plt.xlabel("Graph no.")
     plt.ylabel("||sin(theta)||")
+    plt.grid(True)
     
     plt.show()
     #Result are terrible 

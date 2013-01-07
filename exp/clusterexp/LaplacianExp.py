@@ -72,6 +72,7 @@ else:
     plt.xlabel("Graph no.")
     plt.ylabel("||sin(theta)||")
     plt.legend(loc="upper left")
+    plt.grid(True)
     
     #plt.figure(1)
     #plt.plot(numpy.arange(errors.shape[0]), errors)
