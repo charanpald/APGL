@@ -29,7 +29,7 @@ class EigenUpdaterTestCase(unittest.TestCase):
             A = numpy.random.randn(m, n)
             B = numpy.random.randn(m, p)
 
-            logging.debug("m="+str(m)+" n="+str(n)+" p="+str(p))
+            #logging.debug("m="+str(m)+" n="+str(n)+" p="+str(p))
 
             AcB = numpy.c_[A, B]
             ABBA = AcB.conj().T.dot(AcB)
