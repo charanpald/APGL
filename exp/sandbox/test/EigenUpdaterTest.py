@@ -64,7 +64,6 @@ class EigenUpdaterTestCase(unittest.TestCase):
                 self.assertTrue(numpy.linalg.norm(U - D2.dot(D2UD2).dot(D2.conj().T)) < tol )
 
                 t = min(k, Util.rank(ABBA))
-                self.assertTrue(pi2.shape[0] == t)
                 self.assertTrue(numpy.linalg.norm(V2.conj().T.dot(V2) - numpy.eye(pi2.shape[0])) < tol)
 
                 #Compute estimate using eigendecomposition of full matrix
