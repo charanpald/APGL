@@ -171,9 +171,11 @@ class EigenUpdater(object):
     def eigenAdd2(omega, Q, Y1, Y2, k, debug= False):
         """
         Compute an approximation of the eigendecomposition A^*A + Y1Y2^* +Y2Y1^*
-        in which Y1, Y2 are low rank, Y1^*Y2=0 and A^*A = Q Omega Q*. We use the
-        rank-k approximation of A^*A: Q_k Omega_k Q_k^* and then approximate
-        [A^*A_k + Y1Y2^* + Y2Y1^*]_k.
+        in which Y1, Y2 are low rank matrices, Y1^*Y2=0 and A^*A = Q Omega Q*. We 
+        use the rank-k approximation of A^*A: Q_k Omega_k Q_k^* and then find
+        [A^*A_k + Y1Y2^* + Y2Y1^*]. If debug=False then pi, V are returned which 
+        respectively correspond to all the eigenvalues/eigenvectors of 
+        [A^*A_k + Y1Y2^* + Y2Y1^*]. 
         """
         #logging.debug("< eigenAdd2 >")
         Parameter.checkInt(k, 0, float('inf'))
