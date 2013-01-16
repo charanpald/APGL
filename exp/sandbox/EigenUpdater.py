@@ -20,7 +20,7 @@ class EigenUpdater(object):
         and AB = A*B, BB = B*B. Q is the set of eigenvectors of A*A and s is the
         vector of eigenvalues. 
         """
-        logging.debug("< eigenConcat >")
+        #logging.debug("< eigenConcat >")
         Parameter.checkInt(k, 0, omega.shape[0])
         if not numpy.isrealobj(omega) or not numpy.isrealobj(Q):
             raise ValueError("Eigenvalues and eigenvectors must be real")
@@ -62,7 +62,7 @@ class EigenUpdater(object):
 
         V = numpy.dot(D, H)
 
-        logging.debug("</ eigenConcat >")
+        #logging.debug("</ eigenConcat >")
         return pi, V
 
     @staticmethod
@@ -106,9 +106,7 @@ class EigenUpdater(object):
         Q = numpy.r_[Q, numpy.zeros((p, Q.shape[1]))]
         Y1 = numpy.r_[numpy.zeros((m,p)), numpy.eye(p)]
         Y2 = numpy.r_[AB, 0.5*BB]
-        pi, V = EigenUpdater.eigenAdd2(omega, Q, Y1, Y2, k, debug=debug)
-        #logging.debug("</ lazyEigenConcatAsUpdate >")
-        return pi, V
+        return EigenUpdater.eigenAdd2(omega, Q, Y1, Y2, k, debug=debug)
 
     @staticmethod
     def eigenAdd(omega, Q, Y, k):
@@ -315,7 +313,7 @@ class EigenUpdater(object):
         to return for the new matrix. We could generalise this to delete a given
         list of rows/cols.
         """
-        logging.debug("< eigenRemove >")
+        #logging.debug("< eigenRemove >")
         Parameter.checkClass(omega, numpy.ndarray)
         Parameter.checkClass(Q, numpy.ndarray)
         Parameter.checkInt(k, 0, float('inf'))
@@ -344,7 +342,7 @@ class EigenUpdater(object):
         if numpy.linalg.norm(V[n:, :]) >= EigenUpdater.tol:
             logging.warn("numpy.linalg.norm(V[n:, :])= %s" % str(numpy.linalg.norm(V[n:, :])))
 
-        logging.debug("</ eigenRemove >")
+        #logging.debug("</ eigenRemove >")
         if not debug:
             return pi, V[0:n, :]
         else:
