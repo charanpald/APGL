@@ -265,5 +265,23 @@ class AbstractMatrixGraphTest(unittest.TestCase):
         clustering2 = numpy.array([1, 2, 2, 1, 1, 2])
         self.assertEquals(GraphUtils.randIndex(clustering1, clustering2), 16/30.0) 
 
+    def testModularityMatrix(self): 
+        W = scipy.sparse.csr_matrix((5, 5))
+        W[1, 0] = 1
+        W[0, 1] = 1
+        W[2, 3] = 1
+        W[3, 2] = 1
+        B = GraphUtils.modularityMatrix(W)
+        
+        B2 = numpy.zeros((5,5))
+        d = numpy.array(W.sum(0).ravel()).ravel()
+        m = W.getnnz()/2
+        
+        for i in range(5): 
+            for j in range(5): 
+                B2[i,j] = W[i,j] - d[i]*d[j]/2*m
+                self.assertEquals(B2[i, j], B[i, j])       
+        
+
 if __name__ == '__main__':
     unittest.main()

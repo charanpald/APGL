@@ -209,7 +209,21 @@ class GraphUtils(object):
         
         Lhat = I - D.dot(W)
         return Lhat  
+ 
+    @staticmethod 
+    def modularityMatrix(W):
+        """
+        Compute the modularity matrix from a weight matrix W.   
+        """
+        if not scipy.sparse.isspmatrix_csr(W):
+            raise ValueError("W is not a csr matrix")        
         
+        d = numpy.array(W.sum(0)).ravel()
+        m = W.getnnz()/2 
+        
+        B = W - numpy.outer(d, d)/(2*m)
+        
+        return B 
     
     @staticmethod
     def randIndex(clustering1, clustering2):
