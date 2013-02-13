@@ -5,85 +5,113 @@ Test some recommendation with the movielen data
 from apgl.util.PathDefaults import PathDefaults 
 import nimfa
 import numpy 
-import numpy as np
-import scipy.sparse as sp
+import matplotlib.pyplot as plt 
 from os.path import dirname, abspath, sep
 from warnings import warn
 import scipy.io 
 import logging 
 import sys
-from sklearn.decomposition import ProjectedGradientNMF
+from apgl.util.Sampling import Sampling 
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 numpy.set_printoptions(linewidth=1000, threshold=10000000)
 
 def preprocess(V):
     """
-    Preprocess MovieLens data matrix. Normalize data.
+    Normalize data so that each row has max value 1. 
     
-    Return preprocessed target sparse data matrix in CSR format and users' maximum ratings. Returned matrix's shape is 943 (users) x 1682 (movies). 
-    The sparse data matrix is converted to CSR format for fast arithmetic and matrix vector operations. 
-    
-    :param V: The MovieLens data matrix. 
-    :type V: `scipy.sparse.lil_matrix`
+    :param V: The data matrix. 
+    :type V: `scipy.sparse.csr_matrix`
     """
-    print "Preprocessing data matrix ..."
-    V = V.tocsr()
-    maxs = [np.max(V[i, :].todense()) for i in xrange(V.shape[0])]
+    logging.debug("Preprocessing data matrix")
+    maxs = [numpy.max(V[i, :].todense()) for i in range(V.shape[0])]
+    
     now = 0
-    for row in xrange(V.shape[0]):
+    for row in range(V.shape[0]):
         upto = V.indptr[row+1]
         while now < upto:
-            col = V.indices[now]
             V.data[now] /= maxs[row]
             now += 1
-    print "... Finished." 
+    logging.debug("Finished.")  
     return V, maxs
 
 def readCoauthors(): 
     """
     Take a list of coauthors and read in the complete graph into a sparse 
-    matrix R such that R_ij = k means author i has worked with j, k times.  
+    matrix R such that R_ij = k means author i has worked with j, k times. Then 
+    do matrix factorisation on the resulting methods. 
     """
     matrixFileName = PathDefaults.getOutputDir() + "erasm/R"
     
+    numExamples = 100 
+    numFolds = 3    
+    ranks = numpy.arange(10, 14, 3)
+    
+    trainErrors = numpy.zeros((ranks.shape[0], numFolds))
+    testErrors = numpy.zeros((ranks.shape[0], numFolds))
+    
     R = scipy.io.mmread(matrixFileName)
-    logging.debug("Loaded matrix " + str(R.shape) + " with " + str(R.getnnz()) + " non zeros")   
+    logging.debug("Loaded matrix " + str(R.shape) + " with " + str(R.getnnz()) + " non zeros")
     R = R.tocsr()
-    #R = R[0:100 ,:]
-    
+    R = R[0:numExamples ,:]
     R, maxS = preprocess(R)
-    print(R.getnnz())
-    #print(R.todense())
-    
-    model = ProjectedGradientNMF(n_components=15, init='nndsvd', max_iter=100)    
-    model.fit(R) 
-    print("Done")
-    
-    W = model.components_
-    print(W.shape)
-    
-    """
-    model = nimfa.mf(R, 
-                  seed = "random_vcol", 
-                  rank = 12, 
-                  method = "snmf", 
-                  max_iter = 5, 
-                  initialize_only = True,
-                  version = 'r',
-                  eta = 1.,
-                  beta = 1e-4, 
-                  i_conv = 10,
-                  w_min_change = 0)
-    print "Performing %s %s %d factorization ..." % (model, model.seed, model.rank) 
-    fit = nimfa.mf_run(model)
-    print "... Finished"
-    sparse_w, sparse_h = fit.fit.sparseness()
 
-    W = fit.basis()
+    #Take out some ratings to form a training set
+    rowInds, colInds = R.nonzero()
+    randInds = numpy.random.permutation(rowInds.shape[0])
+    indexList = Sampling.crossValidation(numFolds, rowInds.shape[0])
     
-    H = fit.coef()
-       
-    """       
+    for j, (trnIdx, tstIdx) in enumerate(indexList): 
+        logging.debug("Fold index " + str(j))
+        trainInds = randInds[trnIdx]
+        testInds = randInds[tstIdx]
+        
+        trainR = scipy.sparse.csr_matrix(R.shape)
+        for ind in trainInds: 
+            trainR[rowInds[ind], colInds[ind]] = R[rowInds[ind], colInds[ind]]
+            
+        testR = scipy.sparse.csr_matrix(R.shape) 
+        for ind in testInds: 
+            testR[rowInds[ind], colInds[ind]] = R[rowInds[ind], colInds[ind]]  
+        
+        for i, rank in enumerate(ranks):
+            logging.debug("Rank=" + str(rank))
+            model = nimfa.mf(trainR, method = "lsnmf", max_iter = 50, rank = rank, update = 'Euclidean', objective = 'div')
+            logging.debug("Performing factorisation") 
+            fit = nimfa.mf_run(model)
+            logging.debug("Finished")
+            sparse_w, sparse_h = fit.fit.sparseness()
+        
+            W = fit.basis()
+            H = fit.coef()
+            
+            predR = W.dot(H)
+            
+            #Compute train error  
+            for ind in trainInds: 
+                trainErrors[i, j] += (trainR[rowInds[ind], colInds[ind]] - predR[rowInds[ind], colInds[ind]])**2
+          
+            trainErrors[i, j] /= trainInds.shape[0]  
+          
+            #Compute test error 
+            for ind in testInds: 
+                testErrors[i, j] += (testR[rowInds[ind], colInds[ind]] - predR[rowInds[ind], colInds[ind]])**2
+                
+            testErrors[i, j] /= testInds.shape[0]  
+            logging.debug(testErrors[i, j])
+    
+    meanTrainErrors = trainErrors.mean(1)
+    meanTestErrors = testErrors.mean(1)
+        
+    logging.debug("Train errors = " + str(meanTrainErrors))
+    logging.debug("Test errors = " + str(meanTestErrors))
+    
+    plt.plot(ranks, meanTrainErrors)
+    plt.plot(ranks, meanTestErrors)
+    plt.show()
        
 readCoauthors()
+
+#TODO: 
+#Try a selection of factorisation methods 
+#Parallelism 
