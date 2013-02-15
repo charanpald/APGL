@@ -79,6 +79,8 @@ def factorise(args):
     return trainError, testError 
     
 
+ranks = numpy.arange(20, 101, 5)
+
 def recommend(method): 
     """
     Take a list of coauthors and read in the complete graph into a sparse 
@@ -88,10 +90,9 @@ def recommend(method):
     outputDir = PathDefaults.getOutputDir() + "erasm/" 
     matrixFileName = outputDir + "R"
     
+    numExamples = 5000 
+    numFolds = 5    
     
-    numExamples = 1000 
-    numFolds = 3    
-    ranks = numpy.arange(10, 25, 3)
     
     trainErrors = numpy.zeros((ranks.shape[0], numFolds))
     testErrors = numpy.zeros((ranks.shape[0], numFolds))
@@ -131,21 +132,31 @@ def recommend(method):
     logging.debug("Test errors = " + str(meanTestErrors))
     
     errorFileName = outputDir + "results_" + method
-    numpy.savez(errorFileName, meanTrainErrors, meanTestErrors)    
+    numpy.savez(errorFileName, meanTrainErrors, meanTestErrors)   
+    logging.debug("Saved results as " + errorFileName)
     
-    """
+def plotResults(method): 
+    outputDir = PathDefaults.getOutputDir() + "erasm/" 
+    errorFileName = outputDir + "results_" + method + ".npz"
+    arr = numpy.load(errorFileName)      
+    
+    meanTrainErrors, meanTestErrors = arr["arr_0"], arr["arr_1"]
+    
+    plt.figure()
     plt.plot(ranks, meanTrainErrors, label="Train Error")
     plt.plot(ranks, meanTestErrors, label="Test Error")
     plt.xlabel("Rank")
     plt.ylabel("MSE")
     plt.legend()
-    plt.show()
-    """
+    
 
-methods = ["icm", "lfnmf", "lsnmf", "nmf", "nsnmf" "pmf", "psnmf", "snmf"]      
+methods = ["lsnmf", "nmf"]      
 
 for method in methods: 
     recommend(method)
+    #plotResults(method)
+
+#plt.show()
 
 #TODO: 
 #Try matrix completion 
