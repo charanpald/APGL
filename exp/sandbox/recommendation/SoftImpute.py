@@ -8,6 +8,7 @@ import numpy
 import scipy.sparse
 import scipy.sparse.linalg 
 from apgl.util.SparseUtils import SparseUtils 
+from apgl.util.MCEvaluator import MCEvaluator 
 from apgl.util.Util import Util 
 
 class SoftImpute(object): 
@@ -76,3 +77,7 @@ class SoftImpute(object):
         s = numpy.clip(s, 0, numpy.max(s))
 
         return U, s, V 
+        
+    def getMetricMethod(self): 
+        return MCEvaluator.meanSqError()
+        
