@@ -3,6 +3,18 @@ import numpy
 import multiprocessing
 import itertools 
 
+#Start with some functions used for multiprocessing 
+
+def computeTestError(args):
+    """
+    Used in conjunction with the parallel model selection. Trains and then tests
+    on a seperate test set. 
+    """
+    (trainX, testX, learner) = args
+    predX = learner.learnModel(trainX)
+
+    return learner.getMetricMethod()(testX, predX)
+
 class AbstractMatrixCompleter(object): 
     def __init__(self): 
         pass 
@@ -15,7 +27,7 @@ class AbstractMatrixCompleter(object):
         :param X: The matrix to complete 
         :type X: :class:`scipy.sparse.csr_matrix`
 
-        :param idx: A list of train/test splits
+        :param idx: A list of train/test splits where non-zeros are the examples. 
         
         :param paramDict: A dictionary index by the method name and with value as an array of values
         :type X: :class:`dict`
@@ -33,8 +45,8 @@ class AbstractMatrixCompleter(object):
         paramList = []
         
         for trainInds, testInds in idx:
-            trainX, trainY = X[trainInds, :], y[trainInds]
-            testX, testY = X[testInds, :], y[testInds]
+            trainX = X[trainInds]
+            testX = X[testInds]
             
             indexIter = itertools.product(*gridInds)
             
@@ -47,7 +59,7 @@ class AbstractMatrixCompleter(object):
                     method(val[inds[currentInd]])
                     currentInd += 1                    
                 
-                paramList.append((trainX, trainY, testX, testY, learner))
+                paramList.append((trainX, testX, learner))
             
             m += 1 
             
@@ -62,7 +74,7 @@ class AbstractMatrixCompleter(object):
 
         pool.terminate()
 
-        learner = self.getBestLearner(meanErrors, paramDict, X, y, idx)
+        learner = self.getBestLearner(meanErrors, paramDict, X, idx)
 
         return learner, meanErrors
         
