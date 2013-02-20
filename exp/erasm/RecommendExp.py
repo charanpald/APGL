@@ -88,9 +88,9 @@ def recommend(method):
     do matrix factorisation on the resulting methods. 
     """
     outputDir = PathDefaults.getOutputDir() + "erasm/" 
-    matrixFileName = outputDir + "R"
+    matrixFileName = outputDir + "Toy"
     
-    numExamples = 5000 
+    numExamples = 50 
     numFolds = 5    
     
     
@@ -98,6 +98,7 @@ def recommend(method):
     testErrors = numpy.zeros((ranks.shape[0], numFolds))
     
     R = scipy.io.mmread(matrixFileName)
+    R = scipy.sparse.csr_matrix(R)
     logging.debug("Loaded matrix " + str(R.shape) + " with " + str(R.getnnz()) + " non zeros")
     R = R.tocsr()
     R = R[0:numExamples ,:]
