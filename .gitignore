@@ -1,9 +1,11 @@
+*~
 *.pyc
 *.pyo
 *.so
 *.o
 *.prof
 *.lprof
+*.log
 .spyderproject
 apgl.egg-info/
 build/
