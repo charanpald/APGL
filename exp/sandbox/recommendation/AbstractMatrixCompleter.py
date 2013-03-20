@@ -2,6 +2,8 @@ from apgl.util.Parameter import Parameter
 import numpy 
 import multiprocessing
 import itertools 
+import scipy.sparse 
+import itertools 
 
 #Start with some functions used for multiprocessing 
 
@@ -17,7 +19,8 @@ def computeTestError(args):
 
 class AbstractMatrixCompleter(object): 
     def __init__(self): 
-        pass 
+        self.processes = multiprocessing.cpu_count() 
+        self.chunkSize = 10
     
     def parallelModelSelect(self, X, idx, paramDict):
         """
@@ -44,9 +47,21 @@ class AbstractMatrixCompleter(object):
         m = 0
         paramList = []
         
+        rowInds, colInds = X.nonzero()
+        
         for trainInds, testInds in idx:
-            trainX = X[trainInds]
-            testX = X[testInds]
+            trainX = scipy.sparse.lil_matrix(X.shape)
+            testX = scipy.sparse.lil_matrix(X.shape)
+            
+            for i in range(trainInds.shape[0]): 
+                trainX[rowInds[trainInds[i]], colInds[trainInds[i]]] = X[rowInds[trainInds[i]], colInds[trainInds[i]]]
+            
+            trainX = trainX.tocsr()
+            
+            for i in range(testInds.shape[0]): 
+                testX[rowInds[testInds[i]], colInds[testInds[i]]] = X[rowInds[testInds[i]], colInds[testInds[i]]]
+                
+            testX = testX.tocsr()
             
             indexIter = itertools.product(*gridInds)
             
@@ -65,6 +80,7 @@ class AbstractMatrixCompleter(object):
             
         pool = multiprocessing.Pool(processes=self.processes, maxtasksperchild=100)
         resultsIterator = pool.imap(computeTestError, paramList, self.chunkSize)
+        #resultsIterator = itertools.imap(computeTestError, paramList)
         
         for trainInds, testInds in idx:
             indexIter = itertools.product(*gridInds)
@@ -77,4 +93,23 @@ class AbstractMatrixCompleter(object):
         learner = self.getBestLearner(meanErrors, paramDict, X, idx)
 
         return learner, meanErrors
+
+    def getBestLearner(self, meanErrors, paramDict, X, idx, best="min"): 
+        """
+        Given a grid of errors, paramDict and examples, labels, find the 
+        best learner and train it. 
+        """
+        if best == "min": 
+            bestInds = numpy.unravel_index(numpy.argmin(meanErrors), meanErrors.shape)
+        else: 
+            bestInds = numpy.unravel_index(numpy.argmax(meanErrors), meanErrors.shape)
+        currentInd = 0    
+        learner = self.copy()         
+    
+        for key, val in paramDict.items():
+            method = getattr(learner, key)
+            method(val[bestInds[currentInd]])
+            currentInd += 1   
         
+        learner.learnModel(X)            
+        return learner 
