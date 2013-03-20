@@ -1,6 +1,7 @@
 
 import sys
 from apgl.util.Util import Util
+from apgl.util.Sampling import Sampling 
 from exp.sandbox.recommendation.SoftImpute import SoftImpute 
 import numpy
 import unittest
@@ -13,9 +14,12 @@ class SoftImputeTest(unittest.TestCase):
     def setUp(self):
         logging.basicConfig(stream=sys.stdout, level=logging.INFO)
         numpy.set_printoptions(precision=3, suppress=True)
+        
+        numpy.seterr(all="raise")
 
     def testSvdSoft(self): 
         A = scipy.sparse.rand(10, 10, 0.2)
+        A = A.tocsc()
         
         lmbda = 0.1
         k = 6
@@ -52,6 +56,22 @@ class SoftImputeTest(unittest.TestCase):
         
         nptst.assert_array_almost_equal(numpy.zeros(X.shape), ZList[0].todense())
         nptst.assert_array_almost_equal(X.todense(), ZList[1].todense(), 2)
+
+    def testParallelModelSelect(self): 
+        X = scipy.sparse.rand(10, 10, 0.5)
+        X = X.tocsr()
+          
+        numExamples = X.getnnz()
+        paramDict = {}
+        paramDict["setK"] = numpy.array([5, 10, 20])
+        folds = 3 
+        idx = Sampling.randCrossValidation(folds, numExamples)
+                
+        
+        lmbdas = numpy.array([0.1])
+        softImpute = SoftImpute(lmbdas, k=10)
+        learner, meanErrors = softImpute.parallelModelSelect(X, idx, paramDict)
+
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
