@@ -84,6 +84,24 @@ class  SparseUtilsTest(unittest.TestCase):
         for i in range(numRows): 
             self.assertEquals(d[i], A[i,i])             
 
+    def testSelectMatrix(self): 
+        numRows = 10
+        numCols = 10  
+        A = scipy.sparse.rand(numRows, numCols, 0.5, "csr")
+        
+        #Select first row 
+        rowInds = numpy.zeros(numCols)
+        colInds = numpy.arange(10)
+
+        newA = SparseUtils.selectMatrix(A, rowInds, colInds)
+        
+        for i in range(numCols): 
+            self.assertEquals(A[0, i], newA[0, i])
+            
+        for i in range(1, numRows): 
+            for j in range(numCols): 
+                self.assertEquals(newA[i, j], 0)
+
 if __name__ == '__main__':
     unittest.main()
 

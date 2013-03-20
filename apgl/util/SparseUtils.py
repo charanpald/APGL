@@ -61,4 +61,23 @@ class SparseUtils(object):
         
         return Y 
         
+    @staticmethod 
+    def selectMatrix(X, rowInds, colInds): 
+        """
+        Given a sparse matrix X, and indices rowInds and colInds, create a sparse 
+        matrix of the same shape as X with identical values in those indices. The 
+        returned matrix is a lil_matrix. 
+        """      
+        if not scipy.sparse.issparse(X): 
+            raise ValueError("Input matrix must be sparse")
+        
+        newX = scipy.sparse.lil_matrix(X.shape)
+        
+        for i in range(rowInds.shape[0]): 
+            newX[rowInds[i], colInds[i]] = X[rowInds[i], colInds[i]]
+            
+        return newX 
+        
+        
+        
         
