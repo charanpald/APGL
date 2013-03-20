@@ -14,7 +14,8 @@ class Sampling(object):
     def crossValidation(folds, numExamples):
         """
         Returns a list of tuples (trainIndices, testIndices) using k-fold cross
-        validation.
+        validation. The dataset is split into approximately folds contiguous 
+        subsamples.  
 
         :param folds: The number of cross validation folds.
         :type folds: :class:`int`
@@ -31,6 +32,34 @@ class Sampling(object):
         for i in range(0, folds):
             testIndices = numpy.arange(int(foldSize*i), int(foldSize*(i+1)))
             trainIndices = numpy.setdiff1d(numpy.arange(0, numExamples), numpy.array(testIndices))
+            indexList.append((trainIndices, testIndices))
+
+        return indexList 
+
+    @staticmethod
+    def randCrossValidation(folds, numExamples):
+        """
+        Returns a list of tuples (trainIndices, testIndices) using k-fold cross
+        validation. In this case we randomise the indices and then split into 
+        folds. 
+
+        :param folds: The number of cross validation folds.
+        :type folds: :class:`int`
+
+        :param numExamples: The number of examples.
+        :type numExamples: :class:`int`
+        """
+        Parameter.checkInt(folds, 1, numExamples)
+        Parameter.checkInt(numExamples, 2, float('inf'))
+
+        foldSize = float(numExamples)/folds
+        indexList = []
+
+        inds = numpy.random.permutation(numExamples)
+
+        for i in range(0, folds):
+            testIndices = inds[int(foldSize*i): int(foldSize*(i+1))]
+            trainIndices = numpy.setdiff1d(numpy.arange(0, numExamples), testIndices)
             indexList.append((trainIndices, testIndices))
 
         return indexList 

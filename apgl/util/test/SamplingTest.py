@@ -96,6 +96,20 @@ class  SamplingTest(unittest.TestCase):
         for i in range(folds):
             self.assertTrue((numpy.union1d(indices[i][0], indices[i][1]) == numpy.arange(numExamples)).all())
 
+    def testRandCrossValidation(self): 
+        numExamples = 10
+        folds = 3
+        
+        indices = Sampling.randCrossValidation(folds, numExamples)
+    
+        
+        for i in range(folds):
+            self.assertTrue((numpy.union1d(indices[i][0], indices[i][1]) == numpy.arange(numExamples)).all())
+        
+        
+        
+        
+
 if __name__ == '__main__':
     unittest.main()
 
