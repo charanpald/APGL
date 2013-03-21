@@ -19,6 +19,7 @@ from apgl.util.ProfileUtils import ProfileUtils
 from apgl.util.VqUtils import VqUtils
 from apgl.util.Util import Util
 from exp.sandbox.EfficientNystrom import EfficientNystrom
+from exp.sandbox.RandomisedSVD import RandomisedSVD
 
 class IterativeSpectralClustering(object):
     def __init__(self, k1, k2=20, k3=100, alg="exact", T=10, computeBound=False, logStep=1):
@@ -30,7 +31,7 @@ class IterativeSpectralClustering(object):
         
         :param k1: The number of clusters 
         
-        :param k2: The number of eigenvectors to keep for IASC 
+        :param k2: The number of eigenvectors to keep for IASC or the number of singular vectors for randomisd SVD
         
         :param k3: The number of columns to sample for Nystrom approximation 
         
@@ -43,7 +44,7 @@ class IterativeSpectralClustering(object):
         Parameter.checkInt(k3, 1, float('inf'))
         Parameter.checkInt(T, 1, float('inf'))
         
-        if alg not in ["exact", "IASC", "nystrom", "efficientNystrom"]: 
+        if alg not in ["exact", "IASC", "nystrom", "efficientNystrom", "randomisedSvd"]: 
             raise ValueError("Invalid algorithm : " + str(alg))
 
         self.k1 = k1
@@ -133,10 +134,12 @@ class IterativeSpectralClustering(object):
                             
             elif self.alg == "nystrom":
                 omega, Q = Nystrom.eigpsd(ABBA, self.k3)
-            elif self.alg=="exact": 
+            elif self.alg == "exact": 
                 omega, Q = scipy.sparse.linalg.eigsh(ABBA, min(self.k1, ABBA.shape[0]-1), which="LM", ncv = min(15*self.k1, ABBA.shape[0]))
             elif self.alg == "efficientNystrom":
-                omega, Q = EfficientNystrom.eigWeight(subW, self.k3, self.k1)
+                omega, Q = EfficientNystrom.eigWeight(subW, self.k2, self.k1)
+            elif self.alg == "randomisedSvd": 
+                Q, omega, R = RandomisedSVD.svd(ABBA, self.k3)
             else:
                 raise ValueError("Invalid Algorithm: " + str(self.alg))
 
