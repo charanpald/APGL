@@ -26,6 +26,7 @@ class ClusterExpHelper(object):
     defaultAlgoArgs.runEfficientNystrom = False
     defaultAlgoArgs.runNing = False
     defaultAlgoArgs.runModularity = False
+    defaultAlgoArgs.runRandomisedSvd = False
 
     defaultAlgoArgs.k1 = 10
     defaultAlgoArgs.k2s = [10, 20] 
@@ -56,7 +57,7 @@ class ClusterExpHelper(object):
         
         # define parser
         algoParser = argparse.ArgumentParser(description="", add_help=add_help)
-        for method in ["runIASC", "runExact", "runModularity", "runNystrom", "runEfficientNystrom", "runNing"]:
+        for method in ["runIASC", "runExact", "runModularity", "runNystrom", "runEfficientNystrom", "runNing", "runRandomisedSvd"]:
             algoParser.add_argument("--" + method, action="store_true", default=defaultAlgoArgs.__getattribute__(method))
         algoParser.add_argument("--k1", type=int, help="Number of clusters to construct at each iteration (default: %(default)s)", default=defaultAlgoArgs.k1)
         algoParser.add_argument("--k2s", nargs="+", type=int, help="Rank of the approximated laplacian matrix (default: %(default)s)", default=defaultAlgoArgs.k2s)
@@ -173,6 +174,20 @@ class ClusterExpHelper(object):
                 clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, verbose=True)
     
                 resultsFileName = self.resultsDir + "ResultsNystrom_k1="+ str(self.algoArgs.k1) + "_k3=" + str(k3) + ".npz"
+                self.recordResults(clusterList, timeList, resultsFileName)
+                
+        if self.algoArgs.runRandomisedSvd:
+            logging.debug("Running randomised SVD method")
+            
+            for k2 in self.algoArgs.k2s: 
+                logging.debug("k2=" + str(k2))
+                clusterer = IterativeSpectralClustering(self.algoArgs.k1, k2=k2, alg="randomisedSvd", logStep=self.logStep)
+                clusterer.nb_iter_kmeans = 20
+                clusterer.computeBound = self.algoArgs.computeBound
+                iterator = self.getIterator()
+                clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, verbose=True)
+    
+                resultsFileName = self.resultsDir + "ResultsRandomisedSvd_k1="+ str(self.algoArgs.k1) + "_k2=" + str(k2) + ".npz"
                 self.recordResults(clusterList, timeList, resultsFileName)
                 
         if self.algoArgs.runEfficientNystrom:

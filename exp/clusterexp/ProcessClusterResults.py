@@ -18,7 +18,7 @@ numpy.set_printoptions(suppress=True, linewidth=60, threshold=50000)
 resultsDir = PathDefaults.getOutputDir() + "cluster/"
 #resultsDir = PathDefaults.getOutputDir() + "cluster/cluster_mostrare/"
 
-plotHIV = False
+plotHIV = True
 plotBemol = False
 plotCitation = False
 
@@ -28,7 +28,7 @@ HIVSubDir = "HIV"
 CitationSubDir = "Citation"
 
 # uncomment data files to read (corresponding curve will be recomputed)
-increasingClustFileName = resultsDir + "IncreasingContrastClustErrors_pmax0.01"
+#increasingClustFileName = resultsDir + "IncreasingContrastClustErrors_pmax0.01"
 
 
 maxPoints = 100             # number of points (dot, square, ...) on curves
@@ -62,7 +62,7 @@ class MyPlot:
         self.k3s = k3s
         self.T = T         
         
-        self.methodNames = ["IASC", "Exact", "Ning", "Nystrom"]
+        self.methodNames = ["IASC", "Exact", "Ning", "Nystrom", "RandomisedSvd"]
         self.labelNames = []
         self.plotStyles = []
         self.plotLineWidths = []
@@ -139,6 +139,17 @@ class MyPlot:
                 self.labelNames.append("Ning")
                 self.plotStyles.append(colourPlotStyles[i] + linePlotStyles[0])
                 self.plotLineWidths.append(1)
+            elif method == "RandomisedSvd": 
+                for j, k2 in enumerate(self.k2s): 
+                    resultsFileName = resultsDir + self.subDirName + "/" + self.datasetName + "ResultsRandomisedSvd_k1="+ str(self.k1) + "_k2=" + str(k2) + ".npz"
+                    self.readFile(resultsFileName) 
+                    self.labelNames.append("RSVD "+str(k2))
+                    self.plotStyles.append(colourPlotStyles[i] + linePlotStyles[j])
+                    # When there is not enough line style, one uses different linewidths
+                    if len(self.k3s) > 4:
+                        self.plotLineWidths.append(1 + (1-j//4)*2)
+                    else:
+                        self.plotLineWidths.append(1)
                 
 
     def readFile(self, resultsFileName): 
