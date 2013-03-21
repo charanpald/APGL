@@ -25,8 +25,8 @@ class  RandomisedSVDTest(unittest.TestCase):
         for k in ks: 
             U, s, V = RandomisedSVD.svd(A, k, q)
             
-            nptst.assert_array_almost_equal(U.T.dot(U), numpy.eye(2*k))
-            nptst.assert_array_almost_equal(V.T.dot(V), numpy.eye(2*k))
+            nptst.assert_array_almost_equal(U.T.dot(U), numpy.eye(k))
+            nptst.assert_array_almost_equal(V.T.dot(V), numpy.eye(k))
             A2 = (U*s).dot(V.T)
             
             error = numpy.linalg.norm(A - A2)
