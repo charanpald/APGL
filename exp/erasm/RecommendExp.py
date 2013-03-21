@@ -4,10 +4,12 @@ Test some recommendation with the Mendeley coauthor data
 
 from apgl.util.PathDefaults import PathDefaults 
 from apgl.util.Sampling import Sampling 
-import nimfa
+from apgl.util.SparseUtils import SparseUtils 
+from exp.sandbox.recommendation.AbstractMatrixCompleter import computeTestError
+from exp.sandbox.recommendation.NimfaFactorise import NimfaFactorise 
+from exp.sandbox.recommendation.SoftImpute import SoftImpute 
 import numpy 
 import matplotlib.pyplot as plt 
-from os.path import dirname, abspath, sep
 import scipy.io 
 import logging 
 import sys
@@ -35,56 +37,10 @@ def preprocess(V):
     logging.debug("Finished.")  
     return V, maxs
 
-
-def factorise(args):
-    maxIter = 30
-    R, trainInds, testInds, rank, method = args 
-    
-    logging.debug("Computing factorisation with rank " + str(rank))
-    rowInds, colInds = R.nonzero()
-    
-    trainR = scipy.sparse.csr_matrix(R.shape)
-    for ind in trainInds: 
-        trainR[rowInds[ind], colInds[ind]] = R[rowInds[ind], colInds[ind]]
-        
-    testR = scipy.sparse.csr_matrix(R.shape) 
-    for ind in testInds: 
-        testR[rowInds[ind], colInds[ind]] = R[rowInds[ind], colInds[ind]] 
-    
-    model = nimfa.mf(trainR, method=method, max_iter=maxIter, rank=rank)
-    fit = nimfa.mf_run(model)
-    W = fit.basis()
-    H = fit.coef()
-    
-    predR = W.dot(H)
-    
-    #Compute train error 
-    rowInds, colInds = trainR.nonzero()
-    trainError = 0 
-
-    for i in range(rowInds.shape[0]): 
-        trainError += (trainR[rowInds[i], colInds[i]] - predR[rowInds[i], colInds[i]])**2 
-        
-    trainError /= rowInds.shape[0]
-    
-    #Compute test error
-    rowInds, colInds = testR.nonzero()
-    testError = 0 
-
-    for i in range(rowInds.shape[0]): 
-        testError += (testR[rowInds[i], colInds[i]] - predR[rowInds[i], colInds[i]])**2 
-        
-    testError /= rowInds.shape[0]
-    
-    return trainError, testError 
-    
-
-ranks = numpy.arange(20, 101, 5)
-
-def recommend(method): 
+def recommend(learner): 
     """
     Take a list of coauthors and read in the complete graph into a sparse 
-    matrix R such that R_ij = k means author i has worked with j, k times. Then 
+    matrix X such that X_ij = k means author i has worked with j, k times. Then 
     do matrix factorisation on the resulting methods. 
     """
     outputDir = PathDefaults.getOutputDir() + "erasm/" 
@@ -92,20 +48,16 @@ def recommend(method):
     
     numExamples = 50 
     numFolds = 5    
-    
-    
-    trainErrors = numpy.zeros((ranks.shape[0], numFolds))
-    testErrors = numpy.zeros((ranks.shape[0], numFolds))
-    
-    R = scipy.io.mmread(matrixFileName)
-    R = scipy.sparse.csr_matrix(R)
-    logging.debug("Loaded matrix " + str(R.shape) + " with " + str(R.getnnz()) + " non zeros")
-    R = R.tocsr()
-    R = R[0:numExamples ,:]
-    R, maxS = preprocess(R)
+      
+    X = scipy.io.mmread(matrixFileName)
+    X = scipy.sparse.csr_matrix(X)
+    logging.debug("Loaded matrix " + str(X.shape) + " with " + str(X.getnnz()) + " non zeros")
+    X = X.tocsr()
+    X = X[0:numExamples ,:]
+    X, maxS = preprocess(X)
 
     #Take out some ratings to form a training set
-    rowInds, colInds = R.nonzero()
+    rowInds, colInds = X.nonzero()
     randInds = numpy.random.permutation(rowInds.shape[0])
     indexList = Sampling.crossValidation(numFolds, rowInds.shape[0])
     
@@ -114,53 +66,36 @@ def recommend(method):
         trainInds = randInds[trnIdx]
         testInds = randInds[tstIdx]
         
-        for i, rank in enumerate(ranks):
-            paramList.append((R, trainInds, testInds, rank, method))
+        trainX = SparseUtils.selectMatrix(X, rowInds[trainInds], colInds[trainInds]).tocsr()
+        testX = SparseUtils.selectMatrix(X, rowInds[testInds], colInds[testInds]).tocsr()
+        
+        paramList.append((trainX, testX, learner))
         
     pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
-    results = pool.map(factorise, paramList)
+    results = pool.map(computeTestError, paramList)
+    #results = map(computeTestError, paramList)
     
-    k = 0 
-    for j in range(len(indexList)): 
-        for i in range(len(ranks)):
-            trainErrors[i, j], testErrors[i, j] = results[k]
-            k += 1 
-            
-    meanTrainErrors = trainErrors.mean(1)
-    meanTestErrors = testErrors.mean(1)
-        
-    logging.debug("Train errors = " + str(meanTrainErrors))
+    testErrors = numpy.array(results)
+    meanTestErrors = testErrors.mean()
     logging.debug("Test errors = " + str(meanTestErrors))
     
-    errorFileName = outputDir + "results_" + method
-    numpy.savez(errorFileName, meanTrainErrors, meanTestErrors)   
+    errorFileName = outputDir + "results_" + learner.name()
+    numpy.savez(errorFileName, meanTestErrors)   
     logging.debug("Saved results as " + errorFileName)
     
-def plotResults(method): 
-    outputDir = PathDefaults.getOutputDir() + "erasm/" 
-    errorFileName = outputDir + "results_" + method + ".npz"
-    arr = numpy.load(errorFileName)      
-    
-    meanTrainErrors, meanTestErrors = arr["arr_0"], arr["arr_1"]
-    
-    plt.figure()
-    plt.plot(ranks, meanTrainErrors, label="Train Error")
-    plt.plot(ranks, meanTestErrors, label="Test Error")
-    plt.xlabel("Rank")
-    plt.ylabel("MSE")
-    plt.legend()
-    
+nimfaFactorise = NimfaFactorise("lsnmf")
+lmbdas = numpy.array([0.1])
+softImpute = SoftImpute(lmbdas)
 
-methods = ["lsnmf", "nmf"]      
+learners = [softImpute, nimfaFactorise]      
 
-for method in methods: 
-    recommend(method)
+for learner in learners: 
+    recommend(learner)
     #plotResults(method)
 
 #plt.show()
 
 #TODO: 
-#Try matrix completion 
 #Profile 
 #Different error methods 
 #Save results 
