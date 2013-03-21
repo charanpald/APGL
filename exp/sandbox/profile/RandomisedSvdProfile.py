@@ -23,7 +23,7 @@ class RandomisedSvdProfile(object):
         q = 2
         ProfileUtils.profile('RandomisedSVD.svd(L, k, q)', globals(), locals())
         
-        #Compare against the exact svd 
+        #Compare against the exact svd - it's much faster 
         #ProfileUtils.profile('scipy.sparse.linalg.svds(L, k=2*k)', globals(), locals())
 
 profiler = RandomisedSvdProfile()

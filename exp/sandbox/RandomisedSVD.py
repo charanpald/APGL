@@ -11,7 +11,7 @@ class RandomisedSVD(object):
         pass
     
     @staticmethod
-    def svd(A, k, q): 
+    def svd(A, k, q=2): 
         """
         Compute the SVD of a sparse or dense matrix A, finding the first 2k 
         singular vectors/values, using exponent q. Returns the left and right singular 
