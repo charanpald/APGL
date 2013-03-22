@@ -89,6 +89,7 @@ clusterExpHelper = ClusterExpHelper(generator.getIterator, remainingArgs, defaul
 clusterExpHelper.algoArgs.k1 = 25
 clusterExpHelper.algoArgs.k2s = [25, 50, 100, 200]
 clusterExpHelper.algoArgs.k3s = [100, 200, 500, 1000, 1500]
+clusterExpHelper.algoArgs.k4s = [100, 200, 500, 1000]
 #clusterExpHelper.algoArgs.k3s = [1500]
 clusterExpHelper.printAlgoArgs()
 #    os.makedirs(resultsDir, exist_ok=True) # for python 3.2

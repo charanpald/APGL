@@ -22,7 +22,7 @@ from exp.sandbox.EfficientNystrom import EfficientNystrom
 from exp.sandbox.RandomisedSVD import RandomisedSVD
 
 class IterativeSpectralClustering(object):
-    def __init__(self, k1, k2=20, k3=100, alg="exact", T=10, computeBound=False, logStep=1):
+    def __init__(self, k1, k2=20, k3=100, k4=100, alg="exact", T=10, computeBound=False, logStep=1):
         """
         Intialise this object with integer k1 which is the number of clusters to
         find, and k2 which is the maximum rank of the approximation of the shift
@@ -31,11 +31,13 @@ class IterativeSpectralClustering(object):
         
         :param k1: The number of clusters 
         
-        :param k2: The number of eigenvectors to keep for IASC or the number of singular vectors for randomised SVD
+        :param k2: The number of eigenvectors to keep for IASC 
         
         :param k3: The number of columns to sample for Nystrom approximation 
         
-        :param alg: The algorithm to use: "exact", "IASC", "nystrom" or "efficientNystrom" clustering
+        :param k4: The number of random projections to use with randomised SVD 
+        
+        :param alg: The algorithm to use: "exact", "IASC", "nystrom", "randomisedSvd" or "efficientNystrom" clustering
         
         :param T: The number of iterations before eigenvectors are recomputed in IASC 
         """
@@ -50,6 +52,7 @@ class IterativeSpectralClustering(object):
         self.k1 = k1
         self.k2 = k2
         self.k3 = k3
+        self.k4 = k4
         self.T = T
         
         logging.debug("IterativeSpectralClustering(" + str((k1, k2, k3, T)) + ") with algorithm " + alg)
@@ -139,7 +142,7 @@ class IterativeSpectralClustering(object):
             elif self.alg == "efficientNystrom":
                 omega, Q = EfficientNystrom.eigWeight(subW, self.k2, self.k1)
             elif self.alg == "randomisedSvd": 
-                Q, omega, R = RandomisedSVD.svd(ABBA, self.k2)
+                Q, omega, R = RandomisedSVD.svd(ABBA, self.k4)
             else:
                 raise ValueError("Invalid Algorithm: " + str(self.alg))
 

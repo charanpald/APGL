@@ -47,6 +47,7 @@ defaultAlgoArgs = argparse.Namespace()
 defaultAlgoArgs.k1 = 100
 defaultAlgoArgs.k2s = [100, 200, 500]
 defaultAlgoArgs.k3s = [500, 1000, 2000, 5000]
+defaultAlgoArgs.k4s = [200, 500, 1000, 2000]
 
 defaultAlgoArgs.T = 20 
 

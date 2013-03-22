@@ -111,6 +111,7 @@ clusterExpHelper.algoArgs.T = 20
 clusterExpHelper.algoArgs.k1 = 50
 clusterExpHelper.algoArgs.k2s = [50, 100, 200, 500]
 clusterExpHelper.algoArgs.k3s = [1000, 2000, 5000]
+clusterExpHelper.algoArgs.k4s = [200, 500, 1000, 2000]
 clusterExpHelper.printAlgoArgs()
 
 #    os.makedirs(resultsDir, exist_ok=True) # for python 3.2
