@@ -44,6 +44,7 @@ class IterativeSpectralClustering(object):
         Parameter.checkInt(k1, 1, float('inf'))
         Parameter.checkInt(k2, 1, float('inf'))
         Parameter.checkInt(k3, 1, float('inf'))
+        Parameter.checkInt(k4, 1, float('inf'))
         Parameter.checkInt(T, 1, float('inf'))
         
         if alg not in ["exact", "IASC", "nystrom", "efficientNystrom", "randomisedSvd"]: 
