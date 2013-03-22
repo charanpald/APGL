@@ -121,15 +121,7 @@ if saveResults:
                 omega2k, Q2k = omega2[0:k], Q2[:, 0:k]
                 
                 errors[i, j] += computeBound(L, omega, Q, omega2k, Q2k, k)
-            
-            if i == 0: 
-                #print(omega)
-                #print(omega2)        
-                
-                plt.figure(321)
-                plt.plot(numpy.arange(omega.shape[0]), omega)
-                plt.plot(numpy.arange(omega2.shape[0]), omega2)
-                #plt.show()    
+        
             
             #Incremental updates 
             print("Running Eigen-update")
