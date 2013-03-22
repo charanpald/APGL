@@ -74,7 +74,7 @@ class ThreeClustIterator(object):
 ps = numpy.arange(0.1, 0.21, 0.1)
 #ps = numpy.arange(0.05, 0.20, 0.1)  
 numGraphs = len(ThreeClustIterator().subgraphIndicesList) 
-saveResults = False 
+saveResults = True 
 
 resultsDir = PathDefaults.getOutputDir() + "cluster/"
 fileName = resultsDir + "ThreeClustErrors.npz"
@@ -113,6 +113,7 @@ if saveResults:
     k1 = numClusters
     
     k3 = 90
+    k4 = 90 
     T = 8 # index of iteration where exact decomposition is computed
     exactClusterer = IterativeSpectralClustering(k1, alg="exact")
     iascClusterers = []
@@ -120,6 +121,7 @@ if saveResults:
         iascClusterers.append(IterativeSpectralClustering(k1, k2, alg="IASC", T=T)) 
     nystromClusterer = IterativeSpectralClustering(k1, k3=k3, alg="nystrom")
     ningsClusterer = NingSpectralClustering(k1, T=T)
+    randSvdCluster = IterativeSpectralClustering(k1, k4=k4, alg="randomisedSvd")
     
     numRepetitions = 50
     #numRepetitions = 2
@@ -129,6 +131,7 @@ if saveResults:
     clustErrExact = numpy.zeros((ps.shape[0], numGraphs, numRepetitions))
     clustErrNings = numpy.zeros((ps.shape[0], numGraphs, numRepetitions))
     clustErrNystrom = numpy.zeros((ps.shape[0], numGraphs, numRepetitions))
+    clustErrRandSvd = numpy.zeros((ps.shape[0], numGraphs, numRepetitions))
     
     for r in range(numRepetitions):
         Util.printIteration(r, 1, numRepetitions)
@@ -155,6 +158,10 @@ if saveResults:
                 logging.debug("Running Nings method")
                 graphIterator = ThreeClustIterator(p, numClusters, r).getIterator()
                 clustListNings = ningsClusterer.cluster(graphIterator)
+                
+            logging.debug("Running random SVD method")
+            graphIterator = ThreeClustIterator(p, numClusters, r).getIterator()
+            clustListRandSVD = randSvdCluster.clusterFromIterator(graphIterator, False)
     
             # computer rand index error for each iteration
             # error: proportion of pairs of vertices (x,y) s.t.
@@ -169,32 +176,38 @@ if saveResults:
                   clustErrNystrom[t, it, r] += GraphUtils.randIndex(clustListNystrom[it], indicesList)
                   if do_Nings:
                       clustErrNings[t, it, r] += GraphUtils.randIndex(clustListNings[it], indicesList)
+                      
+                  clustErrRandSvd[t, it, r] += GraphUtils.randIndex(clustListRandSVD[it], indicesList)
     
-    numpy.savez(fileName, clustErrApprox, clustErrExact, clustErrNystrom, clustErrNings)
+    numpy.savez(fileName, clustErrApprox, clustErrExact, clustErrNystrom, clustErrNings, clustErrRandSvd)
     logging.debug("Saved results as " + fileName)
 else:  
     errors = numpy.load(fileName)
-    clustErrApprox, clustErrExact, clustErrNystrom, clustErrNings = errors["arr_0"], errors["arr_1"], errors["arr_2"], errors["arr_3"]
+    clustErrApprox, clustErrExact, clustErrNystrom, clustErrNings, clustErrRandSvd = errors["arr_0"], errors["arr_1"], errors["arr_2"], errors["arr_3"]
     
     meanClustErrExact = clustErrExact.mean(2)
     meanClustErrApprox = clustErrApprox.mean(2)
     meanClustErrNystrom = clustErrNystrom.mean(2)
     meanClustErrNings = clustErrNings.mean(2)
+    meanClustErrRandSvd = clustErrRandSvd.mean(2)
     
     stdClustErrExact = clustErrExact.std(2)
     stdClustErrApprox = clustErrApprox.std(2)
     stdClustErrNystrom = clustErrNystrom.std(2)
     stdClustErrNings = clustErrNings.std(2)
+    stdClustErrRandSvd = clustErrRandSvd.std(2)
     
     print(meanClustErrExact)
     print(meanClustErrApprox)
     print(meanClustErrNystrom)
     print(meanClustErrNings)
+    print(meanClustErrRandSvd)
     
     print(stdClustErrExact)
     print(stdClustErrApprox)
     print(stdClustErrNystrom)
     print(stdClustErrNings)
+    print(stdClustErrRandSvd)
     
     #Now lets plot the results
     iterations = numpy.arange(numGraphs)
@@ -214,9 +227,9 @@ else:
         resultStds.append(stdClustErrApprox[:, :, i])
         names.append("IASC " + str(k2s[i]))
         plotStyles.append(colourPlotStyles[0] + linePlotStyles[i])
-    resultMeans.extend([meanClustErrExact, meanClustErrNings, meanClustErrNystrom]) 
-    resultStds.extend([stdClustErrExact, stdClustErrNings, stdClustErrNystrom]) 
-    names.extend(["Exact", "Ning", "Nystrom"])
+    resultMeans.extend([meanClustErrExact, meanClustErrNings, meanClustErrNystrom, meanClustErrRandSvd])
+    resultStds.extend([stdClustErrExact, stdClustErrNings, stdClustErrNystrom, stdClustErrRandSvd])
+    names.extend(["Exact", "Ning", "Nystrom", "RandSVD"])
     for i in range(3): 
         plotStyles.append(colourPlotStyles[i+1] + linePlotStyles[0])
     
