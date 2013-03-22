@@ -31,7 +31,7 @@ class IterativeSpectralClustering(object):
         
         :param k1: The number of clusters 
         
-        :param k2: The number of eigenvectors to keep for IASC or the number of singular vectors for randomisd SVD
+        :param k2: The number of eigenvectors to keep for IASC or the number of singular vectors for randomised SVD
         
         :param k3: The number of columns to sample for Nystrom approximation 
         
@@ -139,7 +139,7 @@ class IterativeSpectralClustering(object):
             elif self.alg == "efficientNystrom":
                 omega, Q = EfficientNystrom.eigWeight(subW, self.k2, self.k1)
             elif self.alg == "randomisedSvd": 
-                Q, omega, R = RandomisedSVD.svd(ABBA, self.k3)
+                Q, omega, R = RandomisedSVD.svd(ABBA, self.k2)
             else:
                 raise ValueError("Invalid Algorithm: " + str(self.alg))
 
