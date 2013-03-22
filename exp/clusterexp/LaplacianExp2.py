@@ -17,6 +17,7 @@ from apgl.util.Util import Util
 from exp.clusterexp.BoundGraphIterator import BoundGraphIterator 
 from exp.sandbox.Nystrom import Nystrom 
 from exp.sandbox.EigenUpdater import EigenUpdater 
+from exp.sandbox.RandomisedSVD import RandomisedSVD
 
 numpy.random.seed(21)
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -49,7 +50,7 @@ def eigenUpdate(L1, L2, omega, Q, k):
 def computeBound(A, omega, Q, omega2, Q2, k):
     """
     Compute the perturbation bound on L using exact eigenvalues/vectors omega and 
-    Q and approximate ones omega2, Q. 
+    Q and approximate ones omega2, Q2. 
     """
     A = A.todense()
     M = Q2.T.dot(A).dot(Q2)
@@ -75,13 +76,15 @@ def computeBound(A, omega, Q, omega2, Q2, k):
 k = 4
 numGraphs = 100 
 nystromNs = [300, 600, 900]
+randSVDVecs = [300, 600, 900]
 numClusterVertices = 250
-numMethods = len(nystromNs) + 2 
+numMethods = len(nystromNs) + len(randSVDVecs) + 2 
 errors = numpy.zeros((numGraphs, numMethods)) 
 
 numRepetitions = 20 
+#numRepetitions = 5
 
-saveResults = False
+saveResults = True
 resultsDir = PathDefaults.getOutputDir() + "cluster/"
 fileName = resultsDir + "ErrorBoundNystrom.npy"
 
@@ -134,16 +137,26 @@ if saveResults:
             inds = numpy.flipud(numpy.argsort(omega3)) 
             omega3, Q3 = omega3[inds], Q3[:, inds]
             omega3k, Q3k = omega3[0:k], Q3[:, 0:k]
+
+            #Randomised SVD method 
+            print("Running Random SVD")
+            for j, r in enumerate(randSVDVecs):  
+                Q4, omega4, R4 = RandomisedSVD.svd(L, r)
+                inds = numpy.flipud(numpy.argsort(omega4))
+                omega4, Q4 = omega4[inds], Q4[:, inds]
+                omega4k, Q4k = omega4[0:k], Q4[:, 0:k]
+                
+                errors[i, j+len(nystromNs)] += computeBound(L, omega, Q, omega4k, Q4k, k)
             
             #Use previous results for update, not 1st ones 
             lastL = L 
             lastOmega = omega3 
             lastQ = Q3
             
-            errors[i, len(nystromNs)] += computeBound(L, omega, Q, omega3k, Q3k, k)
+            errors[i, len(nystromNs)+len(randSVDVecs)] += computeBound(L, omega, Q, omega3k, Q3k, k)
             
             #Compare vs initial solution     
-            errors[i, len(nystromNs)+1] += computeBound(L, omega, Q, initialOmega, initialQ, k)
+            errors[i, len(nystromNs)+len(randSVDVecs)+1] += computeBound(L, omega, Q, initialOmega, initialQ, k)
             
             i += 1 
     
@@ -158,10 +171,12 @@ else:
     plotStyles1 = ['k-', 'k--', 'k-.', 'b-', 'b--', 'b-.', 'g-', 'g--', 'g-.', 'r-', 'r--', 'r-.']    
     
     plt.figure(0)
-    #plt.plot(numpy.arange(errors.shape[0]), errors[:, 0], label="Nystrom m=300")
+    #plt.plot(numpy.arange(errors.shape[0]), errors[:, 0], plotStyles1[0], label="Nystrom m=300")
     plt.plot(numpy.arange(errors.shape[0]), errors[:, 1], plotStyles1[0], label="Nystrom m=600")
     plt.plot(numpy.arange(errors.shape[0]), errors[:, 2], plotStyles1[1], label="Nystrom m=900")
-    plt.plot(numpy.arange(errors.shape[0]), errors[:, 3], plotStyles1[2], label="Eigen-update") 
+    plt.plot(numpy.arange(errors.shape[0]), errors[:, 5], plotStyles1[2], label="RandSVD r=600")
+    plt.plot(numpy.arange(errors.shape[0]), errors[:, 6], plotStyles1[3], label="RandSVD r=900") 
+    plt.plot(numpy.arange(errors.shape[0]), errors[:, 3], plotStyles1[4], label="Eigen-update") 
     #plt.plot(numpy.arange(errors.shape[0]), errors[:, 4], label="Initial sol.")
     plt.legend(loc="upper left")
     plt.xlabel("Graph no.")
