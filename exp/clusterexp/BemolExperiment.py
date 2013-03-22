@@ -28,10 +28,10 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 # Arguments related to the dataset
 dataArgs = argparse.Namespace()
 dataArgs.nbUser = 10000 # set to 'None' to have all users
-dataArgs.nbPurchasesPerIt = 100 # set to 'None' to take all the purchases
+dataArgs.nbPurchasesPerIt = 500 # set to 'None' to take all the purchases
                                       # per date
-dataArgs.startingIteration = 3700
-dataArgs.endingIteration = 3800 # set to 'None' to have all iterations
+dataArgs.startingIteration = 500    
+dataArgs.endingIteration = 600 # set to 'None' to have all iterations
 dataArgs.stepSize = 1 #This is the step in the number of weeks 
 dataArgs.maxComponents = None
 

@@ -18,12 +18,12 @@ numpy.set_printoptions(suppress=True, linewidth=60, threshold=50000)
 resultsDir = PathDefaults.getOutputDir() + "cluster/"
 #resultsDir = PathDefaults.getOutputDir() + "cluster/cluster_mostrare/"
 
-plotHIV = True
+plotHIV = False
 plotBemol = False
-plotCitation = False
+plotCitation = True
 
 BemolSubDir = "Bemol"
-BemolSubDir = "Bemol_nbU=10000_nbPurchPerIt=100_startIt=3700_endIt=3800_maxComponents=None"
+BemolSubDir = "Bemol_nbU=10000_nbPurchPerIt=500_startIt=500_endIt=600_maxComponents=None"
 HIVSubDir = "HIV"
 CitationSubDir = "Citation"
 
