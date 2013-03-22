@@ -55,7 +55,7 @@ class IterativeSpectralClustering(object):
         self.k4 = k4
         self.T = T
         
-        logging.debug("IterativeSpectralClustering(" + str((k1, k2, k3, T)) + ") with algorithm " + alg)
+        logging.debug("IterativeSpectralClustering(" + str((k1, k2, k3, k4, T)) + ") with algorithm " + alg)
 
         self.nb_iter_kmeans = 100
         self.alg = alg
