@@ -26,6 +26,7 @@ dataArgs = argparse.Namespace()
 dataArgs.startingIteration = 0
 dataArgs.endingIteration = None # set to 'None' to have all iterations
 dataArgs.stepSize = 1
+dataArgs.dayStep = 30 
 
 # Arguments related to the algorithm
 # If one arg is not set, default from ClusterExpHelper.py is used
@@ -68,6 +69,7 @@ dataParser.add_argument("-h", "--help", action="store_true", help="show this hel
 dataParser.add_argument("--startingIteration", type=int, help="At which iteration to start clustering algorithms", default=dataArgs.startingIteration)
 dataParser.add_argument("--endingIteration", type=isIntOrNone, help="At which iteration to end clustering algorithms", default=dataArgs.endingIteration)
 dataParser.add_argument("--stepSize", type=int, help="Number of iterations between each clustering", default=dataArgs.stepSize)
+dataParser.add_argument("--dayStep", type=int, help="Number of days between each recorded graph", default=dataArgs.dayStep)
 devNull, remainingArgs = dataParser.parse_known_args(namespace=dataArgs)
 if dataArgs.help:
     helpParser  = argparse.ArgumentParser(description="", add_help=False, parents=[dataParser, ClusterExpHelper.newAlgoParser(defaultAlgoArgs)])
@@ -75,7 +77,7 @@ if dataArgs.help:
     exit()
 
 dataArgs.extendedDirName = ""
-dataArgs.extendedDirName += "Citation"
+dataArgs.extendedDirName += "Citation_dayStep=" + str(dataArgs.dayStep)  
 
 # seed #
 numpy.random.seed(21)
@@ -99,7 +101,7 @@ for key in keys:
 # data
 #=========================================================================
 #=========================================================================
-generator = CitationIterGenerator()
+generator = CitationIterGenerator(dayStep=dataArgs.dayStep)
 
 def getIterator():
     return itertools.islice(generator.getIterator(), dataArgs.startingIteration, dataArgs.endingIteration, dataArgs.stepSize)
