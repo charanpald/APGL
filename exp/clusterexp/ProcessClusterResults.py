@@ -18,9 +18,9 @@ numpy.set_printoptions(suppress=True, linewidth=60, threshold=50000)
 resultsDir = PathDefaults.getOutputDir() + "cluster/"
 #resultsDir = PathDefaults.getOutputDir() + "cluster/cluster_mostrare/"
 
-plotHIV = False
+plotHIV = True
 plotBemol = False
-plotCitation = True
+plotCitation = False
 
 BemolSubDir = "Bemol"
 BemolSubDir = "Bemol_nbU=10000_nbPurchPerIt=500_startIt=500_endIt=600_maxComponents=None"
@@ -49,7 +49,7 @@ pointPlotStyles = ['o', 'x', '+', '.', 'o', 'x', '+', '.']
 plotInd = 0
 
 class MyPlot:
-    def __init__(self, datasetName, subDirName, k1, k2s, k3s, T=10):
+    def __init__(self, datasetName, subDirName, k1, k2s, k3s, k4s, T=10):
         self.datasetName = datasetName
         self.subDirName = subDirName
         self.measuresList = []
@@ -60,6 +60,7 @@ class MyPlot:
         self.k1 = k1 
         self.k2s = k2s 
         self.k3s = k3s
+        self.k4s = k4s
         self.T = T         
         
         self.methodNames = ["IASC", "Exact", "Ning", "Nystrom", "RandomisedSvd"]
@@ -140,13 +141,13 @@ class MyPlot:
                 self.plotStyles.append(colourPlotStyles[i] + linePlotStyles[0])
                 self.plotLineWidths.append(1)
             elif method == "RandomisedSvd": 
-                for j, k2 in enumerate(self.k2s): 
-                    resultsFileName = resultsDir + self.subDirName + "/" + self.datasetName + "ResultsRandomisedSvd_k1="+ str(self.k1) + "_k2=" + str(k2) + ".npz"
+                for j, k4 in enumerate(self.k4s): 
+                    resultsFileName = resultsDir + self.subDirName + "/" + self.datasetName + "ResultsRandomisedSvd_k1="+ str(self.k1) + "_k4=" + str(k4) + ".npz"
                     self.readFile(resultsFileName) 
-                    self.labelNames.append("RSVD "+str(k2))
+                    self.labelNames.append("RSVD "+str(k4))
                     self.plotStyles.append(colourPlotStyles[i] + linePlotStyles[j])
                     # When there is not enough line style, one uses different linewidths
-                    if len(self.k3s) > 4:
+                    if len(self.k4s) > 4:
                         self.plotLineWidths.append(1 + (1-j//4)*2)
                     else:
                         self.plotLineWidths.append(1)
@@ -170,7 +171,7 @@ class MyPlot:
             logging.debug("Loaded " + resultsFileName)
 
     def plotAll(self):
-        self.plotOne(self.measuresList, "Modularity", "Modularities", numCol=0, loc="upper right")
+        self.plotOne(self.measuresList, "Modularity", "Modularities", numCol=0, loc="lower left")
         self.plotOne(self.measuresList, "k-way normalised cut", "KWayNormCut", numCol=1, loc="upper left")
 #        self.plotOne(self.measuresList, "k-way normalised cut", "KWayNormCut_zoom", numCol=1, maxRow=400, loc="upper right")
         self.plotOne(self.times, "Cumulative computation time (s)", "Time", numCol=0, loc="upper left")
@@ -203,10 +204,11 @@ class MyPlot:
 
 if plotHIV:
     k1 = 25
-    k2s = [25, 50, 100]
+    k2s = [50, 100]
     k3s = [1000, 1500]    
+    k4s = [1000, 1500]
         
-    m = MyPlot("", HIVSubDir, k1, k2s, k3s)
+    m = MyPlot("", HIVSubDir, k1, k2s, k3s, k4s)
     m.readAll()
     m.plotAll()
 
@@ -214,9 +216,10 @@ if plotBemol:
     T = 20
     k1 = 100
     k2s = [100, 200, 500]
-    k3s = [1000, 2000, 5000]
+    k3s = [2000, 5000]
+    k4s = [1000, 2000]
     
-    m = MyPlot("", BemolSubDir, k1, k2s, k3s, T)
+    m = MyPlot("", BemolSubDir, k1, k2s, k3s, k4s, T)
     m.readAll()
     m.test()
     m.plotAll()
@@ -225,9 +228,10 @@ if plotCitation:
     T = 20
     k1 = 50
     k2s = [50, 100, 200, 500]
-    k3s = [1000, 2000, 5000]       
+    k3s = [2000, 5000] 
+    k4s = [1000, 2000]      
     
-    m = MyPlot("", CitationSubDir, k1, k2s, k3s, T)
+    m = MyPlot("", CitationSubDir, k1, k2s, k3s, k4s, T)
     m.readAll()
     m.plotAll()
 
