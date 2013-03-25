@@ -12,7 +12,8 @@ class CitationIterGenerator(object):
     A class to load the high energy physics data and generate an iterator. The 
     dataset is found in http://snap.stanford.edu/data/cit-HepTh.html
     """
-    def __init__(self, minGraphSize=500, maxGraphSize=None):
+    def __init__(self, minGraphSize=500, maxGraphSize=None, dayStep=30):
+        
         dataDir = PathDefaults.getDataDir() + "cluster/"
         edgesFilename = dataDir + "Cit-HepTh.txt"
         dateFilename = dataDir + "Cit-HepTh-dates.txt"
@@ -104,20 +105,18 @@ class CitationIterGenerator(object):
         
         self.minGraphSize = minGraphSize
         self.maxGraphSize = maxGraphSize 
-        self.monthStep = 1
+        self.dayStep = dayStep 
         
     def getIterator(self):
         """
         Return an iterator which outputs the citation graph for each month. Note
         that the graphs are undirected but we make them directed.
         """
-        
         vertexArray = self.graph.getVertexList().getVertices()
         dates = vertexArray[:, 0]
         firstVertex = numpy.argmin(dates)
         
-        daysInMonth = 30 
-        dayList = range(int(numpy.min(dates)), int(numpy.max(dates)), daysInMonth*self.monthStep)
+        dayList = range(int(numpy.min(dates)), int(numpy.max(dates)), self.dayStep)
         dayList.append(numpy.max(dates))
         
         subgraphIndicesList = []
