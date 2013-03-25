@@ -74,7 +74,7 @@ class ThreeClustIterator(object):
 ps = numpy.arange(0.1, 0.21, 0.1)
 #ps = numpy.arange(0.05, 0.20, 0.1)  
 numGraphs = len(ThreeClustIterator().subgraphIndicesList) 
-saveResults = True 
+saveResults = False 
 
 resultsDir = PathDefaults.getOutputDir() + "cluster/"
 fileName = resultsDir + "ThreeClustErrors.npz"
@@ -183,7 +183,7 @@ if saveResults:
     logging.debug("Saved results as " + fileName)
 else:  
     errors = numpy.load(fileName)
-    clustErrApprox, clustErrExact, clustErrNystrom, clustErrNings, clustErrRandSvd = errors["arr_0"], errors["arr_1"], errors["arr_2"], errors["arr_3"]
+    clustErrApprox, clustErrExact, clustErrNystrom, clustErrNings, clustErrRandSvd = errors["arr_0"], errors["arr_1"], errors["arr_2"], errors["arr_3"], errors["arr_4"]
     
     meanClustErrExact = clustErrExact.mean(2)
     meanClustErrApprox = clustErrApprox.mean(2)
@@ -216,7 +216,7 @@ else:
     linePlotStyles = ['-', '--', '-.', ':']
     pointPlotStyles = ['o', 'x', '+', '.']
     
-    numMethods = 3+len(k2s)
+    numMethods = 4+len(k2s)
     
     resultMeans = [] 
     resultStds = []
@@ -230,7 +230,7 @@ else:
     resultMeans.extend([meanClustErrExact, meanClustErrNings, meanClustErrNystrom, meanClustErrRandSvd])
     resultStds.extend([stdClustErrExact, stdClustErrNings, stdClustErrNystrom, stdClustErrRandSvd])
     names.extend(["Exact", "Ning", "Nystrom", "RandSVD"])
-    for i in range(3): 
+    for i in range(4): 
         plotStyles.append(colourPlotStyles[i+1] + linePlotStyles[0])
     
     plt.hold(True)
