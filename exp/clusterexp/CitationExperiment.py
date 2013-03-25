@@ -35,6 +35,11 @@ defaultAlgoArgs = argparse.Namespace()
 #defaultAlgoArgs.runModularity = True
 #defaultAlgoArgs.runNystrom = True
 #defaultAlgoArgs.runNing = True
+defaultAlgoArgs.T = 20 
+defaultAlgoArgs.k1 = 50
+defaultAlgoArgs.k2s = [50, 100, 200, 500]
+defaultAlgoArgs.k3s = [1000, 2000, 5000]
+defaultAlgoArgs.k4s = [500, 1000, 2000, 5000]
 
 #=========================================================================
 #=========================================================================
@@ -107,11 +112,6 @@ def getIterator():
 #=========================================================================
 logging.info("Creating the exp-runner")
 clusterExpHelper = ClusterExpHelper(getIterator, remainingArgs, defaultAlgoArgs, dataArgs.extendedDirName)
-clusterExpHelper.algoArgs.T = 20 
-clusterExpHelper.algoArgs.k1 = 50
-clusterExpHelper.algoArgs.k2s = [50, 100, 200, 500]
-clusterExpHelper.algoArgs.k3s = [1000, 2000, 5000]
-clusterExpHelper.algoArgs.k4s = [200, 500, 1000, 2000]
 clusterExpHelper.printAlgoArgs()
 
 #    os.makedirs(resultsDir, exist_ok=True) # for python 3.2

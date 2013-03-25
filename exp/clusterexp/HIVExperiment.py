@@ -32,6 +32,11 @@ defaultAlgoArgs = argparse.Namespace()
 #defaultAlgoArgs.runModularity = True
 #defaultAlgoArgs.runNystrom = True
 #defaultAlgoArgs.runNing = True
+
+defaultAlgoArgs.k1 = 25
+defaultAlgoArgs.k2s = [25, 50, 100, 200]
+defaultAlgoArgs.k3s = [100, 200, 500, 1000, 1500]
+defaultAlgoArgs.k4s = [100, 200, 500, 1000, 1500]
     
 #=========================================================================
 #=========================================================================
@@ -86,10 +91,7 @@ logging.info("Total graphs in sequence: " + str(numGraphs))
 #=========================================================================
 logging.info("Creating the exp-runner")
 clusterExpHelper = ClusterExpHelper(generator.getIterator, remainingArgs, defaultAlgoArgs, dataArgs.extendedDirName)
-clusterExpHelper.algoArgs.k1 = 25
-clusterExpHelper.algoArgs.k2s = [25, 50, 100, 200]
-clusterExpHelper.algoArgs.k3s = [100, 200, 500, 1000, 1500]
-clusterExpHelper.algoArgs.k4s = [100, 200, 500, 1000]
+
 #clusterExpHelper.algoArgs.k3s = [1500]
 clusterExpHelper.printAlgoArgs()
 #    os.makedirs(resultsDir, exist_ok=True) # for python 3.2
