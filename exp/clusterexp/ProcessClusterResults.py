@@ -25,7 +25,7 @@ plotCitation = False
 BemolSubDir = "Bemol"
 BemolSubDir = "Bemol_nbU=10000_nbPurchPerIt=500_startIt=500_endIt=600_maxComponents=None"
 HIVSubDir = "HIV"
-CitationSubDir = "Citation"
+CitationSubDir = "Citation_dayStep=30"
 
 # uncomment data files to read (corresponding curve will be recomputed)
 #increasingClustFileName = resultsDir + "IncreasingContrastClustErrors_pmax0.01"
@@ -175,7 +175,7 @@ class MyPlot:
         self.plotOne(self.measuresList, "k-way normalised cut", "KWayNormCut", numCol=1, loc="upper left")
 #        self.plotOne(self.measuresList, "k-way normalised cut", "KWayNormCut_zoom", numCol=1, maxRow=400, loc="upper right")
         self.plotOne(self.times, "Cumulative computation time (s)", "Time", numCol=0, loc="upper left")
-        self.plotOne(self.times, "Cumulative computation time (s)", "Time-log", numCol=0, loc="upper left", xlogscale=False, ylogscale=True)
+        self.plotOne(self.times, "Cumulative computation time (s)", "Time-log", numCol=0, xlogscale=False, ylogscale=True)
         #self.plotOne(self.graphInfosList, "Nb nodes", "graph_size", numCol=0, loc="lower right", samePlot=True)
         #self.plotOne(self.graphInfosList, "Nb connected components", "ConnectedComponents", numCol=1, loc="upper right", samePlot=True)
         
@@ -217,7 +217,7 @@ if plotBemol:
     k1 = 100
     k2s = [100, 200, 500]
     k3s = [2000, 5000]
-    k4s = [1000, 2000]
+    k4s = [2000, 5000]
     
     m = MyPlot("", BemolSubDir, k1, k2s, k3s, k4s, T)
     m.readAll()
@@ -229,7 +229,7 @@ if plotCitation:
     k1 = 50
     k2s = [50, 100, 200, 500]
     k3s = [2000, 5000] 
-    k4s = [1000, 2000]      
+    k4s = [2000, 5000]      
     
     m = MyPlot("", CitationSubDir, k1, k2s, k3s, k4s, T)
     m.readAll()
