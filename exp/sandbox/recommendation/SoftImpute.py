@@ -5,7 +5,6 @@ Algorithms for learning large incomplete matrices".
 """
 
 import numpy 
-import 
 import scipy.sparse.linalg 
 from sparsesvd import sparsesvd
 from apgl.util.SparseUtils import SparseUtils 
@@ -21,7 +20,7 @@ class SoftImpute(AbstractMatrixCompleter):
         is a decreasing set of lmbda values for use with soft thresholded SVD. 
         Eps is the convergence threshold and k is the rank of the SVD. 
         """
-        super(SoftImpute, self).__init__()        
+        super(SoftImpute, self).__init__()   
         
         self.lmbdas = lmbdas  
         self.eps = eps
@@ -34,65 +33,144 @@ class SoftImpute(AbstractMatrixCompleter):
         
     def getK(self): 
         return self.k
+   
+    def learnModel(self, X, fullMatrices=True):
+        """
+        Learn the matrix completion using a sparse matrix X. This is the simple 
+        version of the soft impute algorithm in which we store the entire 
+        matrices, newZ and oldZ. 
+        """
+        if not scipy.sparse.isspmatrix_lil(X):
+            raise ValueError("Input matrix must be lil_matrix")
+            
+        (n, m) = X.shape
+        oldU = numpy.zeros((n, 1))
+        oldS = numpy.zeros(1)
+        oldV = numpy.zeros((m, 1))
+        omega = X.nonzero()
+        tol = 10**-6
+         
+        ZList = []
         
-    def learnModel(self, X): 
+        for lmbda in self.lmbdas:
+            gamma = self.eps + 1
+            while gamma > self.eps:
+                #print("gamma="+str(gamma)) 
+                ZOmega = SoftImpute.partialReconstruct(omega, oldU, oldS, oldV)
+                Y = X - ZOmega
+                Y = Y.tocsc()
+                newU, newS, newV = SoftImpute.svdSoft2(Y, oldU, oldS, oldV, lmbda, self.k)
+                
+                normOldZ = (oldS**2).sum()
+                normNewZmOldZ = (oldS**2).sum() + (newS**2).sum() - 2*numpy.trace((oldV.T.dot(newV*newS)).dot(newU.T.dot(oldU*oldS)))
+                
+                #We can get newZ == oldZ in which case we break
+                if normNewZmOldZ < tol: 
+                    gamma = 0
+                elif abs(normOldZ) < tol:
+                    gamma = self.eps + 1 
+                else: 
+                    gamma = normNewZmOldZ/normOldZ
+                
+                oldU = newU.copy() 
+                oldS = newS.copy() 
+                oldV = newV.copy() 
+            
+            if fullMatrices: 
+                newZ = scipy.sparse.lil_matrix((newU*newS).dot(newV.T))
+                ZList.append(newZ)
+            else: 
+                ZList.append((newU,newS,newV))
+        
+        if self.lmbdas.shape[0] != 1:
+            return ZList
+        else:
+            return ZList[0]
+     
+        
+    @staticmethod
+    def svdSparseLowRank(X, U, s, V, k=10): 
         """
-        Learn the matrix completion using a sparse matrix X. 
+        Find the SVD of a matrix A = X + U s V.T in which X is sparse and B = 
+        U s V.T is a low rank matrix. We do this without explictly computing 
+        A, and for the first k singular vectors/values. of X.  
         """
-        if not scipy.sparse.isspmatrix_lil(X): 
+        UX, sX, VX = sparsesvd(X, k)
+        UX = UX.T
+        VX = VX.T
+        
+        Y = numpy.c_[UX, U]
+        
+        Q, R = numpy.linalg.qr(Y)
+        
+        B = numpy.array(X.T.dot(Q)).T + Q.T.dot(U*s).dot(V.T)
+        
+        U2, s2, V2 = numpy.linalg.svd(B, full_matrices=False)
+        U2 = Q.dot(U2)
+        V2 = V2.T
+        
+        return U2, s2, V2 
+
+    def learnModel2(self, X):
+        """
+        Learn the matrix completion using a sparse matrix X. This is the simple 
+        version of the soft impute algorithm in which we store the entire 
+        matrices, newZ and oldZ. 
+        """
+        if not scipy.sparse.isspmatrix_lil(X):
             raise ValueError("Input matrix must be lil_matrix")
             
         oldZ = scipy.sparse.lil_matrix(X.shape)
         omega = X.nonzero()
-        tol = 10**-6 
+        tol = 10**-6
          
         ZList = []
         
-        for lmbda in self.lmbdas: 
+        for lmbda in self.lmbdas:
             gamma = self.eps + 1
-            
-            while gamma > self.eps: 
+            while gamma > self.eps:
                 newZ = oldZ.copy()
-                print("Adding oldZ entries")
-                newZ[omega] = oldZ[omega]  
-                print("Done")                  
+                newZ[omega] = 0
+                newZ = X + newZ
                 newZ = newZ.tocsc()
                     
                 U, s, V = self.svdSoft(newZ, lmbda, self.k)
-                #Get an "invalid value encountered in sqrt" warning sometimes 
-                newZ = scipy.sparse.csc_matrix((U*s).dot(V.T))
+                #Get an "invalid value encountered in sqrt" warning sometimes
+                newZ = scipy.sparse.lil_matrix((U*s).dot(V.T))
                 
                 oldZ = oldZ.tocsr()
                 normOldZ = SparseUtils.norm(oldZ)**2
                 
-                if abs(normOldZ) > tol: 
-                    gamma = SparseUtils.norm(newZ - oldZ)**2/normOldZ
+                normNewZmOldZ = SparseUtils.norm(newZ - oldZ)**2               
                 
-                if SparseUtils.norm(newZ - oldZ)**2 < tol: 
-                    gamma = 0 
+                #We can get newZ == oldZ in which case we break
+                if normNewZmOldZ < tol: 
+                    gamma = 0
+                elif abs(normOldZ) < tol:
+                    gamma = self.eps + 1 
+                else: 
+                    gamma = normNewZmOldZ/normOldZ
                 
-                oldZ = newZ 
+                oldZ = newZ.copy()
             
             ZList.append(newZ)
         
-        if self.lmbdas.shape[0] != 1: 
-            return ZList 
-        else: 
+        if self.lmbdas.shape[0] != 1:
+            return ZList
+        else:
             return ZList[0]
-        
     
     @staticmethod 
-    def svdSoft(A, lmbda, k): 
+    def svdSoft(X, lmbda, k): 
         """
-        Take the soft-thresholded SVD of sparse matrix A under threshold lmbda for the first 
+        Take the soft-thresholded SVD of sparse matrix X under threshold lmbda for the first 
         k singular values and vectors. Returns the left and right singular 
         vectors and the singular values. 
         """
-        if not scipy.sparse.issparse(A): 
-            raise ValueError("A must be a sparse matrix")
+        if not scipy.sparse.issparse(X): 
+            raise ValueError("X must be a sparse matrix")
         
-        #U, s, V = scipy.sparse.linalg.svds(A, k)
-        U, s, V = sparsesvd(A, k) 
+        U, s, V = sparsesvd(X, k) 
         U = U.T
         inds = numpy.flipud(numpy.argsort(s))
         U, s, V = Util.indSvd(U, s, V, inds) 
@@ -102,7 +180,39 @@ class SoftImpute(AbstractMatrixCompleter):
         s = numpy.clip(s, 0, numpy.max(s))
 
         return U, s, V 
+      
+    @staticmethod 
+    def svdSoft2(X, U, s, V, lmbda, k): 
+        """
+        Compute the SVD of a matrix X + UsV^T where X is sparse and U s V^T is 
+        low rank. The first k singular values are computed and then soft thresholded 
+        with threshold lmbda. 
+        """
+        U2, s2, V2 = SoftImpute.svdSparseLowRank(X, U, s, V, k)
         
+        #Soft threshold 
+        s2 = s2 - lmbda
+        s2 = numpy.clip(s2, 0, numpy.max(s2))
+        
+        return U2, s2, V2 
+        
+   
+    @staticmethod 
+    def partialReconstruct(omega, U, s, V): 
+        """
+        Given an array of indices omega, partially reconstruct a matrix 
+        using its SVD. 
+        """ 
+        X = scipy.sparse.lil_matrix((U.shape[0], V.shape[0]))
+        for i in range(omega[0].shape[0]):
+            j = omega[0][i]
+            k = omega[1][i]
+            
+            for l in range(U.shape[1]): 
+                X[j, k] += U[j, l]*s[l]*V[k, l]
+                
+        return X
+     
     def getMetricMethod(self): 
         return MCEvaluator.meanSqError
         
