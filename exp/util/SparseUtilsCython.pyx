@@ -15,7 +15,7 @@ class SparseUtilsCython(object):
     @staticmethod 
     def partialReconstructVals(numpy.ndarray[numpy.long_t, ndim=1] rowInds, numpy.ndarray[numpy.long_t, ndim=1] colInds, numpy.ndarray[numpy.float_t, ndim=2] U, numpy.ndarray[numpy.float_t, ndim=1] s, numpy.ndarray[numpy.float_t, ndim=2] V): 
         """
-        Given an array of indices omega, partially reconstruct a matrix 
+        Given an array of unique indices omega, partially reconstruct a matrix 
         using its SVD. 
         """ 
         cdef unsigned int i
@@ -34,7 +34,7 @@ class SparseUtilsCython(object):
     @staticmethod 
     def partialReconstruct(omega, U, s, V): 
         """
-        Given an array of indices omega, partially reconstruct a matrix 
+        Given an array of unique indices omega, partially reconstruct a matrix 
         using its SVD. The returned matrix is a scipy csc_matrix. 
         """ 
         X = csarray((U.shape[0], V.shape[0]), storageType="colMajor")
@@ -51,7 +51,7 @@ class SparseUtilsCython(object):
     @staticmethod 
     def partialReconstruct2(omega, U, s, V): 
         """
-        Given an array of indices omega, partially reconstruct a matrix 
+        Given an array of unique indices omega, partially reconstruct a matrix 
         using its SVD. The returned matrix is a scipy csc_matrix. Uses Cython 
         to speed up the reconstruction. 
         """ 
