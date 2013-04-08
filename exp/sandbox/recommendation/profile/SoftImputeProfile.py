@@ -6,6 +6,7 @@ from apgl.generator import *
 from apgl.util.ProfileUtils import ProfileUtils
 from exp.sandbox.recommendation.SoftImpute import SoftImpute
 import scipy.sparse
+from exp.util.SparseUtils import SparseUtils
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -14,41 +15,20 @@ class SoftImputeProfile(object):
         numpy.random.seed(21)        
         
         #Create a low rank matrix  
-        n = 2000 
-        m = 2000 
-        density = 0.05 
+        n = 100000 
+        m = 100000 
         self.r = 50 
+        k = 5*10**6
         
-        A = numpy.random.rand(n, n)
-        U, R = numpy.linalg.qr(A)
+        self.X = SparseUtils.generateSparseLowRank((n, m), self.r, k)
         
-        B = numpy.random.rand(m, m)
-        V, R = numpy.linalg.qr(B)
-        
-        U = U[:, 0:self.r]
-        V = V[:, 0:self.r]
-        s = numpy.random.rand(self.r)
-        
-        X = (U*s).dot(V.T)
-        
-        numVals = n*m*density 
-        print(X.shape)
-        
-        rowInds = numpy.random.randint(0, n, numVals)
-        colInds = numpy.random.randint(0, m, numVals)
-        XTrain = numpy.zeros(X.shape)
-        XTrain[(rowInds, colInds)] = X[(rowInds, colInds)]
-        
-        self.XTrain = scipy.sparse.lil_matrix(XTrain)
-        self.X = scipy.sparse.lil_matrix(X)
-        
-        print(self.XTrain.nnz)
+        print(self.X.nnz)
         
     def profileLearnModel(self):
         lmbdas = numpy.array([0.1])
         softImpute = SoftImpute(lmbdas)
         
-        ProfileUtils.profile('softImpute.learnModel(self.XTrain)', globals(), locals())
+        ProfileUtils.profile('softImpute.learnModel(self.X, False)', globals(), locals())
 
 profiler = SoftImputeProfile()
 profiler.profileLearnModel() # 1.3s 
