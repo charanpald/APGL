@@ -149,34 +149,7 @@ class SoftImputeTest(unittest.TestCase):
         softImpute = SoftImpute(lmbdas, k=10)
         learner, meanErrors = softImpute.parallelModelSelect(X, idx, paramDict)
 
-    def testPartialReconstruct(self):
-        n = 10
-        Y = numpy.random.rand(n, n)
-        
-        U, s, V = numpy.linalg.svd(Y)
-        V = V.T 
-        
-        indices = numpy.nonzero(Y)
-        
-        X = SoftImpute.partialReconstruct(indices, U, s, V)
-        X = X.todense()
-        
-        nptst.assert_almost_equal(X, Y)
-        
-        #Try just someIndices 
-        density = 0.2
-        A = scipy.sparse.rand(n, n, density)
-        inds = A.nonzero()
-        
-        X = SoftImpute.partialReconstruct(inds, U, s, V)
-        
-        for i in range(inds[0].shape[0]): 
-            j = inds[0][i]
-            k = inds[1][i]
-            
-            self.assertAlmostEquals(X[j, k], Y[j, k])  
-            
-        self.assertTrue(X.nnz == inds[0].shape[0])
+
         
 
 if __name__ == "__main__":

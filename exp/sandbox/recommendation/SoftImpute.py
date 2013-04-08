@@ -12,6 +12,7 @@ from apgl.util.MCEvaluator import MCEvaluator
 from apgl.util.Util import Util 
 from apgl.util.Parameter import Parameter 
 from exp.sandbox.recommendation.AbstractMatrixCompleter import AbstractMatrixCompleter
+from exp.util.SparseUtilsCython import SparseUtilsCython
 
 class SoftImpute(AbstractMatrixCompleter): 
     def __init__(self, lmbdas, eps=0.1, k=10):
@@ -49,6 +50,9 @@ class SoftImpute(AbstractMatrixCompleter):
         oldV = numpy.zeros((m, 1))
         omega = X.nonzero()
         tol = 10**-6
+        
+        rowInds = numpy.array(omega[0], numpy.int)
+        colInds = numpy.array(omega[1], numpy.int)
          
         ZList = []
         
@@ -56,7 +60,8 @@ class SoftImpute(AbstractMatrixCompleter):
             gamma = self.eps + 1
             while gamma > self.eps:
                 #print("gamma="+str(gamma)) 
-                ZOmega = SoftImpute.partialReconstruct(omega, oldU, oldS, oldV)
+
+                ZOmega = SparseUtilsCython.partialReconstruct2((rowInds, colInds), oldU, oldS, oldV)
                 Y = X - ZOmega
                 Y = Y.tocsc()
                 newU, newS, newV = SoftImpute.svdSoft2(Y, oldU, oldS, oldV, lmbda, self.k)
@@ -196,23 +201,6 @@ class SoftImpute(AbstractMatrixCompleter):
         
         return U2, s2, V2 
         
-   
-    @staticmethod 
-    def partialReconstruct(omega, U, s, V): 
-        """
-        Given an array of indices omega, partially reconstruct a matrix 
-        using its SVD. 
-        """ 
-        X = scipy.sparse.lil_matrix((U.shape[0], V.shape[0]))
-        for i in range(omega[0].shape[0]):
-            j = omega[0][i]
-            k = omega[1][i]
-            
-            for l in range(U.shape[1]): 
-                X[j, k] += U[j, l]*s[l]*V[k, l]
-                
-        return X
-     
     def getMetricMethod(self): 
         return MCEvaluator.meanSqError
         

@@ -14,27 +14,25 @@ class SoftImputeProfile(object):
         numpy.random.seed(21)        
         
         #Create a low rank matrix  
-        n = 400 
-        m = 500 
+        n = 2000 
+        m = 2000 
+        density = 0.05 
+        self.r = 50 
         
         A = numpy.random.rand(n, n)
-        A = A.T.dot(A)
-        l, U = numpy.linalg.eigh(A)
+        U, R = numpy.linalg.qr(A)
         
         B = numpy.random.rand(m, m)
-        B = B.T.dot(B)
-        l, V = numpy.linalg.eigh(B)
+        V, R = numpy.linalg.qr(B)
         
-        r = 50 
-        U = U[:, 0:r]
-        V = V[:, 0:r]
-        s = numpy.random.rand(r)
+        U = U[:, 0:self.r]
+        V = V[:, 0:self.r]
+        s = numpy.random.rand(self.r)
         
         X = (U*s).dot(V.T)
         
-        numVals = n*m*0.1 
+        numVals = n*m*density 
         print(X.shape)
-        print(numpy.random.randint(0, n, numVals))
         
         rowInds = numpy.random.randint(0, n, numVals)
         colInds = numpy.random.randint(0, m, numVals)
@@ -44,6 +42,8 @@ class SoftImputeProfile(object):
         self.XTrain = scipy.sparse.lil_matrix(XTrain)
         self.X = scipy.sparse.lil_matrix(X)
         
+        print(self.XTrain.nnz)
+        
     def profileLearnModel(self):
         lmbdas = numpy.array([0.1])
         softImpute = SoftImpute(lmbdas)
@@ -51,4 +51,4 @@ class SoftImputeProfile(object):
         ProfileUtils.profile('softImpute.learnModel(self.XTrain)', globals(), locals())
 
 profiler = SoftImputeProfile()
-profiler.profileLearnModel()
+profiler.profileLearnModel() # 1.3s 
