@@ -41,8 +41,8 @@ class SoftImpute(AbstractMatrixCompleter):
         version of the soft impute algorithm in which we store the entire 
         matrices, newZ and oldZ. 
         """
-        if not scipy.sparse.isspmatrix_lil(X):
-            raise ValueError("Input matrix must be lil_matrix")
+        if not scipy.sparse.isspmatrix_csc(X):
+            raise ValueError("Input matrix must be csc_matrix")
             
         (n, m) = X.shape
         oldU = numpy.zeros((n, 1))

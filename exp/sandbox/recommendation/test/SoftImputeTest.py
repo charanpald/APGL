@@ -81,7 +81,7 @@ class SoftImputeTest(unittest.TestCase):
     #@unittest.skip("")
     def testLearnModel(self): 
         X = scipy.sparse.rand(10, 10, 0.2)
-        X = X.tolil()        
+        X = X.tocsc()        
         lmbdas = numpy.array([10.0, 0.0])
         eps = 0.001         
         k = 9
