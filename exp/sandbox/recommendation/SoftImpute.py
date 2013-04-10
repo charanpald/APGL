@@ -5,6 +5,7 @@ Algorithms for learning large incomplete matrices".
 """
 
 import numpy 
+import logging 
 import scipy.sparse.linalg 
 from sparsesvd import sparsesvd
 from apgl.util.SparseUtils import SparseUtils 
@@ -56,10 +57,13 @@ class SoftImpute(AbstractMatrixCompleter):
          
         ZList = []
         
+        
         for lmbda in self.lmbdas:
             gamma = self.eps + 1
+            i = 0
+            
             while gamma > self.eps:
-                #print("gamma="+str(gamma)) 
+                
 
                 ZOmega = SparseUtilsCython.partialReconstruct2((rowInds, colInds), oldU, oldS, oldV)
                 Y = X - ZOmega
@@ -80,6 +84,11 @@ class SoftImpute(AbstractMatrixCompleter):
                 oldU = newU.copy() 
                 oldS = newS.copy() 
                 oldV = newV.copy() 
+                
+                logging.debug("Iteration " + str(i) + " gamma="+str(gamma)) 
+                i += 1 
+                
+            logging.debug("Number of iterations for lambda="+str(lmbda) + ": " + str(i))
             
             if fullMatrices: 
                 newZ = scipy.sparse.lil_matrix((newU*newS).dot(newV.T))
