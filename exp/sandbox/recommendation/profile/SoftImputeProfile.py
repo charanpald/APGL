@@ -19,16 +19,16 @@ class SoftImputeProfile(object):
         m = 100000 
         self.r = 50 
         k = 5*10**6
+        #k = 10**5
         
         self.X = SparseUtils.generateSparseLowRank((n, m), self.r, k)
-        
         print(self.X.nnz)
         
     def profileLearnModel(self):
-        lmbdas = numpy.array([0.1])
+        lmbdas = numpy.array([0.5])
         softImpute = SoftImpute(lmbdas)
         
         ProfileUtils.profile('softImpute.learnModel(self.X, False)', globals(), locals())
 
 profiler = SoftImputeProfile()
-profiler.profileLearnModel() # 1.3s 
+profiler.profileLearnModel() # 227s 
