@@ -22,9 +22,10 @@ class SparseUtils(object):
             return X 
         
     @staticmethod 
-    def generateLowRank(shape, r): 
+    def generateLowRank(shape, r, sampleVals=500): 
         """
-        Return the singular values/vectors of a random matrix with rank r. 
+        Return the singular values/vectors of a random matrix with rank r. The 
+        resulting matrix has entries within the range [-1, +1].
         """
         (n, m) = shape 
 
@@ -35,7 +36,13 @@ class SparseUtils(object):
         V, R = numpy.linalg.qr(B)
         
         #Generate singular values 
-        s = numpy.random.rand(r)
+        indsU = numpy.unique(numpy.random.randint(0, n, sampleVals)) 
+        indsV = numpy.unique(numpy.random.randint(0, m, sampleVals)) 
+        X = U[indsU, :].dot(V[indsV, :].T)
+        scaling = 1/max(abs(X.min()), X.max())
+  
+        #s = numpy.ones(r)*scaling
+        s = numpy.random.rand(r)*scaling
         
         return U, s, V
         

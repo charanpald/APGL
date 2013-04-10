@@ -12,7 +12,7 @@ from exp.util.SparseUtils import SparseUtils
 class SparseUtilsCythonTest(unittest.TestCase):
     def setUp(self):
         numpy.set_printoptions(suppress=True, precision=3, linewidth=150)
-        #numpy.random.seed(21)
+        numpy.random.seed(21)
 
     def testGenerateSparseLowRank(self): 
         shape = (5000, 1000)
@@ -43,6 +43,15 @@ class SparseUtilsCythonTest(unittest.TestCase):
         self.assertEquals(U.shape[0], shape[0])
         self.assertEquals(V.shape[0], shape[1])
         self.assertEquals(s.shape[0], r)
+        
+        #Check the range is not 
+        shape = (500, 500)
+        r = 100
+        U, s, V = SparseUtils.generateLowRank(shape, r)
+        X = (U*s).dot(V.T)
+        
+        self.assertTrue(abs(numpy.max(X) - 1) < 0.5) 
+        self.assertTrue(abs(numpy.min(X) + 1) < 0.5) 
        
 
     def testReconstructLowRank(self): 
