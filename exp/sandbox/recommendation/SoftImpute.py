@@ -7,7 +7,7 @@ Algorithms for learning large incomplete matrices".
 import numpy 
 import logging 
 import scipy.sparse.linalg 
-from sparsesvd import sparsesvd
+import exp.util.SparseUtils as ExpSU
 from apgl.util.SparseUtils import SparseUtils 
 from apgl.util.MCEvaluator import MCEvaluator 
 from apgl.util.Util import Util 
@@ -63,12 +63,10 @@ class SoftImpute(AbstractMatrixCompleter):
             i = 0
             
             while gamma > self.eps:
-                
-
                 ZOmega = SparseUtilsCython.partialReconstruct2((rowInds, colInds), oldU, oldS, oldV)
                 Y = X - ZOmega
                 Y = Y.tocsc()
-                newU, newS, newV = SoftImpute.svdSoft2(Y, oldU, oldS, oldV, lmbda, self.k)
+                newU, newS, newV = ExpSU.SparseUtils.svdSoft2(Y, oldU, oldS, oldV, lmbda, self.k)
                 
                 normOldZ = (oldS**2).sum()
                 normNewZmOldZ = (oldS**2).sum() + (newS**2).sum() - 2*numpy.trace((oldV.T.dot(newV*newS)).dot(newU.T.dot(oldU*oldS)))
@@ -101,29 +99,6 @@ class SoftImpute(AbstractMatrixCompleter):
         else:
             return ZList[0]
      
-        
-    @staticmethod
-    def svdSparseLowRank(X, U, s, V, k=10): 
-        """
-        Find the SVD of a matrix A = X + U s V.T in which X is sparse and B = 
-        U s V.T is a low rank matrix. We do this without explictly computing 
-        A, and for the first k singular vectors/values. of X.  
-        """
-        UX, sX, VX = sparsesvd(X, k)
-        UX = UX.T
-        VX = VX.T
-        
-        Y = numpy.c_[UX, U]
-        
-        Q, R = numpy.linalg.qr(Y)
-        
-        B = numpy.array(X.T.dot(Q)).T + Q.T.dot(U*s).dot(V.T)
-        
-        U2, s2, V2 = numpy.linalg.svd(B, full_matrices=False)
-        U2 = Q.dot(U2)
-        V2 = V2.T
-        
-        return U2, s2, V2 
 
     def learnModel2(self, X):
         """
@@ -148,7 +123,7 @@ class SoftImpute(AbstractMatrixCompleter):
                 newZ = X + newZ
                 newZ = newZ.tocsc()
                     
-                U, s, V = self.svdSoft(newZ, lmbda, self.k)
+                U, s, V = ExpSU.SparseUtils.svdSoft(newZ, lmbda, self.k)
                 #Get an "invalid value encountered in sqrt" warning sometimes
                 newZ = scipy.sparse.lil_matrix((U*s).dot(V.T))
                 
@@ -174,41 +149,6 @@ class SoftImpute(AbstractMatrixCompleter):
         else:
             return ZList[0]
     
-    @staticmethod 
-    def svdSoft(X, lmbda, k): 
-        """
-        Take the soft-thresholded SVD of sparse matrix X under threshold lmbda for the first 
-        k singular values and vectors. Returns the left and right singular 
-        vectors and the singular values. 
-        """
-        if not scipy.sparse.issparse(X): 
-            raise ValueError("X must be a sparse matrix")
-        
-        U, s, V = sparsesvd(X, k) 
-        U = U.T
-        inds = numpy.flipud(numpy.argsort(s))
-        U, s, V = Util.indSvd(U, s, V, inds) 
-        
-        #Soft threshold 
-        s = s - lmbda
-        s = numpy.clip(s, 0, numpy.max(s))
-
-        return U, s, V 
-      
-    @staticmethod 
-    def svdSoft2(X, U, s, V, lmbda, k): 
-        """
-        Compute the SVD of a matrix X + UsV^T where X is sparse and U s V^T is 
-        low rank. The first k singular values are computed and then soft thresholded 
-        with threshold lmbda. 
-        """
-        U2, s2, V2 = SoftImpute.svdSparseLowRank(X, U, s, V, k)
-        
-        #Soft threshold 
-        s2 = s2 - lmbda
-        s2 = numpy.clip(s2, 0, numpy.max(s2))
-        
-        return U2, s2, V2 
         
     def getMetricMethod(self): 
         return MCEvaluator.meanSqError

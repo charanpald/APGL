@@ -9,6 +9,7 @@ import logging
 import scipy.sparse 
 import numpy.linalg 
 import numpy.testing as nptst 
+import exp.util.SparseUtils as ExpSU
 from sparsesvd import sparsesvd
 
 class SoftImputeTest(unittest.TestCase):
@@ -18,65 +19,6 @@ class SoftImputeTest(unittest.TestCase):
         
         numpy.seterr(all="raise")
         numpy.random.seed(21)
-
-    def testSvdSoft(self): 
-        A = scipy.sparse.rand(10, 10, 0.2)
-        A = A.tocsc()
-        
-        lmbda = 0.1
-        k = 6
-        U, s, V = SoftImpute.svdSoft(A, lmbda, k)
-        ATilde = U.dot(numpy.diag(s)).dot(V.T)        
-        
-        #Now comput the same matrix using numpy
-        #Pick first k singular vectors/values 
-        A = A.todense() 
-        
-        U2, s2, V2 = numpy.linalg.svd(A)
-        inds = numpy.flipud(numpy.argsort(s2))[0:k]
-        U2, s2, V2 = Util.indSvd(U2, s2, V2, inds)        
-        
-        s2 = s2 - lmbda 
-        s2 = numpy.clip(s, 0, numpy.max(s2))
-        
-
-        ATilde2 = U2.dot(numpy.diag(s2)).dot(V2.T)
-        
-        nptst.assert_array_almost_equal(s, s)
-        nptst.assert_array_almost_equal(ATilde, ATilde2)
-
-    def testSvdSparseLowRank(self): 
-        A = scipy.sparse.rand(10, 10, 0.2) 
-        A = A.tocsc()
-        
-        B = numpy.random.rand(10, 10)
-        U, s, V = numpy.linalg.svd(B)
-        V = V.T         
-        
-        r = 3
-        U = U[:, 0:r]
-        s = s[0:r]
-        V = V[:, 0:r]
-        #B is low rank 
-        B = (U*s).dot(V.T)
-        
-        U2, s2, V2 = SoftImpute.svdSparseLowRank(A, U, s, V)
-        
-        nptst.assert_array_almost_equal(U2.T.dot(U2), numpy.eye(U2.shape[1]))
-        nptst.assert_array_almost_equal(V2.T.dot(V2), numpy.eye(V2.shape[1]))
-        #self.assertEquals(s2.shape[0], r)
-        
-        A2 = (U2*s2).dot(V2.T)
-        
-        #Compute real SVD 
-        C = numpy.array(A.todense()) + B
-        U3, s3, V3 = numpy.linalg.svd(C)
-        V3 = V3.T  
-
-        A3 = (U3*s3).dot(V3.T)
-        
-        self.assertAlmostEquals(numpy.linalg.norm(A2 - A3), 0)
-        
 
     #@unittest.skip("")
     def testLearnModel(self): 
