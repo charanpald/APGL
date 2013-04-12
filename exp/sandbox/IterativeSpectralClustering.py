@@ -22,7 +22,7 @@ from exp.sandbox.EfficientNystrom import EfficientNystrom
 from exp.sandbox.RandomisedSVD import RandomisedSVD
 
 class IterativeSpectralClustering(object):
-    def __init__(self, k1, k2=20, k3=100, k4=100, alg="exact", T=10, computeBound=False, logStep=1):
+    def __init__(self, k1, k2=20, k3=100, k4=100, alg="exact", T=10, computeBound=False, logStep=1, computeSinTheta=False):
         """
         Intialise this object with integer k1 which is the number of clusters to
         find, and k2 which is the maximum rank of the approximation of the shift
@@ -61,6 +61,7 @@ class IterativeSpectralClustering(object):
         self.nb_iter_kmeans = 100
         self.alg = alg
         self.computeBound = computeBound 
+        self.computeSinTheta = computeSinTheta 
         self.logStep = logStep
 
     def findCentroids(self, V, clusters):
@@ -88,6 +89,7 @@ class IterativeSpectralClustering(object):
         decompositionTimeList = [] 
         kMeansTimeList = [] 
         boundList = []
+        sinThetaList = []
         i = 0
 
         for subW in graphListIterator:
@@ -118,7 +120,7 @@ class IterativeSpectralClustering(object):
                         gamma, U = scipy.sparse.linalg.eigsh(ABBA, rank-1, which="LM", ncv = ABBA.shape[0])
                         #logging.debug("gamma=" + str(gamma))
                         bounds2 = self.realBound(omega, Q, gamma, AKbot, self.k2)                  
-                        boundList.append([i, bounds[0], bounds[1], bounds2[0], bounds2[1]])      
+                        boundList.append([bounds[0], bounds[1], bounds2[0], bounds2[1]])      
                 else: 
                     logging.debug("Computing exact eigenvectors")
                     self.storeInformation(subW, ABBA)
@@ -133,6 +135,7 @@ class IterativeSpectralClustering(object):
                         AKbot = (QKbot*omegaKbot).dot(QKbot.T)
                         
                         omegaSort = numpy.flipud(numpy.sort(omega))
+                        boundList.append([0]*4)      
                     else: 
                         omega, Q = scipy.sparse.linalg.eigsh(ABBA, min(self.k2, ABBA.shape[0]-1), which="LM", ncv = min(10*self.k2, ABBA.shape[0]))
                             
@@ -147,6 +150,15 @@ class IterativeSpectralClustering(object):
             else:
                 raise ValueError("Invalid Algorithm: " + str(self.alg))
 
+            if self.computeSinTheta:
+                rank = Util.rank(ABBA.todense())
+                omegaExact, QExact = scipy.sparse.linalg.eigsh(ABBA, rank-1, which="LM", ncv = ABBA.shape[0])
+                inds = numpy.flipud(numpy.argsort(omegaExact))
+                QExactKbot = QExact[:, inds[self.k1:]]
+                inds = numpy.flipud(numpy.argsort(omega))
+                QApproxK = Q[:,inds[:self.k1]]
+                sinThetaList.append(scipy.linalg.norm(QExactKbot.T.dot(QApproxK)))
+            
             decompositionTimeList.append(time.time()-startTime)                  
                   
             if self.alg=="IASC":
@@ -189,7 +201,8 @@ class IterativeSpectralClustering(object):
             i += 1
 
         if verbose:
-            return clustersList, numpy.array((decompositionTimeList, kMeansTimeList)).T, boundList
+            eigenQuality = {"boundList" : boundList, "sinThetaList" : sinThetaList}
+            return clustersList, numpy.array((decompositionTimeList, kMeansTimeList)).T, eigenQuality
         else:
             return clustersList
 

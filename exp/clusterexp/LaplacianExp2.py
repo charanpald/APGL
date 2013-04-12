@@ -72,19 +72,31 @@ def computeBound(A, omega, Q, omega2, Q2, k):
     
     return normR/delta
 
+def computeSinTheta(Qkbot, Q2):
+    """
+    Compute the Frobenius norm of the sinus of canonical angles between Q and Q2.
+    
+    Qkbot represents an orthonormal basis of the space orthogonal to Q.
+    """
+    norm = numpy.linalg.norm(Qkbot.T.dot(Q2))    
+    print("norm: "+str(norm))
+    return norm
+
 
 k = 4
 numGraphs = 100 
-nystromNs = [300, 600, 900]
-randSVDVecs = [300, 600, 900]
+#numGraphs = 20
+nystromNs = [900]
+randSVDVecs = [100, 900]
+IASCL = [k, 300] # more than k is mostly useless (except l=graphSize): a priori, all the remaining directions are equivalent for the noise. So to catch changes implied by noise we have to keep all the directions.
 numClusterVertices = 250
-numMethods = len(nystromNs) + len(randSVDVecs) + 2 
+numMethods = len(nystromNs) + len(randSVDVecs) + len(IASCL) + 3
 errors = numpy.zeros((numGraphs, numMethods)) 
 
 numRepetitions = 20 
-#numRepetitions = 5
+#numRepetitions = 1
 
-saveResults = True
+saveResults = False
 resultsDir = PathDefaults.getOutputDir() + "cluster/"
 fileName = resultsDir + "ErrorBoundNystrom.npy"
 
@@ -98,20 +110,26 @@ if saveResults:
             L = GraphUtils.shiftLaplacian(W)
           
             if i == 0: 
-                lastL = L
-                lastOmega, lastQ = numpy.linalg.eigh(L.todense())
-                inds = numpy.flipud(numpy.argsort(lastOmega))
-                lastOmega, lastQ = lastOmega[inds], lastQ[:, inds]
-                initialOmega, initialQ = lastOmega[0:k], lastQ[:, 0:k]
+                initialL = L
+                initialOmega, initialQ = numpy.linalg.eigh(L.todense())
+                inds = numpy.flipud(numpy.argsort(initialOmega))
+                initialOmega, initialQ = initialOmega[inds], initialQ[:, inds]
                 #Fix for weird error in EigenAdd2 later on 
-                lastQ = numpy.array(lastQ)
+                initialQ = numpy.array(initialQ)
+                initialQk = initialQ[:, 0:k]
+                # for IASC
+                lastL = initialL
+                lastOmegas = [initialOmega]*len(IASCL)
+                lastQs = [initialQ]*len(IASCL)
             
             #Compute exact eigenvalues 
             omega, Q = numpy.linalg.eigh(L.todense())
             inds = numpy.flipud(numpy.argsort(omega))
             omega, Q = omega[inds], Q[:, inds]
             omegak, Qk = omega[0:k], Q[:, 0:k]
+            omegakbot, Qkbot = omega[k:], Q[:, k:]
                
+
             #Nystrom method 
             print("Running Nystrom")
             for j, nystromN in enumerate(nystromNs):  
@@ -120,15 +138,9 @@ if saveResults:
                 omega2, Q2 = omega2[inds], Q2[:, inds]
                 omega2k, Q2k = omega2[0:k], Q2[:, 0:k]
                 
-                errors[i, j] += computeBound(L, omega, Q, omega2k, Q2k, k)
-        
+#                errors[i, j] += computeBound(L, omega, Q, omega2k, Q2k, k)
+                errors[i, j] += computeSinTheta(Qkbot, Q2k)
             
-            #Incremental updates 
-            print("Running Eigen-update")
-            omega3, Q3 = eigenUpdate(lastL, L, lastOmega, lastQ, k)
-            inds = numpy.flipud(numpy.argsort(omega3)) 
-            omega3, Q3 = omega3[inds], Q3[:, inds]
-            omega3k, Q3k = omega3[0:k], Q3[:, 0:k]
 
             #Randomised SVD method 
             print("Running Random SVD")
@@ -138,19 +150,46 @@ if saveResults:
                 omega4, Q4 = omega4[inds], Q4[:, inds]
                 omega4k, Q4k = omega4[0:k], Q4[:, 0:k]
                 
-                errors[i, j+len(nystromNs)] += computeBound(L, omega, Q, omega4k, Q4k, k)
+#                errors[i, j+len(nystromNs)] += computeBound(L, omega, Q, omega4k, Q4k, k)
+                errors[i, j+len(nystromNs)] += computeSinTheta(Qkbot, Q4k)
             
-            #Use previous results for update, not 1st ones 
-            lastL = L 
-            lastOmega = omega3 
-            lastQ = Q3
             
-            errors[i, len(nystromNs)+len(randSVDVecs)] += computeBound(L, omega, Q, omega3k, Q3k, k)
+            #Incremental updates 
+            print("Running Eigen-update")
+            for j, l in enumerate(IASCL):  
+                omega3, Q3 = eigenUpdate(lastL, L, lastOmegas[j], lastQs[j], l)
+                inds = numpy.flipud(numpy.argsort(omega3)) 
+                omega3, Q3 = omega3[inds], Q3[:, inds]
+                omega3k, Q3k = omega3[0:k], Q3[:, 0:k]
+                #Will use previous results for update, not 1st ones
+                lastOmegas[j] = omega3 
+                lastQs[j] = Q3
+
+#                errors[i, len(nystromNs)+len(randSVDVecs)+j] += computeBound(L, omega, Q, omega3k, Q3k, k)
+                errors[i, len(nystromNs)+len(randSVDVecs)+j] += computeSinTheta(Qkbot, Q3k)
+
+            
+            # One step incremental updates from the initial matrix 
+#            print("Running Eigen-update wrt the initial matrix")
+#            omega5, Q5 = eigenUpdate(initialL, L, initialOmega, initialQ, k)
+#            inds = numpy.flipud(numpy.argsort(omega5)) 
+#            omega5, Q5 = omega5[inds], Q5[:, inds]
+#            omega5k, Q5k = omega5[0:k], Q5[:, 0:k]
+
+#            errors[i, len(nystromNs)+len(randSVDVecs)+len(IASCL)] += computeBound(L, omega, Q, omega5k, Q5k, k)
+#            errors[i, len(nystromNs)+len(randSVDVecs)+len(IASCL)] += computeSinTheta(Qkbot, Q5k)
+
+
+            # Compare "online incremental updates" vs "one step incremental updates from the initial matrix" 
+#            errors[i, len(nystromNs)+len(randSVDVecs)+len(IASCL)+1] += computeSinTheta(Q3[:,k:], Q5k)
+
             
             #Compare vs initial solution     
-            errors[i, len(nystromNs)+len(randSVDVecs)+1] += computeBound(L, omega, Q, initialOmega, initialQ, k)
+#            errors[i, len(nystromNs)+len(randSVDVecs)+1] += computeBound(L, omega, Q, initialOmega, initialQ, k)
+            errors[i, len(nystromNs)+len(randSVDVecs)+len(IASCL)+2] += computeSinTheta(Qkbot, initialQk)
             
-            i += 1 
+            lastL = L 
+            i += 1
     
     errors /= numRepetitions 
     print(errors)
@@ -163,13 +202,15 @@ else:
     plotStyles1 = ['k-', 'k--', 'k-.', 'b-', 'b--', 'b-.', 'g-', 'g--', 'g-.', 'r-', 'r--', 'r-.']    
     
     plt.figure(0)
-    #plt.plot(numpy.arange(errors.shape[0]), errors[:, 0], plotStyles1[0], label="Nystrom m=300")
-    plt.plot(numpy.arange(errors.shape[0]), errors[:, 1], plotStyles1[0], label="Nystrom m=600")
-    plt.plot(numpy.arange(errors.shape[0]), errors[:, 2], plotStyles1[1], label="Nystrom m=900")
-    plt.plot(numpy.arange(errors.shape[0]), errors[:, 5], plotStyles1[2], label="RandSVD r=600")
-    plt.plot(numpy.arange(errors.shape[0]), errors[:, 6], plotStyles1[3], label="RandSVD r=900") 
-    plt.plot(numpy.arange(errors.shape[0]), errors[:, 3], plotStyles1[4], label="Eigen-update") 
-    #plt.plot(numpy.arange(errors.shape[0]), errors[:, 4], label="Initial sol.")
+    plt.plot(numpy.arange(errors.shape[0]), errors[:, 0], plotStyles1[0], label="Nystrom m=900")
+    plt.plot(numpy.arange(errors.shape[0]), errors[:, 1], plotStyles1[3], label="RandSVD r=100")
+    plt.plot(numpy.arange(errors.shape[0]), errors[:, 2], plotStyles1[4], label="RandSVD r=900")
+    plt.plot(numpy.arange(errors.shape[0]), errors[:, 3], plotStyles1[6], label="Eigen-update l=4") 
+    plt.plot(numpy.arange(errors.shape[0]), errors[:, 4], plotStyles1[8], label="Eigen-update l=300") 
+    # "online" and "from initial" version leads to same results (as the matrix is almost of rank k)
+    #plt.plot(numpy.arange(errors.shape[0]), errors[:, 5], plotStyles1[7], label="Eigen-update from initial") 
+    #plt.plot(numpy.arange(errors.shape[0]), errors[:, 6], plotStyles1[8], label="Eigen-update: online vs from initial")
+    plt.plot(numpy.arange(errors.shape[0]), errors[:, 7], plotStyles1[9], label="Initial sol.")
     plt.legend(loc="upper left")
     plt.xlabel("Graph no.")
     plt.ylabel("||sin(theta)||")

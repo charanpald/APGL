@@ -18,7 +18,7 @@ numpy.set_printoptions(suppress=True, linewidth=60, threshold=50000)
 resultsDir = PathDefaults.getOutputDir() + "cluster/"
 #resultsDir = PathDefaults.getOutputDir() + "cluster/cluster_mostrare/"
 
-plotHIV = True
+plotHIV = False
 plotBemol = False
 plotCitation = False
 
@@ -28,7 +28,8 @@ HIVSubDir = "HIV"
 CitationSubDir = "Citation_dayStep=30"
 
 # uncomment data files to read (corresponding curve will be recomputed)
-#increasingClustFileName = resultsDir + "IncreasingContrastClustErrors_pmax0.01"
+increasingClustFileName = resultsDir + "IncreasingContrastClustErrors_pmax0.01"
+increasingQualityFileName = resultsDir + "IncreasingContrastSinTheta_pmax0.01"
 
 
 maxPoints = 100             # number of points (dot, square, ...) on curves
@@ -238,26 +239,34 @@ if plotCitation:
 
 #==========================================================================
 #==========================================================================
+# Util to load data
 #==========================================================================
+def loadtxt(fileName):
+    try :
+        file = open(fileName, 'r')
+    except IOError as e:
+        logging.warning(" unable to open file '" + fileName + "'\n" + str(e))
+        return(None)
+    else:
+        file.readline()
+        tab = numpy.loadtxt(file)
+        logging.info("Loaded file " + fileName)
+        file.close()
+        return(tab)
 
-
-#Load IncreasingContrastClustErrors
+#==========================================================================
+#==========================================================================
+#==========================================================================
+#Load IncreasingContrastClustErrors (errors)
 if 'increasingClustFileName' in locals():
     resIncreasing = {}
-    for k2 in [9,18,36,72]:
-        file = open(increasingClustFileName + "_nEigen" + str(k2) + ".dat", 'r')
-        file.readline()
-        resIncreasing[k2] = numpy.loadtxt(file)
-    logging.info("Loaded files " + increasingClustFileName)
-
+    for k2 in [1,9,18,36,72]:
+        resIncreasing[k2] = loadtxt(increasingClustFileName + "_nEigen" + str(k2) + ".dat")
 
 #==========================================================================
 #==========================================================================
 #==========================================================================
-
-
-
-#plot IncreasingContrast results
+#plot IncreasingContrast results (errors)
 numLevel = 3
 printedLevel = 2 # in [0, 1, ... , numLevel-1]
 startingIteration = 2
@@ -269,23 +278,29 @@ if 'increasingClustFileName' in locals():
     plotInd += 1
     legend = []
     # IASC
-    k2s = [9, 18, 72]
+    k2s = [9, 72]
     for i, k2 in enumerate(k2s):
-        plt.plot(iterations, resIncreasing[k2][:, numLevel+printedLevel], colourPlotStyles[0] + linePlotStyles[i])
+        plt.plot(iterations, resIncreasing[k2][:, numLevel*1+printedLevel], colourPlotStyles[0] + linePlotStyles[i])
         legend.append("IASC " + str(k2))
     
     # Exact
-    plt.plot(iterations, resIncreasing[9][:, numLevel*0+printedLevel], colourPlotStyles[1] + linePlotStyles[0])
+    plt.plot(iterations, resIncreasing[1][:, numLevel*0+printedLevel], colourPlotStyles[1] + linePlotStyles[0])
     legend.append("Exact")
     
-    plt.plot(iterations, resIncreasing[9][:, numLevel*2+printedLevel], colourPlotStyles[2] + linePlotStyles[0])
-    legend.append("Ning")
+#    plt.plot(iterations, resIncreasing[2][:, numLevel*2+printedLevel], colourPlotStyles[2] + linePlotStyles[0])
+#    legend.append("Ning")
     
     # Nystrom
-    k2s = [9, 18, 72]
+    k2s = [9, 72]
     for i, k2 in enumerate(k2s):
         plt.plot(iterations, resIncreasing[k2][:, numLevel*3+printedLevel], colourPlotStyles[3] + linePlotStyles[i])
         legend.append("Nystrom " + str(k2))
+
+    # RSvd
+    k2s = [9, 72]
+    for i, k2 in enumerate(k2s):
+        plt.plot(iterations, resIncreasing[k2][:, numLevel*4+printedLevel], colourPlotStyles[4] + linePlotStyles[i])
+        legend.append("RSVD " + str(k2))
 
 
     plt.xlim(2, 22)
@@ -293,12 +308,69 @@ if 'increasingClustFileName' in locals():
     plt.xlabel("Graph no.")
     plt.ylabel("Rand Index")
     plt.legend(legend)
+    plt.ylim(0.05, 0.3)
     plt.savefig(resultsDir + "IncreasingContrastClustErrors_lvl2_paper.eps")
+    logging.info("figure saved " + resultsDir + "IncreasingContrastClustErrors_lvl2_paper.eps")
+
+
+
+#==========================================================================
+#==========================================================================
+#==========================================================================
+#Load IncreasingContrastClustErrors (sin(Theta))
+if 'increasingQualityFileName' in locals():
+    resIncreasing = {}
+    for k2 in [1,9,18,36,72]:
+        resIncreasing[k2] = loadtxt(increasingQualityFileName + "_nEigen" + str(k2) + ".dat")
+
+#==========================================================================
+#==========================================================================
+#==========================================================================
+#plot IncreasingContrast results (sin(Theta))
+startingIteration = 2
+
+if 'increasingQualityFileName' in locals():
+    iterations = numpy.arange(startingIteration, startingIteration+resIncreasing[9].shape[0])
+
+    fig = plt.figure(plotInd)
+    plotInd += 1
+    legend = []
+    # IASC
+    k2s = [9, 72]
+    for i, k2 in enumerate(k2s):
+        plt.plot(iterations, resIncreasing[k2][:,1], colourPlotStyles[0] + linePlotStyles[i])
+        legend.append("IASC " + str(k2))
+    
+    # Exact
+#    plt.plot(iterations, resIncreasing[1][:,0], colourPlotStyles[1] + linePlotStyles[0])
+#    legend.append("Exact")
+    
+#    plt.plot(iterations, resIncreasing[2][:,2], colourPlotStyles[2] + linePlotStyles[0])
+#    legend.append("Ning")
+    
+    # Nystrom
+    k2s = [9, 72]
+    for i, k2 in enumerate(k2s):
+        plt.plot(iterations, resIncreasing[k2][:,3], colourPlotStyles[3] + linePlotStyles[i])
+        legend.append("Nystrom " + str(k2))
+
+    # RSvd
+    k2s = [9, 72]
+    for i, k2 in enumerate(k2s):
+        plt.plot(iterations, resIncreasing[k2][:,4], colourPlotStyles[4] + linePlotStyles[i])
+        legend.append("RSVD " + str(k2))
+
+
+    plt.xlim(2, 22)
+    plt.grid(True)
+    plt.xlabel("Graph no.")
+    plt.ylabel("||sin(Theta)||")
+    plt.legend(legend, loc="lower right")
+#    plt.ylim(0.05, 0.3)
+    plt.savefig(resultsDir + "IncreasingContrastEigenQuality_paper.eps")
+    logging.info("figure saved " + resultsDir + "IncreasingContrastEigenQuality_paper.eps")
 
 
 plt.show()
 
-# to run
-# python -c "execfile('exp/clusterexp/ProcessClusterResults.py')"
-# python3 -c "exec(open('exp/clusterexp/ProcessClusterResults.py').read())"
 

@@ -15,7 +15,7 @@ from apgl.util.SparseUtils import SparseUtils
 from apgl.graph import GraphUtils 
 
 class NingSpectralClustering(object):
-    def __init__(self, k, T=10):
+    def __init__(self, k, T=10, computeBound=False, computeSinTheta=False):
         """
         :param k: The number of clusters         
         
@@ -27,6 +27,8 @@ class NingSpectralClustering(object):
         self.debugSave = False
         self.debugSVDiFile = 0
         self.seed = 21
+        self.computeBound = computeBound        # not implemented
+        self.computeSinTheta = computeSinTheta  # not implemented
 
     def incrementEigenSystem(self, lmbda, Q, W, i, j, deltaW):
         """
@@ -200,6 +202,7 @@ class NingSpectralClustering(object):
         decompositionTimeList = [] 
         kMeansTimeList = [] 
         boundList = []
+        sinThetaList = []
         numpy.random.seed(self.seed)
 
         iter = 0 
@@ -250,6 +253,19 @@ class NingSpectralClustering(object):
                 
                 lmbda = lmbda.real
                 Q = Q.real
+                
+            if self.computeSinTheta:
+                L = GraphUtils.normalisedLaplacianRw(W) 
+                lmbdaExact, QExact = scipy.sparse.linalg.eigs(L, min(self.k, L.shape[0]-1), which="SM", ncv = min(20*self.k, L.shape[0]), v0=numpy.random.rand(L.shape[0]))
+                lmbdaExact = lmbdaExact.real
+                QExact = QExact.real
+                inds = numpy.flipud(numpy.argsort(lmbdaExact))
+                QExactKbot = QExact[:, inds[self.k:]]
+                inds = numpy.flipud(numpy.argsort(lmbda))
+                QApproxK = Q[:,inds[:self.k]]
+                sinThetaList.append(scipy.linalg.norm(QExactKbot.T.dot(QApproxK)))
+            
+            
             decompositionTimeList.append(time.time()-startTime)
 
             # Now do actual clustering 
@@ -265,6 +281,7 @@ class NingSpectralClustering(object):
             iter += 1
 
         if verbose:
-            return clustersList, numpy.array((decompositionTimeList, kMeansTimeList)).T, boundList
+            eigenQuality = {"boundList" : boundList, "sinThetaList" : sinThetaList}
+            return clustersList, numpy.array((decompositionTimeList, kMeansTimeList)).T, eigenQuality
         else:
             return clustersList

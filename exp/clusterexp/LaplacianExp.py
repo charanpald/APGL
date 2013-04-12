@@ -35,7 +35,7 @@ fileName = resultsDir + "ErrorBoundTheorem44.npy"
 
 if saveResults: 
     errors = numpy.zeros((numGraphs, numRepetitions))  
-    allBoundLists = numpy.zeros((numRepetitions, numGraphs-1, 5))
+    allBoundLists = numpy.zeros((numRepetitions, numGraphs, 5))
     
     for r in range(numRepetitions): 
         iterator = BoundGraphIterator(numGraphs=numGraphs)
