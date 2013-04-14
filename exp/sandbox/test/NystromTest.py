@@ -1,6 +1,8 @@
 
 
 import unittest
+import logging
+import sys
 import numpy
 import scipy.sparse 
 from exp.sandbox.Nystrom import Nystrom
@@ -11,46 +13,42 @@ class  NystromTestCase(unittest.TestCase):
     def setUp(self):
         numpy.random.rand(21)
         numpy.set_printoptions(suppress=True, linewidth=200, precision=3)
+        logging.basicConfig(stream=sys.stdout, level=logging.ERROR)
+
 
     def testEigpsd(self):
         tol = 10**-3
+        N=50
 
-        A = numpy.random.rand(10, 10)
+        A = numpy.random.rand(N, N)
         A = A.dot(A.T)
-        w, U = numpy.linalg.eig(A)
-        A = U.dot(numpy.diag(w+1)).dot(U.T)
 
-        n = 10
-        lmbda, V = Nystrom.eigpsd(A, n)
+        lmbda, V = Nystrom.eigpsd(A, N)
         AHat = V.dot(numpy.diag(lmbda)).dot(V.T)
-        self.assertTrue(numpy.linalg.norm(A - AHat) < tol)
+        self.assertTrue(numpy.linalg.norm(A - AHat) < numpy.linalg.norm(A)*tol)
 
-        #Approximation should be good when n < 10
-        for n in range(2, 11):
-            inds = numpy.sort(numpy.random.permutation(A.shape[0])[0:n])
-            lmbda, V = Nystrom.eigpsd(A, inds)
-            AHat = V.dot(numpy.diag(lmbda)).dot(V.T)
-            AHat2 = Nystrom.matrixApprox(A, inds)
-            self.assertTrue(numpy.linalg.norm(A - AHat) < numpy.linalg.norm(A))
-            self.assertAlmostEquals(numpy.linalg.norm(A - AHat), numpy.linalg.norm(A - AHat2))
+        #Approximation should be good when n ~ N
+        lmbda, V = Nystrom.eigpsd(A, N-1)
+        AHat = V.dot(numpy.diag(lmbda)).dot(V.T)
+        self.assertTrue(numpy.linalg.norm(A - AHat) < numpy.linalg.norm(A)*tol)
 
         #Now let's test on positive semi-definite
-        w[9] = 0
-        A = U.dot(numpy.diag(w+1)).dot(U.T)
+        w, U = numpy.linalg.eig(A)
+        w[-1] = 0
+        A = U.dot(numpy.diag(w)).dot(U.T)
 
-        n = 10
-        lmbda, V = Nystrom.eigpsd(A, n)
+        lmbda, V = Nystrom.eigpsd(A, N)
         AHat = V.dot(numpy.diag(lmbda)).dot(V.T)
-        self.assertTrue(numpy.linalg.norm(A - AHat) < tol)
+        self.assertTrue(numpy.linalg.norm(A - AHat) < numpy.linalg.norm(A)*tol)
 
-        #Approximation should be good when n < 10
-        for n in range(2, 11):
+        #Approximation should be good when n ~ N
+        for n in range(N-2, N+1):
             inds = numpy.sort(numpy.random.permutation(A.shape[0])[0:n])
             lmbda, V = Nystrom.eigpsd(A, inds)
             AHat = V.dot(numpy.diag(lmbda)).dot(V.T)
             AHat2 = Nystrom.matrixApprox(A, inds)
-            self.assertTrue(numpy.linalg.norm(A - AHat) < numpy.linalg.norm(A))
-            self.assertAlmostEquals(numpy.linalg.norm(A - AHat), numpy.linalg.norm(A - AHat2))
+            self.assertTrue(numpy.linalg.norm(A - AHat) < numpy.linalg.norm(A)*tol)
+            self.assertAlmostEqual(numpy.linalg.norm(A - AHat), numpy.linalg.norm(A - AHat2))
 
     def testEigpsd2(self):
         #These tests are on sparse matrices 
@@ -73,7 +71,7 @@ class  NystromTestCase(unittest.TestCase):
             AHat = V.dot(numpy.diag(lmbda)).dot(V.T)
             AHat2 = Nystrom.matrixApprox(A, inds)
             self.assertTrue(numpy.linalg.norm(A - AHat) < numpy.linalg.norm(A))
-            self.assertAlmostEquals(numpy.linalg.norm(A - AHat), numpy.linalg.norm(A - AHat2))
+            self.assertAlmostEqual(numpy.linalg.norm(A - AHat), numpy.linalg.norm(A - AHat2))
 
     def testEigpsd3(self):
         # These tests are on big matrices
@@ -110,7 +108,7 @@ class  NystromTestCase(unittest.TestCase):
             self.assertTrue(numpy.linalg.norm(A - AHat) < numpy.linalg.norm(A))
             min_error = min(min_error, numpy.linalg.norm(A - AHat))
             a, b, places = numpy.linalg.norm(A - AHat), numpy.linalg.norm(A - AHat2), -int(numpy.log10(tolA))
-            self.assertAlmostEquals(a, b, places=places, msg= "both approximations differ: " + str(a) + " != " + str(b) + " within " + str(places) + " places (with rank " + str(k) + " approximation)")
+            self.assertAlmostEqual(a, b, places=places, msg= "both approximations differ: " + str(a) + " != " + str(b) + " within " + str(places) + " places (with rank " + str(k) + " approximation)")
         
         #self.assertLess(min_error, tolA)
 
