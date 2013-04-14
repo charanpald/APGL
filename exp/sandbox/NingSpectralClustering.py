@@ -255,8 +255,8 @@ class NingSpectralClustering(object):
                 Q = Q.real
                 
             if self.computeSinTheta:
-                L = GraphUtils.normalisedLaplacianRw(W) 
-                lmbdaExact, QExact = scipy.sparse.linalg.eigs(L, min(self.k, L.shape[0]-1), which="SM", ncv = min(20*self.k, L.shape[0]), v0=numpy.random.rand(L.shape[0]))
+                L = GraphUtils.normalisedLaplacianRw(W)
+                lmbdaExact, QExact = scipy.linalg.eig(L.todense())
                 lmbdaExact = lmbdaExact.real
                 QExact = QExact.real
                 inds = numpy.flipud(numpy.argsort(lmbdaExact))

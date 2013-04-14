@@ -151,14 +151,13 @@ class IterativeSpectralClustering(object):
                 raise ValueError("Invalid Algorithm: " + str(self.alg))
 
             if self.computeSinTheta:
-                rank = Util.rank(ABBA.todense())
-                omegaExact, QExact = scipy.sparse.linalg.eigsh(ABBA, rank-1, which="LM", ncv = ABBA.shape[0])
+                omegaExact, QExact = scipy.linalg.eigh(ABBA.todense())
                 inds = numpy.flipud(numpy.argsort(omegaExact))
                 QExactKbot = QExact[:, inds[self.k1:]]
                 inds = numpy.flipud(numpy.argsort(omega))
                 QApproxK = Q[:,inds[:self.k1]]
                 sinThetaList.append(scipy.linalg.norm(QExactKbot.T.dot(QApproxK)))
-            
+          
             decompositionTimeList.append(time.time()-startTime)                  
                   
             if self.alg=="IASC":
