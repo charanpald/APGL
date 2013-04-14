@@ -199,19 +199,19 @@ if saveResults:
 else: 
     errors = numpy.load(fileName)   
     print(errors)
-    plotStyles1 = ['k-', 'k--', 'k-.', 'b-', 'b--', 'b-.', 'g-', 'g--', 'g-.', 'r-', 'r--', 'r-.']    
+    plotStyles1 = ['k-', 'k--', 'k-.', 'b-', 'b--', 'b-.', 'y-', 'y--', 'y-.', 'r-', 'r--', 'r-.']    
     
     plt.figure(0)
-    plt.plot(numpy.arange(errors.shape[0]), errors[:, 0], plotStyles1[0], label="Nystrom m=900")
-    plt.plot(numpy.arange(errors.shape[0]), errors[:, 1], plotStyles1[3], label="RandSVD r=100")
-    plt.plot(numpy.arange(errors.shape[0]), errors[:, 2], plotStyles1[4], label="RandSVD r=900")
-    plt.plot(numpy.arange(errors.shape[0]), errors[:, 3], plotStyles1[6], label="Eigen-update l=4") 
-    plt.plot(numpy.arange(errors.shape[0]), errors[:, 4], plotStyles1[8], label="Eigen-update l=300") 
+    plt.plot(numpy.arange(errors.shape[0]), errors[:, 3], plotStyles1[0], label="Eigen-update 4") 
+    plt.plot(numpy.arange(errors.shape[0]), errors[:, 4], plotStyles1[1], label="Eigen-update 300") 
+    plt.plot(numpy.arange(errors.shape[0]), errors[:, 7], plotStyles1[9], label="Initial solution")
+    plt.plot(numpy.arange(errors.shape[0]), errors[:, 0], plotStyles1[3], label="Nyst 900")
+    plt.plot(numpy.arange(errors.shape[0]), errors[:, 1], plotStyles1[6], label="RSVD 100")
+    plt.plot(numpy.arange(errors.shape[0]), errors[:, 2], plotStyles1[7], label="RSVD 900")
     # "online" and "from initial" version leads to same results (as the matrix is almost of rank k)
     #plt.plot(numpy.arange(errors.shape[0]), errors[:, 5], plotStyles1[7], label="Eigen-update from initial") 
     #plt.plot(numpy.arange(errors.shape[0]), errors[:, 6], plotStyles1[8], label="Eigen-update: online vs from initial")
-    plt.plot(numpy.arange(errors.shape[0]), errors[:, 7], plotStyles1[9], label="Initial sol.")
-    plt.legend(loc="upper left")
+    plt.legend(loc="upper left", ncol=2)
     plt.xlabel("Graph no.")
     plt.ylabel("||sin(theta)||")
     plt.grid(True)
