@@ -107,9 +107,13 @@ for W in iterator:
 plt.show()
 """
  
-k2s = [3, 6, 12, 24]
+k2s = [3, 6, 12, 24, 150]
 k3s = [3, 24, 90]
 k4s = [3, 24]
+# debug of IASC
+#k2s = [3, 6, 12, 24, 150]
+#k3s = [3]
+#k4s = [3]
  
 if saveResults: 
     numClusters = 3
@@ -130,7 +134,7 @@ if saveResults:
     
     numRepetitions = 50
 #    numRepetitions = 2
-    do_Nings = False
+    do_Nings = True
     
     clustErrApprox = numpy.zeros((ps.shape[0], numGraphs, numRepetitions, len(k2s)))
     clustErrExact = numpy.zeros((ps.shape[0], numGraphs, numRepetitions))
@@ -200,11 +204,11 @@ if saveResults:
                 sinThetaApprox[t, :, r, k] = resApproxList[k][2]["sinThetaList"]
             sinThetaExact[t, :, r] = resExact[2]["sinThetaList"]
             for k in range(len(k3s)): 
-                sinThetaNystrom[t, :, r, k] = resNystromList[k][2]["sinThetaList"][it]
+                sinThetaNystrom[t, :, r, k] = resNystromList[k][2]["sinThetaList"]
             if do_Nings:
-                sinThetaNings[t, :, r] = resNings[2]["sinThetaList"][it]
+                sinThetaNings[t, :, r] = resNings[2]["sinThetaList"]
             for k in range(len(k4s)): 
-                sinThetaRandSvd[t, :, r, k] = resRandSVDList[k][2]["sinThetaList"][it]
+                sinThetaRandSvd[t, :, r, k] = resRandSVDList[k][2]["sinThetaList"]
     
     numpy.savez(fileNameError, clustErrApprox, clustErrExact, clustErrNystrom, clustErrNings, clustErrRandSvd)
     logging.debug("Saved results as " + fileNameError)
@@ -252,12 +256,20 @@ else:
     print(stdClustErrNings)
     print(stdClustErrRandSvd)
     
+    print("<sin(Theta)>")
+    print(meanSinThetaExact)
+    print(meanSinThetaApprox)
+    print(meanSinThetaNystrom)
+    print(meanSinThetaNings)
+    print(meanSinThetaRandSvd)
+    print("</sin(Theta)>")
+    
     #Now lets plot the results
     iterations = numpy.arange(numGraphs)
 
     colourPlotStyles = ['k', 'r', 'g', 'b', 'y', 'm', 'c']
-    linePlotStyles = ['-', '--', '-.', ':']
-    pointPlotStyles = ['o', 'x', '+', '.']
+    linePlotStyles = ['-', '--', '-.', ':', ':']
+    pointPlotStyles = ['o', 'x', '+', '.', '*']
     
     resultMeans = {"error": [], "sinTheta": []}
     resultStds = {"error": [], "sinTheta": []}
@@ -283,19 +295,21 @@ else:
     resultStds["sinTheta"].append(stdSinThetaNings)
     names.append("Ning")
     plotStyles.append(colourPlotStyles[2] + linePlotStyles[0])
-    for i_usedK3, i_k3 in enumerate([2]): 
+    usedK3Inds = [2]
+    for i_usedK3, i_k3 in enumerate(usedK3Inds): 
         resultMeans["error"].append(meanClustErrNystrom[:, :, i_k3])
         resultStds["error"].append(stdClustErrNystrom[:, :, i_k3])
         resultMeans["sinTheta"].append(meanSinThetaNystrom[:, :, i_k3])
         resultStds["sinTheta"].append(stdSinThetaNystrom[:, :, i_k3])
-        names.append("Nystrom " + str(k3s[i_k3]))
-        plotStyles.append(colourPlotStyles[3] + linePlotStyles[i_usedK3]+ "o")
-    for i_usedK4, i_k4 in enumerate([1]): 
+        names.append("Nyst " + str(k3s[i_k3]))
+        plotStyles.append(colourPlotStyles[3] + linePlotStyles[i_usedK3])
+    usedK4Inds = [1]
+    for i_usedK4, i_k4 in enumerate(usedK4Inds): 
         resultMeans["error"].append(meanClustErrRandSvd[:, :, i_k4])
         resultStds["error"].append(stdClustErrRandSvd[:, :, i_k4])
         resultMeans["sinTheta"].append(meanSinThetaRandSvd[:, :, i_k4])
         resultStds["sinTheta"].append(stdSinThetaRandSvd[:, :, i_k4])
-        names.append("RandSVD " + str(k4s[i_k4]))
+        names.append("RSVD " + str(k4s[i_k4]))
         plotStyles.append(colourPlotStyles[4] + linePlotStyles[i_usedK4])
     
     for i_p in range(len(ps)):
@@ -320,10 +334,10 @@ else:
             
                 plt.figure(len(ps)+i_p)
                 plt.plot(iterations, res[i_p, :], plotStyles[i_res], label=names[i_res])
-#                plt.ylim(0, 2)
+                plt.ylim(0, 2)
                 plt.grid(True)
                 plt.xlabel("Graph no.")
-                plt.ylabel("Sin(Theta)")
+                plt.ylabel("||sin(Theta)||")
                 plt.legend(loc="upper left", ncol=2)
         plt.savefig(resultsDir + "ThreeClustSinThetas_p" + str(ps[i_p]) + ".eps")
         logging.info(resultsDir + "ThreeClustSinThetas_p" + str(ps[i_p]) + ".eps")
