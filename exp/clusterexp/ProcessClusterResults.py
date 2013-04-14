@@ -260,7 +260,7 @@ def loadtxt(fileName):
 #Load IncreasingContrastClustErrors (errors)
 if 'increasingClustFileName' in locals():
     resIncreasing = {}
-    for k2 in [1,9,18,36,72]:
+    for k2 in [1,2,9,18,36,72]:
         resIncreasing[k2] = loadtxt(increasingClustFileName + "_nEigen" + str(k2) + ".dat")
 
 #==========================================================================
@@ -287,14 +287,15 @@ if 'increasingClustFileName' in locals():
     plt.plot(iterations, resIncreasing[1][:, numLevel*0+printedLevel], colourPlotStyles[1] + linePlotStyles[0])
     legend.append("Exact")
     
-#    plt.plot(iterations, resIncreasing[2][:, numLevel*2+printedLevel], colourPlotStyles[2] + linePlotStyles[0])
-#    legend.append("Ning")
+    # Ning
+    plt.plot(iterations, resIncreasing[2][:, numLevel*2+printedLevel], colourPlotStyles[2] + linePlotStyles[0])
+    legend.append("Ning")
     
     # Nystrom
     k2s = [9, 72]
     for i, k2 in enumerate(k2s):
         plt.plot(iterations, resIncreasing[k2][:, numLevel*3+printedLevel], colourPlotStyles[3] + linePlotStyles[i])
-        legend.append("Nystrom " + str(k2))
+        legend.append("Nyst " + str(k2))
 
     # RSvd
     k2s = [9, 72]
@@ -320,7 +321,7 @@ if 'increasingClustFileName' in locals():
 #Load IncreasingContrastClustErrors (sin(Theta))
 if 'increasingQualityFileName' in locals():
     resIncreasing = {}
-    for k2 in [1,9,18,36,72]:
+    for k2 in [1,2,9,18,36,72]:
         resIncreasing[k2] = loadtxt(increasingQualityFileName + "_nEigen" + str(k2) + ".dat")
 
 #==========================================================================
@@ -345,14 +346,15 @@ if 'increasingQualityFileName' in locals():
 #    plt.plot(iterations, resIncreasing[1][:,0], colourPlotStyles[1] + linePlotStyles[0])
 #    legend.append("Exact")
     
-#    plt.plot(iterations, resIncreasing[2][:,2], colourPlotStyles[2] + linePlotStyles[0])
-#    legend.append("Ning")
+    # Ning
+    plt.plot(iterations, resIncreasing[2][:,2], colourPlotStyles[2] + linePlotStyles[0])
+    legend.append("Ning")
     
     # Nystrom
     k2s = [9, 72]
     for i, k2 in enumerate(k2s):
         plt.plot(iterations, resIncreasing[k2][:,3], colourPlotStyles[3] + linePlotStyles[i])
-        legend.append("Nystrom " + str(k2))
+        legend.append("Nyst " + str(k2))
 
     # RSvd
     k2s = [9, 72]
