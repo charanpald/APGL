@@ -250,7 +250,11 @@ class NingSpectralClustering(object):
                 # no more hermitian.
                 L = GraphUtils.normalisedLaplacianRw(W) 
                 lmbda, Q = scipy.sparse.linalg.eigs(L, min(self.k, L.shape[0]-1), which="SM", ncv = min(20*self.k, L.shape[0]), v0=numpy.random.rand(L.shape[0]))
-                
+#                n = L.shape[0]
+#                inds = list(range(n))
+#                Lprime = 2*scipy.sparse.csr_matrix( ([1]*n, (inds,inds)), shape=(n,n))-L
+#                lmbda, Q = scipy.sparse.linalg.eigs(Lprime, min(self.k, L.shape[0]-1), which="LM", ncv = min(20*self.k, L.shape[0]), v0=numpy.random.rand(L.shape[0]))
+#                lmbda = 2-lmbda
                 lmbda = lmbda.real
                 Q = Q.real
                 
@@ -259,11 +263,19 @@ class NingSpectralClustering(object):
                 lmbdaExact, QExact = scipy.linalg.eig(L.todense())
                 lmbdaExact = lmbdaExact.real
                 QExact = QExact.real
-                inds = numpy.flipud(numpy.argsort(lmbdaExact))
-                QExactKbot = QExact[:, inds[self.k:]]
-                inds = numpy.flipud(numpy.argsort(lmbda))
+                indsExact = numpy.argsort(lmbdaExact)
+                QExactKbot = QExact[:, indsExact[self.k:]]
+#                UQExactKbot, sQExactKbot, VhQExactKbot = scipy.linalg.svd(QExactKbot)
+                inds = numpy.argsort(lmbda)
                 QApproxK = Q[:,inds[:self.k]]
+#                UQApproxK, sQApproxK, VhQApproxK = scipy.linalg.svd(QApproxK)
+#                sinThetaList.append(scipy.linalg.norm(UQExactKbot.T.dot(UQApproxK)))
                 sinThetaList.append(scipy.linalg.norm(QExactKbot.T.dot(QApproxK)))
+#                print("blop", UQExactKbot.shape, UQApproxK.shape, sinThetaList[-1])
+#                UQExactK, sQExactK, VhQExactK = scipy.linalg.svd(QExact[:, indsExact[:self.k]])
+#                print("blop", scipy.linalg.norm(UQExactKbot.T.dot(UQExactK)))
+#                print("blop", lmbdaExact[indsExact[:10]], lmbda[inds[:10]], sep = "\n")
+#                quit()
             
             
             decompositionTimeList.append(time.time()-startTime)
