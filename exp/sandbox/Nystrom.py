@@ -65,13 +65,13 @@ class Nystrom(object):
             n = min(n, X.shape[0])
             inds = numpy.sort(numpy.random.permutation(X.shape[0])[0:n])
         elif type(n) == numpy.ndarray:
-            inds = n 
+            inds = numpy.sort(n)
         else: 
             raise ValueError("Invalid n value: " + str(n))
             
         invInds = numpy.setdiff1d(numpy.arange(X.shape[0]), inds)
 
-        if numpy.sort(inds).shape[0] == X.shape[0] and (numpy.sort(inds) == numpy.arange(X.shape[0])).all():
+        if inds.shape[0] == X.shape[0] and (inds == numpy.arange(X.shape[0])).all():
             if scipy.sparse.issparse(X):
                 X = numpy.array(X.todense())
             lmbda, V = Util.safeEigh(X)
@@ -83,7 +83,7 @@ class Nystrom(object):
 
         if scipy.sparse.issparse(X): 
             A = numpy.array(A.todense())
-            BB = numpy.array((B*B.T).todense())
+            BB = numpy.array((B.dot(B.T)).todense())
         else:
             BB = B.dot(B.T)
         
