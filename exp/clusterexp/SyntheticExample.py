@@ -74,7 +74,7 @@ class ThreeClustIterator(object):
 ps = numpy.arange(0.1, 0.21, 0.1)
 #ps = numpy.arange(0.05, 0.20, 0.1)  
 numGraphs = len(ThreeClustIterator().subgraphIndicesList) 
-saveResults = False 
+saveResults = True 
 
 resultsDir = PathDefaults.getOutputDir() + "cluster/"
 fileNameError = resultsDir + "ThreeClustErrors.npz"
@@ -156,7 +156,6 @@ if saveResults:
     
             logging.debug("Running exact method")
             graphIterator = ThreeClustIterator(p, numClusters, r).getIterator()
-#            clustListExact, timeListExact, eigenQualityExact = exactClusterer.clusterFromIterator(graphIterator, True)
             resExact = exactClusterer.clusterFromIterator(graphIterator, True)
             
             logging.debug("Running approximate method")
@@ -174,7 +173,7 @@ if saveResults:
             if do_Nings:
                 logging.debug("Running Nings method")
                 graphIterator = ThreeClustIterator(p, numClusters, r).getIterator()
-                clustListNings, timeListNings, eigenQualityNings = ningsClusterer.cluster(graphIterator, True)
+                resNings = ningsClusterer.cluster(graphIterator, True)
                 
             logging.debug("Running random SVD method")
             resRandSVDList = []
