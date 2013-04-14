@@ -185,6 +185,8 @@ ningsClusterer = NingSpectralClustering(args.k1, T=args.exactFreq, computeSinThe
 exactClusterer.nb_iter_kmeans = 20
 approxClusterer.nb_iter_kmeans = 20
 nystromClusterer.nb_iter_kmeans = 20
+RSvdClusterer.nb_iter_kmeans = 20
+ningsClusterer.nb_iter_kmeans = 20
 
 #exactClusterer.computeBound = args.computeBound        # computeBound not implemented for exactClusterer
 approxClusterer.computeBound = args.computeBound
@@ -226,7 +228,6 @@ for r in range(args.numRepetitions):
         # run with Ning's incremental approximation
         logging.info("Running Nings method")
         graphIterator = getGraphIterator()
-#        clustListNings = ningsClusterer.cluster(toDenseGraphListIterator(graphIterator))
         clustListNings, timeListNings, eigenQualityNings = ningsClusterer.cluster(graphIterator, verbose=True)
 
     # print clusters
@@ -310,12 +311,12 @@ for r in range(args.numRepetitions):
             # error with Ning incremental approximation
             for it in range(numIter):
                 meanClustErrNings[it, lvl] += randIndex(clustListNings[it], clust_size)
-            if ningClusterer.computeBound:
+            if ningsClusterer.computeBound:
                 meanBoundListNings += eigenQualityNings["boundList"]
             meanSinThetaListNings += scipy.array([eigenQualityNings["sinThetaList"]]).T
 
         if args.runNystrom:
-            # error with Ning incremental approximation
+            # error with Nystrom approximation
             for it in range(numIter):
                 meanClustErrNystrom[it, lvl] += randIndex(clustListNystrom[it], clust_size)
             if nystromClusterer.computeBound:
@@ -323,7 +324,7 @@ for r in range(args.numRepetitions):
             meanSinThetaListNystrom += scipy.array([eigenQualityNystrom["sinThetaList"]]).T
 
         if args.runRandomisedSvd:
-            # error with Ning incremental approximation
+            # error with randomised svd approximation
             for it in range(numIter):
                 meanClustErrRSvd[it, lvl] += randIndex(clustListRSvd[it], clust_size)
             if RSvdClusterer.computeBound:
