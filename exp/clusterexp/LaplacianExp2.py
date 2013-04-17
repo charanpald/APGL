@@ -23,6 +23,7 @@ numpy.random.seed(21)
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 numpy.set_printoptions(suppress=True, linewidth=200, precision=3)
        
+       
 def eigenUpdate(L1, L2, omega, Q, k): 
     """
     Find the eigen-update between two matrices L1 (with eigenvalues omega, and 
@@ -213,7 +214,7 @@ else:
     #plt.plot(numpy.arange(errors.shape[0]), errors[:, 6], plotStyles1[8], label="Eigen-update: online vs from initial")
     plt.legend(loc="upper left", ncol=2)
     plt.xlabel("Graph no.")
-    plt.ylabel("||sin(theta)||")
+    plt.ylabel(r"$||sin \; \theta(\mathcal{R}(U_k), \mathcal{R}(V_k) )||_F$")
     plt.grid(True)
     
     plt.show()
