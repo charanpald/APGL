@@ -74,7 +74,7 @@ class ThreeClustIterator(object):
 ps = numpy.arange(0.1, 0.21, 0.1)
 #ps = numpy.arange(0.05, 0.20, 0.1)  
 numGraphs = len(ThreeClustIterator().subgraphIndicesList) 
-saveResults = True 
+saveResults = False 
 
 resultsDir = PathDefaults.getOutputDir() + "cluster/"
 fileNameError = resultsDir + "ThreeClustErrors.npz"
@@ -328,15 +328,15 @@ else:
 
     for i_p in range(len(ps)):
         for i_res in range(len(names)):
-            if i_res != len(usedK2Inds): # do not print exact results
+            if i_res != len(usedK2Inds) and i_res != len(usedK2Inds) + 1: # do not print exact results
                 res = resultMeans["sinTheta"][i_res]
             
                 plt.figure(len(ps)+i_p)
                 plt.plot(iterations, res[i_p, :], plotStyles[i_res], label=names[i_res])
-                plt.ylim(0, 2)
+                plt.ylim(0, 1.6)
                 plt.grid(True)
                 plt.xlabel("Graph no.")
-                plt.ylabel("||sin(Theta)||")
+                plt.ylabel(r"$||\sin \; \Theta(\mathcal{R}(U_k), \mathcal{R}(V_k) )||_F$")
                 plt.legend(loc="upper left", ncol=2)
         plt.savefig(resultsDir + "ThreeClustSinThetas_p" + str(ps[i_p]) + ".eps")
         logging.info(resultsDir + "ThreeClustSinThetas_p" + str(ps[i_p]) + ".eps")

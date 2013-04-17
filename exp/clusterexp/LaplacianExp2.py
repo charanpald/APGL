@@ -214,7 +214,7 @@ else:
     #plt.plot(numpy.arange(errors.shape[0]), errors[:, 6], plotStyles1[8], label="Eigen-update: online vs from initial")
     plt.legend(loc="upper left", ncol=2)
     plt.xlabel("Graph no.")
-    plt.ylabel(r"$||sin \; \theta(\mathcal{R}(U_k), \mathcal{R}(V_k) )||_F$")
+    plt.ylabel(r"$||\sin \; \Theta(\mathcal{R}(U_k), \mathcal{R}(V_k) )||_F$")
     plt.grid(True)
     
     plt.show()

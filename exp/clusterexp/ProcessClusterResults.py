@@ -309,7 +309,7 @@ if 'increasingClustFileName' in locals():
     plt.xlabel("Graph no.")
     plt.ylabel("Rand Index")
     plt.legend(legend)
-    plt.ylim(0.05, 0.3)
+    plt.ylim(0.05, 0.4)
     plt.savefig(resultsDir + "IncreasingContrastClustErrors_lvl2_paper.eps")
     logging.info("figure saved " + resultsDir + "IncreasingContrastClustErrors_lvl2_paper.eps")
 
@@ -347,8 +347,8 @@ if 'increasingQualityFileName' in locals():
 #    legend.append("Exact")
     
     # Ning
-    plt.plot(iterations, resIncreasing[2][:,2], colourPlotStyles[2] + linePlotStyles[0])
-    legend.append("Ning")
+#    plt.plot(iterations, resIncreasing[2][:,2], colourPlotStyles[2] + linePlotStyles[0])
+#    legend.append("Ning")
     
     # Nystrom
     k2s = [9, 72]
@@ -366,9 +366,9 @@ if 'increasingQualityFileName' in locals():
     plt.xlim(2, 22)
     plt.grid(True)
     plt.xlabel("Graph no.")
-    plt.ylabel("||sin(Theta)||")
-    plt.legend(legend, loc="lower right")
-#    plt.ylim(0.05, 0.3)
+    plt.ylabel(r"$||\sin \; \Theta(\mathcal{R}(U_k), \mathcal{R}(V_k) )||_F$")
+    plt.ylim(0.05, 12)
+    plt.legend(legend, loc="upper right", ncol=2)
     plt.savefig(resultsDir + "IncreasingContrastEigenQuality_paper.eps")
     logging.info("figure saved " + resultsDir + "IncreasingContrastEigenQuality_paper.eps")
 
