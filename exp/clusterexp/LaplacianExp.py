@@ -70,7 +70,7 @@ else:
     plt.plot(boundList[:, 0], boundList[:, 3], plotStyles1[2], label="Frobenius precise")
     plt.plot(boundList[:, 0], boundList[:, 4], plotStyles1[3], label="2-norm precise")
     plt.xlabel("Graph no.")
-    plt.ylabel("||sin(theta)||")
+    plt.ylabel(r"$||\sin \; \Theta(\mathcal{R}(U_k), \mathcal{R}(V_k) )||$")
     plt.legend(loc="upper left")
     plt.grid(True)
     

@@ -142,7 +142,7 @@ plt.figure(1)
 #plt.plot(nystromNs, errors[:, 0], label="Shift Laplacian")
 plt.plot(nystromNs, innerProds[:, 0], label="Normalised Laplacian")
 plt.xlabel("Columns")
-plt.ylabel("||sin(theta)||")
+plt.ylabel(r"$||\sin \; \Theta(\mathcal{R}(U_k), \mathcal{R}(V_k) )||$")
 plt.legend()
 plt.show()
 
