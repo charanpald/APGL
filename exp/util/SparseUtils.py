@@ -1,8 +1,10 @@
 import numpy 
 import scipy.sparse 
+import scipy.sparse.linalg 
 from sparsesvd import sparsesvd
 from exp.util.SparseUtilsCython import SparseUtilsCython
 from apgl.util.Util import Util 
+from pypropack import svdp
 
 class SparseUtils(object): 
     def __init__(self): 
@@ -73,25 +75,21 @@ class SparseUtils(object):
     @staticmethod
     def svdSparseLowRank(X, U, s, V, k=10): 
         """
-        Find the SVD of a matrix A = X + U s V.T in which X is sparse and B = 
-        U s V.T is a low rank matrix. We do this without explictly computing 
-        A, and for the first k singular vectors/values. of X.  
+        Find the partial SVD of a matrix A = X + U s V.T in which X is sparse and B = 
+        U s V.T is a low rank matrix. We use PROPACK to find the first k 
+        eigenvectors/values. 
         """
-        UX, sX, VX = sparsesvd(X, k)
-        UX = UX.T
-        VX = VX.T
         
-        Y = numpy.c_[UX, U]
+        def matvec(v): 
+            return X.dot(v) + (U*s).dot(V.T.dot(v)) 
         
-        Q, R = numpy.linalg.qr(Y)
+        def rmatvec(v): 
+            return X.T.dot(v) + (V*s).dot(U.T.dot(v))
         
-        B = numpy.array(X.T.dot(Q)).T + Q.T.dot(U*s).dot(V.T)
+        L = scipy.sparse.linalg.LinearOperator(X.shape, matvec, rmatvec) 
+        U, s, V = svdp(L, k, kmax=20*k)
         
-        U2, s2, V2 = numpy.linalg.svd(B, full_matrices=False)
-        U2 = Q.dot(U2)
-        V2 = V2.T
-        
-        return U2, s2, V2 
+        return U, s, V.T 
         
 
     @staticmethod 

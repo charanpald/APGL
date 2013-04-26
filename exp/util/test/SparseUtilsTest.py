@@ -93,36 +93,53 @@ class SparseUtilsCythonTest(unittest.TestCase):
         nptst.assert_array_almost_equal(ATilde, ATilde2)
 
     def testSvdSparseLowRank(self): 
-        A = scipy.sparse.rand(10, 10, 0.2) 
-        A = A.tocsc()
-        
-        B = numpy.random.rand(10, 10)
-        U, s, V = numpy.linalg.svd(B)
-        V = V.T         
-        
-        r = 3
-        U = U[:, 0:r]
-        s = s[0:r]
-        V = V[:, 0:r]
-        #B is low rank 
-        B = (U*s).dot(V.T)
-        
-        U2, s2, V2 = SparseUtils.svdSparseLowRank(A, U, s, V)
-        
-        nptst.assert_array_almost_equal(U2.T.dot(U2), numpy.eye(U2.shape[1]))
-        nptst.assert_array_almost_equal(V2.T.dot(V2), numpy.eye(V2.shape[1]))
-        #self.assertEquals(s2.shape[0], r)
-        
-        A2 = (U2*s2).dot(V2.T)
-        
-        #Compute real SVD 
-        C = numpy.array(A.todense()) + B
-        U3, s3, V3 = numpy.linalg.svd(C)
-        V3 = V3.T  
+        numRuns = 10   
+        n = 10
+        density = 0.2
 
-        A3 = (U3*s3).dot(V3.T)
-        
-        self.assertAlmostEquals(numpy.linalg.norm(A2 - A3), 0)
+        for i in range(numRuns):    
+            
+            A = scipy.sparse.rand(n, n, density) 
+            A = A.tocsc()
+            
+            B = numpy.random.rand(n, n)
+            U, s, V = numpy.linalg.svd(B)
+            V = V.T         
+            
+            r = numpy.random.randint(2, n)
+            U = U[:, 0:r]
+            s = s[0:r]
+            V = V[:, 0:r]
+            #B is low rank 
+            B = (U*s).dot(V.T)
+            
+            k = numpy.random.randint(1, r)
+            U2, s2, V2 = SparseUtils.svdSparseLowRank(A, U, s, V, k=k)
+            U2 = U2[:, 0:k]
+            s2 = s2[0:k]
+            V2 = V2[:, 0:k]
+                        
+            nptst.assert_array_almost_equal(U2.T.dot(U2), numpy.eye(U2.shape[1]))
+            nptst.assert_array_almost_equal(V2.T.dot(V2), numpy.eye(V2.shape[1]))
+            #self.assertEquals(s2.shape[0], r)
+            
+            A2 = (U2*s2).dot(V2.T)
+            
+            #Compute real SVD 
+            C = numpy.array(A.todense()) + B
+            U3, s3, V3 = numpy.linalg.svd(C)
+            V3 = V3.T  
+            U3 = U3[:, 0:k]
+            s3 = s3[0:k]
+            V3 = V3[:, 0:k]
+    
+            A3 = (U3*s3).dot(V3.T)
+            
+            #self.assertAlmostEquals(numpy.linalg.norm(A2 - A3), 0)
+            nptst.assert_array_almost_equal(s2, s3, 3)
+            nptst.assert_array_almost_equal(numpy.abs(U2), numpy.abs(U3), 3)
+            nptst.assert_array_almost_equal(numpy.abs(V2), numpy.abs(V3), 3)
+            
         
 if __name__ == '__main__':
     unittest.main()
