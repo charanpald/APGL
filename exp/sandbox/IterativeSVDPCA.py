@@ -6,7 +6,7 @@ An implementation of the iterative SVDU-IPCA algorithm
 import scipy 
 import numpy
 from apgl.util.Util import Util
-from exp.sandbox.SVDUpdate import svdUpdate
+from exp.sandbox.SVDUpdate import addCols as svdUpdate
 
 numpy.set_printoptions(suppress=True, precision=3, linewidth=300)
 numpy.random.seed(21)
