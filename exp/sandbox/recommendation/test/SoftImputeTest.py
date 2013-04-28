@@ -14,7 +14,7 @@ from sparsesvd import sparsesvd
 
 class SoftImputeTest(unittest.TestCase):
     def setUp(self):
-        logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+        logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
         numpy.set_printoptions(precision=3, suppress=True, linewidth=100)
         
         numpy.seterr(all="raise")
