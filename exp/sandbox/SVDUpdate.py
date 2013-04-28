@@ -4,7 +4,7 @@ Some code to test the SVD updating procedure
 
 import scipy
 import scipy.sparse.linalg
-from scipy.sparse.linalg.interface import LinearOperator
+from scipy.sparse.linalg import LinearOperator
 import numpy
 from apgl.util.Util import Util
 
@@ -161,7 +161,7 @@ class SVDUpdate:
             Ax = Us.dot(V.T.dot(x)) + X.dot(x)
             return V.dot(Us.T.dot(Ax)) + X.T.dot(Ax)
 
-        AH_A = LinearOperator(matvec=matvec_AH_A, shape=(n, n))
+        AH_A = LinearOperator(matvec=matvec_AH_A, shape=(n, n), dtype=X.dtype)
 
         eigvals, eigvec = scipy.sparse.linalg.eigsh(AH_A, k=k)
         s2 = scipy.sqrt(eigvals)
