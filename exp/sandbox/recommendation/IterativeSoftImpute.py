@@ -9,24 +9,39 @@ from apgl.util.Parameter import Parameter
 from exp.sandbox.recommendation.AbstractMatrixCompleter import AbstractMatrixCompleter
 from exp.util.SparseUtilsCython import SparseUtilsCython
 from exp.sandbox.recommendation.SoftImpute import SoftImpute 
-
-"""
-Given a set of matrices X_1, ..., X_T find the completed matrices. 
-"""
+from exp.sandbox.SVDUpdate import SVDUpdate 
 
 class IterativeSoftImpute(AbstractMatrixCompleter): 
-    def __init__(self, lmbda, eps=0.1, k=10, alg="initial"):
+    """
+    Given a set of matrices X_1, ..., X_T find the completed matrices. 
+    """
+    def __init__(self, lmbda, eps=0.1, k=10, svdAlg="propack", updateAlg="initial", r=10):
         """
         Initialise imputing algorithm with given parameters. The lmbda is a value 
         for use with the soft thresholded SVD. Eps is the convergence threshold and 
         k is the rank of the SVD. 
+        
+        :param lmbda: The regularisation parameter for soft-impute 
+        
+        :param eps: The convergence threshold 
+        
+        :param k: The number of SVs to compute 
+        
+        :param svdAlg: The algorithm to use for computing a low rank + sparse matrix
+        
+        :param updateAlg: The algorithm to use for updating an SVD for a new matrix 
+        
+        :param r: The number of random projections to use for randomised SVD 
         """
         super(AbstractMatrixCompleter, self).__init__()   
         
         self.lmbda = lmbda  
         self.eps = eps
         self.k = k   
-        self.alg = alg 
+        self.svdAlg = svdAlg 
+        self.updateAlg = updateAlg
+        self.r = r 
+        self.q = 2
         
     def learnModel(self, matrixIterator):
         """
@@ -49,15 +64,20 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                 oldN = oldU.shape[0]
                 oldM = oldV.shape[0]
                 
-                if n > oldN: 
-                    oldU = Util.extendArray(oldU, (n, oldU.shape[1]))
-                elif n < oldN: 
-                    oldU = oldU[0:n, :]
-                    
-                if m > oldM: 
-                    oldV = Util.extendArray(oldV, (m, oldV.shape[1]))
-                elif m < oldN: 
-                    oldV = oldV[0:m, :]
+                if self.updateAlg == "initial":                 
+                    if n > oldN: 
+                        oldU = Util.extendArray(oldU, (n, oldU.shape[1]))
+                    elif n < oldN: 
+                        oldU = oldU[0:n, :]
+                        
+                    if m > oldM: 
+                        oldV = Util.extendArray(oldV, (m, oldV.shape[1]))
+                    elif m < oldN: 
+                        oldV = oldV[0:m, :]
+                elif self.updateAlg == "svdUpdate":
+                    pass 
+                else: 
+                    raise ValueError("Unknown SVD update algorithm: " + self.updateAlg)
             
             omega = X.nonzero()
             rowInds = numpy.array(omega[0], numpy.int)
@@ -70,7 +90,19 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                 ZOmega = SparseUtilsCython.partialReconstruct2((rowInds, colInds), oldU, oldS, oldV)
                 Y = X - ZOmega
                 Y = Y.tocsc()
-                newU, newS, newV = ExpSU.SparseUtils.svdSoft2(Y, oldU, oldS, oldV, self.lmbda, self.k)
+                
+                if self.svdAlg=="propack": 
+                    newU, newS, newV = ExpSU.SparseUtils.svdSparseLowRank(Y, oldU, oldS, oldV, self.k)
+                elif self.svdAlg=="svdUpdate": 
+                    newU, newS, newV = SVDUpdate.addSparseProjected(oldU, oldS, oldV, Y, self.k)
+                elif self.svdAlg=="RSVD": 
+                    newU, newS, newV = SVDUpdate.addSparseRSVD(oldU, oldS, oldV, Y, self.k, self.k, kRand=self.r, q=self.q)
+                else: 
+                    raise ValueError("Unknown SVD algorithm: " + self.svdAlg)
+        
+                #Soft threshold 
+                newS = newS - self.lmbda
+                newS = numpy.clip(newS, 0, numpy.max(newS))
                 
                 normOldZ = (oldS**2).sum()
                 normNewZmOldZ = (oldS**2).sum() + (newS**2).sum() - 2*numpy.trace((oldV.T.dot(newV*newS)).dot(newU.T.dot(oldU*oldS)))
