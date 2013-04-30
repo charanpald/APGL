@@ -6,6 +6,7 @@ import scipy
 import scipy.sparse.linalg
 from scipy.sparse.linalg import LinearOperator
 import numpy
+import numpy.testing as nptst 
 from apgl.util.Util import Util
 
 numpy.set_printoptions(suppress=True, precision=3, linewidth=300)
@@ -126,7 +127,6 @@ class SVDUpdate:
     
         m, k = U.shape
         r = B.shape[0]
-        n = V.shape[0]
         
         C = B.T - V.dot(V.T).dot(B.T)
         Q, R = numpy.linalg.qr(C)
@@ -137,22 +137,28 @@ class SVDUpdate:
 
         D = numpy.c_[numpy.diag(s), numpy.zeros((k, rPrime))]
         E = numpy.c_[B.dot(V), R.T]
-
         D = numpy.r_[D, E]
+        
+        G1 = numpy.c_[U, numpy.zeros((m, r))]
+        G2 = numpy.c_[numpy.zeros((r, k)), numpy.eye(r)]
+        G = numpy.r_[G1, G2]
+        
+        nptst.assert_array_almost_equal(G.T.dot(G), numpy.eye(G.shape[1])) 
+        
+        H = numpy.c_[V, Q]
+        
+        nptst.assert_array_almost_equal(H.T.dot(H), numpy.eye(H.shape[1])) 
+        
+        nptst.assert_array_almost_equal(G.dot(D).dot(H.T), numpy.r_[(U*s).dot(V.T), B])
 
         Uhat, sHat, Vhat = numpy.linalg.svd(D, full_matrices=False)
         inds = numpy.flipud(numpy.argsort(sHat))[0:k]
         Uhat, sHat, Vhat = Util.indSvd(Uhat, sHat, Vhat, inds)
 
         #The best rank k approximation of [A ; B]
-        Vtilde = numpy.c_[V, Q].dot(Vhat)
+        Utilde = G.dot(Uhat)
         Stilde = sHat
-
-        G1 = numpy.c_[U, numpy.zeros((m, r))]
-        G2 = numpy.c_[numpy.zeros((r, k)), numpy.eye(r)]
-        print(numpy.r_[G1, G2].shape)
-        print(U.shape)
-        Utilde = numpy.r_[G1, G2].dot(Uhat)
+        Vtilde = H.dot(Vhat)
 
         return Utilde, Stilde, Vtilde
     
