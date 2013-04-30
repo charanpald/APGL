@@ -5,6 +5,7 @@ import numpy
 import scipy
 import logging
 import sys 
+import numpy.testing as nptst 
 
 class SVDUpdateTestCase(unittest.TestCase):
     def setUp(self):
@@ -19,17 +20,19 @@ class SVDUpdateTestCase(unittest.TestCase):
         self.k = 10
         p = 0.1  # proportion of coefficients in the sparse matrix
 
-        A = numpy.random.rand(m, n)
-        U, s, VT = numpy.linalg.svd(A)
+        self.A = numpy.random.rand(m, n)
+        U, s, VT = numpy.linalg.svd(self.A)
         V = VT.T
         inds = numpy.flipud(numpy.argsort(s))
         self.U = U[:, inds[0:self.k]]
         self.s = s[inds[0:self.k]]
         self.V = V[:, inds[0:self.k]]
 
+        self.C = numpy.random.rand(r, n)
+        
         # Specific to addCols functions
         self.B = numpy.random.rand(m, r)
-        self.AB = numpy.c_[A, self.B]
+        self.AB = numpy.c_[self.A, self.B]
         
         UAB, sAB, VABT = numpy.linalg.svd(self.AB, full_matrices=False)
         VAB = VABT.T 
@@ -43,7 +46,7 @@ class SVDUpdateTestCase(unittest.TestCase):
         X = numpy.random.rand(m, n)
         X[numpy.random.rand(m, n) < 1-p] = 0
         self.X = scipy.sparse.csc_matrix(X)
-        self.AX = A + self.X.todense()
+        self.AX = self.A + self.X.todense()
         UAX, sAX, VAXT = numpy.linalg.svd(self.AX, full_matrices=False)
         VAX = VAXT.T 
         inds = numpy.flipud(numpy.argsort(sAX))
@@ -73,6 +76,28 @@ class SVDUpdateTestCase(unittest.TestCase):
         print(numpy.linalg.norm(self.AB - self.ABk))
         print(numpy.linalg.norm(self.AB - ABkEst))
         print(numpy.linalg.norm(self.ABk - ABkEst))
+        
+        
+    def testAddRows(self): 
+        #Test if same as add cols 
+        #Test case when k = rank 
+        Utilde, Stilde, Vtilde = SVDUpdate.addRows(self.U, self.s, self.V, self.C)
+        
+        nptst.assert_array_almost_equal(Utilde.T.dot(Utilde), numpy.eye(Utilde.shape[1]))
+        nptst.assert_array_almost_equal(Vtilde.T.dot(Vtilde), numpy.eye(Vtilde.shape[1]))
+        
+        self.assertEquals(Stilde.shape[0], self.k)
+        
+        U, s, V = numpy.linalg.svd(self.A)
+        inds = numpy.flipud(numpy.argsort(s))
+        U, s, V = Util.indSvd(U, s, V, inds)
+        
+        Utilde, Stilde, Vtilde = SVDUpdate.addRows(self.U, self.s, self.V, self.C)
+        D = numpy.r_[self.A, self.C]
+        
+        print(Utilde.shape, Stilde.shape, Vtilde.shape) 
+        nptst.assert_array_almost_equal(D, (Utilde*Stilde).dot(Vtilde.T), 4)
+        
 
     def testAddSparseWrapp(self):
         X = numpy.random.rand(10, 5)

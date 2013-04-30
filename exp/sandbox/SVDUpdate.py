@@ -21,7 +21,8 @@ class SVDUpdate:
     @staticmethod
     def addCols(U, s, V, B):
         """
-        Find the SVD of a matrix [A, B] where  A = U diag(s) V.T. 
+        Find the SVD of a matrix [A, B] where  A = U diag(s) V.T. Uses the QR 
+        decomposition to find an orthogonal basis on B. 
         """
         if U.shape[0] != B.shape[0]:
             raise ValueError("U must have same number of rows as B")
@@ -66,7 +67,8 @@ class SVDUpdate:
     @staticmethod
     def addCols2(U, s, V, B):
         """
-        Find the SVD of a matrix [A, B] where  A = U diag(s) V.T. 
+        Find the SVD of a matrix [A, B] where  A = U diag(s) V.T. Uses the SVD 
+        decomposition to find an orthogonal basis on B. 
         """
         if U.shape[0] != B.shape[0]:
             raise ValueError("U must have same number of rows as B")
@@ -75,8 +77,7 @@ class SVDUpdate:
         if s.shape[0] != V.shape[1]:
             raise ValueError("Number of cols of V must be the same size as s")
 
-        m = U.shape[0]
-        k = U.shape[1]
+        m, k = U.shape
         r = B.shape[1]
         n = V.shape[0]
 
@@ -110,6 +111,50 @@ class SVDUpdate:
 
         return Utilde, Stilde, Vtilde
     
+    @staticmethod
+    def addRows(U, s, V, B): 
+        """
+        Find the SVD of a matrix [A ; B] where  A = U diag(s) V.T. Uses the QR 
+        decomposition to find an orthogonal basis on B. 
+        """
+        if V.shape[0] != B.shape[1]:
+            raise ValueError("U must have same number of rows as B cols")
+        if s.shape[0] != U.shape[1]:
+            raise ValueError("Number of cols of U must be the same size as s")
+        if s.shape[0] != V.shape[1]:
+            raise ValueError("Number of cols of V must be the same size as s")
+    
+        m, k = U.shape
+        r = B.shape[0]
+        n = V.shape[0]
+        
+        C = B.T - V.dot(V.T).dot(B.T)
+        Q, R = numpy.linalg.qr(C)
+
+        rPrime = Util.rank(C)
+        Q = Q[:, 0:rPrime]
+        R = R[0:rPrime, :]
+
+        D = numpy.c_[numpy.diag(s), numpy.zeros((k, rPrime))]
+        E = numpy.c_[B.dot(V), R.T]
+
+        D = numpy.r_[D, E]
+
+        Uhat, sHat, Vhat = numpy.linalg.svd(D, full_matrices=False)
+        inds = numpy.flipud(numpy.argsort(sHat))[0:k]
+        Uhat, sHat, Vhat = Util.indSvd(Uhat, sHat, Vhat, inds)
+
+        #The best rank k approximation of [A ; B]
+        Vtilde = numpy.c_[V, Q].dot(Vhat)
+        Stilde = sHat
+
+        G1 = numpy.c_[U, numpy.zeros((m, r))]
+        G2 = numpy.c_[numpy.zeros((r, k)), numpy.eye(r)]
+        print(numpy.r_[G1, G2].shape)
+        print(U.shape)
+        Utilde = numpy.r_[G1, G2].dot(Uhat)
+
+        return Utilde, Stilde, Vtilde
     
     @staticmethod
     def _addSparseWrapp(f, U, s, V, X, k=10):
@@ -144,7 +189,7 @@ class SVDUpdate:
         """
         Find the rank-k best SVD-decomposition of a matrix A = U s V.T + X in
         which X is sparse and C = U s V.T is a low rank matrix.
-        
+            
         Use Arpack facilities to quickly obtain the decomposition when the
         matrix vector product A x can be computed in less than O(mn).    
         """
@@ -175,7 +220,7 @@ class SVDUpdate:
         Find the rank-k best SVD-decomposition of a matrix A = U s V.T + X in
         which X is sparse and C = U s V.T is a low rank matrix.
         
-        Use the same idea as for clustering updata    
+        Use the same idea as for clustering update    
         """
         return SVDUpdate._addSparseWrapp(SVDUpdate._addSparseProjected, U, s, V, X, k)
     
