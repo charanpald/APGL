@@ -88,16 +88,29 @@ class SVDUpdateTestCase(unittest.TestCase):
         
         self.assertEquals(Stilde.shape[0], self.k)
         
+        #Check we get the original solution with full SVD 
         U, s, V = numpy.linalg.svd(self.A)
         inds = numpy.flipud(numpy.argsort(s))
         U, s, V = Util.indSvd(U, s, V, inds)
         
-        Utilde, Stilde, Vtilde = SVDUpdate.addRows(self.U, self.s, self.V, self.C)
+        Utilde, Stilde, Vtilde = SVDUpdate.addRows(U, s, V, self.C)
         D = numpy.r_[self.A, self.C]
         
-        print(Utilde.shape, Stilde.shape, Vtilde.shape) 
         nptst.assert_array_almost_equal(D, (Utilde*Stilde).dot(Vtilde.T), 4)
         
+        #Check solution for partial rank SVD 
+        k = 20 
+        U, s, V = numpy.linalg.svd(self.A)
+        inds = numpy.flipud(numpy.argsort(s))[0:k]
+        U, s, V = Util.indSvd(U, s, V, inds)
+        
+        Utilde, Stilde, Vtilde = SVDUpdate.addRows(U, s, V, self.C)
+        D = numpy.r_[(U*s).dot(V.T), self.C]
+        U, s, V = numpy.linalg.svd(D)
+        inds = numpy.flipud(numpy.argsort(s))[0:k]
+        U, s, V = Util.indSvd(U, s, V, inds)
+        
+        nptst.assert_array_almost_equal((U*s).dot(V.T), (Utilde*Stilde).dot(Vtilde.T), 4)
 
     def testAddSparseWrapp(self):
         X = numpy.random.rand(10, 5)
