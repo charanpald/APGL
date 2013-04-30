@@ -76,6 +76,16 @@ class IterativeSoftImputeTest(unittest.TestCase):
         for i, Z in enumerate(ZList):
             nptst.assert_array_almost_equal(Z, ZList2[i].todense())
         
+        #Test the SVD updating solution   
+        iterativeSoftImpute.svdAlg = "svdUpdate"
+        ZList = iterativeSoftImpute.learnModel(matrixIterator)
+        
+        #Test using Randomised SVD 
+        iterativeSoftImpute.svdAlg = "RSVD"
+        ZList = iterativeSoftImpute.learnModel(matrixIterator)
+        
+        #Test on an increasing then decreasing set of solutions 
+        
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
