@@ -20,10 +20,20 @@ class SVDUpdate:
         pass
 
     @staticmethod
-    def addCols(U, s, V, B):
+    def addCols(U, s, V, B, k=None):
         """
         Find the SVD of a matrix [A, B] where  A = U diag(s) V.T. Uses the QR 
         decomposition to find an orthogonal basis on B. 
+        
+        :param U: The left singular vectors of A  
+        
+        :param s: The singular values of A 
+        
+        :param V: The right singular vectors of A 
+        
+        :param B: The matrix to append to A 
+        
+        :param k: The rank of the solution or None to use the same rank as UsV.T 
         """
         if U.shape[0] != B.shape[0]:
             raise ValueError("U must have same number of rows as B")
@@ -31,45 +41,62 @@ class SVDUpdate:
             raise ValueError("Number of cols of U must be the same size as s")
         if s.shape[0] != V.shape[1]:
             raise ValueError("Number of cols of V must be the same size as s")
+                
+        if k == None: 
+            k = U.shape[1]
 
-        m = U.shape[0]
-        k = U.shape[1]
+        m, p = U.shape
         r = B.shape[1]
         n = V.shape[0]
 
-        C = numpy.dot(numpy.eye(m) - numpy.dot(U, U.T), B)
+        C = B - U.dot(U.T).dot(B)
         Q, R = numpy.linalg.qr(C)
 
         rPrime = Util.rank(C)
         Q = Q[:, 0:rPrime]
         R = R[0:rPrime, :]
 
-        D = numpy.r_[numpy.diag(s), numpy.zeros((rPrime, k))]
-        E = numpy.r_[numpy.dot(U.T, B), R]
-
+        nptst.assert_array_almost_equal(Q.dot(R), C) 
+    
+        D = numpy.r_[numpy.diag(s), numpy.zeros((rPrime, p))]
+        E = numpy.r_[U.T.dot(B), R]
         D = numpy.c_[D, E]
+        
+        H = numpy.c_[U, Q]
+        
+        G1 = numpy.r_[V, numpy.zeros((r, p))]
+        G2 = numpy.r_[numpy.zeros((n ,r)), numpy.eye(r)]
+        G = numpy.c_[G1, G2]
+        
+        nptst.assert_array_almost_equal(G.T.dot(G), numpy.eye(G.shape[1])) 
+        nptst.assert_array_almost_equal(H.T.dot(H), numpy.eye(H.shape[1])) 
+        nptst.assert_array_almost_equal(H.dot(D).dot(G.T), numpy.c_[(U*s).dot(V.T), B])
 
         Uhat, sHat, Vhat = numpy.linalg.svd(D, full_matrices=False)
-        inds = numpy.flipud(numpy.argsort(sHat))
-        Uhat = Uhat[:, inds[0:k]]
-        sHat = sHat[inds[0:k]]
-        Vhat = Vhat[inds[0:k], :].T
+        inds = numpy.flipud(numpy.argsort(sHat))[0:k]
+        Uhat, sHat, Vhat = Util.indSvd(Uhat, sHat, Vhat, inds)
 
         #The best rank k approximation of [A, B]
-        Utilde = numpy.dot(numpy.c_[U, Q], Uhat)
-        Stilde = numpy.diag(sHat)
+        Utilde = H.dot(Uhat)
+        sTilde = sHat
+        Vtilde = G.dot(Vhat)
 
-        G1 = numpy.r_[V, numpy.zeros((r, k))]
-        G2 = numpy.r_[numpy.zeros((n ,r)), numpy.eye(r)]
-        Vtilde = numpy.dot(numpy.c_[G1, G2], Vhat)
-
-        return Utilde, Stilde, Vtilde
+        return Utilde, sTilde, Vtilde
       
     @staticmethod
     def addCols2(U, s, V, B):
         """
         Find the SVD of a matrix [A, B] where  A = U diag(s) V.T. Uses the SVD 
         decomposition to find an orthogonal basis on B. 
+        
+        :param U: The left singular vectors of A  
+        
+        :param s: The singular values of A 
+        
+        :param V: The right singular vectors of A 
+        
+        :param B: The matrix to append to A 
+        
         """
         if U.shape[0] != B.shape[0]:
             raise ValueError("U must have same number of rows as B")
@@ -84,39 +111,42 @@ class SVDUpdate:
 
         C = numpy.dot(numpy.eye(m) - numpy.dot(U, U.T), B)
         Ubar, sBar, Vbar = numpy.linalg.svd(C, full_matrices=False)
-        inds = numpy.flipud(numpy.argsort(sBar))
-        Ubar = Ubar[:, inds[0:k]]
-        sBar = sBar[inds[0:k]]
-        Vbar = Vbar[inds[0:k], :].T
+        inds = numpy.flipud(numpy.argsort(sBar))[0:k]
+        Ubar, sBar, Vbar = Util.indSvd(Ubar, sBar, Vbar, inds)
 
         rPrime = Ubar.shape[1]
 
         D = numpy.r_[numpy.diag(s), numpy.zeros((rPrime, k))]
         E = numpy.r_[numpy.dot(U.T, B), numpy.diag(sBar).dot(Vbar.T)]
-
         D = numpy.c_[D, E]
 
         Uhat, sHat, Vhat = numpy.linalg.svd(D, full_matrices=False)
-        inds = numpy.flipud(numpy.argsort(sHat))
-        Uhat = Uhat[:, inds[0:k]]
-        sHat = sHat[inds[0:k]]
-        Vhat = Vhat[inds[0:k], :].T
+        inds = numpy.flipud(numpy.argsort(sHat))[0:k]
+        Uhat, sHat, Vhat = Util.indSvd(Uhat, sHat, Vhat, inds)
 
         #The best rank k approximation of [A, B]
         Utilde = numpy.dot(numpy.c_[U, Ubar], Uhat)
-        Stilde = numpy.diag(sHat)
+        sTilde = sHat
 
         G1 = numpy.r_[V, numpy.zeros((r, k))]
         G2 = numpy.r_[numpy.zeros((n ,r)), numpy.eye(r)]
         Vtilde = numpy.dot(numpy.c_[G1, G2], Vhat)
 
-        return Utilde, Stilde, Vtilde
+        return Utilde, sTilde, Vtilde
     
     @staticmethod
-    def addRows(U, s, V, B): 
+    def addRows(U, s, V, B, k=None): 
         """
         Find the SVD of a matrix [A ; B] where  A = U diag(s) V.T. Uses the QR 
         decomposition to find an orthogonal basis on B. 
+        
+        :param U: The left singular vectors of A  
+        
+        :param s: The singular values of A 
+        
+        :param V: The right singular vectors of A 
+        
+        :param B: The matrix to append to A 
         """
         if V.shape[0] != B.shape[1]:
             raise ValueError("U must have same number of rows as B cols")
@@ -125,7 +155,9 @@ class SVDUpdate:
         if s.shape[0] != V.shape[1]:
             raise ValueError("Number of cols of V must be the same size as s")
     
-        m, k = U.shape
+        if k == None: 
+            k = U.shape[1]
+        m, p = U.shape
         r = B.shape[0]
         
         C = B.T - V.dot(V.T).dot(B.T)
@@ -135,20 +167,18 @@ class SVDUpdate:
         Q = Q[:, 0:rPrime]
         R = R[0:rPrime, :]
 
-        D = numpy.c_[numpy.diag(s), numpy.zeros((k, rPrime))]
+        D = numpy.c_[numpy.diag(s), numpy.zeros((p, rPrime))]
         E = numpy.c_[B.dot(V), R.T]
         D = numpy.r_[D, E]
         
         G1 = numpy.c_[U, numpy.zeros((m, r))]
-        G2 = numpy.c_[numpy.zeros((r, k)), numpy.eye(r)]
+        G2 = numpy.c_[numpy.zeros((r, p)), numpy.eye(r)]
         G = numpy.r_[G1, G2]
-        
-        nptst.assert_array_almost_equal(G.T.dot(G), numpy.eye(G.shape[1])) 
         
         H = numpy.c_[V, Q]
         
+        nptst.assert_array_almost_equal(G.T.dot(G), numpy.eye(G.shape[1])) 
         nptst.assert_array_almost_equal(H.T.dot(H), numpy.eye(H.shape[1])) 
-        
         nptst.assert_array_almost_equal(G.dot(D).dot(H.T), numpy.r_[(U*s).dot(V.T), B])
 
         Uhat, sHat, Vhat = numpy.linalg.svd(D, full_matrices=False)
