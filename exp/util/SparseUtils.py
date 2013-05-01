@@ -57,17 +57,19 @@ class SparseUtils(object):
         k values. If k is an array of values [0, U.shape[0]*V.shape[0]] then these 
         indices are used for reconstruction. 
         """
-        (n, m) = (U.shape[0], V.shape[0])  
+        (m, n) = (U.shape[0], V.shape[0])  
         
         if type(k) == numpy.ndarray: 
             inds = k 
+            inds = numpy.unique(inds)
+            rowInds, colInds = numpy.unravel_index(inds, (m, n))
+        elif type(k) == tuple: 
+            rowInds, colInds = k 
         else: 
             inds = numpy.random.randint(0, n*m, k)
-        
-        inds = numpy.unique(inds)
-        rowInds = inds/m 
-        colInds = inds%m  
-        
+            inds = numpy.unique(inds)
+            rowInds, colInds = numpy.unravel_index(inds, (m, n))
+
         X = SparseUtilsCython.partialReconstruct2((rowInds, colInds), U, s, V)
         
         return X 
