@@ -60,7 +60,7 @@ class SVDUpdateProfile(object):
         times.append(time.time()-start)
         print(times)
         
-        #PROPACK is faster 
+        #PROPACK is faster by 40-50% 
 
 profiler = SVDUpdateProfile()
 profiler.benchmark() 
