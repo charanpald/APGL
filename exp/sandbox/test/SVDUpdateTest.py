@@ -61,16 +61,48 @@ class SVDUpdateTestCase(unittest.TestCase):
 
     def testAddCols(self):
         Utilde, Stilde, Vtilde = SVDUpdate.addCols(self.U, self.s, self.V, self.B)
-        ABkEst = numpy.dot(numpy.dot(Utilde, Stilde), Vtilde.T)
+        
+        nptst.assert_array_almost_equal(Utilde.T.dot(Utilde), numpy.eye(Utilde.shape[1]))
+        nptst.assert_array_almost_equal(Vtilde.T.dot(Vtilde), numpy.eye(Vtilde.shape[1]))
+        
+        self.assertEquals(Stilde.shape[0], self.k)
+        
+        #Check we get the original solution with full SVD 
+        U, s, V = numpy.linalg.svd(self.A, full_matrices=False)
+        inds = numpy.flipud(numpy.argsort(s))
+        U, s, V = Util.indSvd(U, s, V, inds)
+             
+        Utilde, Stilde, Vtilde = SVDUpdate.addCols(U, s, V, self.B, k=100)
+        D = numpy.c_[self.A, self.B]
 
-        print(numpy.linalg.norm(self.AB))
-        print(numpy.linalg.norm(self.AB - self.ABk))
-        print(numpy.linalg.norm(self.AB - ABkEst))
-        print(numpy.linalg.norm(self.ABk - ABkEst))
+        nptst.assert_array_almost_equal(D, (Utilde*Stilde).dot(Vtilde.T), 4)
+        
+        #Check solution for partial rank SVD 
+        k = 20 
+        U, s, V = numpy.linalg.svd(self.A)
+        inds = numpy.flipud(numpy.argsort(s))[0:k]
+        U, s, V = Util.indSvd(U, s, V, inds)
+        
+        Utilde, Stilde, Vtilde = SVDUpdate.addCols(U, s, V, self.B)
+        D = numpy.c_[(U*s).dot(V.T), self.B]
+        U, s, V = numpy.linalg.svd(D)
+        inds = numpy.flipud(numpy.argsort(s))[0:k]
+        U, s, V = Util.indSvd(U, s, V, inds)
+        
+        nptst.assert_array_almost_equal((U*s).dot(V.T), (Utilde*Stilde).dot(Vtilde.T), 4)
+        
+        #Test if same as add cols 
+        U, s, V = numpy.linalg.svd(self.A)
+        inds = numpy.flipud(numpy.argsort(s))[0:k]
+        U, s, V = Util.indSvd(U, s, V, inds)
+        Utilde, sTilde, Vtilde = SVDUpdate.addCols(U, s, V, self.B)
+        Vtilde2, sTilde2, Utilde2 = SVDUpdate.addRows(V, s, U, self.B.T)
+        
+        nptst.assert_array_almost_equal((Utilde*sTilde).dot(Vtilde.T),  (Utilde2*sTilde2).dot(Vtilde2.T))
 
     def testAddCols2(self):
         Utilde, Stilde, Vtilde = SVDUpdate.addCols2(self.U, self.s, self.V, self.B)
-        ABkEst = numpy.dot(numpy.dot(Utilde, Stilde), Vtilde.T)
+        ABkEst = numpy.dot((Utilde*Stilde), Vtilde.T)
 
         print(numpy.linalg.norm(self.AB))
         print(numpy.linalg.norm(self.AB - self.ABk))
@@ -79,7 +111,7 @@ class SVDUpdateTestCase(unittest.TestCase):
         
         
     def testAddRows(self): 
-        #Test if same as add cols 
+        
         #Test case when k = rank 
         Utilde, Stilde, Vtilde = SVDUpdate.addRows(self.U, self.s, self.V, self.C)
         
@@ -111,6 +143,15 @@ class SVDUpdateTestCase(unittest.TestCase):
         U, s, V = Util.indSvd(U, s, V, inds)
         
         nptst.assert_array_almost_equal((U*s).dot(V.T), (Utilde*Stilde).dot(Vtilde.T), 4)
+        
+        #Test if same as add cols 
+        U, s, V = numpy.linalg.svd(self.A)
+        inds = numpy.flipud(numpy.argsort(s))[0:k]
+        U, s, V = Util.indSvd(U, s, V, inds)
+        Utilde, sTilde, Vtilde = SVDUpdate.addRows(U, s, V, self.C)
+        Vtilde2, sTilde2, Utilde2 = SVDUpdate.addCols(V, s, U, self.C.T)
+        
+        nptst.assert_array_almost_equal((Utilde*sTilde).dot(Vtilde.T),  (Utilde2*sTilde2).dot(Vtilde2.T))
 
     def testAddSparseWrapp(self):
         X = numpy.random.rand(10, 5)
