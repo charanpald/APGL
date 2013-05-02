@@ -89,7 +89,7 @@ class SparseUtils(object):
             return X.T.dot(v) + (V*s).dot(U.T.dot(v))
         
         L = scipy.sparse.linalg.LinearOperator(X.shape, matvec, rmatvec) 
-        U, s, V = svdp(L, k, kmax=20*k)
+        U, s, V = svdp(L, k, kmax=30*k)
         
         return U, s, V.T 
         
