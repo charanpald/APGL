@@ -4,33 +4,39 @@ Some common functions used for the recommendation experiments
 """
 import logging
 import numpy
+import argparse
 from copy import copy
 from apgl.util.PathDefaults import PathDefaults
-import argparse
 from apgl.util import Util
+from exp.sandbox.recommendation.IterativeSoftImpute import IterativeSoftImpute 
 
 class RecommendExpHelper(object):
-    # priority for default args
-    # - best priority: command-line value
-    # - middle priority: set-by-function value
-    # - lower priority: class value
-    defaultAlgoArgs = argparse.Namespace()
-    defaultAlgoArgs.runIASC = False
-    defaultAlgoArgs.runExact = False
-    defaultAlgoArgs.runNystrom = False
-    defaultAlgoArgs.runEfficientNystrom = False
-    defaultAlgoArgs.runNing = False
-    defaultAlgoArgs.runModularity = False
-    defaultAlgoArgs.runRandomisedSvd = False
+    def __init__(self, iteratorFunc, cmdLine=None, defaultAlgoArgs = None, dirName=""):
+        """ priority for default args
+         - best priority: command-line value
+         - middle priority: set-by-function value
+         - lower priority: class value
+        """
+        self.defaultAlgoArgs = argparse.Namespace()
+        self.defaultAlgoArgs.runSoftImpute = False
+        self.defaultAlgoArgs.lmbdas = [0.1, 0.2, 0.5, 1.0]        
+        
+        # Parameters to choose which methods to run
+        # Obtained merging default parameters from the class with those from the user
+        self.algoArgs = RecommendExpHelper.newAlgoParams(defaultAlgoArgs)
+        
+        # Variables related to the dataset
+        self.getIteratorFunc = iteratorFunc
+        
+        #How often to print output 
+        self.logStep = 10
 
-    defaultAlgoArgs.k1 = 10
-    defaultAlgoArgs.k2s = [10, 20] 
-    defaultAlgoArgs.k3s = [500, 1000]
-    defaultAlgoArgs.k4s = [500, 1000]
-    
-    defaultAlgoArgs.T = 10
-    
-    defaultAlgoArgs.computeBound = False
+        # basic resultsDir
+        self.resultsDir = PathDefaults.getOutputDir() + "recommend/" + dirName + "/"
+
+        # update algoParams from command line
+        self.readAlgoParams(cmdLine)
+
 
     @staticmethod
     # update parameters with those from the user
@@ -42,44 +48,23 @@ class RecommendExpHelper(object):
     @staticmethod
     # merge default algoParameters from the class with those from the user
     def newAlgoParams(algoArgs=None):
-        algoArgs_ = copy(ClusterExpHelper.defaultAlgoArgs)
-        ClusterExpHelper.updateParams(algoArgs_, algoArgs)
+        algoArgs_ = copy(RecommendExpHelper.defaultAlgoArgs)
+        RecommendExpHelper.updateParams(algoArgs_, algoArgs)
         return(algoArgs_)
     
     @staticmethod
     def newAlgoParser(defaultAlgoArgs=None, add_help=False):
         # default algorithm args
-        defaultAlgoArgs = ClusterExpHelper.newAlgoParams(defaultAlgoArgs)
+        defaultAlgoArgs = RecommendExpHelper.newAlgoParams(defaultAlgoArgs)
         
         # define parser
         algoParser = argparse.ArgumentParser(description="", add_help=add_help)
-        for method in ["runIASC", "runExact", "runModularity", "runNystrom", "runEfficientNystrom", "runNing", "runRandomisedSvd"]:
+        for method in ["runSoftImpute"]:
             algoParser.add_argument("--" + method, action="store_true", default=defaultAlgoArgs.__getattribute__(method))
-        algoParser.add_argument("--k1", type=int, help="Number of clusters to construct at each iteration (default: %(default)s)", default=defaultAlgoArgs.k1)
-        algoParser.add_argument("--k2s", nargs="+", type=int, help="Rank of the approximated laplacian matrix (default: %(default)s)", default=defaultAlgoArgs.k2s)
-        algoParser.add_argument("--k3s", nargs="+", type=int, help="Number of rows/columns used by the Nystrom approach (default: %(default)s)", default=defaultAlgoArgs.k3s)
-        algoParser.add_argument("--k4s", nargs="+", type=int, help="Number of random projections to use with the randomised SVD approach (default: %(default)s)", default=defaultAlgoArgs.k4s)
-        algoParser.add_argument("--T", type=int, help="The exact decomposition is recomputed any T-th iteration (default: %(default)s)", default=defaultAlgoArgs.T)
+        algoParser.add_argument("--lmbdas", type=float, help="Regularisation parameter (default: %(default)s)", default=defaultAlgoArgs.k1)
 
         return(algoParser)
     
-    def __init__(self, iteratorFunc, cmdLine=None, defaultAlgoArgs = None, dirName=""):
-        # Parameters to choose which methods to run
-        # Obtained merging default parameters from the class with those from the user
-        self.algoArgs = ClusterExpHelper.newAlgoParams(defaultAlgoArgs)
-        
-        # Variables related to the dataset
-        self.getIteratorFunc = iteratorFunc
-        
-        #How often to print output 
-        self.logStep = 10
-
-        # basic resultsDir
-        self.resultsDir = PathDefaults.getOutputDir() + "cluster/" + dirName + "/"
-
-        # update algoParams from command line
-        self.readAlgoParams(cmdLine)
-
     # update current algoArgs with values from user and then from command line
     def readAlgoParams(self, cmdLine=None, defaultAlgoArgs=None):
         # update current algoArgs with values from the user
@@ -101,9 +86,9 @@ class RecommendExpHelper(object):
     def getIterator(self):
         return self.getIteratorFunc()
 
-    def recordResults(self, clusterList, timeList, fileName):
+    def recordResults(self, recommendList, timeList, fileName):
         """
-        Save results for a particular clustering
+        Save results for a particular recommendation 
         """
         iterator = self.getIterator()
         measures = []
@@ -134,45 +119,14 @@ class RecommendExpHelper(object):
         """
         Run the selected clustering experiments and save results
         """
-        
-        if self.algoArgs.runIASC:
-            logging.debug("Running approximate method")
-            
-            for k2 in self.algoArgs.k2s: 
-                logging.debug("k2=" + str(k2))
-                clusterer = IterativeSpectralClustering(self.algoArgs.k1, k2=k2, T=self.algoArgs.T, alg="IASC", logStep=self.logStep)
-                clusterer.nb_iter_kmeans = 20
-                clusterer.computeBound = self.algoArgs.computeBound
-                iterator = self.getIterator()
-                clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, verbose=True)
-    
-                resultsFileName = self.resultsDir + "ResultsIASC_k1=" + str(self.algoArgs.k1) + "_k2=" + str(k2) + "_T=" + str(self.algoArgs.T) + ".npz"
-                self.recordResults(clusterList, timeList, resultsFileName)
-
-        if self.algoArgs.runExact:
+        if self.algoArgs.runSoftImpute:
             logging.debug("Running exact method")
-            clusterer = IterativeSpectralClustering(self.algoArgs.k1, alg="exact", logStep=self.logStep)
-            clusterer.nb_iter_kmeans = 20
-            iterator = self.getIterator()
-            clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, verbose=True)
-
-            resultsFileName = self.resultsDir + "ResultsExact_k1=" + str(self.algoArgs.k1) + ".npz"
-            self.recordResults(clusterList, timeList, resultsFileName)
-
-        if self.algoArgs.runNystrom:
-            logging.debug("Running Nystrom method")
+            learner = IterativeSoftImpute(self.algoArgs.lmbdas, svdAlg="propack", logStep=self.logStep)
+            Xiterator = self.getIterator()
+            ZList = learner.learnModel(iterator)
             
-            for k3 in self.algoArgs.k3s: 
-                logging.debug("k3=" + str(k3))
-                clusterer = IterativeSpectralClustering(self.algoArgs.k1, k3=k3, alg="nystrom", logStep=self.logStep)
-                clusterer.nb_iter_kmeans = 20
-                clusterer.computeBound = self.algoArgs.computeBound
-                iterator = self.getIterator()
-                clusterList, timeList, boundList = clusterer.clusterFromIterator(iterator, verbose=True)
-    
-                resultsFileName = self.resultsDir + "ResultsNystrom_k1="+ str(self.algoArgs.k1) + "_k3=" + str(k3) + ".npz"
-                self.recordResults(clusterList, timeList, resultsFileName)
-                
-
+            for lmbda in self.algoArgs.lmbdas: 
+                resultsFileName = self.resultsDir + "ResultsSoftImpute_lmbda=" + str(lmbda) + ".npz"
+                self.recordResults(ZList, resultsFileName)
 
         logging.info("All done: see you around!")
