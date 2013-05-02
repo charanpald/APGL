@@ -8,10 +8,11 @@ import argparse
 from copy import copy
 from apgl.util.PathDefaults import PathDefaults
 from apgl.util import Util
+from apgl.util.MCEvaluator import MCEvaluator 
 from exp.sandbox.recommendation.IterativeSoftImpute import IterativeSoftImpute 
 
 class RecommendExpHelper(object):
-    def __init__(self, iteratorFunc, cmdLine=None, defaultAlgoArgs = None, dirName=""):
+    def __init__(self, trainXIteratorFunc, testXIteratorFunc, cmdLine=None, defaultAlgoArgs = None, dirName=""):
         """ priority for default args
          - best priority: command-line value
          - middle priority: set-by-function value
@@ -26,7 +27,8 @@ class RecommendExpHelper(object):
         self.algoArgs = RecommendExpHelper.newAlgoParams(defaultAlgoArgs)
         
         # Variables related to the dataset
-        self.getIteratorFunc = iteratorFunc
+        self.trainXIteratorFunc = trainXIteratorFunc
+        self.testXIteratorFunc = testXIteratorFunc
         
         #How often to print output 
         self.logStep = 10
@@ -86,33 +88,26 @@ class RecommendExpHelper(object):
     def getIterator(self):
         return self.getIteratorFunc()
 
-    def recordResults(self, recommendList, timeList, fileName):
+    def recordResults(self, ZIter, fileName):
         """
         Save results for a particular recommendation 
         """
-        iterator = self.getIterator()
+        trainIterator = self.trainXIterator()
+        testIterator = self.testXIterator()
         measures = []
-        graphInfo =  []
         logging.debug("Computing cluster measures")
 
-        for i in range(len(clusterList)):
-            Util.printIteration(i, self.logStep, len(clusterList))
-            W = next(iterator)
-            #G = networkx.Graph(W)
+        for predX in ZIter:
+            #Util.printIteration(i, self.logStep, len(clusterList))
+            testX = next(testIterator)
+
             #Store modularity, k-way normalised cut, and cluster size 
-            currentMeasures = [GraphUtils.modularity(W, clusterList[i]), GraphUtils.kwayNormalisedCut(W, clusterList[i]), len(numpy.unique(clusterList[i]))] 
+            currentMeasures = [MCEvaluator.meanSqError(testX, predX)] 
             measures.append(currentMeasures) 
 
-            # graph size
-            currentGraphInfo = [W.shape[0]]
-            graphInfo.append(currentGraphInfo)
-            # nb connected components
-            #graphInfo[i, 1] = networkx.number_connected_components(G)
-        
         measures = numpy.array(measures)
-        graphInfo = numpy.array(graphInfo)
         
-        numpy.savez(fileName, measures, timeList, graphInfo)
+        numpy.savez(fileName, measures)
         logging.debug("Saved file as " + fileName)
 
     def runExperiment(self):
@@ -122,11 +117,11 @@ class RecommendExpHelper(object):
         if self.algoArgs.runSoftImpute:
             logging.debug("Running exact method")
             learner = IterativeSoftImpute(self.algoArgs.lmbdas, svdAlg="propack", logStep=self.logStep)
-            Xiterator = self.getIterator()
-            ZList = learner.learnModel(iterator)
+            trainIterator = self.trainXIterator()
+            ZIter = learner.learnModel(trainIterator)
             
             for lmbda in self.algoArgs.lmbdas: 
                 resultsFileName = self.resultsDir + "ResultsSoftImpute_lmbda=" + str(lmbda) + ".npz"
-                self.recordResults(ZList, resultsFileName)
+                self.recordResults(ZIter, resultsFileName)
 
         logging.info("All done: see you around!")
