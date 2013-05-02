@@ -15,7 +15,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
     """
     Given a set of matrices X_1, ..., X_T find the completed matrices. 
     """
-    def __init__(self, lmbda, eps=0.1, k=10, svdAlg="propack", updateAlg="initial", r=10):
+    def __init__(self, lmbda, eps=0.1, k=10, svdAlg="propack", updateAlg="initial", r=10, logStep=10):
         """
         Initialise imputing algorithm with given parameters. The lmbda is a value 
         for use with the soft thresholded SVD. Eps is the convergence threshold and 
@@ -42,6 +42,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         self.updateAlg = updateAlg
         self.r = r 
         self.q = 2
+        self.logStep = logStep
         
     def learnModel(self, matrixIterator):
         """
@@ -76,6 +77,10 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                         oldV = oldV[0:m, :]
                 elif self.updateAlg == "svdUpdate":
                     pass 
+                elif self.updateAlg == "zero": 
+                    oldU = numpy.zeros((n, 1))
+                    oldS = numpy.zeros(1)
+                    oldV = numpy.zeros((m, 1))   
                 else: 
                     raise ValueError("Unknown SVD update algorithm: " + self.updateAlg)
             
@@ -128,6 +133,20 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
             j += 1 
             
         return ZList
+
+    def predict(self, ZList, indList): 
+        """
+        Make a set of predictions for a given set of completed matrices and 
+        index lists. 
+        """ 
+        XhatList = []
+        
+        for i, Z in enumerate(ZList):
+            U, s, V = Z 
+            Xhat = ExpSU.SparseUtils.reconstructLowRank(U, s, V, indList[i])
+            XhatList.append(Xhat)    
+        
+        return XhatList
 
     def setK(self, k):
         Parameter.checkInt(k, 1, float('inf'))
