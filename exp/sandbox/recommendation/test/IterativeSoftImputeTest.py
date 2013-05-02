@@ -21,8 +21,6 @@ class IterativeSoftImputeTest(unittest.TestCase):
         
         numpy.seterr(all="raise")
         numpy.random.seed(21)
-
-    def testLearnModel(self): 
         
         #Create a sequence of matrices 
         n = 20 
@@ -44,12 +42,16 @@ class IterativeSoftImputeTest(unittest.TestCase):
         X2 = ExpSU.SparseUtils.reconstructLowRank(U, s, V, inds2)
         X3 = ExpSU.SparseUtils.reconstructLowRank(U, s, V, inds3)
         
-        matrixList = [X1, X2, X3]
-        matrixIterator = iter(matrixList)
-        
+        self.matrixList = [X1, X2, X3]
+        self.indsList = [inds1, inds2, inds3]
+
+    def testLearnModel(self): 
         lmbda = 0.0 
+        eps = 0.1 
+        k = 10
         
-        iterativeSoftImpute = IterativeSoftImpute(lmbda, k=10)
+        matrixIterator = iter(self.matrixList)
+        iterativeSoftImpute = IterativeSoftImpute(lmbda, k=k, eps=eps, svdAlg="propack")
         ZList = iterativeSoftImpute.learnModel(matrixIterator)
         
         #Check that ZList is the same as XList 
@@ -57,35 +59,57 @@ class IterativeSoftImputeTest(unittest.TestCase):
             U, s, V = Z
             Xhat = (U*s).dot(V.T)
             
-            nptst.assert_array_almost_equal(Xhat, matrixList[i].todense())
+            nptst.assert_array_almost_equal(Xhat, self.matrixList[i].todense())
         
         #Compare solution with that of SoftImpute class 
         lmbda = 0.5 
-        iterativeSoftImpute.setLambda(lmbda)
+        iterativeSoftImpute = IterativeSoftImpute(lmbda, k=k, eps=eps, svdAlg="propack", updateAlg="zero")
         
+        matrixIterator = iter(self.matrixList)
         ZList = iterativeSoftImpute.learnModel(matrixIterator)
         
         lmbdas = numpy.array([lmbda])
-        softImpute = SoftImpute(lmbdas, k=10)
-        Z1 = softImpute.learnModel(X1)
-        Z2 = softImpute.learnModel(X2)
-        Z3 = softImpute.learnModel(X3)
+        
+        softImpute = SoftImpute(lmbdas, k=k, eps=eps)
+        Z1 = softImpute.learnModel(self.matrixList[0])
+        Z2 = softImpute.learnModel(self.matrixList[1])
+        Z3 = softImpute.learnModel(self.matrixList[2])
         
         ZList2 = [Z1, Z2, Z3]
         
         for i, Z in enumerate(ZList):
-            nptst.assert_array_almost_equal(Z, ZList2[i].todense())
+            U, s, V = Z 
+            Xhat = (U*s).dot(V.T)
+            nptst.assert_array_almost_equal(Xhat, ZList2[i].todense())
         
         #Test the SVD updating solution   
+        iterativeSoftImpute = IterativeSoftImpute(lmbda, k=9, eps=eps, svdAlg="propack", updateAlg="zero")
         iterativeSoftImpute.svdAlg = "svdUpdate"
+        matrixIterator = iter(self.matrixList)
         ZList = iterativeSoftImpute.learnModel(matrixIterator)
         
         #Test using Randomised SVD 
         iterativeSoftImpute.svdAlg = "RSVD"
+        matrixIterator = iter(self.matrixList)
         ZList = iterativeSoftImpute.learnModel(matrixIterator)
         
         #Test on an increasing then decreasing set of solutions 
+
+    def testPredict(self): 
+        #Create a set of indices 
+        lmbda = 0.0 
         
+        iterativeSoftImpute = IterativeSoftImpute(lmbda, k=10)
+        matrixIterator = iter(self.matrixList)
+        ZList = iterativeSoftImpute.learnModel(matrixIterator)
+        
+        XhatList = iterativeSoftImpute.predict(ZList, self.indsList)
+        
+        #Check we get the exact matrices returned 
+        for i, Xhat in enumerate(XhatList): 
+            nptst.assert_array_almost_equal(numpy.array(Xhat.todense()), self.matrixList[i].todense())
+            
+            self.assertEquals(Xhat.nnz, self.indsList[i].shape[0])
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
