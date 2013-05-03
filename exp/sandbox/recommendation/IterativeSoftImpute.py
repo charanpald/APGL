@@ -8,7 +8,6 @@ from apgl.util.Util import Util
 from apgl.util.Parameter import Parameter 
 from exp.sandbox.recommendation.AbstractMatrixCompleter import AbstractMatrixCompleter
 from exp.util.SparseUtilsCython import SparseUtilsCython
-from exp.sandbox.recommendation.SoftImpute import SoftImpute 
 from exp.sandbox.SVDUpdate import SVDUpdate 
 
 class IterativeSoftImpute(AbstractMatrixCompleter): 
