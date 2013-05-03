@@ -57,7 +57,6 @@ class SoftImpute(AbstractMatrixCompleter):
          
         ZList = []
         
-        
         for lmbda in self.lmbdas:
             gamma = self.eps + 1
             i = 0
@@ -106,8 +105,8 @@ class SoftImpute(AbstractMatrixCompleter):
         version of the soft impute algorithm in which we store the entire 
         matrices, newZ and oldZ. 
         """
-        if not scipy.sparse.isspmatrix_lil(X):
-            raise ValueError("Input matrix must be lil_matrix")
+        #if not scipy.sparse.isspmatrix_lil(X):
+        #    raise ValueError("Input matrix must be lil_matrix")
             
         oldZ = scipy.sparse.lil_matrix(X.shape)
         omega = X.nonzero()
@@ -149,6 +148,19 @@ class SoftImpute(AbstractMatrixCompleter):
         else:
             return ZList[0]
     
+    def predict(self, ZList, inds): 
+        """
+        Take a list of Z matrices (given by their decomposition) and reconstruct 
+        them for the given indices. 
+        """
+        predXList = []        
+        
+        for Z in ZList: 
+            U, s, V = Z
+            Xhat = ExpSU.SparseUtils.reconstructLowRank(U, s, V, inds)
+            predXList.append(Xhat)
+            
+        return predXList 
         
     def getMetricMethod(self): 
         return MCEvaluator.meanSqError
