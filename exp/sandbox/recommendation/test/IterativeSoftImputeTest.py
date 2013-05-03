@@ -111,6 +111,15 @@ class IterativeSoftImputeTest(unittest.TestCase):
             
             self.assertEquals(Xhat.nnz, self.indsList[i].shape[0])
 
+    def testModelSelect(self):
+        lmbda = 0.1
+        X = self.matrixList[0]
+        
+        iterativeSoftImpute = IterativeSoftImpute(lmbda, k=10)
+        lmbdas = numpy.array([1.0, 0.8, 0.5, 0.2, 0.1])
+        folds = 5 
+        iterativeSoftImpute.modelSelect(X, lmbdas, folds)
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
