@@ -77,12 +77,13 @@ class SparseUtils(object):
         return X 
         
     @staticmethod
-    def svdSparseLowRank(X, U, s, V, k=10): 
+    def svdSparseLowRank(X, U, s, V): 
         """
         Find the partial SVD of a matrix A = X + U s V.T in which X is sparse and B = 
-        U s V.T is a low rank matrix. We use PROPACK to find the first k 
-        eigenvectors/values. 
+        U s V.T is a low rank matrix. We use PROPACK to find the singular  
+        vectors/values. 
         """
+        k = min(X.shape[0], X.shape[1])
         
         def matvec(v): 
             return X.dot(v) + (U*s).dot(V.T.dot(v)) 
@@ -97,34 +98,44 @@ class SparseUtils(object):
         
 
     @staticmethod 
-    def svdSoft(X, lmbda, k): 
+    def svdSoft(X, lmbda): 
         """
-        Take the soft-thresholded SVD of sparse matrix X under threshold lmbda for the first 
-        k singular values and vectors. Returns the left and right singular 
-        vectors and the singular values. 
+        Find the partial SVD of the sparse or dense matrix X, for which singular 
+        values are >= lmbda. Soft threshold the resulting singular values 
+        so that s <- max(s - lambda, 0)
         """
-        if not scipy.sparse.issparse(X): 
-            raise ValueError("X must be a sparse matrix")
+        if scipy.sparse.issparse(X): 
+            def matvec(v): 
+                return X.dot(v)
         
-        U, s, V = sparsesvd(X, k) 
-        U = U.T
+            def rmatvec(v): 
+                return X.T.dot(v)          
+            
+            k = min(X.shape[0], X.shape[1])
+            L = scipy.sparse.linalg.LinearOperator(X.shape, matvec, rmatvec) 
+            U, s, V = svdp(L, k, kmax=30*k)
+        else: 
+            U, s, V = numpy.linalg.svd(X)
+            
         inds = numpy.flipud(numpy.argsort(s))
+        inds = inds[s[inds] >= lmbda]
         U, s, V = Util.indSvd(U, s, V, inds) 
         
         #Soft threshold 
-        s = s - lmbda
-        s = numpy.clip(s, 0, numpy.max(s))
+        if s.shape[0] != 0: 
+            s = s - lmbda
+            s = numpy.clip(s, 0, numpy.max(s))
 
         return U, s, V 
       
     @staticmethod 
-    def svdSoft2(X, U, s, V, lmbda, k): 
+    def svdSoft2(X, U, s, V, lmbda): 
         """
         Compute the SVD of a matrix X + UsV^T where X is sparse and U s V^T is 
-        low rank. The first k singular values are computed and then soft thresholded 
+        low rank. The singular values >= lmbda are computed and then soft thresholded 
         with threshold lmbda. 
         """
-        U2, s2, V2 = SparseUtils.svdSparseLowRank(X, U, s, V, k)
+        U2, s2, V2 = SparseUtils.svdSparseLowRank(X, U, s, V)
         
         #Soft threshold 
         s2 = s2 - lmbda

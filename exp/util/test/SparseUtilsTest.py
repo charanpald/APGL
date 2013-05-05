@@ -70,27 +70,32 @@ class SparseUtilsCythonTest(unittest.TestCase):
         A = scipy.sparse.rand(10, 10, 0.2)
         A = A.tocsc()
         
-        lmbda = 0.1
-        k = 6
-        U, s, V = SparseUtils.svdSoft(A, lmbda, k)
-        ATilde = U.dot(numpy.diag(s)).dot(V.T)        
+        lmbda = 0.2
+        U, s, V = SparseUtils.svdSoft(A, lmbda)
+        ATilde = U.dot(numpy.diag(s)).dot(V.T)     
         
-        #Now comput the same matrix using numpy
-        #Pick first k singular vectors/values 
+        #Now compute the same matrix using numpy
         A = A.todense() 
         
         U2, s2, V2 = numpy.linalg.svd(A)
-        inds = numpy.flipud(numpy.argsort(s2))[0:k]
-        U2, s2, V2 = Util.indSvd(U2, s2, V2, inds)        
+        inds = numpy.flipud(numpy.argsort(s2))
+        inds = inds[s2[inds] > lmbda]
+        U2, s2, V2 = Util.indSvd(U2, s2, V2, inds) 
         
         s2 = s2 - lmbda 
-        s2 = numpy.clip(s, 0, numpy.max(s2))
-        
+        s2 = numpy.clip(s, 0, numpy.max(s2)) 
 
         ATilde2 = U2.dot(numpy.diag(s2)).dot(V2.T)
         
         nptst.assert_array_almost_equal(s, s)
         nptst.assert_array_almost_equal(ATilde, ATilde2)
+        
+        #Now run svdSoft with a numpy array 
+        U3, s3, V3 = SparseUtils.svdSoft(A, lmbda)
+        ATilde3 = U.dot(numpy.diag(s)).dot(V.T)  
+        
+        nptst.assert_array_almost_equal(s, s3)
+        nptst.assert_array_almost_equal(ATilde3, ATilde2)
 
     def testSvdSparseLowRank(self): 
         numRuns = 10   
@@ -114,7 +119,7 @@ class SparseUtilsCythonTest(unittest.TestCase):
             B = (U*s).dot(V.T)
             
             k = numpy.random.randint(1, r)
-            U2, s2, V2 = SparseUtils.svdSparseLowRank(A, U, s, V, k=k)
+            U2, s2, V2 = SparseUtils.svdSparseLowRank(A, U, s, V)
             U2 = U2[:, 0:k]
             s2 = s2[0:k]
             V2 = V2[:, 0:k]
