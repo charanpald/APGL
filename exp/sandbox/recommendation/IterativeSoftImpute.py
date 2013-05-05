@@ -105,7 +105,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                     Y = Y.tocsc()
                     
                     if self.iterativeSoftImpute.svdAlg=="propack": 
-                        newU, newS, newV = ExpSU.SparseUtils.svdSparseLowRank(Y, self.oldU, self.oldS, self.oldV, self.iterativeSoftImpute.k)
+                        newU, newS, newV = ExpSU.SparseUtils.svdSparseLowRank(Y, self.oldU, self.oldS, self.oldV)
                     elif self.iterativeSoftImpute.svdAlg=="svdUpdate": 
                         newU, newS, newV = SVDUpdate.addSparseProjected(self.oldU, self.oldS, self.oldV, Y, self.iterativeSoftImpute.k)
                     elif self.iterativeSoftImpute.svdAlg=="RSVD": 
@@ -132,7 +132,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                     self.oldS = newS.copy() 
                     self.oldV = newV.copy() 
                     
-                    logging.debug("Iteration " + str(i) + " gamma="+str(gamma)) 
+                    #logging.debug("Iteration " + str(i) + " gamma="+str(gamma)) 
                     i += 1 
                     
                 logging.debug("Number of iterations for lambda="+str(self.iterativeSoftImpute.lmbda) + ": " + str(i))
@@ -170,31 +170,24 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         squared error). 
         """
         
-        Xlil = X.tolil() 
-        inds = X.nonzero()
-        
-        cvInds = Sampling.randCrossValidation(folds, inds[0].shape[0])
+        Xcoo = X.tocoo() 
+        cvInds = Sampling.randCrossValidation(folds, X.nnz)
         errors = numpy.zeros((lmbdas.shape[0], folds))
         
         for i, (trainInds, testInds) in enumerate(cvInds): 
             trainX = scipy.sparse.coo_matrix(X.shape)
-            trainInds2 = (inds[0][trainInds], inds[1][trainInds])
-            trainInds2 = inds
-            print(Xlil.data)
-            trainX.data = Xlil.data[trainInds]
-            trainX.row = Xlil.row[inds[0][trainInds]]
-            trainX.col = Xlil.col[inds[1][trainInds]]
+            trainX.data = Xcoo.data[trainInds]
+            trainX.row = Xcoo.row[trainInds]
+            trainX.col = Xcoo.col[trainInds]
+            trainX = trainX.tocsc()
             
             testX = scipy.sparse.coo_matrix(X.shape)
-            testInds2 = inds[0][testInds], inds[1][testInds]
-            testX[testInds2] = Xlil[testInds2]
+            testX.data = Xcoo.data[testInds]
+            testX.row = Xcoo.row[testInds]
+            testX.col = Xcoo.col[testInds]
+            testX = testX.tocsc()
             
-            print(X.todense())
-            print(trainInds2)
-            print(trainInds, testInds)
-            print(trainX.todense())
-            print(testX.todense())
-            print(trainX.nnz, testX.nnz)
+            testInds2 = testX.nonzero()
         
             for j, lmbda in enumerate(lmbdas): 
                 self.setLambda(lmbda)
@@ -204,7 +197,9 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                 predX = predXIter.next() 
                 errors[j, i] = MCEvaluator.meanSqError(testX, predX)
         
+        print("errors=" + str(errors))
         meanErrors = errors.mean(1)
+        print("meanErrors=" + str(meanErrors))
         
         return lmbdas[numpy.argmin(meanErrors)]
 
