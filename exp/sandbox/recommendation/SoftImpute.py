@@ -65,7 +65,7 @@ class SoftImpute(AbstractMatrixCompleter):
                 ZOmega = SparseUtilsCython.partialReconstruct2((rowInds, colInds), oldU, oldS, oldV)
                 Y = X - ZOmega
                 Y = Y.tocsc()
-                newU, newS, newV = ExpSU.SparseUtils.svdSoft2(Y, oldU, oldS, oldV, lmbda, self.k)
+                newU, newS, newV = ExpSU.SparseUtils.svdSoft2(Y, oldU, oldS, oldV, lmbda)
                 
                 normOldZ = (oldS**2).sum()
                 normNewZmOldZ = (oldS**2).sum() + (newS**2).sum() - 2*numpy.trace((oldV.T.dot(newV*newS)).dot(newU.T.dot(oldU*oldS)))
@@ -116,19 +116,18 @@ class SoftImpute(AbstractMatrixCompleter):
         
         for lmbda in self.lmbdas:
             gamma = self.eps + 1
+            i = 0
             while gamma > self.eps:
-                newZ = oldZ.copy()
-                newZ[omega] = 0
-                newZ = X + newZ
-                newZ = newZ.tocsc()
-                    
-                U, s, V = ExpSU.SparseUtils.svdSoft(newZ, lmbda, self.k)
+                Y = oldZ.copy()
+                Y[omega] = 0
+                Y = X + Y
+                Y = Y.tocsc()
+                U, s, V = ExpSU.SparseUtils.svdSoft(Y, lmbda)
                 #Get an "invalid value encountered in sqrt" warning sometimes
                 newZ = scipy.sparse.lil_matrix((U*s).dot(V.T))
                 
                 oldZ = oldZ.tocsr()
                 normOldZ = SparseUtils.norm(oldZ)**2
-                
                 normNewZmOldZ = SparseUtils.norm(newZ - oldZ)**2               
                 
                 #We can get newZ == oldZ in which case we break
@@ -140,7 +139,11 @@ class SoftImpute(AbstractMatrixCompleter):
                     gamma = normNewZmOldZ/normOldZ
                 
                 oldZ = newZ.copy()
+                
+                logging.debug("Iteration " + str(i) + " gamma="+str(gamma)) 
+                i += 1
             
+            logging.debug("Number of iterations for lambda="+str(lmbda) + ": " + str(i))
             ZList.append(newZ)
         
         if self.lmbdas.shape[0] != 1:
