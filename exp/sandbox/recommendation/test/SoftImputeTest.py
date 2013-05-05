@@ -19,8 +19,7 @@ class SoftImputeTest(unittest.TestCase):
         
         numpy.seterr(all="raise")
         numpy.random.seed(21)
-
-    #@unittest.skip("")
+        
     def testLearnModel(self): 
         X = scipy.sparse.rand(10, 10, 0.2)
         X = X.tocsc()        
@@ -30,8 +29,7 @@ class SoftImputeTest(unittest.TestCase):
         
         #Check out singular values 
         U, s, V = sparsesvd(X.tocsc(), k) 
-        #print(s)
-        
+
         softImpute = SoftImpute(lmbdas, eps, k)
         ZList = softImpute.learnModel(X)
         
@@ -46,21 +44,35 @@ class SoftImputeTest(unittest.TestCase):
         Z = softImpute.learnModel(X)
         self.assertEquals(numpy.linalg.norm(Z.todense()), 0)
         
-        #Compare against learnModel2 against a moderate lambda value 
-        lmbdas = numpy.array([0.2])
+        #Check solution for medium values of lambda 
+        eps = 0.1
+        lmbdas = numpy.array([0.1, 0.2, 0.5, 1.0])
         softImpute = SoftImpute(lmbdas, eps, k)
         ZList = softImpute.learnModel(X)
-        ZList2 = softImpute.learnModel2(X)
         
-        #nptst.assert_almost_equal(ZList.todense(), ZList2.todense())
-
+        for j, Z in enumerate(ZList): 
+            Z = Z.todense()
+            Zomega = numpy.zeros(X.shape)
+            
+            rowInds, colInds = X.nonzero()
+            for i in range(X.nonzero()[0].shape[0]): 
+                Zomega[rowInds[i], colInds[i]] = Z[rowInds[i], colInds[i]]
+                
+            U, s, V = ExpSU.SparseUtils.svdSoft(numpy.array(X-Zomega+Z), lmbdas[j])      
+            
+            tol = 0.1
+            self.assertTrue(numpy.linalg.norm(Z -(U*s).dot(V.T))**2 < tol)
+        
     def testLearnModel2(self): 
         X = scipy.sparse.rand(10, 10, 0.2)
-        X = X.tolil()        
+        X = X.tocsc()        
         lmbdas = numpy.array([10.0, 0.0])
-        eps = 0.001         
+        eps = 0.01         
         k = 9
         
+        #Check out singular values 
+        U, s, V = sparsesvd(X.tocsc(), k) 
+
         softImpute = SoftImpute(lmbdas, eps, k)
         ZList = softImpute.learnModel2(X)
         
@@ -74,22 +86,25 @@ class SoftImputeTest(unittest.TestCase):
         softImpute = SoftImpute(lmbdas, eps, k)
         Z = softImpute.learnModel2(X)
         self.assertEquals(numpy.linalg.norm(Z.todense()), 0)
-
-    @unittest.skip("")
-    def testParallelModelSelect(self): 
-        X = scipy.sparse.rand(10, 10, 0.5)
-        X = X.tocsr()
-          
-        numExamples = X.getnnz()
-        paramDict = {}
-        paramDict["setK"] = numpy.array([5, 10, 20])
-        folds = 3 
-        idx = Sampling.randCrossValidation(folds, numExamples)
-                
         
-        lmbdas = numpy.array([0.1])
-        softImpute = SoftImpute(lmbdas, k=10)
-        learner, meanErrors = softImpute.parallelModelSelect(X, idx, paramDict)
+        #Check solution for medium values of lambda 
+        eps = 0.1
+        lmbdas = numpy.array([0.1, 0.2, 0.5, 1.0])
+        softImpute = SoftImpute(lmbdas, eps, k)
+        ZList = softImpute.learnModel2(X)
+        
+        for j, Z in enumerate(ZList): 
+            Z = Z.todense()
+            Zomega = numpy.zeros(X.shape)
+            
+            rowInds, colInds = X.nonzero()
+            for i in range(X.nonzero()[0].shape[0]): 
+                Zomega[rowInds[i], colInds[i]] = Z[rowInds[i], colInds[i]]
+                
+            U, s, V = ExpSU.SparseUtils.svdSoft(numpy.array(X-Zomega+Z), lmbdas[j])      
+            
+            tol = 0.1
+            self.assertTrue(numpy.linalg.norm(Z -(U*s).dot(V.T))**2 < tol)
 
     def testPredict(self): 
         X = scipy.sparse.rand(10, 10, 0.2)
