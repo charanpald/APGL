@@ -2,6 +2,8 @@
 
 
 from apgl.util.Util import Util
+from apgl.util.Sampling import Sampling 
+from apgl.util.MCEvaluator import MCEvaluator
 from exp.sandbox.recommendation.IterativeSoftImpute import IterativeSoftImpute
 from exp.sandbox.recommendation.SoftImpute import SoftImpute 
 import sys
@@ -16,7 +18,7 @@ import exp.util.SparseUtils as ExpSU
 
 class IterativeSoftImputeTest(unittest.TestCase):
     def setUp(self):
-        logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+        #logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
         numpy.set_printoptions(precision=4, suppress=True, linewidth=200)
         
         numpy.seterr(all="raise")
@@ -194,22 +196,49 @@ class IterativeSoftImputeTest(unittest.TestCase):
     #@unittest.skip("")
     def testModelSelect(self):
         lmbda = 0.1
-        shape = (100, 100) 
+        shape = (20, 20) 
         r = 20 
-        k = 100
+        k = 50
         noise = 0.2
         X = ExpSU.SparseUtils.generateSparseLowRank(shape, r, k, noise)
         
-        
-        print("--------------------")
-        print(X.nnz)
         U, s, V = numpy.linalg.svd(X.todense())
-        print(s)
-        
+
         iterativeSoftImpute = IterativeSoftImpute(lmbda, k=10, svdAlg="propack", updateAlg="zero")
-        lmbdas = numpy.linspace(numpy.max(s), 0.01, 10)
+        lmbdas = numpy.linspace(numpy.max(s)+0.1, 0.001, 20)
         folds = 5 
-        iterativeSoftImpute.modelSelect(X, lmbdas, folds)
+        cvInds = Sampling.randCrossValidation(folds, X.nnz)
+        meanTestErrors = iterativeSoftImpute.modelSelect(X, lmbdas, cvInds)
+
+        #Now do model selection manually 
+        (rowInds, colInds) = X.nonzero()
+        trainErrors = numpy.zeros((lmbdas.shape[0], len(cvInds)))
+        testErrors = numpy.zeros((lmbdas.shape[0], len(cvInds)))
+        
+        for i, lmbda in enumerate(lmbdas): 
+            for j, (trainInds, testInds) in enumerate(cvInds): 
+                trainX = scipy.sparse.csc_matrix(X.shape)
+                testX = scipy.sparse.csc_matrix(X.shape)
+                
+                for p in trainInds: 
+                    trainX[rowInds[p], colInds[p]] = X[rowInds[p], colInds[p]]
+                    
+                for p in testInds: 
+                    testX[rowInds[p], colInds[p]] = X[rowInds[p], colInds[p]]
+                                 
+                softImpute = SoftImpute(numpy.array([lmbda])) 
+                ZList = [softImpute.learnModel(trainX, fullMatrices=False)]
+                
+                predTrainX = softImpute.predict(ZList, trainX.nonzero())[0]
+                predX = softImpute.predict(ZList, testX.nonzero())[0]
+
+                
+                testErrors[i, j] = MCEvaluator.meanSqError(testX, predX)
+                trainErrors[i, j] = MCEvaluator.meanSqError(trainX, predTrainX)
+        
+        meanTestErrors2 = testErrors.mean(1)   
+        meanTrainErrors2 = trainErrors.mean(1)  
+        nptst.assert_array_almost_equal(meanTestErrors, meanTestErrors2, 3) 
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
