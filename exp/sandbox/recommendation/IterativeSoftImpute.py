@@ -163,7 +163,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
   
         return ZTestIter()
 
-    def modelSelect(self, X, lmbdas, folds):
+    def modelSelect(self, X, lmbdas, cvInds):
         """
         Pick a value of lambda based on a single matrix X. We do cross validation 
         within, and return the best value of lambda (according to the mean 
@@ -171,8 +171,8 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         """
         
         Xcoo = X.tocoo() 
-        cvInds = Sampling.randCrossValidation(folds, X.nnz)
-        errors = numpy.zeros((lmbdas.shape[0], folds))
+        
+        errors = numpy.zeros((lmbdas.shape[0], len(cvInds)))
         
         for i, (trainInds, testInds) in enumerate(cvInds): 
             trainX = scipy.sparse.coo_matrix(X.shape)
@@ -197,11 +197,9 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                 predX = predXIter.next() 
                 errors[j, i] = MCEvaluator.meanSqError(testX, predX)
         
-        print("errors=" + str(errors))
         meanErrors = errors.mean(1)
-        print("meanErrors=" + str(meanErrors))
-        
-        return lmbdas[numpy.argmin(meanErrors)]
+
+        return meanErrors 
 
     def setK(self, k):
         Parameter.checkInt(k, 1, float('inf'))
