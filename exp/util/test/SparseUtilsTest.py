@@ -20,7 +20,7 @@ class SparseUtilsCythonTest(unittest.TestCase):
         r = 5 
         k = 10 
 
-        X, U, s, V = SparseUtils.generateSparseLowRank(shape, r, k, True)         
+        X, U, s, V = SparseUtils.generateSparseLowRank(shape, r, k, verbose=True)         
         
         self.assertEquals(U.shape, (shape[0],r))
         self.assertEquals(V.shape, (shape[1], r))
