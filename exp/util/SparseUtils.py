@@ -1,7 +1,6 @@
 import numpy 
 import scipy.sparse 
 import scipy.sparse.linalg 
-from sparsesvd import sparsesvd
 from exp.util.SparseUtilsCython import SparseUtilsCython
 from apgl.util.Util import Util 
 from pypropack import svdp
@@ -11,14 +10,17 @@ class SparseUtils(object):
         pass 
     
     @staticmethod 
-    def generateSparseLowRank(shape, r, k, verbose=False): 
+    def generateSparseLowRank(shape, r, k, noise=0.0, verbose=False): 
         """
         A method to efficiently generate large sparse matrices of low rank. We 
         use rank r and k indices are sampled from the full matrix to form a 
-        sparse one. Returns a scipy csc_matrix. 
+        sparse one. One can also perturb the observed values with a Gaussian 
+        noise component. Returns a scipy csc_matrix. 
         """
         U, s, V = SparseUtils.generateLowRank(shape, r)
-        X = SparseUtils.reconstructLowRank(U, s, V, k)        
+        X = SparseUtils.reconstructLowRank(U, s, V, k)
+
+        X.data += numpy.random.randn(X.data.shape[0])*noise        
         
         if verbose: 
             return X, U, s, V
@@ -95,6 +97,24 @@ class SparseUtils(object):
         U, s, V = svdp(L, k, kmax=30*k)
         
         return U, s, V.T 
+        
+
+    @staticmethod
+    def svdPropack(X, k):
+        """
+        Perform the SVD of a sparse matrix X using PROPACK for the first k 
+        singular values. 
+        """
+        def matvec(v): 
+            return X.dot(v) 
+        
+        def rmatvec(v): 
+            return X.T.dot(v)
+        
+        L = scipy.sparse.linalg.LinearOperator(X.shape, matvec, rmatvec) 
+        U, s, VT = svdp(L, k, kmax=30*k)
+        
+        return U, s, VT.T 
         
 
     @staticmethod 
