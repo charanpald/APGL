@@ -8,6 +8,8 @@ from scipy.sparse.linalg import LinearOperator
 import numpy
 import numpy.testing as nptst 
 from apgl.util.Util import Util
+from pypropack import svdp
+from exp.util.SparseUtils import SparseUtils 
 
 numpy.set_printoptions(suppress=True, precision=3, linewidth=300)
 numpy.random.seed(21)
@@ -266,12 +268,13 @@ class SVDUpdate:
         m, n = X.shape
         
         # decompose X as X1 X2.T   
-        colSums = numpy.array(abs(X).sum(1)).ravel()
         inds = scipy.unique(X.nonzero()[1])
         if len(inds) > 0:
             X1 = numpy.array(X[:,inds].todense())
             X2 = numpy.zeros((n, len(inds)))
             X2[(inds, numpy.arange(len(inds)))] = 1
+        
+        nptst.assert_array_almost_equal(X.todense(), X1.dot(X2.T))        
         
         # svd decomposition of projections of X1 and X2
         UTX1 = U.T.dot(X1)
@@ -291,12 +294,14 @@ class SVDUpdate:
         
         # svd of W
         W = scipy.sparse.csc_matrix(W)
-        UW, sW, VWT = scipy.sparse.linalg.svds(W, k)
-        
+        UW, sW, VW = SparseUtils.svdPropack(W, k)
+        VWT = VW.T
+   
         # reconstruct the correct decomposition
         Ures = numpy.c_[U, Q1].dot(UW)
         sres = sW
         Vres = numpy.c_[V, Q2].dot(VWT.T)
+        print(sres)
         
         return Ures, sres, Vres 
         
@@ -317,6 +322,9 @@ class SVDUpdate:
 
     @staticmethod
     def _addSparseRSVD(U, s, V, X, k=10, kX=None, kRand=None, q=None):
+        """
+        Perform a randomised SVD of the matrix X + U diag(s) V.T. We use th
+        """
         if kX==None:
             kX=k
         if kRand==None:
@@ -327,8 +335,9 @@ class SVDUpdate:
         m, n = X.shape
         Us = U*s
 
-        UX, sX, VXT = scipy.sparse.linalg.svds(X, kX)
-        omega = numpy.c_[V, VXT.T, numpy.random.randn(n, kRand)]
+        kX = numpy.min([m, n, kX])
+        UX, sX, VX = SparseUtils.svdPropack(X, kX)
+        omega = numpy.c_[V, VX, numpy.random.randn(n, kRand)]
         
         def rMultA(x):
             return Us.dot(V.T.dot(x)) + X.dot(x)
