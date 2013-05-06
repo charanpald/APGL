@@ -132,7 +132,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                     self.oldS = newS.copy() 
                     self.oldV = newV.copy() 
                     
-                    #logging.debug("Iteration " + str(i) + " gamma="+str(gamma)) 
+                    logging.debug("Iteration " + str(i) + " gamma="+str(gamma)) 
                     i += 1 
                     
                 logging.debug("Number of iterations for lambda="+str(self.iterativeSoftImpute.lmbda) + ": " + str(i))
@@ -192,7 +192,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
             for j, lmbda in enumerate(lmbdas): 
                 self.setLambda(lmbda)
                 ZIter = self.learnModel(iter([trainX]))
-                predXIter = self.predict(ZIter, testInds2)
+                predXIter = self.predict(ZIter, [testInds2])
                 
                 predX = predXIter.next() 
                 errors[j, i] = MCEvaluator.meanSqError(testX, predX)
