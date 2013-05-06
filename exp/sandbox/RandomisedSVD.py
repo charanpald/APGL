@@ -36,3 +36,28 @@ class RandomisedSVD(object):
         U = Q.dot(U)
         
         return U, s, V 
+        
+    def svd2(A, lmbda): 
+        """
+        Compute the randomised SVD with error estimate up to a tolerance of 
+        lmbda, i.e. ||A - QQ^TA||_2 <= lmbda. 
+        """ 
+        Parameter.checkFloat(lmbda, 0.0, float("inf"))
+        r = 10 
+
+        m, n = A.shape        
+        Omega = numpy.random.randn(n, k)
+        Y = A.dot(Omega)
+        
+        Q = numpy.zeros((m, 0))
+        
+        i = 0 
+
+        while numpy.max((Y**2).sum(0)) > eps/(10*numpy.sqrt(2/numpy.pi)): 
+            Y[:, i] = Y[:, i] - Q.dot(Q.T).dot(Y[:, i])
+            q = Y[:, i]
+            Q = numpy.c_[Q, q]
+            
+            omega = numpy.random.randn(n) 
+        
+        
