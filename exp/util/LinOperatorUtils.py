@@ -1,5 +1,15 @@
+import numpy 
 import multiprocessing 
 import scipy.sparse.linalg.LinearOperator
+
+
+def dot(args): 
+    X, v = args 
+    return X.dot(v)
+
+def dotT(args): 
+    X, v = args 
+    return X.T.dot(v)
 
 class LinOperatorUtils(object): 
     """
@@ -9,6 +19,7 @@ class LinOperatorUtils(object):
     def __init__(self): 
         pass 
     
+    @staticmethod 
     def sparseMatrixOp(X): 
         def matvec(v): 
             return X.dot(v)
@@ -25,13 +36,34 @@ class LinOperatorUtils(object):
             pool = multiprocessing.Pool(processes=numProcesses) 
             paramList = [] 
             
+            inds = numpy.array(numpy.linspace(0, X.shape[0], numProcesses+1))
             for i in range(numProcesses): 
+                paramList.append((X[inds[i]:inds[i+1], :], v))
                 
+            iterator = pool.imap(dot, paramList)
+            u = numpy.zeros(X.shape[0])
             
-            return X.dot(v)
+            for i in range(numProcesses): 
+                u[inds[i]:inds[i+1]] = iterator.next()
+            
+            return u
         
         def rmatvec(v): 
-            return X.T.dot(v)          
+            numProcesses = multiprocessing.cpu_count()
+            pool = multiprocessing.Pool(processes=numProcesses) 
+            paramList = [] 
+            
+            inds = numpy.array(numpy.linspace(0, X.shape[0], numProcesses+1))
+            for i in range(numProcesses): 
+                paramList.append((X[:, inds[i]:inds[i+1]], v))
+                
+            iterator = pool.imap(dotT, paramList)
+            u = numpy.zeros(X.shape[1])
+            
+            for i in range(numProcesses): 
+                u[inds[i]:inds[i+1]] = iterator.next()
+            
+            return u      
             
         L = scipy.sparse.linalg.LinearOperator(X.shape, matvec, rmatvec) 
         return L    
