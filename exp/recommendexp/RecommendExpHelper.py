@@ -11,11 +11,14 @@ from apgl.util import Util
 from apgl.util.MCEvaluator import MCEvaluator 
 from exp.sandbox.recommendation.IterativeSoftImpute import IterativeSoftImpute 
 from exp.util.SparseUtils import SparseUtils 
+from apgl.util.Sampling import Sampling 
 
 class RecommendExpHelper(object):
     defaultAlgoArgs = argparse.Namespace()
     defaultAlgoArgs.runSoftImpute = False
-    defaultAlgoArgs.lmbdas = [0.1, 0.2, 0.5, 1.0]        
+    defaultAlgoArgs.lmbdas = numpy.linspace(1.0, 0.01, 10)     
+    defaultAlgoArgs.folds = 5
+    defaultAlgoArgs.k = 500
     
     def __init__(self, trainXIteratorFunc, testXIteratorFunc, cmdLine=None, defaultAlgoArgs = None, dirName=""):
         """ priority for default args
@@ -120,11 +123,19 @@ class RecommendExpHelper(object):
         """
         if self.algoArgs.runSoftImpute:
             logging.debug("Running exact method")
-            learner = IterativeSoftImpute(self.algoArgs.lmbdas[0], svdAlg="propack", logStep=self.logStep)
+            learner = IterativeSoftImpute(k=self.algoArgs.k, svdAlg="propack", logStep=self.logStep)
             trainIterator = self.trainXIteratorFunc()
+            
+            #Let's find the optimal lambda using the first matrix 
+            X = trainIterator.next() 
+            cvInds = Sampling.randCrossValidation(self.defaultAlgoArgs.folds, X.nnz)
+            errors = learner.modelSelect(X, self.defaultAlgoArgs.lmbdas, cvInds)
+            
+            logging.debug("Errors = " + str(errors))
+            
+            learner.setLambda(self.defaultAlgoArgs.lmbdas[numpy.argmin(errors)])
             ZIter = learner.learnModel(trainIterator)
             
-
             resultsFileName = self.resultsDir + "ResultsSoftImpute_lmbda=" + str(self.algoArgs.lmbdas[0]) + ".npz"
             self.recordResults(ZIter, resultsFileName)
 
