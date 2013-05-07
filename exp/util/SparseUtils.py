@@ -4,6 +4,7 @@ import scipy.sparse.linalg
 import logging 
 from exp.util.SparseUtilsCython import SparseUtilsCython
 from apgl.util.Util import Util 
+from exp.util.LinOperatorUtils import LinOperatorUtils 
 from pypropack import svdp
 
 class SparseUtils(object): 
@@ -35,6 +36,7 @@ class SparseUtils(object):
         resulting matrix has entries within the range [-1, +1].
         """
         (n, m) = shape 
+        r = numpy.min([n, m, r])
 
         A = numpy.random.rand(n, r)
         U, R = numpy.linalg.qr(A)
@@ -99,13 +101,7 @@ class SparseUtils(object):
         if k==None: 
             k = min(X.shape[0], X.shape[1])
         
-        def matvec(v): 
-            return X.dot(v) + (U*s).dot(V.T.dot(v)) 
-        
-        def rmatvec(v): 
-            return X.T.dot(v) + (V*s).dot(U.T.dot(v))
-        
-        L = scipy.sparse.linalg.LinearOperator(X.shape, matvec, rmatvec) 
+        L = LinOperatorUtils.sparseLowRankOp(X, U, s, V)
         U, s, V = svdp(L, k, kmax=30*k)
         
         logging.debug("Number of SVs: " + str(s.shape[0]) + " and min SV: " + str(numpy.min(s)))
@@ -119,13 +115,7 @@ class SparseUtils(object):
         Perform the SVD of a sparse matrix X using PROPACK for the first k 
         singular values. 
         """
-        def matvec(v): 
-            return X.dot(v) 
-        
-        def rmatvec(v): 
-            return X.T.dot(v)
-        
-        L = scipy.sparse.linalg.LinearOperator(X.shape, matvec, rmatvec) 
+        L = scipy.sparse.linalg.aslinearoperator(X) 
         U, s, VT = svdp(L, k, kmax=30*k)
         
         return U, s, VT.T 
@@ -139,14 +129,8 @@ class SparseUtils(object):
         so that s <- max(s - lambda, 0)
         """
         if scipy.sparse.issparse(X): 
-            def matvec(v): 
-                return X.dot(v)
-        
-            def rmatvec(v): 
-                return X.T.dot(v)          
-            
             k = min(X.shape[0], X.shape[1])
-            L = scipy.sparse.linalg.LinearOperator(X.shape, matvec, rmatvec) 
+            L = scipy.sparse.linalg.aslinearoperator(X)  
             U, s, V = svdp(L, k, kmax=30*k)
         else: 
             U, s, V = numpy.linalg.svd(X)
