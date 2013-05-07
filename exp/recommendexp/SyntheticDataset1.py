@@ -21,6 +21,7 @@ class SyntheticDataset1(object):
         endN = 12000
         r = 150 
         
+        noise = 0.1
         U, s, V = SparseUtils.generateLowRank((endM, endN), r)
         
         startNumInds = 9000
@@ -45,9 +46,11 @@ class SyntheticDataset1(object):
         for i in range(numMatrices): 
             trainX = SparseUtils.reconstructLowRank(U, s, V, trainInds[0:stepList[i]])
             trainX = trainX[0:startM, :][:, 0:startN]
+            trainX.data += numpy.random.randn(trainX.data.shape[0])*noise 
             
             testX =  SparseUtils.reconstructLowRank(U, s, V, testInds)  
             testX = testX[0:startM, :][:, 0:startN]
+            testX.data += numpy.random.randn(testX.data.shape[0])*noise 
             trainXList.append(trainX)
             testXList.append(testX)
             
@@ -65,7 +68,6 @@ class SyntheticDataset1(object):
             trainXList.append(trainX)
             testXList.append(testX)
             
-    
         self.trainXList = trainXList
         self.testXList = testXList 
         
