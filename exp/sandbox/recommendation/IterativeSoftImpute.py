@@ -15,7 +15,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
     """
     Given a set of matrices X_1, ..., X_T find the completed matrices. 
     """
-    def __init__(self, lmbda, eps=0.1, k=10, svdAlg="propack", updateAlg="initial", r=10, logStep=10):
+    def __init__(self, lmbda=0.1, eps=0.1, k=None, svdAlg="propack", updateAlg="initial", r=10, logStep=10):
         """
         Initialise imputing algorithm with given parameters. The lmbda is a value 
         for use with the soft thresholded SVD. Eps is the convergence threshold and 
@@ -105,7 +105,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                     Y = Y.tocsc()
                     
                     if self.iterativeSoftImpute.svdAlg=="propack": 
-                        newU, newS, newV = ExpSU.SparseUtils.svdSparseLowRank(Y, self.oldU, self.oldS, self.oldV)
+                        newU, newS, newV = ExpSU.SparseUtils.svdSparseLowRank(Y, self.oldU, self.oldS, self.oldV, k=self.iterativeSoftImpute.k)
                     elif self.iterativeSoftImpute.svdAlg=="svdUpdate": 
                         newU, newS, newV = SVDUpdate.addSparseProjected(self.oldU, self.oldS, self.oldV, Y, self.iterativeSoftImpute.k)
                     elif self.iterativeSoftImpute.svdAlg=="RSVD": 
@@ -171,10 +171,11 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         """
         
         Xcoo = X.tocoo() 
-        
         errors = numpy.zeros((lmbdas.shape[0], len(cvInds)))
         
         for i, (trainInds, testInds) in enumerate(cvInds): 
+            Util.printIteration(i, 1, len(cvInds), "Fold: ")
+            
             trainX = scipy.sparse.coo_matrix(X.shape)
             trainX.data = Xcoo.data[trainInds]
             trainX.row = Xcoo.row[trainInds]
@@ -188,13 +189,14 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
             testX = testX.tocsc()
             
             testInds2 = testX.nonzero()
-        
+            
             for j, lmbda in enumerate(lmbdas): 
+                Util.printIteration(j, 1, len(lmbdas), "Lambda: ")
                 self.setLambda(lmbda)
                 ZIter = self.learnModel(iter([trainX]))
                 predXIter = self.predict(ZIter, [testInds2])
                 
-                predX = predXIter.next() 
+                predX = predXIter.next()
                 errors[j, i] = MCEvaluator.meanSqError(testX, predX)
         
         meanErrors = errors.mean(1)
@@ -202,7 +204,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         return meanErrors 
 
     def setK(self, k):
-        Parameter.checkInt(k, 1, float('inf'))
+        #Parameter.checkInt(k, 1, float('inf'))
         
         self.k = k 
         
