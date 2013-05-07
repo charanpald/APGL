@@ -1,6 +1,7 @@
 import numpy 
 import scipy.sparse 
 import scipy.sparse.linalg 
+import logging 
 from exp.util.SparseUtilsCython import SparseUtilsCython
 from apgl.util.Util import Util 
 from pypropack import svdp
@@ -79,13 +80,24 @@ class SparseUtils(object):
         return X 
         
     @staticmethod
-    def svdSparseLowRank(X, U, s, V): 
+    def svdSparseLowRank(X, U, s, V, k=None): 
         """
         Find the partial SVD of a matrix A = X + U s V.T in which X is sparse and B = 
         U s V.T is a low rank matrix. We use PROPACK to find the singular  
         vectors/values. 
+        
+        :param X: The input matrix in csc_matrix format. 
+        
+        :param U: The left singular vectors 
+        
+        :parma s: The singulal values 
+        
+        :param V: The right singular vectors 
+        
+        :param k: The number of singular values/vectors or None for all 
         """
-        k = min(X.shape[0], X.shape[1])
+        if k==None: 
+            k = min(X.shape[0], X.shape[1])
         
         def matvec(v): 
             return X.dot(v) + (U*s).dot(V.T.dot(v)) 
@@ -95,6 +107,8 @@ class SparseUtils(object):
         
         L = scipy.sparse.linalg.LinearOperator(X.shape, matvec, rmatvec) 
         U, s, V = svdp(L, k, kmax=30*k)
+        
+        logging.debug("Number of SVs: " + str(s.shape[0]) + " and min SV: " + str(numpy.min(s)))
         
         return U, s, V.T 
         
