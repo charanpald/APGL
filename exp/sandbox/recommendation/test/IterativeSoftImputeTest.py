@@ -1,6 +1,3 @@
-
-
-
 from apgl.util.Util import Util
 from apgl.util.Sampling import Sampling 
 from apgl.util.MCEvaluator import MCEvaluator
@@ -14,7 +11,6 @@ import scipy.sparse
 import numpy.linalg 
 import numpy.testing as nptst 
 import exp.util.SparseUtils as ExpSU
-
 
 class IterativeSoftImputeTest(unittest.TestCase):
     def setUp(self):
@@ -204,7 +200,7 @@ class IterativeSoftImputeTest(unittest.TestCase):
         
         U, s, V = numpy.linalg.svd(X.todense())
 
-        iterativeSoftImpute = IterativeSoftImpute(lmbda, k=10, svdAlg="propack", updateAlg="zero")
+        iterativeSoftImpute = IterativeSoftImpute(lmbda, k=None, svdAlg="propack", updateAlg="zero")
         lmbdas = numpy.linspace(numpy.max(s)+0.1, 0.001, 20)
         folds = 5 
         cvInds = Sampling.randCrossValidation(folds, X.nnz)
