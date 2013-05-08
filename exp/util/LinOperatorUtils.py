@@ -47,13 +47,15 @@ class LinOperatorUtils(object):
             paramList = [] 
             for i in range(numProcesses): 
                 paramList.append((X[rowInds[i]:rowInds[i+1], :], U[rowInds[i]:rowInds[i+1], :], s, V, w))
-                
+
             iterator = pool.imap(dotSVD, paramList)
+
             #iterator = itertools.imap(dotSVD, paramList)
             p = numpy.zeros(X.shape[0])
             
             for i in range(numProcesses): 
                 p[rowInds[i]:rowInds[i+1]] = iterator.next()
+            
             
             return p
         
@@ -61,8 +63,9 @@ class LinOperatorUtils(object):
             paramList = [] 
             for i in range(numProcesses): 
                 paramList.append((X[:, colInds[i]:colInds[i+1]], U, s, V[colInds[i]:colInds[i+1], :], w))
-                
+        
             iterator = pool.imap(dotSVDT, paramList)
+            #iterator = itertools.imap(dotSVDT, paramList)
             p = numpy.zeros(X.shape[1])
             
             for i in range(numProcesses): 
@@ -75,36 +78,60 @@ class LinOperatorUtils(object):
         
     @staticmethod 
     def parallelSparseOp(X):
+        """
+        Return the parallel linear operator corresponding to left and right multiply of 
+        csc_matrix X. Note that there is a significant overhead for creating and waiting 
+        for locked processes. 
+        """
+        if not scipy.sparse.isspmatrix_csc(X): 
+            raise ValueError("Currently only supports csc_matrices")
+        
         numProcesses = multiprocessing.cpu_count()
         pool = multiprocessing.Pool(processes=numProcesses) 
-        rowInds = numpy.array(numpy.linspace(0, X.shape[0], numProcesses+1), numpy.int) 
-        colInds = numpy.array(numpy.linspace(0, X.shape[1], numProcesses+1), numpy.int)
+        numJobs = numProcesses
+        colInds = numpy.array(numpy.linspace(0, X.shape[1], numJobs+1), numpy.int)
         
         def matvec(w): 
             paramList = [] 
-            for i in range(numProcesses): 
-                paramList.append((X[rowInds[i]:rowInds[i+1], :], w))
-                
-            iterator = pool.imap(dot, paramList)
+            for i in range(numJobs): 
+                paramList.append((X[:, colInds[i]:colInds[i+1]], w[colInds[i]:colInds[i+1]]))
+            
+            iterator = pool.imap(dot, paramList, chunksize=1)
+            #iterator = itertools.imap(dot, paramList)
             p = numpy.zeros(X.shape[0])
             
-            for i in range(numProcesses): 
-                p[rowInds[i]:rowInds[i+1]] = iterator.next()
+            for i in range(numJobs): 
+                p += iterator.next()
             
             return p
         
         def rmatvec(w): 
             paramList = [] 
-            for i in range(numProcesses): 
+            for i in range(numJobs): 
                 paramList.append((X[:, colInds[i]:colInds[i+1]], w))
-                
-            iterator = pool.imap(dotT, paramList)
+            
+            iterator = pool.imap(dotT, paramList, chunksize=1)
+            #iterator = itertools.imap(dotT, paramList)
             p = numpy.zeros(X.shape[1])
             
-            for i in range(numProcesses): 
+            for i in range(numJobs): 
                 p[colInds[i]:colInds[i+1]] = iterator.next()
             
             return p      
+        
+        def matmat(A): 
+            paramList = [] 
+            for i in range(numJobs): 
+                paramList.append((X[:, colInds[i]:colInds[i+1]], A[colInds[i]:colInds[i+1], :]))
+                
+            iterator = pool.imap(dot, paramList, chunksize=1)
+            #iterator = itertools.imap(dot, paramList)
+            P = numpy.zeros((X.shape[0], A.shape[1])) 
             
-        return scipy.sparse.linalg.LinearOperator(X.shape, matvec, rmatvec, dtype=X.dtype)   
+            for i in range(numJobs): 
+                P += iterator.next()
+            
+            return P    
+        
+        return scipy.sparse.linalg.LinearOperator(X.shape, matvec, rmatvec, matmat, dtype=X.dtype)   
     
