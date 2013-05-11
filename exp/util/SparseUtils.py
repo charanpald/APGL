@@ -28,6 +28,27 @@ class SparseUtils(object):
             return X, U, s, V
         else: 
             return X 
+    
+    @staticmethod 
+    def generateSparseLowRank2(shape, r, k, snr=1.0, verbose=False): 
+        """
+        Generate large sparse low rank matrices according to the model given 
+        in Mazumder et al., 2010. We have Z = UV.T + E where all three matrices 
+        are gaussian. The signal to noise ratio is given by snr. 
+        """
+        (m, n) = shape
+        U = numpy.random.randn(m, r)
+        V = numpy.random.randn(n, r)
+        s = numpy.ones(r)
+        
+        noise = r/snr**2
+        X = SparseUtils.reconstructLowRank(U, s, V, k)
+        X.data += numpy.random.randn(X.data.shape[0])*noise    
+        
+        if verbose: 
+            return X, U, V
+        else: 
+            return X 
         
     @staticmethod 
     def generateLowRank(shape, r, sampleVals=500): 
