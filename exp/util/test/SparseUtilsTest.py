@@ -145,6 +145,21 @@ class SparseUtilsCythonTest(unittest.TestCase):
             nptst.assert_array_almost_equal(numpy.abs(U2), numpy.abs(U3), 3)
             nptst.assert_array_almost_equal(numpy.abs(V2), numpy.abs(V3), 3)
             
+    def testGenerateSparseLowRank2(self): 
+        shape = (2000, 1000)
+        r = 5 
+        k = 20000 
+
+        X, U, V = SparseUtils.generateSparseLowRank2(shape, r, k, verbose=True)         
+        
+        self.assertEquals(U.shape, (shape[0],r))
+        self.assertEquals(V.shape, (shape[1], r))
+        self.assertTrue(X.nnz <= k)
+        
+        Y = U.dot(V.T)
+        inds = X.nonzero()
+        
+           
         
 if __name__ == '__main__':
     unittest.main()
