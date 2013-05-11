@@ -34,7 +34,7 @@ dataParser = argparse.ArgumentParser(description="", add_help=False)
 dataParser.add_argument("-h", "--help", action="store_true", help="show this help message and exit")
 devNull, remainingArgs = dataParser.parse_known_args(namespace=dataArgs)
 if dataArgs.help:
-    helpParser  = argparse.ArgumentParser(description="", add_help=False, parents=[dataParser, ClusterExpHelper.newAlgoParser(defaultAlgoArgs)])
+    helpParser  = argparse.ArgumentParser(description="", add_help=False, parents=[dataParser, RecommendExpHelper.newAlgoParser(defaultAlgoArgs)])
     helpParser.print_help()
     exit()
 
