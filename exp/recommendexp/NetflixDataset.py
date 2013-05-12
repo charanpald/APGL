@@ -24,12 +24,14 @@ class NetflixDataset(object):
         self.startMovieID = 1 
         self.endMovieID = 17770
         
+        self.numMovies = 17770
+        
         outputDir = PathDefaults.getOutputDir() + "recommend/netflix/"
         self.ratingFileName = outputDir + "data.npz"  
         self.custDictFileName = outputDir + "custIdDict.pkl"
         self.probeFileName = PathDefaults.getDataDir() + "netflix/probe.txt"    
         self.testRatingsFileName = outputDir + "test_data.npz"
-        
+        self.isTrainRatingsFileName = outputDir + "is_train.npz"
         #self.processRatings() 
         #self.processProbe() 
     
@@ -41,6 +43,8 @@ class NetflixDataset(object):
         if not os.path.exists(self.ratingFileName) or not os.path.exists(self.custDictFileName): 
             dataDir = PathDefaults.getDataDir() + "netflix/training_set/"
 
+            logging.debug("Processing ratings given in " + dataDir)
+
             custIdDict = {} 
             custIdSet = set([])        
             
@@ -50,7 +54,7 @@ class NetflixDataset(object):
             dates = array.array("L")
             j = 0
             
-            for i in range(self.startMovieID, self.endMovieID): 
+            for i in range(self.startMovieID, self.endMovieID+1): 
                 Util.printIteration(i-1, 1, self.endMovieID-1)
                 ratingsFile = open(dataDir + "mv_" + str(i).zfill(7) + ".txt")
                 ratingsFile.readline()
@@ -91,37 +95,52 @@ class NetflixDataset(object):
 
     def processProbe(self): 
         """
-        We go through the probe set and create a boolean array over the dataset 
-        to indicate whether a rating is part of the training or test set. 
+        Go through the probe set and label the corresponding ratings in the full 
+        dataset as test. 
         """
-        if True or not os.path.exists(self.testRatingsFileName):
-            movieIds = array.array("I")
-            custIds = array.array("I")
-            custIdDict = pickle.load(open(self.custDictFileName))         
+        if os.path.exists(self.isTrainRatingFileName):
+            custIdDict = pickle.load(open(self.custDictFileName))             
+            dataArr = numpy.load(self.ratingFileName)
+            movieInds, custInds, ratings, dates = dataArr["arr_0"], dataArr["arr_1"], dataArr["arr_2"], dataArr["arr_3"]
+            logging.debug("Number of ratings: " + str(ratings.shape[0]+1))            
+            del ratings, dates 
+            logging.debug("Training data loaded")
             
+            isTrainRating = numpy.ones(movieInds.shape[0], numpy.bool)
             probeFile = open(self.probeFileName)
             i = 0 
             
+            #First figure out the movie boundaries 
+            movieBoundaries = numpy.nonzero(numpy.diff(movieInds) != 0)[0] + 1
+            movieBoundaries = numpy.insert(movieBoundaries, 0, 0)
+            movieBoundaries = numpy.append(movieBoundaries, movieInds.shape[0])
+            
+            assert movieBoundaries.shape[0] == self.numMovies+1 
+            assert movieBoundaries[-1] == self.movieInds.shape[0]
+            
             for line in probeFile: 
                 if line.find(":") != -1: 
-                    Util.printIteration(i, 100, self.endMovieID-1)
+                    Util.printIteration(i, 10, self.endMovieID-1)
                     movieId = line[0:-2]
                     movieInd = int(movieId)-1
+                
+                    startInd = movieBoundaries[movieInd] 
+                    endInd = movieBoundaries[movieInd+1] 
+                    #All the customers that watches movie movieInd
+                    tempCustInds = custInds[startInd:endInd]
+                    sortedInds = numpy.argsort(tempCustInds)
+                    
                     i += 1
                 else: 
                     custId = int(line.strip())
                     custInd = custIdDict[custId]
+
+                    offset = numpy.searchsorted(tempCustInds[sortedInds], custInd)
+                    isTrainRating[startInd + sortedInds[offset]] = 0 
                     
-                    movieIds.append(movieInd)
-                    custIds.append(custInd)  
-                    
-            movieIds = numpy.array(movieIds, numpy.uint32)
-            custIds = numpy.array(custIds, numpy.uint32)   
-        
-            numpy.savez(self.testRatingsFileName, movieIds, custIds) 
-            logging.debug("Saved file as " + self.testRatingsFileName)
-        else: 
-            logging.debug("Test ratings file " + str(self.testRatingsFileName) + " already processed")                
+            numpy.savez(self.isTrainRatingFileName, isTrainRating) 
+            logging.debug("Saved file as " + self.isTrainRatingFileName)
+
 
     def getTrainIteratorFunc(self): 
         class NetflixIterator(object): 
@@ -165,8 +184,8 @@ class NetflixDataset(object):
                 
               
 dataset = NetflixDataset()
-#dataset.processRatings()
-dataset.processProbe()
+dataset.processRatings()
+#dataset.processProbe()
 
 iterator = dataset.getTrainIteratorFunc()
 
