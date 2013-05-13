@@ -61,7 +61,7 @@ class ProfileUtils(object):
                 bytes = globals()[item].nbytes
                 arrayList.append((item, globals()[item].shape, bytes))
             elif scipy.sparse.issparse(globals()[item]):
-                bytes = globals()[item].getnnz()*globals()[item].dtype.itemsize
+                bytes = globals()[item].data.nbytes
                 arrayList.append((item, globals()[item].shape, bytes))
             
         #Now sort list
