@@ -8,6 +8,7 @@ from __future__ import print_function
 import sys 
 import os
 import numpy
+from contextlib import contextmanager
 import numpy.random as rand
 import logging
 import scipy.linalg
@@ -676,4 +677,25 @@ class Util(object):
         http://stackoverflow.com/questions/3071415/efficient-method-to-calculate-the-rank-vector-of-a-list-in-python
         """
         return sorted(range(len(seq)), key = seq.__getitem__)
-        
+    
+    @staticmethod     
+    @contextmanager
+    def suppressStdout():
+        with open(os.devnull, "w") as devnull:
+            old_stdout = sys.stdout
+            sys.stdout = devnull
+        try:
+            yield
+        finally:
+            sys.stdout = old_stdout
+            
+    @staticmethod     
+    @contextmanager
+    def suppressStderr():
+        with open(os.devnull, "w") as devnull:
+            old_stderr = sys.stderr
+            sys.stderr = devnull
+        try:
+            yield
+        finally:
+            sys.stderr = old_stderr
