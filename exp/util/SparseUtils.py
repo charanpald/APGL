@@ -1,3 +1,5 @@
+import os 
+import sys 
 import numpy 
 import scipy.sparse 
 import scipy.sparse.linalg 
@@ -103,7 +105,7 @@ class SparseUtils(object):
         return X 
         
     @staticmethod
-    def svdSparseLowRank(X, U, s, V, k=None): 
+    def svdSparseLowRank(X, U, s, V, k=None, kmax=None): 
         """
         Find the partial SVD of a matrix A = X + U s V.T in which X is sparse and B = 
         U s V.T is a low rank matrix. We use PROPACK to find the singular  
@@ -119,31 +121,49 @@ class SparseUtils(object):
         
         :param k: The number of singular values/vectors or None for all 
         """
-        if k==None: 
-            k = min(X.shape[0], X.shape[1])
-        
+
         L = LinOperatorUtils.sparseLowRankOp(X, U, s, V)
-        U, s, V = svdp(L, k, kmax=30*k)
-        
+        U, s, V = SparseUtils.svdPropack(L, k, kmax=kmax)
+   
         logging.debug("Number of SVs: " + str(s.shape[0]) + " and min SV: " + str(numpy.min(s)))
         
-        return U, s, V.T 
+        return U, s, V 
         
 
     @staticmethod
-    def svdPropack(X, k):
+    def svdPropack(X, k, kmax=None):
         """
-        Perform the SVD of a sparse matrix X using PROPACK for the first k 
+        Perform the SVD of a sparse matrix X using PROPACK for the largest k 
         singular values. 
-        """
-        L = scipy.sparse.linalg.aslinearoperator(X) 
-        U, s, VT = svdp(L, k, kmax=30*k)
         
+        :param X: The input matrix as scipy.sparse.csc_matrix or a LinearOperator
+        
+        :param k: The number of singular vectors/values for None for all 
+        
+        :param kmax: The maximal number of iterations / maximal dimension of Krylov subspace.
+        """
+        if k==None: 
+            k = min(X.shape[0], X.shape[1])
+        if kmax==None: 
+            kmax = SparseUtils.kmaxMultiplier*k
+        
+        if scipy.sparse.isspmatrix(X): 
+            L = scipy.sparse.linalg.aslinearoperator(X) 
+        else: 
+            L = X
+        
+        U, s, VT, info, sigma_bound = svdp(L, k, kmax=kmax, full_output=True)
+
+        if info > 0: 
+            logging.debug("An invariant subspace of dimension " + str(info) + " was found.")
+        elif info==-1: 
+            logging.warning(str(k) + " singular triplets did not converge within " + str(kmax) + " iterations")
+              
         return U, s, VT.T 
         
 
     @staticmethod 
-    def svdSoft(X, lmbda): 
+    def svdSoft(X, lmbda, kmax=None): 
         """
         Find the partial SVD of the sparse or dense matrix X, for which singular 
         values are >= lmbda. Soft threshold the resulting singular values 
@@ -152,7 +172,9 @@ class SparseUtils(object):
         if scipy.sparse.issparse(X): 
             k = min(X.shape[0], X.shape[1])
             L = scipy.sparse.linalg.aslinearoperator(X)  
-            U, s, V = svdp(L, k, kmax=30*k)
+            
+            U, s, V = SparseUtils.svdPropack(L, k, kmax=kmax)
+            V = V.T
         else: 
             U, s, V = numpy.linalg.svd(X)
             
@@ -181,3 +203,5 @@ class SparseUtils(object):
         s2 = numpy.clip(s2, 0, numpy.max(s2))
         
         return U2, s2, V2 
+        
+    kmaxMultiplier = 15 
