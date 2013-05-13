@@ -98,7 +98,7 @@ class NetflixDataset(object):
         Go through the probe set and label the corresponding ratings in the full 
         dataset as test. 
         """
-        if os.path.exists(self.isTrainRatingFileName):
+        if os.path.exists(self.isTrainRatingsFileName):
             custIdDict = pickle.load(open(self.custDictFileName))             
             dataArr = numpy.load(self.ratingFileName)
             movieInds, custInds, ratings, dates = dataArr["arr_0"], dataArr["arr_1"], dataArr["arr_2"], dataArr["arr_3"]
@@ -138,8 +138,8 @@ class NetflixDataset(object):
                     offset = numpy.searchsorted(tempCustInds[sortedInds], custInd)
                     isTrainRating[startInd + sortedInds[offset]] = 0 
                     
-            numpy.savez(self.isTrainRatingFileName, isTrainRating) 
-            logging.debug("Saved file as " + self.isTrainRatingFileName)
+            numpy.savez(self.isTrainRatingsFileName, isTrainRating) 
+            logging.debug("Saved file as " + self.isTrainRatingsFileName)
 
 
     def getTrainIteratorFunc(self): 
@@ -185,7 +185,7 @@ class NetflixDataset(object):
               
 dataset = NetflixDataset()
 dataset.processRatings()
-#dataset.processProbe()
+dataset.processProbe()
 
 iterator = dataset.getTrainIteratorFunc()
 
