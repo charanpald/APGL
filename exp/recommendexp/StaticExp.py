@@ -12,7 +12,6 @@ import numpy
 import argparse
 from apgl.graph import *
 from exp.recommendexp.RecommendExpHelper import RecommendExpHelper
-from exp.clusterexp.ClusterExpHelper import ClusterExpHelper
 from exp.recommendexp.StaticDataset import StaticMatrixMarketDataset
 
 if __debug__:
@@ -37,7 +36,7 @@ dataParser.add_argument("--train", dest="train_file", help="training datafile (M
 dataParser.add_argument("--test", dest="test_file", help="test datafile (MatrixMarket format)")
 devNull, remainingArgs = dataParser.parse_known_args(namespace=dataArgs)
 if dataArgs.help:
-    helpParser  = argparse.ArgumentParser(description="", add_help=False, parents=[dataParser, ClusterExpHelper.newAlgoParser(defaultAlgoArgs)])
+    helpParser  = argparse.ArgumentParser(description="", add_help=False, parents=[dataParser, RecommendExpHelper.newAlgoParser(defaultAlgoArgs)])
     helpParser.print_help()
     exit()
 
