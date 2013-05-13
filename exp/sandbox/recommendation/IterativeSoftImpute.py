@@ -10,6 +10,7 @@ from exp.sandbox.recommendation.AbstractMatrixCompleter import AbstractMatrixCom
 from exp.util.SparseUtilsCython import SparseUtilsCython
 from exp.sandbox.SVDUpdate import SVDUpdate 
 from apgl.util.Sampling import Sampling 
+from apgl.util.ProfileUtils import ProfileUtils 
 
 class IterativeSoftImpute(AbstractMatrixCompleter): 
     """
@@ -42,6 +43,10 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         self.updateAlg = updateAlg
         self.r = r 
         self.q = 2
+        if k != None:
+            self.kmax = k*5
+        else: 
+            self.kmax = None 
         self.logStep = logStep
         
     def learnModel(self, XIterator):
@@ -63,6 +68,10 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                 
             def next(self): 
                 X = self.XIterator.next() 
+                
+                if not scipy.sparse.isspmatrix_csc(X): 
+                    raise ValueError("X must be a csc_matrix")
+                
                 (n, m) = X.shape
                 
                 if self.j == 0: 
@@ -105,7 +114,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                     Y = Y.tocsc()
                     
                     if self.iterativeSoftImpute.svdAlg=="propack": 
-                        newU, newS, newV = ExpSU.SparseUtils.svdSparseLowRank(Y, self.oldU, self.oldS, self.oldV, k=self.iterativeSoftImpute.k)
+                        newU, newS, newV = ExpSU.SparseUtils.svdSparseLowRank(Y, self.oldU, self.oldS, self.oldV, k=self.iterativeSoftImpute.k, kmax=self.iterativeSoftImpute.kmax)
                     elif self.iterativeSoftImpute.svdAlg=="svdUpdate": 
                         newU, newS, newV = SVDUpdate.addSparseProjected(self.oldU, self.oldS, self.oldV, Y, self.iterativeSoftImpute.k)
                     elif self.iterativeSoftImpute.svdAlg=="RSVD": 
