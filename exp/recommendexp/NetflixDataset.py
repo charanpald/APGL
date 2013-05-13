@@ -225,10 +225,5 @@ class NetflixDataset(object):
     def getTestIteratorFunc(self): 
         return NetflixIterator(self, False)           
               
-dataset = NetflixDataset()
-#iterator = dataset.getTrainIteratorFunc()
-iterator = dataset.getTestIteratorFunc()
 
-for X in iterator: 
-    print(X.shape, X.nnz)
 
