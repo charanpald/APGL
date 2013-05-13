@@ -12,7 +12,10 @@ class StaticMatrixMarketDataset(object):
         """
         train = mmread(train_file)
         test = mmread(test_file)
-
+        
+        train = train.tocsc() 
+        test = test.tocsc() 
+        
         self.trainXList = [train]
         self.testXList = [test]
 
