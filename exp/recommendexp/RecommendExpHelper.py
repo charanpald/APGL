@@ -132,8 +132,9 @@ class RecommendExpHelper(object):
             errors = learner.modelSelect(X, self.defaultAlgoArgs.lmbdas, cvInds)
             
             logging.debug("Errors = " + str(errors))
-            
             learner.setLambda(self.defaultAlgoArgs.lmbdas[numpy.argmin(errors)])
+            
+            trainIterator = self.trainXIteratorFunc()
             ZIter = learner.learnModel(trainIterator)
             
             resultsFileName = self.resultsDir + "ResultsSoftImpute_lmbda=" + str(self.algoArgs.lmbdas[0]) + ".npz"
