@@ -16,7 +16,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
     """
     Given a set of matrices X_1, ..., X_T find the completed matrices. 
     """
-    def __init__(self, lmbda=0.1, eps=0.1, k=None, svdAlg="propack", updateAlg="initial", r=10, logStep=10):
+    def __init__(self, lmbda=0.1, eps=0.1, k=None, svdAlg="propack", updateAlg="initial", r=10, logStep=10, kmax=None):
         """
         Initialise imputing algorithm with given parameters. The lmbda is a value 
         for use with the soft thresholded SVD. Eps is the convergence threshold and 
