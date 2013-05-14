@@ -124,6 +124,8 @@ class SparseUtils(object):
         
         :param kmax: The number of Krylov vectors or None to use SparseUtils.kmaxMultiplier*k
         """
+        if not scipy.sparse.issparse(X): 
+            raise ValueError("X matrix should be sparse") 
 
         L = LinOperatorUtils.sparseLowRankOp(X, U, s, V)
         
