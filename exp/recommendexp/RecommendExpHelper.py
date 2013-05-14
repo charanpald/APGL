@@ -5,6 +5,7 @@ Some common functions used for the recommendation experiments
 import logging
 import numpy
 import argparse
+import scipy.sparse
 from copy import copy
 from apgl.util.PathDefaults import PathDefaults
 from apgl.util import Util
@@ -132,14 +133,15 @@ class RecommendExpHelper(object):
             
             #First find the largest singular value to compute lambdas 
             X = trainIterator.next() 
-            U, s, V = SparseUtils.svdPropack(X, 1)
+            X = scipy.sparse.csc_matrix(X, dtype=numpy.float)
+            U, s, V = SparseUtils.svdArpack(X, 1, kmax=20)
             self.lmbdas = s[0]*self.defaultAlgoArgs.rhos
             logging.debug("Largest singular value : " + str(s[0]))
             
             #Let's find the optimal lambda using the first matrix 
             logging.debug("Performing model selection")
             cvInds = Sampling.randCrossValidation(self.defaultAlgoArgs.folds, X.nnz)
-            errors = learner.modelSelect(X, self.defaultAlgoArgs.rhos, cvInds)
+            errors = learner.modelSelect(X, self.lmbdas, cvInds)
             
             logging.debug("Errors = " + str(errors))
             learner.setLambda(self.lmbdas[numpy.argmin(errors)])
