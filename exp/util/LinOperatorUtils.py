@@ -2,6 +2,7 @@ import numpy
 import multiprocessing 
 import itertools
 import scipy.sparse.linalg
+from exp.util.GeneralLinearOperator import GeneralLinearOperator
 
 def dot(args): 
     X, w = args 
@@ -28,13 +29,24 @@ class LinOperatorUtils(object):
     
     @staticmethod 
     def sparseLowRankOp(X, U, s, V): 
+        if not scipy.sparse.issparse(X): 
+            raise ValueError("X matrix should be sparse") 
+        if X.shape[0] != U.shape[0] or X.shape[1] != V.shape[0]: 
+            raise ValueError("X and U s V^T should have the same shape")
+        
         def matvec(w): 
             return X.dot(w) + (U*s).dot(V.T.dot(w)) 
         
         def rmatvec(w): 
             return X.T.dot(w) + (V*s).dot(U.T.dot(w))
+            
+        def matmat(W): 
+            return X.dot(W) + (U*s).dot(V.T.dot(W))  
+            
+        def rmatmat(W): 
+            return X.T.dot(W) + (V*s).dot(U.T.dot(W))
         
-        return scipy.sparse.linalg.LinearOperator(X.shape, matvec, rmatvec, dtype=X.dtype) 
+        return GeneralLinearOperator(X.shape, matvec, rmatvec, matmat, rmatmat, dtype=X.dtype) 
     
     @staticmethod 
     def parallelSparseLowRankOp(X, U, s, V): 
