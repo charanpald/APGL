@@ -29,10 +29,12 @@ class LinOperatorUtilsTest(unittest.TestCase):
             u = numpy.random.rand(m)
             v = numpy.random.rand(n)
             W = numpy.random.rand(n, p)
+            V = numpy.random.rand(m, p)
             
             nptst.assert_array_almost_equal(L.matvec(v), A.dot(v))
             nptst.assert_array_almost_equal(L.rmatvec(u), A.T.dot(u))
             nptst.assert_array_almost_equal(L.matmat(W), A.dot(W))
+            nptst.assert_array_almost_equal(L.rmatmat(V), A.T.dot(V))
 
     def testSparseLowRankOp(self): 
         numRuns = 10         
