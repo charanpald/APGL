@@ -1,7 +1,9 @@
 import numpy 
 import scipy.sparse 
+import gc 
 from exp.util.GeneralLinearOperator import GeneralLinearOperator
 from apgl.util.Parameter import Parameter 
+from apgl.util.ProfileUtils import ProfileUtils 
 
 class RandomisedSVD(object): 
     """
@@ -37,17 +39,25 @@ class RandomisedSVD(object):
         n = L.shape[1]
         omega = numpy.random.randn(n, k)
         Y = L.matmat(omega)
-        
+        del omega 
+
         for i in range(q):
             Y = L.rmatmat(Y)
+            gc.collect() 
             Y = L.matmat(Y)
+            gc.collect() 
         
         Q, R = numpy.linalg.qr(Y)
+        
+        del Y 
+        del R 
+        gc.collect() 
+        
         B = L.rmatmat(Q).T
         U, s, V = numpy.linalg.svd(B, full_matrices=False)
+        del B 
         V = V.T
         U = Q.dot(U)
-        
         return U, s, V 
         
     def svd2(A, lmbda): 
