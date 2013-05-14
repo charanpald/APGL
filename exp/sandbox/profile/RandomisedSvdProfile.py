@@ -8,6 +8,9 @@ import scipy.io
 from apgl.util.ProfileUtils import ProfileUtils
 from exp.sandbox.RandomisedSVD import RandomisedSVD 
 from apgl.util.PathDefaults import PathDefaults 
+from exp.recommendexp.NetflixDataset import NetflixDataset
+from exp.util.LinOperatorUtils import LinOperatorUtils 
+from exp.util.GeneralLinearOperator import GeneralLinearOperator 
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -41,7 +44,22 @@ class RandomisedSvdProfile(object):
         print(s)
         
         print("All done")
+        
+    def profileSvd3(self):
+        dataset = NetflixDataset()
+        iterator = dataset.getTrainIteratorFunc()
+        X = iterator.next() 
+        
+        #L = LinOperatorUtils.parallelSparseOp(X)  
+        L = GeneralLinearOperator.asLinearOperator(X)
+        
+        k = 50 
+        U, s, V = RandomisedSVD.svd(L, k)
+        
+        print(s)
+        
+        print("All done")
 
 profiler = RandomisedSvdProfile()
 #profiler.profileSvd() #51.4 s
-profiler.profileSvd2() #51.4 s
+profiler.profileSvd3() 
