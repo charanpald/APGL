@@ -1,10 +1,9 @@
 from cython.operator cimport dereference as deref, preincrement as inc 
-from sppy import csarray 
+
 import struct
 import numpy 
 cimport numpy
 import scipy.sparse 
- 
 numpy.import_array()
 
 class SparseUtilsCython(object): 
@@ -37,6 +36,8 @@ class SparseUtilsCython(object):
         Given an array of unique indices omega, partially reconstruct a matrix 
         using its SVD. The returned matrix is a scipy csc_matrix. 
         """ 
+        from sppy import csarray 
+        
         X = csarray((U.shape[0], V.shape[0]), storageType="colMajor")
         X.reserve(omega[0].shape[0])
         for i in range(omega[0].shape[0]):
