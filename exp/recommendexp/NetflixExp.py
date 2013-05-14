@@ -22,10 +22,12 @@ numpy.seterr("raise", under="ignore")
 
 # Arguments related to the dataset
 dataArgs = argparse.Namespace()
+dataArgs.maxIter = 10 
 
 # Arguments related to the algorithm
 defaultAlgoArgs = argparse.Namespace()
 defaultAlgoArgs.k = 200
+defaultAlgoArgs.svdAlg = "arpack"
 
 # init (reading/writting command line arguments)
 # data args parser #
@@ -38,7 +40,7 @@ if dataArgs.help:
     exit()
 
 dataArgs.extendedDirName = ""
-dataArgs.extendedDirName += "Netflix"
+dataArgs.extendedDirName += "NetflixDataset"
 
 # print args #
 logging.info("Running on NetflixDataset")
@@ -49,7 +51,7 @@ for key in keys:
     logging.info("    " + str(key) + ": " + str(dataArgs.__getattribute__(key)))
 
 # data
-generator = NetflixDataset()
+generator = NetflixDataset(maxIter=dataArgs.maxIter)
 
 # run
 logging.info("Creating the exp-runner")
