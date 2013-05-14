@@ -16,9 +16,10 @@ from apgl.util.Sampling import Sampling
 class RecommendExpHelper(object):
     defaultAlgoArgs = argparse.Namespace()
     defaultAlgoArgs.runSoftImpute = False
-    defaultAlgoArgs.lmbdas = numpy.linspace(1.0, 0.01, 10)     
+    defaultAlgoArgs.gammas = numpy.linspace(0.5, 0.01, 10)     
     defaultAlgoArgs.folds = 5
     defaultAlgoArgs.k = 500
+    defaultAlgoArgs.kmax = None 
     
     def __init__(self, trainXIteratorFunc, testXIteratorFunc, cmdLine=None, defaultAlgoArgs = None, dirName=""):
         """ priority for default args
@@ -69,7 +70,7 @@ class RecommendExpHelper(object):
         algoParser = argparse.ArgumentParser(description="", add_help=add_help)
         for method in ["runSoftImpute"]:
             algoParser.add_argument("--" + method, action="store_true", default=defaultAlgoArgs.__getattribute__(method))
-        algoParser.add_argument("--lmbdas", type=float, help="Regularisation parameter (default: %(default)s)", default=defaultAlgoArgs.lmbdas)
+        algoParser.add_argument("--gammas", type=float, help="Regularisation parameter (default: %(default)s)", default=defaultAlgoArgs.gammas)
 
         return(algoParser)
     
@@ -123,17 +124,24 @@ class RecommendExpHelper(object):
         """
         if self.algoArgs.runSoftImpute:
             logging.debug("Running exact method")
-            learner = IterativeSoftImpute(k=self.algoArgs.k, svdAlg="propack", logStep=self.logStep)
+            learner = IterativeSoftImpute(k=self.algoArgs.k, svdAlg="propack", logStep=self.logStep, kmax=self.algoArgs.kmax)
             trainIterator = self.trainXIteratorFunc()
             
-            #Let's find the optimal lambda using the first matrix 
+            #First find the largest singular value to compute lambdas 
             X = trainIterator.next() 
+            U, s, V = SparseUtils.svdPropack(X, 1)
+            self.lmbdas = s[0]*self.defaultAlgoArgs.gammas
+            logging.debug("Largest singular value : " + str(s[0]))
+            
+            #Let's find the optimal lambda using the first matrix 
+            logging.debug("Performing model selection")
             cvInds = Sampling.randCrossValidation(self.defaultAlgoArgs.folds, X.nnz)
-            errors = learner.modelSelect(X, self.defaultAlgoArgs.lmbdas, cvInds)
+            errors = learner.modelSelect(X, self.defaultAlgoArgs.gammas, cvInds)
             
             logging.debug("Errors = " + str(errors))
-            learner.setLambda(self.defaultAlgoArgs.lmbdas[numpy.argmin(errors)])
+            learner.setLambda(self.defaultAlgoArgs.gammas[numpy.argmin(errors)])
             
+            logging.debug("Training with lambda = " + str(self.defaultAlgoArgs.gammas[numpy.argmin(errors)]))
             trainIterator = self.trainXIteratorFunc()
             ZIter = learner.learnModel(trainIterator)
             
