@@ -10,13 +10,13 @@ class  GenerateToyDataTest(unittest.TestCase):
     def setUp(self): 
         pass 
 
-    @unittest.skip("")
+    #@unittest.skip("")
     def testGetTrainIteratorFunc(self):
         dataset = NetflixDataset()
         #iterator = dataset.getTrainIteratorFunc()
         iterator = dataset.getTrainIteratorFunc()
       
-    @unittest.skip("")
+    #@unittest.skip("")
     def testGetTestIteratorFunc(self):
         dataset = NetflixDataset()
         #iterator = dataset.getTrainIteratorFunc()
