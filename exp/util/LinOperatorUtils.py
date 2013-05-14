@@ -131,19 +131,33 @@ class LinOperatorUtils(object):
             
             return p      
         
-        def matmat(A): 
+        def matmat(W): 
             paramList = [] 
             for i in range(numJobs): 
-                paramList.append((X[:, colInds[i]:colInds[i+1]], A[colInds[i]:colInds[i+1], :]))
+                paramList.append((X[:, colInds[i]:colInds[i+1]], W[colInds[i]:colInds[i+1], :]))
                 
             iterator = pool.imap(dot, paramList, chunksize=1)
             #iterator = itertools.imap(dot, paramList)
-            P = numpy.zeros((X.shape[0], A.shape[1])) 
+            P = numpy.zeros((X.shape[0], W.shape[1])) 
             
             for i in range(numJobs): 
                 P += iterator.next()
             
             return P    
-        
-        return scipy.sparse.linalg.LinearOperator(X.shape, matvec, rmatvec, matmat, dtype=X.dtype)   
+            
+        def rmatmat(W): 
+            paramList = [] 
+            for i in range(numJobs): 
+                paramList.append((X[:, colInds[i]:colInds[i+1]], W))
+            
+            iterator = pool.imap(dotT, paramList, chunksize=1)
+            #iterator = itertools.imap(dotT, paramList)
+            P = numpy.zeros((X.shape[1], W.shape[1]))
+            
+            for i in range(numJobs): 
+                P[colInds[i]:colInds[i+1], :] = iterator.next()
+            
+            return P             
+            
+        return GeneralLinearOperator(X.shape, matvec, rmatvec, matmat, rmatmat, dtype=X.dtype)   
     
