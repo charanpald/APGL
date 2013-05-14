@@ -15,11 +15,14 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
 class NetflixIterator(object): 
-    def __init__(self, netflixDataset, isTraining): 
+    def __init__(self, netflixDataset, isTraining, maxIter=None): 
         """
         Initialise this iterator with a NetflixDataset object and indicate whether 
         we want the training or test set. 
         """
+        if maxIter != None: 
+            logging.debug("Maximum number of iterations: " + str(maxIter))
+        
         self.currentDate = datetime(2001,1,1)
         self.timeDelta = timedelta(netflixDataset.timeStep)
         self.netflixDataset = netflixDataset
@@ -48,10 +51,13 @@ class NetflixIterator(object):
         logging.debug("Sorting dates")
         self.dateInds = numpy.argsort(self.dates)
         self.sortedDates = self.dates[self.dateInds]
+        
+        self.i = 0
+        self.maxIter = maxIter 
                         
     def next(self):
         logging.debug(self.currentDate)
-        if self.currentDate > self.netflixDataset.endDate + self.timeDelta: 
+        if self.currentDate > self.netflixDataset.endDate + self.timeDelta or self.i==self.maxIter: 
             raise StopIteration
         
         timeInt = int((self.currentDate-self.netflixDataset.startDate).total_seconds())    
@@ -62,6 +68,7 @@ class NetflixIterator(object):
         
         X = scipy.sparse.csc_matrix((currentRatings, currentInds))                
         self.currentDate += self.timeDelta
+        self.i += 1
 
         return X
 
@@ -69,7 +76,7 @@ class NetflixIterator(object):
         return self    
 
 class NetflixDataset(object): 
-    def __init__(self): 
+    def __init__(self, maxIter=None): 
         """
         Return a training and test set for netflix based on the time each 
         rating was made. 
@@ -97,6 +104,8 @@ class NetflixDataset(object):
         self.probeFileName = PathDefaults.getDataDir() + "netflix/probe.txt"    
         self.testRatingsFileName = outputDir + "test_data.npz"
         self.isTrainRatingsFileName = outputDir + "is_train.npz"
+        
+        self.maxIter = maxIter 
 
         self.processRatings()
         self.processProbe()
@@ -220,10 +229,10 @@ class NetflixDataset(object):
             
             
     def getTrainIteratorFunc(self): 
-        return NetflixIterator(self, True)
+        return NetflixIterator(self, True, self.maxIter)
                 
     def getTestIteratorFunc(self): 
-        return NetflixIterator(self, False)           
+        return NetflixIterator(self, False, self.maxIter)           
               
 
 
