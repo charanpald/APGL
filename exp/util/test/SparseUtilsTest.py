@@ -159,7 +159,39 @@ class SparseUtilsCythonTest(unittest.TestCase):
         Y = U.dot(V.T)
         inds = X.nonzero()
         
-           
+    def testSvdPropack(self): 
+        shape = (500, 100)
+        r = 5 
+        k = 1000 
+
+        X, U, s, V = SparseUtils.generateSparseLowRank(shape, r, k, verbose=True)                
+        
+        k2 = 10 
+        U, s, V = SparseUtils.svdPropack(X, k2)
+
+        U2, s2, V2 = numpy.linalg.svd(X.todense())
+        V2 = V2.T
+
+        nptst.assert_array_almost_equal(s, s2[0:k2])
+        nptst.assert_array_almost_equal(numpy.abs(U), numpy.abs(U2[:, 0:k2]), 3)
+        nptst.assert_array_almost_equal(numpy.abs(V), numpy.abs(V2[:, 0:k2]), 3)
+                
+    def testSvdArpack(self): 
+        shape = (500, 100)
+        r = 5 
+        k = 1000 
+
+        X, U, s, V = SparseUtils.generateSparseLowRank(shape, r, k, verbose=True)                
+        
+        k2 = 10 
+        U, s, V = SparseUtils.svdArpack(X, k2)
+
+        U2, s2, V2 = numpy.linalg.svd(X.todense())
+        V2 = V2.T
+
+        nptst.assert_array_almost_equal(s, s2[0:k2])
+        nptst.assert_array_almost_equal(numpy.abs(U), numpy.abs(U2[:, 0:k2]), 3)
+        nptst.assert_array_almost_equal(numpy.abs(V), numpy.abs(V2[:, 0:k2]), 3)
         
 if __name__ == '__main__':
     unittest.main()
