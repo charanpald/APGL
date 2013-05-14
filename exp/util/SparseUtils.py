@@ -3,6 +3,7 @@ import sys
 import numpy 
 import scipy.sparse 
 import scipy.sparse.linalg 
+from scipy.sparse.linalg import LinearOperator  
 import logging 
 from exp.util.SparseUtilsCython import SparseUtilsCython
 from apgl.util.Util import Util 
@@ -105,7 +106,7 @@ class SparseUtils(object):
         return X 
         
     @staticmethod
-    def svdSparseLowRank(X, U, s, V, k=None, kmax=None): 
+    def svdSparseLowRank(X, U, s, V, k=None, kmax=None, usePropack=True): 
         """
         Find the partial SVD of a matrix A = X + U s V.T in which X is sparse and B = 
         U s V.T is a low rank matrix. We use PROPACK to find the singular  
@@ -120,10 +121,16 @@ class SparseUtils(object):
         :param V: The right singular vectors 
         
         :param k: The number of singular values/vectors or None for all 
+        
+        :param kmax: The number of Krylov vectors or None to use SparseUtils.kmaxMultiplier*k
         """
 
         L = LinOperatorUtils.sparseLowRankOp(X, U, s, V)
-        U, s, V = SparseUtils.svdPropack(L, k, kmax=kmax)
+        
+        if usePropack: 
+            U, s, V = SparseUtils.svdPropack(L, k, kmax=kmax)
+        else: 
+            U, s, V = SparseUtils.svdArpack(L, k, kmax=kmax)
    
         logging.debug("Number of SVs: " + str(s.shape[0]) + " and min SV: " + str(numpy.min(s)))
         
@@ -161,6 +168,46 @@ class SparseUtils(object):
               
         return U, s, VT.T 
         
+    @staticmethod
+    def svdArpack(X, k, kmax=None):
+        """
+        Perform the SVD of a sparse matrix X using ARPACK for the largest k 
+        singular values. Note that the input matrix should be of float dtype.  
+        
+        :param X: The input matrix as scipy.sparse.csc_matrix or a LinearOperator
+        
+        :param k: The number of singular vectors/values for None for all 
+        
+        :param kmax: The maximal number of iterations / maximal dimension of Krylov subspace.
+        """
+        if k==None: 
+            k = min(X.shape[0], X.shape[1])
+        if kmax==None: 
+            kmax = SparseUtils.kmaxMultiplier*k        
+        
+        if scipy.sparse.isspmatrix(X): 
+            L = scipy.sparse.linalg.aslinearoperator(X) 
+        else: 
+            L = X        
+        
+        m, n = L.shape
+
+        def matvec_AH_A(x):
+            Ax = L.matvec(x)
+            return L.rmatvec(Ax)
+
+        AH_A = LinearOperator(matvec=matvec_AH_A, shape=(n, n), dtype=L.dtype)
+
+        eigvals, eigvec = scipy.sparse.linalg.eigsh(AH_A, k=k, ncv=kmax)
+        s2 = scipy.sqrt(eigvals)
+        V2 = eigvec
+        U2 = L.matmat(V2)/s2
+
+        inds = numpy.flipud(numpy.argsort(s2))
+        U2, s2, V2 = Util.indSvd(U2, s2, V2.T, inds)
+        
+        return U2, s2, V2
+
 
     @staticmethod 
     def svdSoft(X, lmbda, kmax=None): 
