@@ -1,4 +1,6 @@
 import numpy 
+import scipy.sparse 
+from exp.util.GeneralLinearOperator import GeneralLinearOperator
 from apgl.util.Parameter import Parameter 
 
 class RandomisedSVD(object): 
@@ -11,26 +13,37 @@ class RandomisedSVD(object):
         pass
     
     @staticmethod
-    def svd(A, k, q=2): 
+    def svd(X, k, q=2): 
         """
-        Compute the SVD of a sparse or dense matrix A, finding the first k 
+        Compute the SVD of a sparse or dense matrix X, finding the first k 
         singular vectors/values, using exponent q. Returns the left and right singular 
         vectors, and the singular values. The resulting matrix can be approximated 
-        using A ~ U s V.T. 
+        using X ~ U s V.T. 
+        
+        :param X: A matrix of GeneralLinearOperator 
+        
+        :param k: The number of singular values and random projections
+        
+        :param q: The exponent for the projections. 
         """
         Parameter.checkInt(k, 1, float("inf"))
         Parameter.checkInt(q, 1, float("inf"))        
+
+        if scipy.sparse.isspmatrix(X): 
+            L = GeneralLinearOperator.asLinearOperator(X) 
+        else: 
+            L = X
         
-        n = A.shape[0]
+        n = L.shape[1]
         omega = numpy.random.randn(n, k)
-        Y = A.dot(omega)
+        Y = L.matmat(omega)
         
-        for i in range(q): 
-            Y = A.T.dot(Y)
-            Y = A.dot(Y)
+        for i in range(q):
+            Y = L.rmatmat(Y)
+            Y = L.matmat(Y)
         
         Q, R = numpy.linalg.qr(Y)
-        B = A.T.dot(Q).T   
+        B = L.rmatmat(Q).T
         U, s, V = numpy.linalg.svd(B, full_matrices=False)
         V = V.T
         U = Q.dot(U)
