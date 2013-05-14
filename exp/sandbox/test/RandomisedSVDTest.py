@@ -15,7 +15,8 @@ class  RandomisedSVDTest(unittest.TestCase):
 
     def testSvd(self): 
         n = 100 
-        A = scipy.sparse.rand(n, n, 0.1)
+        m = 80
+        A = scipy.sparse.rand(m, n, 0.1)
         
         ks = [10, 20, 30, 40] 
         q = 2 
