@@ -115,6 +115,8 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                     
                     if self.iterativeSoftImpute.svdAlg=="propack": 
                         newU, newS, newV = ExpSU.SparseUtils.svdSparseLowRank(Y, self.oldU, self.oldS, self.oldV, k=self.iterativeSoftImpute.k, kmax=self.iterativeSoftImpute.kmax)
+                    elif self.iterativeSoftImpute.svdAlg=="arpack": 
+                        newU, newS, newV = ExpSU.SparseUtils.svdSparseLowRank(Y, self.oldU, self.oldS, self.oldV, k=self.iterativeSoftImpute.k, kmax=self.iterativeSoftImpute.kmax, usePropack=False)
                     elif self.iterativeSoftImpute.svdAlg=="svdUpdate": 
                         newU, newS, newV = SVDUpdate.addSparseProjected(self.oldU, self.oldS, self.oldV, Y, self.iterativeSoftImpute.k)
                     elif self.iterativeSoftImpute.svdAlg=="RSVD": 
