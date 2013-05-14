@@ -8,7 +8,6 @@ import errno
 import logging
 import numpy
 import argparse
-from apgl.graph import *
 from exp.recommendexp.RecommendExpHelper import RecommendExpHelper
 from exp.recommendexp.NetflixDataset import NetflixDataset
 
