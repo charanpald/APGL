@@ -1,7 +1,4 @@
 
-
-
-
 import unittest
 import numpy
 import numpy.testing as nptst 
