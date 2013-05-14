@@ -73,8 +73,8 @@ class RecommendExpHelper(object):
         for method in ["runSoftImpute"]:
             algoParser.add_argument("--" + method, action="store_true", default=defaultAlgoArgs.__getattribute__(method))
         algoParser.add_argument("--rhos", type=float, help="Regularisation parameter (default: %(default)s)", default=defaultAlgoArgs.rhos)
-        algoParser.add_argument("--k", type=float, help="Max number of singular values/vectors (default: %(default)s)", default=defaultAlgoArgs.k)
-        algoParser.add_argument("--kmax", type=float, help="Max number of Krylov/Lanczos vectors for PROPACK/ARPACK (default: %(default)s)", default=defaultAlgoArgs.kmax)
+        algoParser.add_argument("--k", type=int, help="Max number of singular values/vectors (default: %(default)s)", default=defaultAlgoArgs.k)
+        algoParser.add_argument("--kmax", type=int, help="Max number of Krylov/Lanczos vectors for PROPACK/ARPACK (default: %(default)s)", default=defaultAlgoArgs.kmax)
         algoParser.add_argument("--svdAlg", type=str, help="Algorithm to compute SVD for each iteration of soft impute (default: %(default)s)", default=defaultAlgoArgs.svdAlg)
         return(algoParser)
     
