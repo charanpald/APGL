@@ -6,6 +6,7 @@ import pickle
 import os 
 import scipy.sparse 
 import numpy.testing as nptst 
+import gc 
 from datetime import datetime, timedelta   
 from exp.util.SparseUtils import SparseUtils 
 from apgl.util.PathDefaults import PathDefaults 
@@ -30,21 +31,26 @@ class NetflixIterator(object):
         dataArr = numpy.load(netflixDataset.ratingFileName)
         movieIds, custIds, self.ratings, self.dates = dataArr["arr_0"], dataArr["arr_1"], dataArr["arr_2"], dataArr["arr_3"]
         self.trainInds = numpy.c_[movieIds, custIds].T
+        del movieIds
+        del custIds
         logging.debug("Training data loaded")
         logging.debug("Number of ratings: " + str(self.ratings.shape[0]+1))
         
         isTrainRating = numpy.load(netflixDataset.isTrainRatingsFileName)["arr_0"]
-        logging.debug("Train/test indicator loaded")                
+        logging.debug("Train/test indicator loaded")              
      
         if isTraining:
             self.trainInds = self.trainInds[:, isTrainRating]
             self.ratings = self.ratings[isTrainRating]         
-            self.dates = self.dates[isTrainRating]  
+            self.dates = self.dates[isTrainRating] 
+            del isTrainRating
         else: 
             isTestRating = numpy.logical_not(isTrainRating)
             self.trainInds = self.trainInds[:, isTestRating]
             self.ratings = self.ratings[isTestRating]         
             self.dates = self.dates[isTestRating]  
+            del isTrainRating
+            del isTestRating
             
         logging.debug("Final number of ratings " + str(self.ratings.shape[0])) 
      
@@ -54,11 +60,13 @@ class NetflixIterator(object):
         
         self.i = 0
         self.maxIter = maxIter 
+        gc.collect()
                         
     def next(self):
-        logging.debug(self.currentDate)
         if self.currentDate > self.netflixDataset.endDate + self.timeDelta or self.i==self.maxIter: 
             raise StopIteration
+            
+        logging.debug(self.currentDate)
         
         timeInt = int((self.currentDate-self.netflixDataset.startDate).total_seconds())    
         ind = numpy.searchsorted(self.sortedDates, timeInt)
@@ -66,7 +74,7 @@ class NetflixIterator(object):
         currentRatings = self.ratings[self.dateInds[0:ind]]
         currentInds = self.trainInds[:, self.dateInds[0:ind]]
         
-        X = scipy.sparse.csc_matrix((currentRatings, currentInds))                
+        X = scipy.sparse.csc_matrix((currentRatings, currentInds), dtype=self.ratings.dtype)                
         self.currentDate += self.timeDelta
         self.i += 1
 
