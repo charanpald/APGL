@@ -4,8 +4,10 @@ import sys
 import scipy 
 import scipy.sparse 
 import scipy.sparse.linalg 
+import scipy.io
 from apgl.util.ProfileUtils import ProfileUtils
 from exp.sandbox.RandomisedSVD import RandomisedSVD 
+from apgl.util.PathDefaults import PathDefaults 
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -26,5 +28,20 @@ class RandomisedSvdProfile(object):
         #Compare against the exact svd - it's much faster 
         #ProfileUtils.profile('scipy.sparse.linalg.svds(L, k=2*k)', globals(), locals())
 
+    def profileSvd2(self):
+        dataDir = PathDefaults.getDataDir() + "erasm/contacts/" 
+        trainFilename = dataDir + "contacts_train"        
+        
+        trainX = scipy.io.mmread(trainFilename)
+        trainX = scipy.sparse.csc_matrix(trainX, dtype=numpy.int8)
+        
+        k = 500 
+        U, s, V = RandomisedSVD.svd(trainX, k)
+        
+        print(s)
+        
+        print("All done")
+
 profiler = RandomisedSvdProfile()
-profiler.profileSvd() #51.4 s
+#profiler.profileSvd() #51.4 s
+profiler.profileSvd2() #51.4 s
