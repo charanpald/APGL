@@ -21,9 +21,6 @@ class NetflixIterator(object):
         Initialise this iterator with a NetflixDataset object and indicate whether 
         we want the training or test set. 
         """
-        if netflixDataset.maxIter != None: 
-            logging.debug("Maximum number of iterations: " + str(netflixDataset.maxIter))
-        
         self.currentDate = datetime(2001,1,1)
         self.timeDelta = timedelta(netflixDataset.timeStep)
         self.netflixDataset = netflixDataset
@@ -108,6 +105,9 @@ class NetflixDataset(object):
         #self.processProbe()
         self.splitDataset()        
         self.loadProcessedData()
+        
+        if self.maxIter != None: 
+            logging.debug("Maximum number of iterations: " + str(self.maxIter))
 
     def processRatings(self): 
         """
