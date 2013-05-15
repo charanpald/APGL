@@ -41,6 +41,9 @@ class RecommendExpHelper(object):
         
         #How often to print output 
         self.logStep = 10
+        
+        self.modelSelect = False
+        self.defaultRho = 0.05
 
         # basic resultsDir
         self.resultsDir = PathDefaults.getOutputDir() + "recommend/" + dirName + "/"
@@ -113,8 +116,8 @@ class RecommendExpHelper(object):
             
             U, s, V = Z 
             predX = SparseUtils.reconstructLowRank(U, s, V, testX.nonzero())
-            currentMeasures = [MCEvaluator.meanSqError(testX, predX)] 
-            print(currentMeasures)
+            currentMeasures = [MCEvaluator.meanSqError(testX, predX), MCEvaluator.rootMeanSqError(testX, predX)] 
+            logging.debug("Error measures: " + str(currentMeasures))
             measures.append(currentMeasures) 
 
         measures = numpy.array(measures)
@@ -138,15 +141,20 @@ class RecommendExpHelper(object):
             self.lmbdas = s[0]*self.defaultAlgoArgs.rhos
             logging.debug("Largest singular value : " + str(s[0]))
             
-            #Let's find the optimal lambda using the first matrix 
-            logging.debug("Performing model selection")
-            cvInds = Sampling.randCrossValidation(self.defaultAlgoArgs.folds, X.nnz)
-            errors = learner.modelSelect(X, self.lmbdas, cvInds)
             
-            logging.debug("Errors = " + str(errors))
-            learner.setLambda(self.lmbdas[numpy.argmin(errors)])
-            
-            logging.debug("Training with lambda = " + str(self.lmbdas[numpy.argmin(errors)]))
+            if self.modelSelect: 
+                #Let's find the optimal lambda using the first matrix 
+                logging.debug("Performing model selection")
+                cvInds = Sampling.randCrossValidation(self.defaultAlgoArgs.folds, X.nnz)
+                errors = learner.modelSelect(X, self.lmbdas, cvInds)
+                
+                logging.debug("Errors = " + str(errors))
+                lmbda = self.lmbdas[numpy.argmin(errors)]
+            else: 
+                lmbda = self.defaultRho*s[0]
+                
+            learner.setLambda(lmbda)            
+            logging.debug("Training with lambda = " + str(lmbda))
             trainIterator = self.trainXIteratorFunc()
             ZIter = learner.learnModel(trainIterator)
             
