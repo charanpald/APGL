@@ -16,65 +16,54 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
 class NetflixIterator(object): 
-    def __init__(self, netflixDataset, isTraining, maxIter=None): 
+    def __init__(self, netflixDataset, isTraining): 
         """
         Initialise this iterator with a NetflixDataset object and indicate whether 
         we want the training or test set. 
         """
-        if maxIter != None: 
-            logging.debug("Maximum number of iterations: " + str(maxIter))
+        if netflixDataset.maxIter != None: 
+            logging.debug("Maximum number of iterations: " + str(netflixDataset.maxIter))
         
         self.currentDate = datetime(2001,1,1)
         self.timeDelta = timedelta(netflixDataset.timeStep)
         self.netflixDataset = netflixDataset
         
-        dataArr = numpy.load(netflixDataset.ratingFileName)
-        movieIds, custIds, self.ratings, self.dates = dataArr["arr_0"], dataArr["arr_1"], dataArr["arr_2"], dataArr["arr_3"]
-        self.trainInds = numpy.c_[movieIds, custIds].T
-        del movieIds
-        del custIds
-        logging.debug("Training data loaded")
-        logging.debug("Number of ratings: " + str(self.ratings.shape[0]+1))
-        
-        isTrainRating = numpy.load(netflixDataset.isTrainRatingsFileName)["arr_0"]
-        logging.debug("Train/test indicator loaded")              
-     
-        if isTraining:
-            self.trainInds = self.trainInds[:, isTrainRating]
-            self.ratings = self.ratings[isTrainRating]         
-            self.dates = self.dates[isTrainRating] 
-            del isTrainRating
-        else: 
-            isTestRating = numpy.logical_not(isTrainRating)
-            self.trainInds = self.trainInds[:, isTestRating]
-            self.ratings = self.ratings[isTestRating]         
-            self.dates = self.dates[isTestRating]  
-            del isTrainRating
-            del isTestRating
-            
-        logging.debug("Final number of ratings " + str(self.ratings.shape[0])) 
-     
-        logging.debug("Sorting dates")
-        self.dateInds = numpy.argsort(self.dates)
-        self.sortedDates = self.dates[self.dateInds]
-        
         self.i = 0
-        self.maxIter = maxIter 
-        gc.collect()
-                        
+        self.maxIter = netflixDataset.maxIter 
+        self.isTraining = isTraining 
+        
     def next(self):
         if self.currentDate > self.netflixDataset.endDate + self.timeDelta or self.i==self.maxIter: 
+            logging.debug("Final iteration: " + str(self.i))
             raise StopIteration
             
-        logging.debug(self.currentDate)
+        logging.debug("Current date: " + str(self.currentDate)) 
         
         timeInt = int((self.currentDate-self.netflixDataset.startDate).total_seconds())    
-        ind = numpy.searchsorted(self.sortedDates, timeInt)
+        ind = numpy.searchsorted(self.netflixDataset.sortedDates, timeInt)
         
-        currentRatings = self.ratings[self.dateInds[0:ind]]
-        currentInds = self.trainInds[:, self.dateInds[0:ind]]
+        currentIsTrainRatings = self.netflixDataset.isTrainRating[self.netflixDataset.dateInds[0:ind]] 
+        currentRatings = self.netflixDataset.ratings[self.netflixDataset.dateInds[0:ind]]
+        currentInds = self.netflixDataset.trainInds[:, self.netflixDataset.dateInds[0:ind]]
         
-        X = scipy.sparse.csc_matrix((currentRatings, currentInds), dtype=self.ratings.dtype)                
+        if self.isTraining: 
+            currentRatings[numpy.logical_not(currentIsTrainRatings)] = 0 
+        else: 
+            currentRatings[currentIsTrainRatings] = 0 
+        
+        X = scipy.sparse.csc_matrix((currentRatings, currentInds), dtype=self.netflixDataset.ratings.dtype)      
+        X.eliminate_zeros()
+        X.prune()
+        
+        del currentRatings
+        del currentInds
+        gc.collect()
+        
+        if self.isTraining: 
+            assert X.nnz  == currentIsTrainRatings.sum() 
+        else: 
+            assert X.nnz  == numpy.logical_not(currentIsTrainRatings).sum() 
+          
         self.currentDate += self.timeDelta
         self.i += 1
 
@@ -87,7 +76,7 @@ class NetflixDataset(object):
     def __init__(self, maxIter=None): 
         """
         Return a training and test set for netflix based on the time each 
-        rating was made. 
+        rating was made. There are 62 iterations. 
         """ 
         self.timeStep = 30 
         self.startDate = datetime(1998,1,1)
@@ -116,7 +105,9 @@ class NetflixDataset(object):
         self.maxIter = maxIter 
 
         self.processRatings()
-        self.processProbe()
+        #self.processProbe()
+        self.splitDataset()        
+        self.loadProcessedData()
 
     def processRatings(self): 
         """
@@ -166,7 +157,7 @@ class NetflixDataset(object):
             movieIds = numpy.array(movieIds, numpy.uint32)
             custIds = numpy.array(custIds, numpy.uint32)
             ratings = numpy.array(ratings, numpy.uint8)
-            dates = numpy.array(dates)
+            dates = numpy.array(dates, numpy.uint32)
             
             assert ratings.shape[0] == self.numRatings            
             
@@ -234,13 +225,50 @@ class NetflixDataset(object):
             logging.debug("Saved file as " + self.isTrainRatingsFileName)
         else: 
             logging.debug("Train/test indicators file " + str(self.isTrainRatingsFileName) + " already processed")
+    
+    def splitDataset(self): 
+        """
+        We generate a random training and test sets based on a specified split. 
+        """
+        if not os.path.exists(self.isTrainRatingsFileName):
+            custIdDict = pickle.load(open(self.custDictFileName))             
+            dataArr = numpy.load(self.ratingFileName)
+            movieInds, custInds, ratings, dates = dataArr["arr_0"], dataArr["arr_1"], dataArr["arr_2"], dataArr["arr_3"]
+            logging.debug("Number of ratings: " + str(ratings.shape[0]+1))            
+            del ratings, dates 
+            logging.debug("Training data loaded")
             
-            
+            trainSplit = 4.0/5            
+            isTrainRating = numpy.array(numpy.random.rand(movieInds.shape[0]) <= trainSplit, numpy.bool)
+
+            numpy.savez(self.isTrainRatingsFileName, isTrainRating) 
+            logging.debug("Saved file as " + self.isTrainRatingsFileName)
+        else: 
+            logging.debug("Train/test indicators file " + str(self.isTrainRatingsFileName) + " already generated")
+        
+    def loadProcessedData(self): 
+        dataArr = numpy.load(self.ratingFileName)
+        movieIds, custIds, self.ratings, self.dates = dataArr["arr_0"], dataArr["arr_1"], dataArr["arr_2"], dataArr["arr_3"]
+        self.trainInds = numpy.c_[movieIds, custIds].T
+        del movieIds
+        del custIds
+        logging.debug("Training data loaded")
+        logging.debug("Number of ratings: " + str(self.ratings.shape[0]+1))
+        
+        self.isTrainRating = numpy.load(self.isTrainRatingsFileName)["arr_0"]
+        logging.debug("Train/test indicator loaded")              
+     
+        logging.debug("Sorting dates")
+        self.dateInds = numpy.array(numpy.argsort(self.dates), numpy.uint32)
+        self.sortedDates = self.dates[self.dateInds]
+        logging.debug("Done")
+        gc.collect()
+           
     def getTrainIteratorFunc(self): 
-        return NetflixIterator(self, True, self.maxIter)
+        return NetflixIterator(self, True)
                 
     def getTestIteratorFunc(self): 
-        return NetflixIterator(self, False, self.maxIter)           
+        return NetflixIterator(self, False)           
               
 
 
