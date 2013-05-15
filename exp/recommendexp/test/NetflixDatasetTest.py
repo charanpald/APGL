@@ -19,10 +19,17 @@ class  GenerateToyDataTest(unittest.TestCase):
     #@unittest.skip("")
     def testGetTestIteratorFunc(self):
         dataset = NetflixDataset()
-        #iterator = dataset.getTrainIteratorFunc()
-        iterator = dataset.getTestIteratorFunc()
+
+        trainIterator = dataset.getTrainIteratorFunc()        
+        testIterator = dataset.getTestIteratorFunc()
         
+        for trainX in trainIterator: 
+            testX = testIterator.next() 
+            
+            print(trainX.shape, trainX.nnz, testX.nnz)
+            self.assertEquals(trainX.shape, testX.shape)
         
+    #@unittest.skip("")    
     def testData(self): 
         dataset = NetflixDataset()
         custIdDict = pickle.load(open(dataset.custDictFileName))             
