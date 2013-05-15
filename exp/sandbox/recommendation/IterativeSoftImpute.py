@@ -2,7 +2,6 @@ import numpy
 import logging
 import scipy.sparse.linalg
 import exp.util.SparseUtils as ExpSU
-from apgl.util.SparseUtils import SparseUtils
 from exp.sandbox.RandomisedSVD import RandomisedSVD
 from exp.util.MCEvaluator import MCEvaluator
 from apgl.util.Util import Util
@@ -10,8 +9,6 @@ from apgl.util.Parameter import Parameter
 from exp.sandbox.recommendation.AbstractMatrixCompleter import AbstractMatrixCompleter
 from exp.util.SparseUtilsCython import SparseUtilsCython
 from exp.sandbox.SVDUpdate import SVDUpdate
-from apgl.util.Sampling import Sampling
-from apgl.util.ProfileUtils import ProfileUtils
 from exp.util.LinOperatorUtils import LinOperatorUtils
 
 class IterativeSoftImpute(AbstractMatrixCompleter):
@@ -51,11 +48,16 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
             self.kmax = None
         self.logStep = logStep
 
-    def learnModel(self, XIterator):
+    def learnModel(self, XIterator, lmbdas=None):
         """
         Learn the matrix completion using an iterator which outputs
         a sequence of sparse matrices X. The output of this method is also
-        an iterator which outputs a sequence of completed matrices.
+        an iterator which outputs a sequence of completed matrices in factorised 
+        form. 
+        
+        :param XIterator: An iterator which emits scipy.sparse.csc_matrix objects 
+        
+        :param lmbdas: An optional array of lambdas for model selection using warm restarts 
         """
 
         class ZIterator(object):
@@ -64,12 +66,15 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                 self.j = 0
                 self.XIterator = XIterator
                 self.iterativeSoftImpute = iterativeSoftImpute
+                self.lmbdas = lmbdas 
 
             def __iter__(self):
                 return self
 
             def next(self):
                 X = self.XIterator.next()
+                if self.lmbdas != None: 
+                    self.iterativeSoftImpute.setLambda(self.lmbdas.next())
 
                 if not scipy.sparse.isspmatrix_csc(X):
                     raise ValueError("X must be a csc_matrix")
@@ -181,8 +186,11 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         """
         Pick a value of lambda based on a single matrix X. We do cross validation
         within, and return the best value of lambda (according to the mean
-        squared error).
+        squared error). The lmbdas must be in decreasing order and we use 
+        warm restarts. 
         """
+        if (numpy.flipud(numpy.sort(lmbdas)) != lmbdas).all(): 
+            raise ValueError("Lambdas must be in descending order")    
 
         Xcoo = X.tocoo()
         errors = numpy.zeros((lmbdas.shape[0], len(cvInds)))
@@ -203,14 +211,20 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
             testX = testX.tocsc()
 
             testInds2 = testX.nonzero()
-
-            for j, lmbda in enumerate(lmbdas):
-                Util.printIteration(j, 1, len(lmbdas), "Lambda index: ")
-                self.setLambda(lmbda)
-                ZIter = self.learnModel(iter([trainX]))
-                predXIter = self.predict(ZIter, [testInds2])
-
-                predX = predXIter.next()
+            
+            #Create lists 
+            trainXIter = []
+            testIndList = []
+            
+            for lmbda in lmbdas: 
+                trainXIter.append(trainX)
+                testIndList.append(testInds2)
+            trainXIter = iter(trainXIter)
+            
+            ZIter = self.learnModel(trainXIter, iter(lmbdas))
+            predXIter = self.predict(ZIter, testIndList)
+            
+            for j, predX in enumerate(predXIter): 
                 errors[j, i] = MCEvaluator.meanSqError(testX, predX)
 
         meanErrors = errors.mean(1)
