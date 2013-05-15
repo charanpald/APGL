@@ -1,6 +1,6 @@
 from apgl.util.Util import Util
 from apgl.util.Sampling import Sampling 
-from apgl.util.MCEvaluator import MCEvaluator
+from exp.util.MCEvaluator import MCEvaluator
 from exp.sandbox.recommendation.IterativeSoftImpute import IterativeSoftImpute
 from exp.sandbox.recommendation.SoftImpute import SoftImpute 
 import sys
@@ -102,7 +102,7 @@ class IterativeSoftImputeTest(unittest.TestCase):
         k = 20
         
         matrixIterator = iter(self.matrixList)
-        iterativeSoftImpute = IterativeSoftImpute(lmbda, k=k, eps=eps, svdAlg="RSVD")
+        iterativeSoftImpute = IterativeSoftImpute(lmbda, k=k, eps=eps, svdAlg="rsvd")
         ZList = iterativeSoftImpute.learnModel(matrixIterator)
         
         #Check that ZList is the same as XList 
@@ -116,7 +116,7 @@ class IterativeSoftImputeTest(unittest.TestCase):
         lmbdaList = [0.1, 0.2, 0.5, 1.0]
         
         for lmbda in lmbdaList: 
-            iterativeSoftImpute = IterativeSoftImpute(lmbda, k=k, eps=eps, svdAlg="RSVD", updateAlg="zero")
+            iterativeSoftImpute = IterativeSoftImpute(lmbda, k=k, eps=eps, svdAlg="rsvd", updateAlg="zero")
             
             matrixIterator = iter(self.matrixList)
             ZList = iterativeSoftImpute.learnModel(matrixIterator)
