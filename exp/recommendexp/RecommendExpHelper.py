@@ -17,7 +17,7 @@ from apgl.util.Sampling import Sampling
 class RecommendExpHelper(object):
     defaultAlgoArgs = argparse.Namespace()
     defaultAlgoArgs.runSoftImpute = False
-    defaultAlgoArgs.rhos = numpy.linspace(0.5, 0.01, 10)     
+    defaultAlgoArgs.rhos = numpy.linspace(0.1, 0.001, 10)     
     defaultAlgoArgs.folds = 3
     defaultAlgoArgs.k = 200
     defaultAlgoArgs.kmax = None 
