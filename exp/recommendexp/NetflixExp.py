@@ -11,6 +11,7 @@ import argparse
 from exp.recommendexp.RecommendExpHelper import RecommendExpHelper
 from exp.recommendexp.NetflixDataset import NetflixDataset
 
+#Uncomment this for the final run 
 if __debug__: 
     raise RuntimeError("Must run python with -O flag")
 
@@ -21,11 +22,11 @@ numpy.seterr("raise", under="ignore")
 
 # Arguments related to the dataset
 dataArgs = argparse.Namespace()
-dataArgs.maxIter = 10 
+dataArgs.maxIter = 20 
 
 # Arguments related to the algorithm
 defaultAlgoArgs = argparse.Namespace()
-defaultAlgoArgs.k = 200
+defaultAlgoArgs.k = 100
 defaultAlgoArgs.svdAlg = "arpack"
 
 # init (reading/writting command line arguments)
