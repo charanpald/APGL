@@ -1,4 +1,4 @@
-
+import numpy 
 
 class MCEvaluator(object):
     """
@@ -20,7 +20,14 @@ class MCEvaluator(object):
         for i in range(rowInds.shape[0]): 
             error += (testX[rowInds[i], colInds[i]] - predX[rowInds[i], colInds[i]])**2
             
-        error /= rowInds.shape[0]
+        error /= float(rowInds.shape[0]) 
         
         return error 
         
+    @staticmethod 
+    def rootMeanSqError(testX, predX): 
+        """
+        Find the root mean squared error between two sparse matrices testX and predX. 
+        """
+        
+        return numpy.sqrt(MCEvaluator.meanSqError(testX, predX)) 
