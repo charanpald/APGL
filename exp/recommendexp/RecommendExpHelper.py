@@ -140,10 +140,10 @@ class RecommendExpHelper(object):
             logging.debug("Largest singular value : " + str(s[0]))
             
             
-            if self.defaultAlgoArgs.modelSelect: 
+            if self.algoArgs.modelSelect: 
                 #Let's find the optimal lambda using the first matrix 
                 logging.debug("Performing model selection")
-                cvInds = Sampling.randCrossValidation(self.defaultAlgoArgs.folds, X.nnz)
+                cvInds = Sampling.randCrossValidation(self.algoArgs.folds, X.nnz)
                 errors = learner.modelSelect(X, self.lmbdas, cvInds)
                 
                 logging.debug("Errors = " + str(errors))
