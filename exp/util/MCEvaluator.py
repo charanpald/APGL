@@ -15,16 +15,14 @@ class MCEvaluator(object):
         Find the mean squared error between two sparse matrices testX and predX. 
         Note that the matrices must have nonzero elements in the same places. 
         """
-        
-        nptst.assert_array_equal(testX.nonzero()[0], predX.nonzero()[0])
-        nptst.assert_array_equal(testX.nonzero()[1], predX.nonzero()[1])
+        #Note that some predictions might be zero 
+        assert numpy.in1d(predX.nonzero()[0], testX.nonzero()[0]).all() 
+        assert numpy.in1d(predX.nonzero()[1], testX.nonzero()[1]).all() 
         
         diff = testX - predX     
-        
-        if diff.data.shape[0] != 0: 
-            return numpy.mean(diff.data**2) 
-        else: 
-            return 0 
+        error = numpy.sum(diff.data**2)/testX.data.shape[0]
+        return error
+
         
     @staticmethod 
     def rootMeanSqError(testX, predX): 
