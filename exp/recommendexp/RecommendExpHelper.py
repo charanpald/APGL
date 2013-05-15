@@ -9,7 +9,7 @@ import scipy.sparse
 from copy import copy
 from apgl.util.PathDefaults import PathDefaults
 from apgl.util import Util
-from apgl.util.MCEvaluator import MCEvaluator 
+from exp.util.MCEvaluator import MCEvaluator 
 from exp.sandbox.recommendation.IterativeSoftImpute import IterativeSoftImpute 
 from exp.util.SparseUtils import SparseUtils 
 from apgl.util.Sampling import Sampling 
@@ -18,10 +18,11 @@ class RecommendExpHelper(object):
     defaultAlgoArgs = argparse.Namespace()
     defaultAlgoArgs.runSoftImpute = False
     defaultAlgoArgs.rhos = numpy.linspace(0.5, 0.01, 10)     
-    defaultAlgoArgs.folds = 5
-    defaultAlgoArgs.k = 500
+    defaultAlgoArgs.folds = 3
+    defaultAlgoArgs.k = 200
     defaultAlgoArgs.kmax = None 
     defaultAlgoArgs.svdAlg = "propack"
+    defaultAlgoArgs.modelSelect = False
     
     def __init__(self, trainXIteratorFunc, testXIteratorFunc, cmdLine=None, defaultAlgoArgs = None, dirName=""):
         """ priority for default args
@@ -29,8 +30,6 @@ class RecommendExpHelper(object):
          - middle priority: set-by-function value
          - lower priority: class value
         """
-    
-        
         # Parameters to choose which methods to run
         # Obtained merging default parameters from the class with those from the user
         self.algoArgs = RecommendExpHelper.newAlgoParams(defaultAlgoArgs)
@@ -42,7 +41,6 @@ class RecommendExpHelper(object):
         #How often to print output 
         self.logStep = 10
         
-        self.modelSelect = False
         self.defaultRho = 0.05
 
         # basic resultsDir
@@ -50,7 +48,6 @@ class RecommendExpHelper(object):
 
         # update algoParams from command line
         self.readAlgoParams(cmdLine)
-
 
     @staticmethod
     # update parameters with those from the user
@@ -79,6 +76,7 @@ class RecommendExpHelper(object):
         algoParser.add_argument("--k", type=int, help="Max number of singular values/vectors (default: %(default)s)", default=defaultAlgoArgs.k)
         algoParser.add_argument("--kmax", type=int, help="Max number of Krylov/Lanczos vectors for PROPACK/ARPACK (default: %(default)s)", default=defaultAlgoArgs.kmax)
         algoParser.add_argument("--svdAlg", type=str, help="Algorithm to compute SVD for each iteration of soft impute (default: %(default)s)", default=defaultAlgoArgs.svdAlg)
+        algoParser.add_argument("--modelSelect", type=bool, help="Weather to do model selection on the 1st iteration (default: %(default)s)", default=defaultAlgoArgs.modelSelect)
         return(algoParser)
     
     # update current algoArgs with values from user and then from command line
@@ -142,7 +140,7 @@ class RecommendExpHelper(object):
             logging.debug("Largest singular value : " + str(s[0]))
             
             
-            if self.modelSelect: 
+            if self.defaultAlgoArgs.modelSelect: 
                 #Let's find the optimal lambda using the first matrix 
                 logging.debug("Performing model selection")
                 cvInds = Sampling.randCrossValidation(self.defaultAlgoArgs.folds, X.nnz)
