@@ -2,9 +2,12 @@ import logging
 import unittest
 import numpy
 import scipy.sparse 
-from apgl.util.MCEvaluator import MCEvaluator
+from exp.util.MCEvaluator import MCEvaluator
 
 class  MCEvaluatorTest(unittest.TestCase):
+    def setUp(self): 
+        numpy.random.seed(21)
+    
     def testMeanSqError(self): 
         numExamples = 10
         testX = scipy.sparse.rand(numExamples, numExamples)
