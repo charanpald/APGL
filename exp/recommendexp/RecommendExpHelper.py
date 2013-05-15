@@ -120,6 +120,7 @@ class RecommendExpHelper(object):
 
         measures = numpy.array(measures)
         
+        logging.debug(measures)
         numpy.savez(fileName, measures)
         logging.debug("Saved file as " + fileName)
 
