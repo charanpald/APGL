@@ -22,7 +22,7 @@ numpy.seterr("raise", under="ignore")
 
 # Arguments related to the dataset
 dataArgs = argparse.Namespace()
-dataArgs.maxIter = 20 
+dataArgs.maxIter = 40 
 
 # Arguments related to the algorithm
 defaultAlgoArgs = argparse.Namespace()
