@@ -156,6 +156,17 @@ class IterativeSoftImputeTest(unittest.TestCase):
         #Test on an increasing then decreasing set of solutions 
         pass 
 
+    def testPostProcess(self): 
+        lmbda = 0.0 
+        eps = 0.1 
+        k = 20
+        
+        matrixIterator = iter(self.matrixList)
+        iterativeSoftImpute = IterativeSoftImpute(lmbda, k=k, eps=eps, svdAlg="rsvd", postProcess=True)
+        ZList = iterativeSoftImpute.learnModel(matrixIterator)
+        
+        Z = ZList.next() 
+
     #@unittest.skip("")
     def testPredict(self): 
         #Create a set of indices 

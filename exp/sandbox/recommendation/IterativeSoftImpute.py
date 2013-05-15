@@ -15,7 +15,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
     """
     Given a set of matrices X_1, ..., X_T find the completed matrices.
     """
-    def __init__(self, lmbda=0.1, eps=0.1, k=None, svdAlg="propack", updateAlg="initial", r=10, logStep=10, kmax=None):
+    def __init__(self, lmbda=0.1, eps=0.1, k=None, svdAlg="propack", updateAlg="initial", r=10, logStep=10, kmax=None, postProcess=False):
         """
         Initialise imputing algorithm with given parameters. The lmbda is a value
         for use with the soft thresholded SVD. Eps is the convergence threshold and
@@ -47,6 +47,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         else:
             self.kmax = None
         self.logStep = logStep
+        self.postProcess = postProcess 
 
     def learnModel(self, XIterator, lmbdas=None):
         """
@@ -154,6 +155,9 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                     logging.debug("Iteration " + str(i) + " gamma="+str(gamma))
                     i += 1
 
+                if self.iterativeSoftImpute.postProcess: 
+                    newU, newS, newV = self.iterativeSoftImpute.unshrink(X, newU, newV)    
+
                 logging.debug("Number of iterations for lambda="+str(self.iterativeSoftImpute.lmbda) + ": " + str(i))
 
                 self.j += 1
@@ -230,6 +234,30 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         meanErrors = errors.mean(1)
 
         return meanErrors
+
+    def unshrink(self, X, U, V): 
+        """
+        Perform post-processing on a factorisation of a matrix X use factor 
+        vectors U and V. 
+        """
+        
+        a = X.data 
+        B = numpy.zeros((X.data.shape[0], U.shape[1])) 
+            
+        rowInds, colInds = X.nonzero()
+        rowInds = numpy.array(rowInds, numpy.int)
+        colInds = numpy.array(colInds, numpy.int)
+        s = numpy.ones(U.shape[1])        
+        
+        #Populate B 
+        for i in range(U.shape[1]): 
+            #rewrite for 1d arrays
+            B[:, i] = SparseUtilsCython.partialReconstructVals(rowInds, colInds, numpy.array([U[:, i]]), numpy.array(s[i]), numpy.array[V[:, i])
+        
+        print(B)
+        s = numpy.linalg.inv(B.T.dot(B)).dot(B).dot(a)
+        
+        return s 
 
     def setK(self, k):
         #Parameter.checkInt(k, 1, float('inf'))

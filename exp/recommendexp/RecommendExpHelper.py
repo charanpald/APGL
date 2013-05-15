@@ -17,12 +17,13 @@ from apgl.util.Sampling import Sampling
 class RecommendExpHelper(object):
     defaultAlgoArgs = argparse.Namespace()
     defaultAlgoArgs.runSoftImpute = False
-    defaultAlgoArgs.rhos = numpy.linspace(0.1, 0.001, 10)     
+    defaultAlgoArgs.rhos = numpy.linspace(0.01, 0.0, 10)     
     defaultAlgoArgs.folds = 3
     defaultAlgoArgs.k = 200
     defaultAlgoArgs.kmax = None 
     defaultAlgoArgs.svdAlg = "propack"
-    defaultAlgoArgs.modelSelect = False
+    defaultAlgoArgs.modelSelect = True
+    defaultAlgoArgs.postProcess = True 
     
     def __init__(self, trainXIteratorFunc, testXIteratorFunc, cmdLine=None, defaultAlgoArgs = None, dirName=""):
         """ priority for default args
@@ -104,17 +105,21 @@ class RecommendExpHelper(object):
         """
         Save results for a particular recommendation 
         """
+        trainIterator = self.trainXIteratorFunc()
         testIterator = self.testXIteratorFunc()
         measures = []
         logging.debug("Computing recommendation errors")
 
         for Z in ZIter:
-            #Util.printIteration(i, self.logStep, len(clusterList))
+            trainX = next(trainIterator)
             testX = next(testIterator)
             
             U, s, V = Z 
-            predX = SparseUtils.reconstructLowRank(U, s, V, testX.nonzero())
-            currentMeasures = [MCEvaluator.meanSqError(testX, predX), MCEvaluator.rootMeanSqError(testX, predX)] 
+            predTrainX = SparseUtils.reconstructLowRank(U, s, V, trainX.nonzero())
+            predTestX = SparseUtils.reconstructLowRank(U, s, V, testX.nonzero())
+            
+            currentMeasures = [MCEvaluator.rootMeanSqError(trainX, predTrainX)] 
+            currentMeasures.extend([MCEvaluator.rootMeanSqError(testX, predTestX)]) 
             logging.debug("Error measures: " + str(currentMeasures))
             measures.append(currentMeasures) 
 
@@ -130,7 +135,7 @@ class RecommendExpHelper(object):
         """
         if self.algoArgs.runSoftImpute:
             logging.debug("Running soft impute")
-            learner = IterativeSoftImpute(k=self.algoArgs.k, svdAlg=self.algoArgs.svdAlg, logStep=self.logStep, kmax=self.algoArgs.kmax)
+            learner = IterativeSoftImpute(k=self.algoArgs.k, svdAlg=self.algoArgs.svdAlg, logStep=self.logStep, kmax=self.algoArgs.kmax, postProcess=self.algoArgs.postProcess)
             trainIterator = self.trainXIteratorFunc()
             
             #First find the largest singular value to compute lambdas 
