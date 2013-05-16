@@ -156,7 +156,10 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                     i += 1
 
                 if self.iterativeSoftImpute.postProcess: 
-                    newU, newS, newV = self.iterativeSoftImpute.unshrink(X, newU, newV)    
+                    #Add the mean vectors 
+                    newU = numpy.c_[newU, numpy.array(X.mean(1)).ravel()]
+                    newV = numpy.c_[newV, numpy.array(X.mean(0)).ravel()]
+                    newS = self.iterativeSoftImpute.unshrink(X, newU, newV)    
 
                 logging.debug("Number of iterations for lambda="+str(self.iterativeSoftImpute.lmbda) + ": " + str(i))
 
@@ -240,22 +243,19 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         Perform post-processing on a factorisation of a matrix X use factor 
         vectors U and V. 
         """
-        
+        logging.debug("Post processing singular values")
         a = X.data 
         B = numpy.zeros((X.data.shape[0], U.shape[1])) 
             
         rowInds, colInds = X.nonzero()
         rowInds = numpy.array(rowInds, numpy.int)
-        colInds = numpy.array(colInds, numpy.int)
-        s = numpy.ones(U.shape[1])        
+        colInds = numpy.array(colInds, numpy.int)  
         
         #Populate B 
         for i in range(U.shape[1]): 
-            #rewrite for 1d arrays
-            B[:, i] = SparseUtilsCython.partialReconstructVals(rowInds, colInds, numpy.array([U[:, i]]), numpy.array(s[i]), numpy.array[V[:, i])
+            B[:, i] = SparseUtilsCython.partialOuterProduct(rowInds, colInds, U[:, i], V[:, i])
         
-        print(B)
-        s = numpy.linalg.inv(B.T.dot(B)).dot(B).dot(a)
+        s = numpy.linalg.pinv(B.T.dot(B)).dot(B.T).dot(a)
         
         return s 
 
