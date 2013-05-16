@@ -11,13 +11,26 @@ class  GenerateToyDataTest(unittest.TestCase):
         pass 
 
     #@unittest.skip("")
-    def testGetTrainIteratorFunc(self):
-        dataset = NetflixDataset()
+    def testIteratorFunc(self):
+        iterStartDate = datetime(2005,12,31)
+        dataset = NetflixDataset(iterStartDate=iterStartDate)
         #iterator = dataset.getTrainIteratorFunc()
-        iterator = dataset.getTrainIteratorFunc()
+        trainIterator = dataset.getTrainIteratorFunc()
+        testIterator = dataset.getTestIteratorFunc()
+        
+        trainX = trainIterator.next() 
+        testX = testIterator.next()
+        self.assertEquals(trainX.shape, testX.shape)
+        self.assertEquals(trainX.nnz + testX.nnz, dataset.numRatings)
+        
+        try: 
+            trainIterator.next()
+            self.fail()
+        except StopIteration: 
+            pass 
       
     #@unittest.skip("")
-    def testGetTestIteratorFunc(self):
+    def testIteratorFunc2(self):
         dataset = NetflixDataset()
 
         trainIterator = dataset.getTrainIteratorFunc()        
