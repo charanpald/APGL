@@ -11,64 +11,9 @@ from datetime import datetime, timedelta
 from exp.util.SparseUtils import SparseUtils 
 from apgl.util.PathDefaults import PathDefaults 
 from apgl.util.Util import Util 
+from exp.recommendexp.TimeStamptedIterator import TimeStamptedIterator
 
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-
-
-class NetflixIterator(object): 
-    def __init__(self, netflixDataset, isTraining): 
-        """
-        Initialise this iterator with a NetflixDataset object and indicate whether 
-        we want the training or test set. 
-        """
-        self.currentDate = netflixDataset.iterStartDate
-        self.timeDelta = timedelta(netflixDataset.timeStep)
-        self.netflixDataset = netflixDataset
-        
-        self.i = 0
-        self.maxIter = netflixDataset.maxIter 
-        self.isTraining = isTraining 
-        
-    def next(self):
-        if self.currentDate >= self.netflixDataset.endDate + self.timeDelta or self.i==self.maxIter: 
-            logging.debug("Final iteration: " + str(self.i))
-            raise StopIteration
-            
-        logging.debug("Current date: " + str(self.currentDate)) 
-        
-        timeInt = int((self.currentDate-self.netflixDataset.startDate).total_seconds())  
-        #Find all ratings before and including current date 
-        ind = numpy.searchsorted(self.netflixDataset.sortedDates, timeInt, side="right")
-        
-        currentIsTrainRatings = self.netflixDataset.isTrainRating[self.netflixDataset.dateInds[0:ind]] 
-        currentRatings = self.netflixDataset.ratings[self.netflixDataset.dateInds[0:ind]]
-        currentInds = self.netflixDataset.trainInds[:, self.netflixDataset.dateInds[0:ind]]
-        
-        if self.isTraining: 
-            currentRatings[numpy.logical_not(currentIsTrainRatings)] = 0 
-        else: 
-            currentRatings[currentIsTrainRatings] = 0 
-        
-        X = scipy.sparse.csc_matrix((currentRatings, currentInds), dtype=self.netflixDataset.ratings.dtype)      
-        X.eliminate_zeros()
-        X.prune()
-        
-        del currentRatings
-        del currentInds
-        gc.collect()
-        
-        if self.isTraining: 
-            assert X.nnz  == currentIsTrainRatings.sum() 
-        else: 
-            assert X.nnz  == numpy.logical_not(currentIsTrainRatings).sum() 
-          
-        self.currentDate += self.timeDelta
-        self.i += 1
-
-        return X
-
-    def __iter__(self):
-        return self    
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)  
 
 class NetflixDataset(object): 
     def __init__(self, maxIter=None, iterStartDate=None): 
@@ -274,10 +219,10 @@ class NetflixDataset(object):
         gc.collect()
            
     def getTrainIteratorFunc(self): 
-        return NetflixIterator(self, True)
+        return TimeStamptedIterator(self, True)
                 
     def getTestIteratorFunc(self): 
-        return NetflixIterator(self, False)           
+        return TimeStamptedIterator(self, False)           
               
 
 
