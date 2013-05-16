@@ -21,7 +21,7 @@ class NetflixIterator(object):
         Initialise this iterator with a NetflixDataset object and indicate whether 
         we want the training or test set. 
         """
-        self.currentDate = datetime(2001,1,1)
+        self.currentDate = netflixDataset.iterStartDate
         self.timeDelta = timedelta(netflixDataset.timeStep)
         self.netflixDataset = netflixDataset
         
@@ -30,14 +30,15 @@ class NetflixIterator(object):
         self.isTraining = isTraining 
         
     def next(self):
-        if self.currentDate > self.netflixDataset.endDate + self.timeDelta or self.i==self.maxIter: 
+        if self.currentDate >= self.netflixDataset.endDate + self.timeDelta or self.i==self.maxIter: 
             logging.debug("Final iteration: " + str(self.i))
             raise StopIteration
             
         logging.debug("Current date: " + str(self.currentDate)) 
         
-        timeInt = int((self.currentDate-self.netflixDataset.startDate).total_seconds())    
-        ind = numpy.searchsorted(self.netflixDataset.sortedDates, timeInt)
+        timeInt = int((self.currentDate-self.netflixDataset.startDate).total_seconds())  
+        #Find all ratings before and including current date 
+        ind = numpy.searchsorted(self.netflixDataset.sortedDates, timeInt, side="right")
         
         currentIsTrainRatings = self.netflixDataset.isTrainRating[self.netflixDataset.dateInds[0:ind]] 
         currentRatings = self.netflixDataset.ratings[self.netflixDataset.dateInds[0:ind]]
@@ -70,14 +71,22 @@ class NetflixIterator(object):
         return self    
 
 class NetflixDataset(object): 
-    def __init__(self, maxIter=None): 
+    def __init__(self, maxIter=None, iterStartDate=None): 
         """
         Return a training and test set for netflix based on the time each 
         rating was made. There are 62 iterations. 
         """ 
         self.timeStep = 30 
+        
+        #startDate is used to convert dates into ints 
         self.startDate = datetime(1998,1,1)
         self.endDate = datetime(2005,12,31)
+        
+        #iterStartDate is the starting date of the iterator 
+        if iterStartDate != None: 
+            self.iterStartDate = iterStartDate
+        else: 
+            self.iterStartDate = datetime(2001,1,1)
         
         self.startMovieID = 1 
         self.endMovieID = 17770
