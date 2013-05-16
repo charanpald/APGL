@@ -245,7 +245,7 @@ class IterativeSoftImputeTest(unittest.TestCase):
         
         meanTestErrors2 = testErrors.mean(1)   
         meanTrainErrors2 = trainErrors.mean(1)  
-        nptst.assert_array_almost_equal(meanTestErrors, meanTestErrors2, 3) 
+        nptst.assert_array_almost_equal(meanTestErrors, meanTestErrors2, 2) 
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
