@@ -245,17 +245,16 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         vectors U and V. 
         """
         logging.debug("Post processing singular values")
+               
         #Fix for versions of numpy < 1.7 
-        try: 
-            a = numpy.random.choice(X.data, numpy.min([self.postProcessSamples, X.data.shape[0]]), replace=False)  
-        except: 
-            a = X.data[numpy.random.randint(0, X.data.shape[0], numpy.min([self.postProcessSamples, X.data.shape[0]]))]
+        inds = numpy.unique(numpy.random.randint(0, X.data.shape[0], numpy.min([self.postProcessSamples, X.data.shape[0]]))) 
+        a = X.data[inds]
             
         B = numpy.zeros((a.shape[0], U.shape[1])) 
             
-        rowInds, colInds = X.nonzero()
-        rowInds = numpy.array(rowInds, numpy.int)
-        colInds = numpy.array(colInds, numpy.int)  
+        rowInds, colInds = X.nonzero() 
+        rowInds = numpy.array(rowInds[inds], numpy.int)
+        colInds = numpy.array(colInds[inds], numpy.int)  
         
         #Populate B 
         for i in range(U.shape[1]): 

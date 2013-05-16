@@ -166,6 +166,12 @@ class IterativeSoftImputeTest(unittest.TestCase):
         ZList = iterativeSoftImpute.learnModel(matrixIterator)
         
         Z = ZList.next() 
+        
+        #Try case with iterativeSoftImpute.postProcessSamples < X.nnz 
+        iterativeSoftImpute.postProcessSamples = int(self.matrixList[0].nnz/2)
+        
+        ZList = iterativeSoftImpute.learnModel(matrixIterator)
+        Z = ZList.next() 
 
     #@unittest.skip("")
     def testPredict(self): 
