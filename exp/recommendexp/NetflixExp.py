@@ -8,6 +8,7 @@ import errno
 import logging
 import numpy
 import argparse
+from datetime import datetime
 from exp.recommendexp.RecommendExpHelper import RecommendExpHelper
 from exp.recommendexp.NetflixDataset import NetflixDataset
 
@@ -51,7 +52,9 @@ for key in keys:
     logging.info("    " + str(key) + ": " + str(dataArgs.__getattribute__(key)))
 
 # data
-generator = NetflixDataset(maxIter=dataArgs.maxIter)
+#Set iterStartDate to None for all iterations 
+iterStartDate = datetime(2005,12,31)
+generator = NetflixDataset(maxIter=dataArgs.maxIter, iterStartDate=iterStartDate)
 
 # run
 logging.info("Creating the exp-runner")
