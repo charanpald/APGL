@@ -22,7 +22,7 @@ class RecommendExpHelper(object):
     defaultAlgoArgs.k = 200
     defaultAlgoArgs.kmax = None 
     defaultAlgoArgs.svdAlg = "propack"
-    defaultAlgoArgs.modelSelect = True
+    defaultAlgoArgs.modelSelect = False
     defaultAlgoArgs.postProcess = True 
     
     def __init__(self, trainXIteratorFunc, testXIteratorFunc, cmdLine=None, defaultAlgoArgs = None, dirName=""):
@@ -41,8 +41,6 @@ class RecommendExpHelper(object):
         
         #How often to print output 
         self.logStep = 10
-        
-        self.defaultRho = 0.05
 
         # basic resultsDir
         self.resultsDir = PathDefaults.getOutputDir() + "recommend/" + dirName + "/"
@@ -73,11 +71,11 @@ class RecommendExpHelper(object):
         algoParser = argparse.ArgumentParser(description="", add_help=add_help)
         for method in ["runSoftImpute"]:
             algoParser.add_argument("--" + method, action="store_true", default=defaultAlgoArgs.__getattribute__(method))
-        algoParser.add_argument("--rhos", type=float, help="Regularisation parameter (default: %(default)s)", default=defaultAlgoArgs.rhos)
+        algoParser.add_argument("--rhos", type=float, nargs="+", help="Regularisation parameter (default: %(default)s)", default=defaultAlgoArgs.rhos)
         algoParser.add_argument("--k", type=int, help="Max number of singular values/vectors (default: %(default)s)", default=defaultAlgoArgs.k)
         algoParser.add_argument("--kmax", type=int, help="Max number of Krylov/Lanczos vectors for PROPACK/ARPACK (default: %(default)s)", default=defaultAlgoArgs.kmax)
         algoParser.add_argument("--svdAlg", type=str, help="Algorithm to compute SVD for each iteration of soft impute (default: %(default)s)", default=defaultAlgoArgs.svdAlg)
-        algoParser.add_argument("--modelSelect", type=bool, help="Weather to do model selection on the 1st iteration (default: %(default)s)", default=defaultAlgoArgs.modelSelect)
+        algoParser.add_argument("--modelSelect", action="store_true", help="Weather to do model selection on the 1st iteration (default: %(default)s)", default=defaultAlgoArgs.modelSelect)
         return(algoParser)
     
     # update current algoArgs with values from user and then from command line
@@ -142,7 +140,7 @@ class RecommendExpHelper(object):
             X = trainIterator.next() 
             X = scipy.sparse.csc_matrix(X, dtype=numpy.float)
             U, s, V = SparseUtils.svdArpack(X, 1, kmax=20)
-            self.lmbdas = s[0]*self.defaultAlgoArgs.rhos
+            self.lmbdas = s[0]*self.algoArgs.rhos
             logging.debug("Largest singular value : " + str(s[0]))
             
             
@@ -155,7 +153,7 @@ class RecommendExpHelper(object):
                 logging.debug("Errors = " + str(errors))
                 lmbda = self.lmbdas[numpy.argmin(errors)]
             else: 
-                lmbda = self.defaultRho*s[0]
+                lmbda = self.algoArgs.rhos[0]*s[0]
                 
             learner.setLambda(lmbda)            
             logging.debug("Training with lambda = " + str(lmbda))

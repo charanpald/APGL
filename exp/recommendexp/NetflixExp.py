@@ -24,6 +24,8 @@ numpy.seterr("raise", under="ignore")
 # Arguments related to the dataset
 dataArgs = argparse.Namespace()
 dataArgs.maxIter = 40 
+#Set iterStartDate to None for all iterations 
+dataArgs.iterStartDate = datetime(2005,12,31)
 
 # Arguments related to the algorithm
 defaultAlgoArgs = argparse.Namespace()
@@ -52,9 +54,7 @@ for key in keys:
     logging.info("    " + str(key) + ": " + str(dataArgs.__getattribute__(key)))
 
 # data
-#Set iterStartDate to None for all iterations 
-iterStartDate = datetime(2005,12,31)
-generator = NetflixDataset(maxIter=dataArgs.maxIter, iterStartDate=iterStartDate)
+generator = NetflixDataset(maxIter=dataArgs.maxIter, iterStartDate=dataArgs.iterStartDate)
 
 # run
 logging.info("Creating the exp-runner")
