@@ -48,6 +48,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
             self.kmax = None
         self.logStep = logStep
         self.postProcess = postProcess 
+        self.postProcessSamples = 10**5
 
     def learnModel(self, XIterator, lmbdas=None):
         """
@@ -244,8 +245,8 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         vectors U and V. 
         """
         logging.debug("Post processing singular values")
-        a = X.data 
-        B = numpy.zeros((X.data.shape[0], U.shape[1])) 
+        a = numpy.random.choice(X.data, numpy.min([self.postProcessSamples, X.data.shape[0]]), replace=False)  
+        B = numpy.zeros((a.shape[0], U.shape[1])) 
             
         rowInds, colInds = X.nonzero()
         rowInds = numpy.array(rowInds, numpy.int)
