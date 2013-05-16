@@ -30,6 +30,25 @@ class SparseUtilsCython(object):
             
         return values
         
+    @staticmethod
+    def partialOuterProduct(numpy.ndarray[numpy.long_t, ndim=1] rowInds, numpy.ndarray[numpy.long_t, ndim=1] colInds, numpy.ndarray[numpy.float_t, ndim=1] u, numpy.ndarray[numpy.float_t, ndim=1] v):
+        """
+        Given an array of unique indices omega, partially reconstruct a matrix 
+        using two vectors u and v 
+        """ 
+        cdef unsigned int i
+        cdef unsigned int j 
+        cdef unsigned int k
+        cdef numpy.ndarray[numpy.float_t, ndim=1, mode="c"] values = numpy.zeros(rowInds.shape[0], numpy.float)
+        
+        for i in range(rowInds.shape[0]):
+            j = rowInds[i]
+            k = colInds[i]
+            
+            values[i] = u[j]*v[k]            
+            
+        return values    
+        
     @staticmethod 
     def partialReconstruct(omega, U, s, V): 
         """
