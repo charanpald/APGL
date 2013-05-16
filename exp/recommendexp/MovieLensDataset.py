@@ -16,45 +16,37 @@ from exp.recommendexp.TimeStamptedIterator import TimeStamptedIterator
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)  
 
 class MovieLensDataset(object): 
-    def __init__(self, maxIter=None, iterStartDate=None): 
+    def __init__(self, maxIter=None, iterStartTimeStamp=None): 
         """
         Return a training and test set for movielens based on the time each 
         rating was made. 
         """ 
         self.timeStep = 30 
         
-        #startDate is used to convert dates into ints 
-        self.startDate = datetime(1998,1,1)
-        self.endDate = datetime(2005,12,31)
-        
         #iterStartDate is the starting date of the iterator 
-        if iterStartDate != None: 
-            self.iterStartDate = iterStartDate
+        if iterStartTimeStamp != None: 
+            self.iterStartTimeStamp = iterStartTimeStamp
         else: 
-            self.iterStartDate = datetime(2001,1,1)
-        
-        self.startMovieID = 1 
-        self.endMovieID = 17770
-        
+            self.iterStartTimeStamp = datetime(1970, 1, 1).total_seconds()
+         
         self.numMovies = 10681
         self.numRatings = 10000054
         self.numCustomers = 71567
         
-        outputDir = PathDefaults.getOutputDir() + "recommend/netflix/"
+        outputDir = PathDefaults.getOutputDir() + "recommend/movielens/"
 
         if not os.path.exists(outputDir): 
             os.mkdir(outputDir)
                 
         self.ratingFileName = outputDir + "data.npz"  
-        self.custDictFileName = outputDir + "custIdDict.pkl"
-        self.probeFileName = PathDefaults.getDataDir() + "netflix/probe.txt"    
-        self.testRatingsFileName = outputDir + "test_data.npz"
+        self.custDictFileName = outputDir + "custIdDict.pkl"   
+        self.movieDictFileName = outputDir + "movieIdDict.pkl" 
         self.isTrainRatingsFileName = outputDir + "is_train.npz"
         
         self.maxIter = maxIter 
+        self.trainSplit = 4.0/5 
 
         self.processRatings()
-        #self.processProbe()
         self.splitDataset()        
         self.loadProcessedData()
         
@@ -67,116 +59,76 @@ class MovieLensDataset(object):
         access. 
         """
         if not os.path.exists(self.ratingFileName) or not os.path.exists(self.custDictFileName): 
-            dataDir = PathDefaults.getDataDir() + "netflix/training_set/"
+            dataDir = PathDefaults.getDataDir() + "movielens/"
 
             logging.debug("Processing ratings given in " + dataDir)
 
             custIdDict = {} 
-            custIdSet = set([])        
+            custIdSet = set([])    
             
-            movieIds = array.array("I")
-            custIds = array.array("I")
-            ratings = array.array("B")
+            movieIdDict = {} 
+            movieIdSet = set([])
+            
+            movieInds = array.array("I")
+            custInds = array.array("I")
+            ratings = array.array("f")
             dates = array.array("L")
+            i = 0            
             j = 0
             
-            for i in range(self.startMovieID, self.endMovieID+1): 
-                Util.printIteration(i-1, 1, self.endMovieID-1)
-                ratingsFile = open(dataDir + "mv_" + str(i).zfill(7) + ".txt")
-                ratingsFile.readline()
+            itr = 0 
+            ratingsFile = open(dataDir + "ratings.dat")
+            
+            for line in ratingsFile: 
+                Util.printIteration(itr, 100000, self.numRatings)
+                vals = line.split("::")
                 
-                for line in ratingsFile: 
-                    vals = line.split(",")
-                    
-                    custId = int(vals[0])
-                    
-                    if custId not in custIdSet: 
-                        custIdSet.add(custId)
-                        custIdDict[custId] = j
-                        custInd = j 
-                        j += 1 
-                    else: 
-                        custInd = custIdDict[custId]
-                    
-                    rating = int(vals[1])     
-                    t = datetime.strptime(vals[2].strip(), "%Y-%m-%d")
+                custId = int(vals[0])
                 
-                    movieIds.append(i-1)
-                    custIds.append(custInd)   
-                    ratings.append(rating)
-                    dates.append(int((t-self.startDate).total_seconds()))
+                if custId not in custIdSet: 
+                    custIdSet.add(custId)
+                    custIdDict[custId] = j
+                    custInd = j 
+                    j += 1 
+                else: 
+                    custInd = custIdDict[custId]
                     
-            movieIds = numpy.array(movieIds, numpy.uint32)
-            custIds = numpy.array(custIds, numpy.uint32)
-            ratings = numpy.array(ratings, numpy.uint8)
+                movieId = int(vals[1])
+                
+                if movieId not in movieIdSet: 
+                    movieIdSet.add(movieId)
+                    movieIdDict[movieId] = i
+                    movieInd = i 
+                    i += 1 
+                else: 
+                    movieInd = movieIdDict[movieId]
+                    
+                rating = float(vals[2])     
+                time = int(vals[3])
+            
+                movieInds.append(movieInd)
+                custInds.append(custInd)   
+                ratings.append(rating)
+                dates.append(time)
+                itr += 1 
+                    
+            movieInds = numpy.array(movieInds, numpy.uint32)
+            custInds = numpy.array(custInds, numpy.uint32)
+            ratings = numpy.array(ratings, numpy.float)
             dates = numpy.array(dates, numpy.uint32)
             
             assert ratings.shape[0] == self.numRatings            
             
-            numpy.savez(self.ratingFileName, movieIds, custIds, ratings, dates) 
+            numpy.savez(self.ratingFileName, movieInds, custInds, ratings, dates) 
             logging.debug("Saved ratings file as " + self.ratingFileName)
             
             pickle.dump(custIdDict, open(self.custDictFileName, 'wb'))
             logging.debug("Saved custIdDict as " + self.custDictFileName)
+            
+            pickle.dump(movieIdDict, open(self.movieDictFileName, 'wb'))
+            logging.debug("Saved movieIdDict as " + self.movieDictFileName)
         else: 
             logging.debug("Ratings file " + str(self.ratingFileName) + " already processed")
-
-    def processProbe(self): 
-        """
-        Go through the probe set and label the corresponding ratings in the full 
-        dataset as test. 
-        """
-        if not os.path.exists(self.isTrainRatingsFileName):
-            custIdDict = pickle.load(open(self.custDictFileName))             
-            dataArr = numpy.load(self.ratingFileName)
-            movieInds, custInds, ratings, dates = dataArr["arr_0"], dataArr["arr_1"], dataArr["arr_2"], dataArr["arr_3"]
-            logging.debug("Number of ratings: " + str(ratings.shape[0]+1))            
-            del ratings, dates 
-            logging.debug("Training data loaded")
-            
-            isTrainRating = numpy.ones(movieInds.shape[0], numpy.bool)
-            probeFile = open(self.probeFileName)
-            i = 0 
-            
-            #First figure out the movie boundaries 
-            movieBoundaries = numpy.nonzero(numpy.diff(movieInds) != 0)[0] + 1
-            movieBoundaries = numpy.insert(movieBoundaries, 0, 0)
-            movieBoundaries = numpy.append(movieBoundaries, movieInds.shape[0])
-            
-            assert movieBoundaries.shape[0] == self.numMovies+1 
-            assert movieBoundaries[-1] == movieInds.shape[0]
-            
-            for line in probeFile: 
-                if line.find(":") != -1: 
-                    Util.printIteration(i, 10, self.numProbeMovies)
-                    movieId = line[0:-2]
-                    movieInd = int(movieId)-1
-                
-                    startInd = movieBoundaries[movieInd] 
-                    endInd = movieBoundaries[movieInd+1] 
-                    #All the customers that watches movie movieInd
-                    tempCustInds = custInds[startInd:endInd]
-                    sortedInds = numpy.argsort(tempCustInds)
-                    
-                    assert (movieInds[startInd:endInd] == movieInd).all()
-                    
-                    i += 1
-                else: 
-                    custId = int(line.strip())
-                    custInd = custIdDict[custId]
-
-                    offset = numpy.searchsorted(tempCustInds[sortedInds], custInd)
-                    isTrainRating[startInd + sortedInds[offset]] = 0 
-                    
-                    assert custInds[startInd + sortedInds[offset]] == custInd
-               
-            assert i == self.numProbeMovies 
-            assert numpy.logical_not(isTrainRating).sum() == self.numProbeRatings               
-               
-            numpy.savez(self.isTrainRatingsFileName, isTrainRating) 
-            logging.debug("Saved file as " + self.isTrainRatingsFileName)
-        else: 
-            logging.debug("Train/test indicators file " + str(self.isTrainRatingsFileName) + " already processed")
     
     def splitDataset(self): 
         """
@@ -186,12 +138,12 @@ class MovieLensDataset(object):
             custIdDict = pickle.load(open(self.custDictFileName))             
             dataArr = numpy.load(self.ratingFileName)
             movieInds, custInds, ratings, dates = dataArr["arr_0"], dataArr["arr_1"], dataArr["arr_2"], dataArr["arr_3"]
-            logging.debug("Number of ratings: " + str(ratings.shape[0]+1))            
+            logging.debug("Number of ratings: " + str(ratings.shape[0]))            
             del ratings, dates 
             logging.debug("Training data loaded")
             
-            trainSplit = 4.0/5            
-            isTrainRating = numpy.array(numpy.random.rand(movieInds.shape[0]) <= trainSplit, numpy.bool)
+                       
+            isTrainRating = numpy.array(numpy.random.rand(movieInds.shape[0]) <= self.trainSplit, numpy.bool)
 
             numpy.savez(self.isTrainRatingsFileName, isTrainRating) 
             logging.debug("Saved file as " + self.isTrainRatingsFileName)
@@ -200,10 +152,10 @@ class MovieLensDataset(object):
         
     def loadProcessedData(self): 
         dataArr = numpy.load(self.ratingFileName)
-        movieIds, custIds, self.ratings, self.dates = dataArr["arr_0"], dataArr["arr_1"], dataArr["arr_2"], dataArr["arr_3"]
-        self.trainInds = numpy.c_[movieIds, custIds].T
-        del movieIds
-        del custIds
+        movieInds, custInds, self.ratings, self.dates = dataArr["arr_0"], dataArr["arr_1"], dataArr["arr_2"], dataArr["arr_3"]
+        self.trainInds = numpy.c_[movieInds, custInds].T
+        del movieInds
+        del custInds
         logging.debug("Training data loaded")
         logging.debug("Number of ratings: " + str(self.ratings.shape[0]+1))
         
@@ -223,4 +175,8 @@ class MovieLensDataset(object):
         return TimeStamptedIterator(self, False)           
               
 
+dataset = MovieLensDataset()
+iterator = dataset.getTrainIteratorFunc() 
 
+for X in iterator: 
+    print(X.nnz, X.shape)
