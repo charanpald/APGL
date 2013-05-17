@@ -75,6 +75,9 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
 
             def next(self):
                 X = self.XIterator.next()
+                
+                logging.debug("Learning on matrix with shape: " + str(X.shape) + " and " + str(X.nnz) + " non-zeros")                
+                
                 if self.lmbdas != None: 
                     self.iterativeSoftImpute.setLambda(self.lmbdas.next())
 
@@ -110,9 +113,9 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                     else:
                         raise ValueError("Unknown SVD update algorithm: " + self.updateAlg)
 
-                omega = X.nonzero()
-                rowInds = numpy.array(omega[0], numpy.int)
-                colInds = numpy.array(omega[1], numpy.int)
+                rowInds, colInds = X.nonzero()
+                rowInds = numpy.array(rowInds, numpy.int)
+                colInds = numpy.array(colInds, numpy.int)
 
                 gamma = self.iterativeSoftImpute.eps + 1
                 i = 0
@@ -165,7 +168,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                 logging.debug("Number of iterations for lambda="+str(self.iterativeSoftImpute.lmbda) + ": " + str(i))
 
                 self.j += 1
-                return (newU,newS,newV)
+                return (newU, newS, newV)
 
         return ZIterator(XIterator, self)
 
@@ -175,20 +178,28 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         an index list.
         """
         class ZTestIter(object):
-            def __init__(self):
+            def __init__(self, iterativeSoftImpute):
                 self.i = 0
+                self.iterativeSoftImpute = iterativeSoftImpute
 
             def __iter__(self):
                 return self
 
-            def next(self):
-                U, s, V = ZIter.next()
-                Xhat = ExpSU.SparseUtils.reconstructLowRank(U, s, V, indList[self.i])
+            def next(self):    
+                Xhat = self.iterativeSoftImpute.predictOne(ZIter.next(), indList[self.i])  
                 self.i += 1
+                return Xhat 
 
-                return Xhat
+        return ZTestIter(self)
 
-        return ZTestIter()
+    def predictOne(self, Z, inds): 
+        U, s, V = Z
+        
+        if type(inds) == tuple: 
+            logging.debug("Predicting on matrix with shape: " + str((U.shape[0], V.shape[0])) + " and " + str(inds[0].shape[0]) + " non-zeros")  
+        Xhat = ExpSU.SparseUtils.reconstructLowRank(U, s, V, inds)
+    
+        return Xhat
 
     def modelSelect(self, X, lmbdas, cvInds):
         """
