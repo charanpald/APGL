@@ -161,9 +161,13 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
 
                 if self.iterativeSoftImpute.postProcess: 
                     #Add the mean vectors 
+                    previousS = newS
                     newU = numpy.c_[newU, numpy.array(X.mean(1)).ravel()]
                     newV = numpy.c_[newV, numpy.array(X.mean(0)).ravel()]
-                    newS = self.iterativeSoftImpute.unshrink(X, newU, newV)    
+                    newS = self.iterativeSoftImpute.unshrink(X, newU, newV)  
+                    
+                    #print("Difference in s after postprocessing: " + str(numpy.linalg.norm(previousS - newS[0:-1]))) 
+                    logging.debug("Difference in s after postprocessing: " + str(numpy.linalg.norm(previousS - newS[0:-1]))) 
 
                 logging.debug("Number of iterations for lambda="+str(self.iterativeSoftImpute.lmbda) + ": " + str(i))
 
