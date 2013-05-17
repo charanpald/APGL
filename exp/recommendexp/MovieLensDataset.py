@@ -21,13 +21,13 @@ class MovieLensDataset(object):
         Return a training and test set for movielens based on the time each 
         rating was made. 
         """ 
-        self.timeStep = 30 
+        self.timeStep = timedelta(30).total_seconds() 
         
         #iterStartDate is the starting date of the iterator 
         if iterStartTimeStamp != None: 
             self.iterStartTimeStamp = iterStartTimeStamp
         else: 
-            self.iterStartTimeStamp = datetime(1970, 1, 1).total_seconds()
+            self.iterStartTimeStamp = 789652009
          
         self.numMovies = 10681
         self.numRatings = 10000054
@@ -135,6 +135,7 @@ class MovieLensDataset(object):
         We generate a random training and test sets based on a specified split. 
         """
         if not os.path.exists(self.isTrainRatingsFileName):
+            numpy.random.seed(21)
             custIdDict = pickle.load(open(self.custDictFileName))             
             dataArr = numpy.load(self.ratingFileName)
             movieInds, custInds, ratings, dates = dataArr["arr_0"], dataArr["arr_1"], dataArr["arr_2"], dataArr["arr_3"]
@@ -156,6 +157,8 @@ class MovieLensDataset(object):
         self.trainInds = numpy.c_[movieInds, custInds].T
         del movieInds
         del custInds
+        self.startTimeStamp = numpy.min(self.dates)
+        self.endTimeStamp = numpy.max(self.dates)
         logging.debug("Training data loaded")
         logging.debug("Number of ratings: " + str(self.ratings.shape[0]+1))
         
@@ -174,9 +177,3 @@ class MovieLensDataset(object):
     def getTestIteratorFunc(self): 
         return TimeStamptedIterator(self, False)           
               
-
-dataset = MovieLensDataset()
-iterator = dataset.getTrainIteratorFunc() 
-
-for X in iterator: 
-    print(X.nnz, X.shape)
