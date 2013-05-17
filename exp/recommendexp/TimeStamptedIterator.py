@@ -2,7 +2,7 @@ import numpy
 import gc 
 import logging 
 import scipy.sparse 
-from datetime import timedelta 
+from datetime import datetime  
 
 class TimeStamptedIterator(object): 
     def __init__(self, ratingDataset, isTraining): 
@@ -10,8 +10,8 @@ class TimeStamptedIterator(object):
         Initialise this iterator with a ratingDataset object and indicate whether 
         we want the training or test set. 
         """
-        self.currentDate = ratingDataset.iterStartDate
-        self.timeDelta = timedelta(ratingDataset.timeStep)
+        self.currentTimeStamp = ratingDataset.iterStartTimeStamp
+        self.timeDelta = ratingDataset.timeStep 
         self.ratingDataset = ratingDataset
         
         self.i = 0
@@ -19,15 +19,14 @@ class TimeStamptedIterator(object):
         self.isTraining = isTraining 
         
     def next(self):
-        if self.currentDate >= self.ratingDataset.endDate + self.timeDelta or self.i==self.maxIter: 
+        if self.currentTimeStamp >= self.ratingDataset.endTimeStamp + self.timeDelta or self.i==self.maxIter: 
             logging.debug("Final iteration: " + str(self.i))
             raise StopIteration
             
-        logging.debug("Current date: " + str(self.currentDate)) 
+        logging.debug("Current : " + str(datetime.utcfromtimestamp(self.currentTimeStamp))) 
         
-        timeInt = int((self.currentDate-self.ratingDataset.startDate).total_seconds())  
         #Find all ratings before and including current date 
-        ind = numpy.searchsorted(self.ratingDataset.sortedDates, timeInt, side="right")
+        ind = numpy.searchsorted(self.ratingDataset.sortedDates, self.currentTimeStamp, side="right")
         
         currentIsTrainRatings = self.ratingDataset.isTrainRating[self.ratingDataset.dateInds[0:ind]] 
         currentRatings = self.ratingDataset.ratings[self.ratingDataset.dateInds[0:ind]]
@@ -51,7 +50,7 @@ class TimeStamptedIterator(object):
         else: 
             assert X.nnz  == numpy.logical_not(currentIsTrainRatings).sum() 
           
-        self.currentDate += self.timeDelta
+        self.currentTimeStamp += self.timeDelta
         self.i += 1
 
         return X
