@@ -190,6 +190,9 @@ class IterativeSoftImputeTest(unittest.TestCase):
             
             self.assertEquals(Xhat.nnz, self.indsList[i].shape[0])
             
+            self.assertAlmostEquals(MCEvaluator.meanSqError(Xhat, self.matrixList[i]), 0)
+            self.assertAlmostEquals(MCEvaluator.rootMeanSqError(Xhat, self.matrixList[i]), 0)
+            
         #Try moderate lambda 
         lmbda = 0.1 
         iterativeSoftImpute = IterativeSoftImpute(lmbda, k=10)
