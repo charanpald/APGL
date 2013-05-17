@@ -22,7 +22,7 @@ class NetflixDataset(object):
         Return a training and test set for netflix based on the time each 
         rating was made. There are 62 iterations. 
         """ 
-        self.timeStep = 30 
+        self.timeStep = timedelta(30).total_seconds()  
         
         #startDate is used to convert dates into ints 
         #self.startDate = datetime(1998,1,1)
