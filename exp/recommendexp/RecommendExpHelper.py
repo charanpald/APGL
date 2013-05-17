@@ -11,19 +11,21 @@ from apgl.util.PathDefaults import PathDefaults
 from apgl.util import Util
 from exp.util.MCEvaluator import MCEvaluator 
 from exp.sandbox.recommendation.IterativeSoftImpute import IterativeSoftImpute 
+from exp.sandbox.recommendation.IterativeMeanRating import IterativeMeanRating 
 from exp.util.SparseUtils import SparseUtils 
 from apgl.util.Sampling import Sampling 
 
 class RecommendExpHelper(object):
     defaultAlgoArgs = argparse.Namespace()
     defaultAlgoArgs.runSoftImpute = False
+    defaultAlgoArgs.runMean = False
     defaultAlgoArgs.rhos = numpy.linspace(0.01, 0.0, 10)     
     defaultAlgoArgs.folds = 3
     defaultAlgoArgs.k = 200
     defaultAlgoArgs.kmax = None 
     defaultAlgoArgs.svdAlg = "propack"
     defaultAlgoArgs.modelSelect = False
-    defaultAlgoArgs.postProcess = True 
+    defaultAlgoArgs.postProcess = False 
     
     def __init__(self, trainXIteratorFunc, testXIteratorFunc, cmdLine=None, defaultAlgoArgs = None, dirName=""):
         """ priority for default args
@@ -69,13 +71,14 @@ class RecommendExpHelper(object):
         
         # define parser
         algoParser = argparse.ArgumentParser(description="", add_help=add_help)
-        for method in ["runSoftImpute"]:
+        for method in ["runSoftImpute", "runMean"]:
             algoParser.add_argument("--" + method, action="store_true", default=defaultAlgoArgs.__getattribute__(method))
         algoParser.add_argument("--rhos", type=float, nargs="+", help="Regularisation parameter (default: %(default)s)", default=defaultAlgoArgs.rhos)
         algoParser.add_argument("--k", type=int, help="Max number of singular values/vectors (default: %(default)s)", default=defaultAlgoArgs.k)
         algoParser.add_argument("--kmax", type=int, help="Max number of Krylov/Lanczos vectors for PROPACK/ARPACK (default: %(default)s)", default=defaultAlgoArgs.kmax)
         algoParser.add_argument("--svdAlg", type=str, help="Algorithm to compute SVD for each iteration of soft impute (default: %(default)s)", default=defaultAlgoArgs.svdAlg)
         algoParser.add_argument("--modelSelect", action="store_true", help="Weather to do model selection on the 1st iteration (default: %(default)s)", default=defaultAlgoArgs.modelSelect)
+        algoParser.add_argument("--postProcess", action="store_true", help="Weather to do model selection on the 1st iteration (default: %(default)s)", default=defaultAlgoArgs.postProcess)
         return(algoParser)
     
     # update current algoArgs with values from user and then from command line
@@ -99,7 +102,7 @@ class RecommendExpHelper(object):
     def getIterator(self):
         return self.getIteratorFunc()
 
-    def recordResults(self, ZIter, fileName):
+    def recordResults(self, ZIter, learner, fileName):
         """
         Save results for a particular recommendation 
         """
@@ -112,14 +115,13 @@ class RecommendExpHelper(object):
             trainX = next(trainIterator)
             testX = next(testIterator)
             
-            U, s, V = Z 
-            predTrainX = SparseUtils.reconstructLowRank(U, s, V, trainX.nonzero())
-            predTestX = SparseUtils.reconstructLowRank(U, s, V, testX.nonzero())
+            predTrainX = learner.predictOne(Z, trainX.nonzero())
+            predTestX = learner.predictOne(Z, testX.nonzero())
             
-            currentMeasures = [MCEvaluator.rootMeanSqError(trainX, predTrainX)] 
-            currentMeasures.extend([MCEvaluator.rootMeanSqError(testX, predTestX)]) 
+            currentMeasures = [MCEvaluator.rootMeanSqError(trainX, predTrainX)]
+            currentMeasures.extend([MCEvaluator.rootMeanSqError(testX, predTestX)])
             logging.debug("Error measures: " + str(currentMeasures))
-            measures.append(currentMeasures) 
+            measures.append(currentMeasures)
 
         measures = numpy.array(measures)
         
@@ -161,6 +163,16 @@ class RecommendExpHelper(object):
             ZIter = learner.learnModel(trainIterator)
             
             resultsFileName = self.resultsDir + "ResultsSoftImpute_k=" + str(self.algoArgs.k) + ".npz"
-            self.recordResults(ZIter, resultsFileName)
-
+            self.recordResults(ZIter, learner, resultsFileName)
+            
+        if self.algoArgs.runMean: 
+            logging.debug("Running mean recommendation")
+            
+            learner = IterativeMeanRating()
+            trainIterator = self.trainXIteratorFunc()
+            ZIter = learner.learnModel(trainIterator)
+            
+            resultsFileName = self.resultsDir + "ResultsMeanRating.npz"
+            self.recordResults(ZIter, learner, resultsFileName)
+            
         logging.info("All done: see you around!")
