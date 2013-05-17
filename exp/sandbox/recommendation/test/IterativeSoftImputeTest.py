@@ -165,13 +165,31 @@ class IterativeSoftImputeTest(unittest.TestCase):
         iterativeSoftImpute = IterativeSoftImpute(lmbda, k=k, eps=eps, svdAlg="rsvd", postProcess=True)
         ZList = iterativeSoftImpute.learnModel(matrixIterator)
         
-        Z = ZList.next() 
+        for i, Z in enumerate(ZList):
+            U, s, V = Z
+            Xhat = (U*s).dot(V.T)
+            
+            nptst.assert_array_almost_equal(Xhat, self.matrixList[i].todense())
         
         #Try case with iterativeSoftImpute.postProcessSamples < X.nnz 
+        matrixIterator = iter(self.matrixList)
         iterativeSoftImpute.postProcessSamples = int(self.matrixList[0].nnz/2)
         
         ZList = iterativeSoftImpute.learnModel(matrixIterator)
-        Z = ZList.next() 
+        for i, Z in enumerate(ZList):
+            U, s, V = Z
+            Xhat = (U*s).dot(V.T)
+            
+            nptst.assert_array_almost_equal(Xhat, self.matrixList[i].todense(), 2)
+
+        #Try for larger lambda 
+        iterativeSoftImpute.setLambda(0.2)
+        ZList = iterativeSoftImpute.learnModel(matrixIterator)
+        for i, Z in enumerate(ZList):
+            U, s, V = Z
+            Xhat = (U*s).dot(V.T)
+            
+    
 
     #@unittest.skip("")
     def testPredict(self): 
@@ -255,6 +273,9 @@ class IterativeSoftImputeTest(unittest.TestCase):
         meanTestErrors2 = testErrors.mean(1)   
         meanTrainErrors2 = trainErrors.mean(1)  
         nptst.assert_array_almost_equal(meanTestErrors, meanTestErrors2, 2) 
+
+
+        
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
