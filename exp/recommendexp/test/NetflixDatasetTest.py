@@ -2,18 +2,19 @@ import numpy
 import unittest
 import pickle 
 import logging 
+import time 
 from datetime import datetime 
 from exp.recommendexp.NetflixDataset import NetflixDataset 
 
 
-class  GenerateToyDataTest(unittest.TestCase):
+class  NetflixDatasetTest(unittest.TestCase):
     def setUp(self): 
         pass 
 
     #@unittest.skip("")
     def testIteratorFunc(self):
-        iterStartDate = datetime(2005,12,31)
-        dataset = NetflixDataset(iterStartDate=iterStartDate)
+        iterStartTimeStamp = time.mktime(datetime(2005,12,31).timetuple())
+        dataset = NetflixDataset(iterStartTimeStamp=iterStartTimeStamp)
         #iterator = dataset.getTrainIteratorFunc()
         trainIterator = dataset.getTrainIteratorFunc()
         testIterator = dataset.getTestIteratorFunc()
@@ -65,20 +66,21 @@ class  GenerateToyDataTest(unittest.TestCase):
         self.assertEquals(ratings[547], 4)
         self.assertEquals(ratings[550], 5)
         
-        self.assertEquals(dates[0], int((datetime(2005,9,6)-dataset.startDate).total_seconds()))
-        self.assertEquals(dates[9], int((datetime(2005,5,11)-dataset.startDate).total_seconds()))
-        self.assertEquals(dates[10], int((datetime(2005,5,19)-dataset.startDate).total_seconds()))
-        self.assertEquals(dates[547], int((datetime(2005,9,5)-dataset.startDate).total_seconds()))
+        self.assertEquals(dates[0], int(time.mktime(datetime(2005,9,6).timetuple())))
+        self.assertEquals(dates[9], int(time.mktime(datetime(2005,5,11).timetuple())))
+        self.assertEquals(dates[10], int(time.mktime(datetime(2005,5,19).timetuple())))
+        self.assertEquals(dates[547], int(time.mktime(datetime(2005,9,5).timetuple())))
         
         isTrainRating = numpy.load(dataset.isTrainRatingsFileName)["arr_0"]
         logging.debug("Train/test indicator loaded")  
-        
+        """
         self.assertEquals(isTrainRating[3], False)
         self.assertEquals(isTrainRating[47], False)
         self.assertEquals(isTrainRating[59], False)
         self.assertEquals(isTrainRating[numpy.logical_and(movieInds==9, custInds==custIdDict[1952305])], False)
         self.assertEquals(isTrainRating[numpy.logical_and(movieInds==9, custInds==custIdDict[1531863])], False) 
         self.assertEquals((1-isTrainRating[movieInds==9]).sum(), 2)
+        """
         
         
         
