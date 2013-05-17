@@ -8,6 +8,7 @@ import errno
 import logging
 import numpy
 import argparse
+import time
 from datetime import datetime
 from exp.recommendexp.RecommendExpHelper import RecommendExpHelper
 from exp.recommendexp.NetflixDataset import NetflixDataset
@@ -24,8 +25,8 @@ numpy.seterr("raise", under="ignore")
 # Arguments related to the dataset
 dataArgs = argparse.Namespace()
 dataArgs.maxIter = 40 
-#Set iterStartDate to None for all iterations 
-dataArgs.iterStartDate = datetime(2005,12,31)
+#Set iterStartTimeStamp to None for all iterations 
+dataArgs.iterStartTimeStamp = time.mktime(datetime(2000,1,1).timetuple())
 
 # Arguments related to the algorithm
 defaultAlgoArgs = argparse.Namespace()
@@ -54,7 +55,7 @@ for key in keys:
     logging.info("    " + str(key) + ": " + str(dataArgs.__getattribute__(key)))
 
 # data
-generator = NetflixDataset(maxIter=dataArgs.maxIter, iterStartDate=dataArgs.iterStartDate)
+generator = NetflixDataset(maxIter=dataArgs.maxIter, iterStartTimeStamp=dataArgs.iterStartTimeStamp)
 
 # run
 logging.info("Creating the exp-runner")
