@@ -4,6 +4,7 @@ import logging
 import sys 
 import pickle 
 import os 
+import time 
 import scipy.sparse 
 import numpy.testing as nptst 
 import gc 
@@ -16,7 +17,7 @@ from exp.recommendexp.TimeStamptedIterator import TimeStamptedIterator
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)  
 
 class NetflixDataset(object): 
-    def __init__(self, maxIter=None, iterStartDate=None): 
+    def __init__(self, maxIter=None, iterStartTimeStamp=None): 
         """
         Return a training and test set for netflix based on the time each 
         rating was made. There are 62 iterations. 
@@ -24,15 +25,15 @@ class NetflixDataset(object):
         self.timeStep = 30 
         
         #startDate is used to convert dates into ints 
-        self.startDate = datetime(1998,1,1)
-        self.endDate = datetime(2005,12,31)
+        #self.startDate = datetime(1998,1,1)
+        #self.endDate = datetime(2005,12,31)
         
         #iterStartDate is the starting date of the iterator 
-        if iterStartDate != None: 
-            self.iterStartDate = iterStartDate
+        if iterStartTimeStamp != None: 
+            self.iterStartTimeStamp = iterStartTimeStamp
         else: 
-            self.iterStartDate = datetime(2001,1,1)
-        
+            self.iterStartTimeStamp = time.mktime(datetime(2001,1,1).timetuple()) 
+
         self.startMovieID = 1 
         self.endMovieID = 17770
         
@@ -54,6 +55,7 @@ class NetflixDataset(object):
         self.isTrainRatingsFileName = outputDir + "is_train.npz"
         
         self.maxIter = maxIter 
+        self.trainSplit = 4.0/5 
 
         self.processRatings()
         #self.processProbe()
@@ -106,7 +108,7 @@ class NetflixDataset(object):
                     movieIds.append(i-1)
                     custIds.append(custInd)   
                     ratings.append(rating)
-                    dates.append(int((t-self.startDate).total_seconds()))
+                    dates.append(int(time.mktime(t.timetuple()))) 
                     
             movieIds = numpy.array(movieIds, numpy.uint32)
             custIds = numpy.array(custIds, numpy.uint32)
@@ -185,6 +187,7 @@ class NetflixDataset(object):
         We generate a random training and test sets based on a specified split. 
         """
         if not os.path.exists(self.isTrainRatingsFileName):
+            numpy.random.seed(21)
             custIdDict = pickle.load(open(self.custDictFileName))             
             dataArr = numpy.load(self.ratingFileName)
             movieInds, custInds, ratings, dates = dataArr["arr_0"], dataArr["arr_1"], dataArr["arr_2"], dataArr["arr_3"]
@@ -192,8 +195,7 @@ class NetflixDataset(object):
             del ratings, dates 
             logging.debug("Training data loaded")
             
-            trainSplit = 4.0/5            
-            isTrainRating = numpy.array(numpy.random.rand(movieInds.shape[0]) <= trainSplit, numpy.bool)
+            isTrainRating = numpy.array(numpy.random.rand(movieInds.shape[0]) <= self.trainSplit, numpy.bool)
 
             numpy.savez(self.isTrainRatingsFileName, isTrainRating) 
             logging.debug("Saved file as " + self.isTrainRatingsFileName)
@@ -204,6 +206,8 @@ class NetflixDataset(object):
         dataArr = numpy.load(self.ratingFileName)
         movieIds, custIds, self.ratings, self.dates = dataArr["arr_0"], dataArr["arr_1"], dataArr["arr_2"], dataArr["arr_3"]
         self.trainInds = numpy.c_[movieIds, custIds].T
+        self.startTimeStamp = numpy.min(self.dates)
+        self.endTimeStamp = numpy.max(self.dates)
         del movieIds
         del custIds
         logging.debug("Training data loaded")
