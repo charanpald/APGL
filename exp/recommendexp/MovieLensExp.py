@@ -26,8 +26,8 @@ numpy.seterr("raise", under="ignore")
 dataArgs = argparse.Namespace()
 dataArgs.maxIter = 40 
 #Set iterStartDate to None for all iterations 
-dataArgs.iterStartTimeStamp = None 
-#dataArgs.iterStartTimeStamp = time.mktime(datetime(2005,12,31).timetuple())
+#dataArgs.iterStartTimeStamp = None 
+dataArgs.iterStartTimeStamp = time.mktime(datetime(2005,1,1).timetuple())
 
 # Arguments related to the algorithm
 defaultAlgoArgs = argparse.Namespace()
