@@ -21,7 +21,7 @@ class RecommendExpHelper(object):
     defaultAlgoArgs.runMean = False
     defaultAlgoArgs.rhos = numpy.linspace(0.01, 0.0, 10)     
     defaultAlgoArgs.folds = 3
-    defaultAlgoArgs.k = 200
+    defaultAlgoArgs.k = [5, 10, 20, 50, 100]
     defaultAlgoArgs.kmax = None 
     defaultAlgoArgs.svdAlg = "propack"
     defaultAlgoArgs.modelSelect = False
@@ -74,7 +74,7 @@ class RecommendExpHelper(object):
         for method in ["runSoftImpute", "runMean"]:
             algoParser.add_argument("--" + method, action="store_true", default=defaultAlgoArgs.__getattribute__(method))
         algoParser.add_argument("--rhos", type=float, nargs="+", help="Regularisation parameter (default: %(default)s)", default=defaultAlgoArgs.rhos)
-        algoParser.add_argument("--k", type=int, help="Max number of singular values/vectors (default: %(default)s)", default=defaultAlgoArgs.k)
+        algoParser.add_argument("--k", type=int, nargs="+", help="Max number of singular values/vectors (default: %(default)s)", default=defaultAlgoArgs.k)
         algoParser.add_argument("--kmax", type=int, help="Max number of Krylov/Lanczos vectors for PROPACK/ARPACK (default: %(default)s)", default=defaultAlgoArgs.kmax)
         algoParser.add_argument("--svdAlg", type=str, help="Algorithm to compute SVD for each iteration of soft impute (default: %(default)s)", default=defaultAlgoArgs.svdAlg)
         algoParser.add_argument("--modelSelect", action="store_true", help="Weather to do model selection on the 1st iteration (default: %(default)s)", default=defaultAlgoArgs.modelSelect)
@@ -135,35 +135,37 @@ class RecommendExpHelper(object):
         """
         if self.algoArgs.runSoftImpute:
             logging.debug("Running soft impute")
-            learner = IterativeSoftImpute(k=self.algoArgs.k, svdAlg=self.algoArgs.svdAlg, logStep=self.logStep, kmax=self.algoArgs.kmax, postProcess=self.algoArgs.postProcess)
-            trainIterator = self.trainXIteratorFunc()
             
-            #First find the largest singular value to compute lambdas 
-            X = trainIterator.next() 
-            X = scipy.sparse.csc_matrix(X, dtype=numpy.float)
-            U, s, V = SparseUtils.svdArpack(X, 1, kmax=20)
-            self.lmbdas = s[0]*self.algoArgs.rhos
-            logging.debug("Largest singular value : " + str(s[0]))
-            
-            
-            if self.algoArgs.modelSelect: 
-                #Let's find the optimal lambda using the first matrix 
-                logging.debug("Performing model selection")
-                cvInds = Sampling.randCrossValidation(self.algoArgs.folds, X.nnz)
-                errors = learner.modelSelect(X, self.lmbdas, cvInds)
+            for k in self.algoArgs.k: 
+                learner = IterativeSoftImpute(k=k, svdAlg=self.algoArgs.svdAlg, logStep=self.logStep, kmax=self.algoArgs.kmax, postProcess=self.algoArgs.postProcess)
+                trainIterator = self.trainXIteratorFunc()
                 
-                logging.debug("Errors = " + str(errors))
-                lmbda = self.lmbdas[numpy.argmin(errors)]
-            else: 
-                lmbda = self.algoArgs.rhos[0]*s[0]
+                #First find the largest singular value to compute lambdas 
+                X = trainIterator.next() 
+                X = scipy.sparse.csc_matrix(X, dtype=numpy.float)
+                U, s, V = SparseUtils.svdArpack(X, 1, kmax=20)
+                self.lmbdas = s[0]*self.algoArgs.rhos
+                logging.debug("Largest singular value : " + str(s[0]))
                 
-            learner.setLambda(lmbda)            
-            logging.debug("Training with lambda = " + str(lmbda))
-            trainIterator = self.trainXIteratorFunc()
-            ZIter = learner.learnModel(trainIterator)
-            
-            resultsFileName = self.resultsDir + "ResultsSoftImpute_k=" + str(self.algoArgs.k) + ".npz"
-            self.recordResults(ZIter, learner, resultsFileName)
+                
+                if self.algoArgs.modelSelect: 
+                    #Let's find the optimal lambda using the first matrix 
+                    logging.debug("Performing model selection")
+                    cvInds = Sampling.randCrossValidation(self.algoArgs.folds, X.nnz)
+                    errors = learner.modelSelect(X, self.lmbdas, cvInds)
+                    
+                    logging.debug("Errors = " + str(errors))
+                    lmbda = self.lmbdas[numpy.argmin(errors)]
+                else: 
+                    lmbda = self.algoArgs.rhos[0]*s[0]
+                    
+                learner.setLambda(lmbda)            
+                logging.debug("Training with lambda = " + str(lmbda))
+                trainIterator = self.trainXIteratorFunc()
+                ZIter = learner.learnModel(trainIterator)
+                
+                resultsFileName = self.resultsDir + "ResultsSoftImpute_k=" + str(k) + ".npz"
+                self.recordResults(ZIter, learner, resultsFileName)
             
         if self.algoArgs.runMean: 
             logging.debug("Running mean recommendation")

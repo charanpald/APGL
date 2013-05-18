@@ -31,7 +31,7 @@ dataArgs.iterStartTimeStamp = time.mktime(datetime(2005,1,1).timetuple())
 
 # Arguments related to the algorithm
 defaultAlgoArgs = argparse.Namespace()
-defaultAlgoArgs.k = 100
+defaultAlgoArgs.k = [5, 10, 20, 50, 100]
 defaultAlgoArgs.svdAlg = "arpack"
 
 # init (reading/writting command line arguments)
