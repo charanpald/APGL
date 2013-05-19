@@ -14,6 +14,7 @@ from exp.sandbox.recommendation.IterativeSoftImpute import IterativeSoftImpute
 from exp.sandbox.recommendation.IterativeMeanRating import IterativeMeanRating 
 from exp.util.SparseUtils import SparseUtils 
 from apgl.util.Sampling import Sampling 
+from apgl.util.FileLock import FileLock 
 
 class RecommendExpHelper(object):
     defaultAlgoArgs = argparse.Namespace()
@@ -21,7 +22,7 @@ class RecommendExpHelper(object):
     defaultAlgoArgs.runMean = False
     defaultAlgoArgs.rhos = numpy.linspace(0.01, 0.0, 10)     
     defaultAlgoArgs.folds = 3
-    defaultAlgoArgs.k = [5, 10, 20, 50, 100]
+    defaultAlgoArgs.k = numpy.array(2**numpy.arange(3, 9, 0.5), numpy.int)
     defaultAlgoArgs.kmax = None 
     defaultAlgoArgs.svdAlg = "propack"
     defaultAlgoArgs.modelSelect = False
@@ -56,7 +57,7 @@ class RecommendExpHelper(object):
         if update:
             for key, val in vars(update).items():
                 params.__setattr__(key, val) 
-    
+
     @staticmethod
     # merge default algoParameters from the class with those from the user
     def newAlgoParams(algoArgs=None):
@@ -137,35 +138,44 @@ class RecommendExpHelper(object):
             logging.debug("Running soft impute")
             
             for k in self.algoArgs.k: 
-                learner = IterativeSoftImpute(k=k, svdAlg=self.algoArgs.svdAlg, logStep=self.logStep, kmax=self.algoArgs.kmax, postProcess=self.algoArgs.postProcess)
-                trainIterator = self.trainXIteratorFunc()
-                
-                #First find the largest singular value to compute lambdas 
-                X = trainIterator.next() 
-                X = scipy.sparse.csc_matrix(X, dtype=numpy.float)
-                U, s, V = SparseUtils.svdArpack(X, 1, kmax=20)
-                self.lmbdas = s[0]*self.algoArgs.rhos
-                logging.debug("Largest singular value : " + str(s[0]))
-                
-                
-                if self.algoArgs.modelSelect: 
-                    #Let's find the optimal lambda using the first matrix 
-                    logging.debug("Performing model selection")
-                    cvInds = Sampling.randCrossValidation(self.algoArgs.folds, X.nnz)
-                    errors = learner.modelSelect(X, self.lmbdas, cvInds)
-                    
-                    logging.debug("Errors = " + str(errors))
-                    lmbda = self.lmbdas[numpy.argmin(errors)]
-                else: 
-                    lmbda = self.algoArgs.rhos[0]*s[0]
-                    
-                learner.setLambda(lmbda)            
-                logging.debug("Training with lambda = " + str(lmbda))
-                trainIterator = self.trainXIteratorFunc()
-                ZIter = learner.learnModel(trainIterator)
-                
                 resultsFileName = self.resultsDir + "ResultsSoftImpute_k=" + str(k) + ".npz"
-                self.recordResults(ZIter, learner, resultsFileName)
+                fileLock = FileLock(resultsFileName)  
+                
+                
+                if not fileLock.isLocked() and not fileLock.fileExists(): 
+                    fileLock.lock()
+                    logging.debug("k=" + str(k))
+                    learner = IterativeSoftImpute(k=k, svdAlg=self.algoArgs.svdAlg, logStep=self.logStep, kmax=self.algoArgs.kmax, postProcess=self.algoArgs.postProcess)
+                    trainIterator = self.trainXIteratorFunc()
+                    
+                    #First find the largest singular value to compute lambdas 
+                    X = trainIterator.next() 
+                    X = scipy.sparse.csc_matrix(X, dtype=numpy.float)
+                    U, s, V = SparseUtils.svdArpack(X, 1, kmax=20)
+                    self.lmbdas = s[0]*self.algoArgs.rhos
+                    logging.debug("Largest singular value : " + str(s[0]))
+                    
+                    
+                    if self.algoArgs.modelSelect: 
+                        #Let's find the optimal lambda using the first matrix 
+                        logging.debug("Performing model selection")
+                        cvInds = Sampling.randCrossValidation(self.algoArgs.folds, X.nnz)
+                        errors = learner.modelSelect(X, self.lmbdas, cvInds)
+                        
+                        logging.debug("Errors = " + str(errors))
+                        lmbda = self.lmbdas[numpy.argmin(errors)]
+                    else: 
+                        lmbda = self.algoArgs.rhos[0]*s[0]
+                        
+                    learner.setLambda(lmbda)            
+                    logging.debug("Training with lambda = " + str(lmbda))
+                    trainIterator = self.trainXIteratorFunc()
+                    ZIter = learner.learnModel(trainIterator)
+                    
+                    self.recordResults(ZIter, learner, resultsFileName)
+                    fileLock.unlock()
+                else: 
+                    logging.debug("File is locked or already computed: " + resultsFileName)
             
         if self.algoArgs.runMean: 
             logging.debug("Running mean recommendation")
