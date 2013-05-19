@@ -153,6 +153,7 @@ class ContactsDataset(object):
     def loadProcessedData(self): 
         dataArr = numpy.load(self.ratingFileName)
         self.trainInds, self.dates = dataArr["arr_0"], dataArr["arr_1"]
+        self.ratings = numpy.ones(self.dates.shape[0], numpy.uint8)
         self.startTimeStamp = numpy.min(self.dates)
         self.endTimeStamp = numpy.max(self.dates)
         logging.debug("Training data loaded")
