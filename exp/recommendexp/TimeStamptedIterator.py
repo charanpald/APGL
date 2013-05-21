@@ -49,7 +49,10 @@ class TimeStamptedIterator(object):
         
         if self.centreRows: 
             logging.debug("Centering rows of X with shape " + str(X.shape))
-            X, mu = SparseUtils.centreRows(X)        
+            X, mu = SparseUtils.centreRows(X)   
+        
+        X.eliminate_zeros()
+        X.prune()
         
         if self.isTraining: 
             assert X.nnz  == currentIsTrainRatings.sum() 
