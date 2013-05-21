@@ -3,9 +3,10 @@ import gc
 import logging 
 import scipy.sparse 
 from datetime import datetime  
+from exp.util.SparseUtils import SparseUtils 
 
 class TimeStamptedIterator(object): 
-    def __init__(self, ratingDataset, isTraining): 
+    def __init__(self, ratingDataset, isTraining, centreRows=True): 
         """
         Initialise this iterator with a ratingDataset object and indicate whether 
         we want the training or test set. 
@@ -17,6 +18,7 @@ class TimeStamptedIterator(object):
         self.i = 0
         self.maxIter = ratingDataset.maxIter 
         self.isTraining = isTraining 
+        self.centreRows = centreRows 
         
     def next(self):
         if self.currentTimeStamp >= self.ratingDataset.endTimeStamp + self.timeDelta or self.i==self.maxIter: 
@@ -45,11 +47,15 @@ class TimeStamptedIterator(object):
         del currentInds
         gc.collect()
         
+        if self.centreRows: 
+            logging.debug("Centering rows of X with shape " + str(X.shape))
+            X, mu = SparseUtils.centreRows(X)        
+        
         if self.isTraining: 
             assert X.nnz  == currentIsTrainRatings.sum() 
         else: 
             assert X.nnz  == numpy.logical_not(currentIsTrainRatings).sum() 
-          
+         
         self.currentTimeStamp += self.timeDelta
         self.i += 1
 
