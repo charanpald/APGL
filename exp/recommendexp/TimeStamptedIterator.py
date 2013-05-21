@@ -6,7 +6,7 @@ from datetime import datetime
 from exp.util.SparseUtils import SparseUtils 
 
 class TimeStamptedIterator(object): 
-    def __init__(self, ratingDataset, isTraining, centre=True): 
+    def __init__(self, ratingDataset, isTraining, center=True): 
         """
         Initialise this iterator with a ratingDataset object and indicate whether 
         we want the training or test set. 
@@ -18,7 +18,7 @@ class TimeStamptedIterator(object):
         self.i = 0
         self.maxIter = ratingDataset.maxIter 
         self.isTraining = isTraining 
-        self.centreRows = centreRows 
+        self.center = center 
         
     def next(self):
         if self.currentTimeStamp >= self.ratingDataset.endTimeStamp + self.timeDelta or self.i==self.maxIter: 
@@ -47,7 +47,7 @@ class TimeStamptedIterator(object):
         del currentInds
         gc.collect()
         
-        if self.centre: 
+        if self.center: 
             logging.debug("Centering rows and cols of X with shape " + str(X.shape))
             inds = X.nonzero()
             #Note that if a zero has only one value it becomes zero after we center the row 
