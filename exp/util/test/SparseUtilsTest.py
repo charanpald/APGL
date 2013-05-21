@@ -9,6 +9,8 @@ import logging
 import scipy.sparse 
 from exp.util.SparseUtils import SparseUtils
 from apgl.util.Util import Util 
+from exp.util.MCEvaluator import MCEvaluator 
+from exp.sandbox.recommendation.SoftImpute import SoftImpute 
 
 class SparseUtilsCythonTest(unittest.TestCase):
     def setUp(self):
@@ -215,10 +217,91 @@ class SparseUtilsCythonTest(unittest.TestCase):
         mu2 /= numNnz 
         mu2[numNnz==0] = 0
         
-        X, mu = SparseUtils.centreRows(X)      
+        X, mu = SparseUtils.centerRows(X)      
         nptst.assert_array_almost_equal(numpy.array(X.mean(1)).ravel(), numpy.zeros(X.shape[0]))
         nptst.assert_array_almost_equal(mu, mu2)
         
+    def testCentreRows2(self): 
+        shape = (50, 10)
+        r = 5 
+        k = 100 
+        
+        #Test if centering rows changes the RMSE
+        X, U, s, V = SparseUtils.generateSparseLowRank(shape, r, k, verbose=True)   
+ 
+        Y = X.copy() 
+        Y.data = numpy.random.rand(X.nnz)
+        
+        error = ((X.data - Y.data)**2).sum()
+        
+        X, mu = SparseUtils.centerRows(X)
+        Y, mu = SparseUtils.centerRows(Y, mu)
+        
+        error2 = ((X.data - Y.data)**2).sum()
+        self.assertAlmostEquals(error, error2)
+        
+        error3 = numpy.linalg.norm(X.todense()- Y.todense())**2
+        self.assertAlmostEquals(error2, error3)        
+        
+        
+    def testCentreCols(self): 
+        shape = (50, 10)
+        r = 5 
+        k = 100 
+
+        X, U, s, V = SparseUtils.generateSparseLowRank(shape, r, k, verbose=True)   
+        rowInds, colInds = X.nonzero()
+        
+        mu2 = numpy.array(X.sum(0)).ravel()
+        numNnz = numpy.zeros(X.shape[1])
+        
+        for i in range(X.shape[0]): 
+            for j in range(X.shape[1]):     
+                if X[i,j]!=0:                 
+                    numNnz[j] += 1
+                    
+        mu2 /= numNnz 
+        mu2[numNnz==0] = 0
+        
+        X, mu = SparseUtils.centerCols(X)      
+        nptst.assert_array_almost_equal(numpy.array(X.mean(0)).ravel(), numpy.zeros(X.shape[1]))
+        nptst.assert_array_almost_equal(mu, mu2)       
+        
+    def testUncentre(self): 
+        shape = (50, 10)
+        r = 5 
+        k = 100 
+
+        X, U, s, V = SparseUtils.generateSparseLowRank(shape, r, k, verbose=True)   
+        rowInds, colInds = X.nonzero()  
+        
+        Y = X.copy()
+
+        inds = X.nonzero()
+        X, mu1 = SparseUtils.centerRows(X)
+        X, mu2 = SparseUtils.centerCols(X, inds=inds)   
+        
+        cX = X.copy()
+        
+        Y2 = SparseUtils.uncenter(X, mu1, mu2)
+        
+        nptst.assert_array_almost_equal(Y.todense(), Y2.todense(), 3)
+        
+        #We try softImpute on a centered matrix and check if the results are the same 
+        lmbdas = numpy.array([0.1])
+        softImpute = SoftImpute(lmbdas)
+        
+        Z = softImpute.learnModel(cX, fullMatrices=False)
+        Z = softImpute.predict([Z], cX.nonzero())[0]
+        
+        error1 = MCEvaluator.rootMeanSqError(cX, Z)
+        
+        X = SparseUtils.uncenter(cX, mu1, mu2)
+        Z2 = SparseUtils.uncenter(Z, mu1, mu2)
+        
+        error2 = MCEvaluator.rootMeanSqError(X, Z2)
+        
+        self.assertAlmostEquals(error1, error2)
         
 if __name__ == '__main__':
     unittest.main()

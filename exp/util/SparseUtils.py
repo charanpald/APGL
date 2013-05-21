@@ -254,25 +254,73 @@ class SparseUtils(object):
         return U2, s2, V2 
 
     @staticmethod
-    def centreRows(X): 
+    def centerRows(X, mu=None, inds=None): 
         """
         Simply subtract the mean value of a row from each non-zero element. 
+        """
+        if inds == None: 
+            rowInds, colInds = X.nonzero()
+        else: 
+            rowInds, colInds = inds
+        rowInds = numpy.array(rowInds, numpy.int)
+        colInds = numpy.array(colInds, numpy.int)
+        
+        if mu == None: 
+            #This is the mean of the nonzero values in each row 
+            nonZeroCounts = numpy.bincount(rowInds, minlength=X.shape[0])
+            inds = nonZeroCounts==0
+            nonZeroCounts += inds
+            mu = numpy.array(X.sum(1)).ravel()/nonZeroCounts
+            mu[inds] = 0
+
+        vals = SparseUtilsCython.partialOuterProduct(rowInds, colInds, numpy.array(mu, numpy.float), numpy.ones(X.shape[1]))
+        X.data -= vals 
+        
+        return X, mu 
+
+    @staticmethod
+    def centerCols(X, mu=None, inds=None): 
+        """
+        Simply subtract the mean value of a row from each non-zero element. 
+        """
+        if inds == None: 
+            rowInds, colInds = X.nonzero()
+        else: 
+            rowInds, colInds = inds
+        rowInds = numpy.array(rowInds, numpy.int)
+        colInds = numpy.array(colInds, numpy.int)
+        
+        if mu == None: 
+            #This is the mean of the nonzero values in each col 
+            nonZeroCounts = numpy.bincount(colInds, minlength=X.shape[1])
+            inds = nonZeroCounts==0
+            nonZeroCounts += inds
+            mu = numpy.array(X.sum(0)).ravel()/nonZeroCounts
+            mu[inds] = 0
+        
+        vals = SparseUtilsCython.partialOuterProduct(rowInds, colInds, numpy.ones(X.shape[0]), numpy.array(mu, numpy.float))
+        X.data -= vals 
+        
+        return X, mu 
+     
+    
+    @staticmethod
+    def uncenter(X, mu1, mu2): 
+        """
+        Uncenter a matrix with mu1 and mu2, the row and columns means of the original 
+        matrix. X is the centered matrix. 
         """
         rowInds, colInds = X.nonzero()
         rowInds = numpy.array(rowInds, numpy.int)
         colInds = numpy.array(colInds, numpy.int)
         
-        #This is the mean of the nonzero values in each row 
-        nonZeroCounts = numpy.bincount(rowInds, minlength=X.shape[0])
-        inds = nonZeroCounts==0
-        nonZeroCounts += inds
-        mu = numpy.array(X.sum(1)).ravel()/nonZeroCounts
-        vals = SparseUtilsCython.partialOuterProduct(rowInds, colInds, numpy.array(mu, numpy.float), numpy.ones(X.shape[1]))
+        vals1 = SparseUtilsCython.partialOuterProduct(rowInds, colInds, numpy.array(mu1, numpy.float), numpy.ones(X.shape[1]))
+        vals2 = SparseUtilsCython.partialOuterProduct(rowInds, colInds, numpy.ones(X.shape[0]), numpy.array(mu2, numpy.float))
+        X.data += vals1 + vals2
         
-        mu[inds] = 0
+        return X 
         
-        X.data -= vals 
         
-        return X, mu 
-        
+
+      
     kmaxMultiplier = 15 
