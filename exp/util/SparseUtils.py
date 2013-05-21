@@ -252,5 +252,27 @@ class SparseUtils(object):
         s2 = numpy.clip(s2, 0, numpy.max(s2))
         
         return U2, s2, V2 
+
+    @staticmethod
+    def centreRows(X): 
+        """
+        Simply subtract the mean value of a row from each non-zero element. 
+        """
+        rowInds, colInds = X.nonzero()
+        rowInds = numpy.array(rowInds, numpy.int)
+        colInds = numpy.array(colInds, numpy.int)
+        
+        #This is the mean of the nonzero values in each row 
+        nonZeroCounts = numpy.bincount(rowInds, minlength=X.shape[0])
+        inds = nonZeroCounts==0
+        nonZeroCounts += inds
+        mu = numpy.array(X.sum(1)).ravel()/nonZeroCounts
+        vals = SparseUtilsCython.partialOuterProduct(rowInds, colInds, mu, numpy.ones(X.shape[1]))
+        
+        mu[inds] = 0
+        
+        X.data -= vals 
+        
+        return X, mu 
         
     kmaxMultiplier = 15 

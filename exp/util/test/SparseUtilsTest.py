@@ -193,5 +193,32 @@ class SparseUtilsCythonTest(unittest.TestCase):
         nptst.assert_array_almost_equal(numpy.abs(U), numpy.abs(U2[:, 0:k2]), 3)
         nptst.assert_array_almost_equal(numpy.abs(V), numpy.abs(V2[:, 0:k2]), 3)
         
+    def testCentreRows(self): 
+        shape = (50, 10)
+        r = 5 
+        k = 100 
+
+        X, U, s, V = SparseUtils.generateSparseLowRank(shape, r, k, verbose=True)   
+        rowInds, colInds = X.nonzero()
+        
+        for i in range(rowInds.shape[0]): 
+            self.assertEquals(X[rowInds[i], colInds[i]], X.data[i])
+        
+        mu2 = numpy.array(X.sum(1)).ravel()
+        numNnz = numpy.zeros(X.shape[0])
+        
+        for i in range(X.shape[0]): 
+            for j in range(X.shape[1]):     
+                if X[i,j]!=0:                 
+                    numNnz[i] += 1
+                    
+        mu2 /= numNnz 
+        mu2[numNnz==0] = 0
+        
+        X, mu = SparseUtils.centreRows(X)      
+        nptst.assert_array_almost_equal(numpy.array(X.mean(1)).ravel(), numpy.zeros(X.shape[0]))
+        nptst.assert_array_almost_equal(mu, mu2)
+        
+        
 if __name__ == '__main__':
     unittest.main()
