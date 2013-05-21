@@ -267,7 +267,7 @@ class SparseUtils(object):
         inds = nonZeroCounts==0
         nonZeroCounts += inds
         mu = numpy.array(X.sum(1)).ravel()/nonZeroCounts
-        vals = SparseUtilsCython.partialOuterProduct(rowInds, colInds, mu, numpy.ones(X.shape[1]))
+        vals = SparseUtilsCython.partialOuterProduct(rowInds, colInds, numpy.array(mu, numpy.float), numpy.ones(X.shape[1]))
         
         mu[inds] = 0
         
