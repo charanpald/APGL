@@ -6,7 +6,7 @@ from datetime import datetime
 from exp.util.SparseUtils import SparseUtils 
 
 class TimeStamptedIterator(object): 
-    def __init__(self, ratingDataset, isTraining, centreRows=True): 
+    def __init__(self, ratingDataset, isTraining, centre=True): 
         """
         Initialise this iterator with a ratingDataset object and indicate whether 
         we want the training or test set. 
@@ -47,9 +47,13 @@ class TimeStamptedIterator(object):
         del currentInds
         gc.collect()
         
-        if self.centreRows: 
-            logging.debug("Centering rows of X with shape " + str(X.shape))
-            X, mu = SparseUtils.centreRows(X)   
+        if self.centre: 
+            logging.debug("Centering rows and cols of X with shape " + str(X.shape))
+            inds = X.nonzero()
+            #Note that if a zero has only one value it becomes zero after we center the row 
+            #hence we use the nonzero indices again during column centering 
+            X, self.muRows = SparseUtils.centerRows(X)
+            X, self.muCols = SparseUtils.centerCols(X, inds=inds)   
         
         X.eliminate_zeros()
         X.prune()
