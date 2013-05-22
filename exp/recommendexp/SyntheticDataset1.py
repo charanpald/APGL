@@ -16,29 +16,33 @@ class SyntheticDataset1(object):
         collaborative filtering. Each item in the list is (trainX, testX).
         """    
         numpy.random.seed(21)    
-        startM = 5000 
-        startN = 10000 
-        endM = 6000
-        endN = 12000
-        r = 150 
+        startM = 500 
+        startN = 1000 
+        endM = 600
+        endN = 1200
+        r = 50 
         
-        noise = 0.1
+        noise = 0.2
         U, s, V = SparseUtils.generateLowRank((endM, endN), r)
         
-        startNumInds = 9000
-        endNumInds = 12000
-        inds = numpy.random.randint(0, startM*startN-1, endNumInds)
+        startNumInds = 90000
+        endNumInds = 120000
+        inds = numpy.random.randint(0, endM*endN-1, endNumInds)
         inds = numpy.unique(inds)
         numpy.random.shuffle(inds)
         endNumInds = inds.shape[0]
         
         rowInds, colInds = numpy.unravel_index(inds, (endM, endN))
         vals = SparseUtilsCython.partialReconstructVals(rowInds, colInds, U, s, V)
-        vals +=  numpy.random.randn(vals.shape[0])*noise 
+        vals /= vals.std()
+        vals +=  numpy.random.randn(vals.shape[0])*noise
         
         trainSplit = 2.0/3 
         isTrainInd = numpy.array(numpy.random.rand(inds.shape[0]) <= trainSplit, numpy.bool)
-        XMaskTrain = scipy.sparse.csc_matrix((isTrainInd, (rowInds, colInds)), dtype=numpy.bool, shape=(endM, endN)) 
+        
+        assert (trainSplit - isTrainInd.sum()/float(isTrainInd.shape[0]))
+        
+        XMaskTrain = scipy.sparse.csc_matrix((isTrainInd, (rowInds, colInds)), dtype=numpy.bool, shape=(endM, endN))
         XMaskTest = scipy.sparse.csc_matrix((numpy.logical_not(isTrainInd), (rowInds, colInds)), dtype=numpy.bool, shape=(endM, endN))
 
         #In the first phase, the matrices stay the same size but there are more nonzero 
@@ -61,7 +65,12 @@ class SyntheticDataset1(object):
             X, muCols = SparseUtils.centerCols(X, inds=(tempRowInds, tempColInds))   
     
             trainX = X.multiply(XMaskTrain)[0:startM, 0:startN]
+            trainX.eliminate_zeros()
+            trainX.prune() 
+            
             testX = X.multiply(XMaskTest)[0:startM, 0:startN]
+            testX.eliminate_zeros()
+            testX.prune() 
             
             trainXList.append(trainX)
             testXList.append(testX)
@@ -80,7 +89,12 @@ class SyntheticDataset1(object):
     
         for i in range(numMatrices): 
             trainX = X.multiply(XMaskTrain)[0:mStepList[i], :][:, 0:nStepList[i]]
+            trainX.eliminate_zeros()
+            trainX.prune() 
+            
             testX = X.multiply(XMaskTest)[0:mStepList[i], :][:, 0:nStepList[i]]
+            testX.eliminate_zeros()
+            testX.prune() 
             
             trainXList.append(trainX)
             testXList.append(testX)
