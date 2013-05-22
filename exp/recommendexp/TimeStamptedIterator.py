@@ -33,20 +33,11 @@ class TimeStamptedIterator(object):
         currentIsTrainRatings = self.ratingDataset.isTrainRating[self.ratingDataset.dateInds[0:ind]] 
         currentRatings = self.ratingDataset.ratings[self.ratingDataset.dateInds[0:ind]]
         currentInds = self.ratingDataset.trainInds[:, self.ratingDataset.dateInds[0:ind]]
-        
-        if self.isTraining: 
-            currentRatings[numpy.logical_not(currentIsTrainRatings)] = 0 
-        else: 
-            currentRatings[currentIsTrainRatings] = 0 
-        
-        X = scipy.sparse.csc_matrix((currentRatings, currentInds), dtype=self.ratingDataset.ratings.dtype)      
-        X.eliminate_zeros()
-        X.prune()
-        
+
+        X = scipy.sparse.csc_matrix((currentRatings, currentInds), dtype=self.ratingDataset.ratings.dtype)   
         del currentRatings
-        del currentInds
-        gc.collect()
         
+        #Centre on the the complete data 
         if self.center: 
             logging.debug("Centering rows and cols of X with shape " + str(X.shape))
             inds = X.nonzero()
@@ -54,13 +45,22 @@ class TimeStamptedIterator(object):
             #hence we use the nonzero indices again during column centering 
             X, self.muRows = SparseUtils.centerRows(X)
             X, self.muCols = SparseUtils.centerCols(X, inds=inds)   
+       
+        if self.isTraining: 
+            XMask = scipy.sparse.csc_matrix((currentIsTrainRatings, currentInds), dtype=numpy.bool, shape=X.shape)  
+        else: 
+            XMask = scipy.sparse.csc_matrix((numpy.logical_not(currentIsTrainRatings), currentInds), dtype=numpy.bool, shape=X.shape)  
         
+        X = X.multiply(XMask)     
         X.eliminate_zeros()
         X.prune()
         
-        if self.isTraining: 
+        del currentInds
+        gc.collect()
+        
+        if not self.center and self.isTraining: 
             assert X.nnz  == currentIsTrainRatings.sum() 
-        else: 
+        elif not self.center: 
             assert X.nnz  == numpy.logical_not(currentIsTrainRatings).sum() 
          
         self.currentTimeStamp += self.timeDelta
