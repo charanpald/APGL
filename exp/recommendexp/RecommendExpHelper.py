@@ -20,9 +20,9 @@ class RecommendExpHelper(object):
     defaultAlgoArgs = argparse.Namespace()
     defaultAlgoArgs.runSoftImpute = False
     defaultAlgoArgs.runMean = False
-    defaultAlgoArgs.rhos = numpy.linspace(0.1, 0.0, 10)     
+    defaultAlgoArgs.rhos = numpy.linspace(0.4, 0.0, 10)     
     defaultAlgoArgs.folds = 3
-    defaultAlgoArgs.k = numpy.array(2**numpy.arange(3, 9, 0.5), numpy.int)
+    defaultAlgoArgs.ks = numpy.array(2**numpy.arange(3, 7, 0.5), numpy.int)
     defaultAlgoArgs.kmax = None 
     defaultAlgoArgs.svdAlg = "propack"
     defaultAlgoArgs.modelSelect = False
@@ -75,7 +75,7 @@ class RecommendExpHelper(object):
         for method in ["runSoftImpute", "runMean"]:
             algoParser.add_argument("--" + method, action="store_true", default=defaultAlgoArgs.__getattribute__(method))
         algoParser.add_argument("--rhos", type=float, nargs="+", help="Regularisation parameter (default: %(default)s)", default=defaultAlgoArgs.rhos)
-        algoParser.add_argument("--k", type=int, nargs="+", help="Max number of singular values/vectors (default: %(default)s)", default=defaultAlgoArgs.k)
+        algoParser.add_argument("--ks", type=int, nargs="+", help="Max number of singular values/vectors (default: %(default)s)", default=defaultAlgoArgs.ks)
         algoParser.add_argument("--kmax", type=int, help="Max number of Krylov/Lanczos vectors for PROPACK/ARPACK (default: %(default)s)", default=defaultAlgoArgs.kmax)
         algoParser.add_argument("--svdAlg", type=str, help="Algorithm to compute SVD for each iteration of soft impute (default: %(default)s)", default=defaultAlgoArgs.svdAlg)
         algoParser.add_argument("--modelSelect", action="store_true", help="Weather to do model selection on the 1st iteration (default: %(default)s)", default=defaultAlgoArgs.modelSelect)
@@ -110,6 +110,7 @@ class RecommendExpHelper(object):
         trainIterator = self.trainXIteratorFunc()
         testIterator = self.testXIteratorFunc()
         measures = []
+        metadata = []
         logging.debug("Computing recommendation errors")
 
         for Z in ZIter:
@@ -120,14 +121,19 @@ class RecommendExpHelper(object):
             predTestX = learner.predictOne(Z, testX.nonzero())
             
             currentMeasures = [MCEvaluator.rootMeanSqError(trainX, predTrainX)]
-            currentMeasures.extend([MCEvaluator.rootMeanSqError(testX, predTestX)])
+            currentMeasures.extend([MCEvaluator.rootMeanSqError(testX, predTestX), MCEvaluator.meanAbsError(testX, predTestX)])
             logging.debug("Error measures: " + str(currentMeasures))
+            logging.debug("Standard deviation of test set " + str(testX.data.std()))
             measures.append(currentMeasures)
+            
+            #Store the rank of the result plus the lambda 
+            metadata.append([Z[0].shape[1], learner.getRho()])
 
         measures = numpy.array(measures)
+        metadata = numpy.array(metadata)
         
         logging.debug(measures)
-        numpy.savez(fileName, measures)
+        numpy.savez(fileName, measures, metadata)
         logging.debug("Saved file as " + fileName)
 
     def runExperiment(self):
@@ -137,45 +143,43 @@ class RecommendExpHelper(object):
         if self.algoArgs.runSoftImpute:
             logging.debug("Running soft impute")
             
-            for k in self.algoArgs.k: 
-                resultsFileName = self.resultsDir + "ResultsSoftImpute_k=" + str(k) + ".npz"
-                fileLock = FileLock(resultsFileName)  
+            resultsFileName = self.resultsDir + "ResultsSoftImpute.npz"
+            fileLock = FileLock(resultsFileName)  
+            
+            if not fileLock.isLocked() and not fileLock.fileExists(): 
+                fileLock.lock()
                 
+                learner = IterativeSoftImpute(svdAlg=self.algoArgs.svdAlg, logStep=self.logStep, kmax=self.algoArgs.kmax, postProcess=self.algoArgs.postProcess)
+                trainIterator = self.trainXIteratorFunc()
                 
-                if not fileLock.isLocked() and not fileLock.fileExists(): 
-                    fileLock.lock()
-                    logging.debug("k=" + str(k))
-                    learner = IterativeSoftImpute(k=k, svdAlg=self.algoArgs.svdAlg, logStep=self.logStep, kmax=self.algoArgs.kmax, postProcess=self.algoArgs.postProcess)
-                    trainIterator = self.trainXIteratorFunc()
-                    
-                    #First find the largest singular value to compute lambdas 
+                if self.algoArgs.modelSelect: 
+                    #Let's find the optimal lambda using the first matrix 
                     X = trainIterator.next() 
                     X = scipy.sparse.csc_matrix(X, dtype=numpy.float)
-                    U, s, V = SparseUtils.svdArpack(X, 1, kmax=20)
-                    self.lmbdas = s[0]*self.algoArgs.rhos
-                    logging.debug("Largest singular value : " + str(s[0]))
+                    logging.debug("Performing model selection")
+                    cvInds = Sampling.randCrossValidation(self.algoArgs.folds, X.nnz)
+                    meanErrors, stdErrors = learner.modelSelect(X, self.algoArgs.rhos, self.algoArgs.ks, cvInds)
                     
-                    
-                    if self.algoArgs.modelSelect: 
-                        #Let's find the optimal lambda using the first matrix 
-                        logging.debug("Performing model selection")
-                        cvInds = Sampling.randCrossValidation(self.algoArgs.folds, X.nnz)
-                        errors = learner.modelSelect(X, self.lmbdas, cvInds)
-                        
-                        logging.debug("Errors = " + str(errors))
-                        lmbda = self.lmbdas[numpy.argmin(errors)]
-                    else: 
-                        lmbda = self.algoArgs.rhos[0]*s[0]
-                        
-                    learner.setLambda(lmbda)            
-                    logging.debug("Training with lambda = " + str(lmbda))
-                    trainIterator = self.trainXIteratorFunc()
-                    ZIter = learner.learnModel(trainIterator)
-                    
-                    self.recordResults(ZIter, learner, resultsFileName)
-                    fileLock.unlock()
+                    logging.debug("Mean errors = " + str(meanErrors))
+                    logging.debug("Std errors = " + str(stdErrors))
+                    rho = self.algoArgs.rhos[numpy.unravel_index(numpy.argmin(meanErrors), meanErrors.shape)[0]]
+                    k = self.algoArgs.ks[numpy.unravel_index(numpy.argmin(meanErrors), meanErrors.shape)[1]]
                 else: 
-                    logging.debug("File is locked or already computed: " + resultsFileName)
+                    rho = self.algoArgs.rhos[0]
+                    k = self.algoArgs.ks[0]
+                    
+                learner.setK(k)            
+                logging.debug("Training with k = " + str(k))                    
+                    
+                learner.setRho(rho)            
+                logging.debug("Training with rho = " + str(rho))
+                trainIterator = self.trainXIteratorFunc()
+                ZIter = learner.learnModel(trainIterator)
+                
+                self.recordResults(ZIter, learner, resultsFileName)
+                fileLock.unlock()
+            else: 
+                logging.debug("File is locked or already computed: " + resultsFileName)
             
         if self.algoArgs.runMean: 
             logging.debug("Running mean recommendation")
