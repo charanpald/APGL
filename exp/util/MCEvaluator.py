@@ -31,3 +31,19 @@ class MCEvaluator(object):
         """
         
         return numpy.sqrt(MCEvaluator.meanSqError(testX, predX)) 
+        
+    @staticmethod 
+    def meanAbsError(testX, predX): 
+        """
+        Find the mean absolute error between two sparse matrices testX and predX. 
+        Note that the matrices must have nonzero elements in the same places. 
+        """
+        #Note that some predictions might be zero 
+        assert numpy.in1d(predX.nonzero()[0], testX.nonzero()[0]).all() 
+        assert numpy.in1d(predX.nonzero()[1], testX.nonzero()[1]).all() 
+        
+        diff = testX - predX     
+        error = numpy.abs(diff.data).sum()/testX.data.shape[0]
+        return error
+        
+    
