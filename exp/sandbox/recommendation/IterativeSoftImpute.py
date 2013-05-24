@@ -34,6 +34,8 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         :param updateAlg: The algorithm to use for updating an SVD for a new matrix
 
         :param r: The number of random projections to use for randomised SVD
+        
+        :param q: The oversampling used for the randomised SVD 
         """
         super(AbstractMatrixCompleter, self).__init__()
 
@@ -43,6 +45,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         self.svdAlg = svdAlg
         self.updateAlg = updateAlg
         self.r = r
+        self.p = 50
         self.q = 2
         if k != None:
             self.kmax = k*5
@@ -145,7 +148,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                         newU, newS, newV = SVDUpdate.addSparseProjected(self.oldU, self.oldS, self.oldV, Y, self.iterativeSoftImpute.k)
                     elif self.iterativeSoftImpute.svdAlg=="rsvd":
                         L = LinOperatorUtils.sparseLowRankOp(Y, self.oldU, self.oldS, self.oldV)
-                        newU, newS, newV = RandomisedSVD.svd(L, self.iterativeSoftImpute.k, q=self.iterativeSoftImpute.q)
+                        newU, newS, newV = RandomisedSVD.svd(L, self.iterativeSoftImpute.k, p=self.iterativeSoftImpute.p, q=self.iterativeSoftImpute.q)
                     else:
                         raise ValueError("Unknown SVD algorithm: " + self.iterativeSoftImpute.svdAlg)
 
