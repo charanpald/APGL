@@ -15,7 +15,7 @@ class RandomisedSVD(object):
         pass
     
     @staticmethod
-    def svd(X, k, q=2): 
+    def svd(X, k, p=10, q=2): 
         """
         Compute the SVD of a sparse or dense matrix X, finding the first k 
         singular vectors/values, using exponent q. Returns the left and right singular 
@@ -26,9 +26,12 @@ class RandomisedSVD(object):
         
         :param k: The number of singular values and random projections
         
+        :param p: The oversampling parameter 
+        
         :param q: The exponent for the projections. 
         """
         Parameter.checkInt(k, 1, float("inf"))
+        Parameter.checkInt(p, 0, float("inf"))
         Parameter.checkInt(q, 1, float("inf"))        
 
         if scipy.sparse.isspmatrix(X): 
@@ -37,7 +40,7 @@ class RandomisedSVD(object):
             L = X
         
         n = L.shape[1]
-        omega = numpy.random.randn(n, k)
+        omega = numpy.random.randn(n, k+p)
         Y = L.matmat(omega)
         del omega 
 
@@ -58,6 +61,11 @@ class RandomisedSVD(object):
         del B 
         V = V.T
         U = Q.dot(U)
+
+        U = U[:, 0:k]
+        s = s[0:k]
+        V = V[:, 0:k]        
+        
         return U, s, V 
         
     def svd2(A, lmbda): 
