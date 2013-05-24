@@ -105,6 +105,19 @@ class SparseUtils(object):
         
         return X 
         
+    @staticmethod 
+    def reconstructLowRankPQ(P, Q, inds): 
+        """
+        Given an array of unique indices inds in [0, U.shape[0]*V.shape[0]-1],
+        partially reconstruct $P*Q^T$. The returned matrix is a scipy csc_matrix. 
+        """
+        (m, n) = (P.shape[0], Q.shape[0])  
+        
+        rowInds, colInds = numpy.unravel_index(inds, (m, n))
+        X = SparseUtilsCython.partialReconstructPQ((rowInds, colInds), P, Q)
+        
+        return X 
+        
     @staticmethod
     def svdSparseLowRank(X, U, s, V, k=None, kmax=None, usePropack=True): 
         """

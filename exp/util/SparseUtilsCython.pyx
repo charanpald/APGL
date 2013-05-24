@@ -30,6 +30,24 @@ class SparseUtilsCython(object):
             
         return values
         
+    @staticmethod 
+    def partialReconstructValsPQ(numpy.ndarray[numpy.long_t, ndim=1] rowInds, numpy.ndarray[numpy.long_t, ndim=1] colInds, numpy.ndarray[numpy.float_t, ndim=2] P, numpy.ndarray[numpy.float_t, ndim=2] Q): 
+        """
+        Given an array of unique indices inds, partially reconstruct $P*Q^T$.
+        """ 
+        cdef unsigned int i
+        cdef unsigned int j 
+        cdef unsigned int k
+        cdef numpy.ndarray[numpy.float_t, ndim=1, mode="c"] values = numpy.zeros(rowInds.shape[0], numpy.float)
+        
+        for i in range(rowInds.shape[0]):
+            j = rowInds[i]
+            k = colInds[i]
+            
+            values[i] = P[j, :].dot(Q[k,:])            
+            
+        return values
+        
     @staticmethod
     def partialOuterProduct(numpy.ndarray[numpy.long_t, ndim=1] rowInds, numpy.ndarray[numpy.long_t, ndim=1] colInds, numpy.ndarray[numpy.float_t, ndim=1] u, numpy.ndarray[numpy.float_t, ndim=1] v):
         """
@@ -79,6 +97,19 @@ class SparseUtilsCython(object):
         vals = SparseUtilsCython.partialReconstructVals(omega[0], omega[1], U, s, V)
         inds = numpy.c_[omega[0], omega[1]].T
         X = scipy.sparse.csc_matrix((vals, inds), shape=(U.shape[0], V.shape[0]))
+        
+        return X 
+    
+    @staticmethod 
+    def partialReconstructPQ(omega, P, Q): 
+        """
+        Given an array of unique indices inds, partially reconstruct $P*Q^T$.
+        The returned matrix is a scipy csc_matrix.
+        """ 
+        
+        vals = SparseUtilsCython.partialReconstructValsPQ(omega[0], omega[1], P, Q)
+        inds = numpy.c_[omega[0], omega[1]].T
+        X = scipy.sparse.csc_matrix((vals, inds), shape=(P.shape[0], Q.shape[0]))
         
         return X 
         

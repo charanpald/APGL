@@ -9,8 +9,9 @@ import numpy.random
 import scipy.sparse
 import scipy.sparse.linalg 
 import scipy.linalg
-from apgl.util.MCEvaluator import MCEvaluator 
+from exp.util.MCEvaluator import MCEvaluator 
 from apgl.util.Util import Util 
+import exp.util.SparseUtils as ExpSU
 import logging
 
 class SGDNorm2Reg(object): 
@@ -33,7 +34,7 @@ class SGDNorm2Reg(object):
         
     def learnModel(self, X, P=None, Q=None): 
         """
-        Learn the matrix completion using a sparse matrix X. 
+        Learn the matrix completion using a sparse matrix X.
         """
         
         if P == None:
@@ -56,18 +57,19 @@ class SGDNorm2Reg(object):
                 error = X[u,i] - P[u,:].dot(Q[i,:])
                 if error > self.eps:
                     logging.debug(str(u) + " " + str(i) + ": " + str(error))
-                grad_weight = self.gamma/(t+self.t0)
-#                grad_weight = self.gamma/scipy.sqrt(t+self.t0)
+                grad_weight = 1.*self.gamma/(t+self.t0)
+#                grad_weight = 1.self.gamma/scipy.sqrt(t+self.t0)
                 oldProw = P[u,:].copy()
                 P[u,:] += grad_weight * (error*Q[i,:]-self.lmbda*P[u,:])
                 Q[i,:] += grad_weight * (error*oldProw-self.lmbda*Q[i,:])
                 
-                # stop due to limited time budget
-                if t >= self.tmax:
-                    break;
                 t += 1
+                # stop due to limited time budget
+                if t > self.tmax:
+                    break;
                     
-            ZList.append(scipy.sparse.csr_matrix(P).dot(scipy.sparse.csr_matrix(Q).T))
+#            ZList.append(scipy.sparse.csr_matrix(P).dot(scipy.sparse.csr_matrix(Q).T))
+            ZList.append((P, Q))
             
             # stop due to no change after a bunch of gradient steps
             logging.debug("norm of DeltaP: " + str(scipy.linalg.norm(P - oldP)))
@@ -76,14 +78,35 @@ class SGDNorm2Reg(object):
                 break;
             
             # stop due to limited time budget
-            if t >= self.tmax:
+            if t > self.tmax:
                 break;
                 
         if __debug__:
-            logging.info("nb grad: " + str(t))
+            logging.info("nb grad: " + str(t-1))
 
         return ZList 
+
+    def predict(self, ZList, inds, i=-1):
+        """
+        From i-th matrix returned by learnModel, predict the values of indices
+        contained in inds.
+        """
+        U, V = ZList[i]
+        Xhat = ExpSU.SparseUtils.reconstructLowRankPQ(U, V, inds)
+        return Xhat
+
+    def predictAll(self, ZList, inds):
+        """
+        Make a set of predictions for a given iterator of completed matrices and
+        an index list.
+        """
+        predXList = []
         
+        for i in range(len(ZList)): 
+            predXList.append(self.predict(ZList, inds, i))
+            
+        return predXList 
+
     def getMetricMethod(self): 
-        return MCEvaluator.meanSqError()
+        return MCEvaluator.meanSqError
         
