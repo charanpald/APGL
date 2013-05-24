@@ -16,37 +16,39 @@ ks = numpy.array(2**numpy.arange(3, 8.5, 0.5), numpy.int)
 logging.debug(ks)
 
 plotStyles = ['k-', 'k--', 'k-.', 'r--', 'r-', 'g-', 'b-', 'b--', 'b-.', 'g--', 'g--', 'g-.', 'r-', 'r--', 'r-.']
-i = 0
+methods = ["propack", "arpack", "rsvd", "svdUpdate"]
 
-try: 
-    fileName = outputDir + "ResultsSoftImpute.npz"
-    data = numpy.load(fileName)
-    measures = data["arr_0"]
-    metadata = data["arr_1"]
-    
-    print(metadata[0,1])
-    
-    plt.figure(0)
-    plt.plot(numpy.arange(measures.shape[0]), measures[:, 1], plotStyles[i],)
-    plt.ylabel("RMSE Test")
-    plt.legend(loc="lower left") 
-    
-    plt.figure(1)
-    plt.plot(numpy.arange(measures.shape[0]), measures[:, 2], plotStyles[i])
-    plt.ylabel("MAE Test")
-    plt.legend(loc="lower left") 
-    
-    plt.figure(2)
-    plt.plot(numpy.arange(measures.shape[0]), measures[:, 0], plotStyles[i])
-    plt.legend() 
-    plt.ylabel("RMSE Train")
-    
-    plt.figure(3)
-    plt.plot(numpy.arange(metadata.shape[0]), metadata[:, 0], plotStyles[i])
-    plt.legend() 
-    plt.ylabel("Rank")
-except: 
-    logging.debug("Missing results : " + str(fileName))
-   
+for i, method in enumerate(methods): 
+
+    try: 
+        fileName = outputDir + "ResultsSoftImpute_alg=" + method + ".npz"
+        data = numpy.load(fileName)
+        measures = data["arr_0"]
+        metadata = data["arr_1"]
+        
+        print(metadata[0,1])
+        
+        plt.figure(0)
+        plt.plot(numpy.arange(measures.shape[0]), measures[:, 1], plotStyles[i], label=method)
+        plt.ylabel("RMSE Test")
+        plt.legend(loc="lower left") 
+        
+        plt.figure(1)
+        plt.plot(numpy.arange(measures.shape[0]), measures[:, 2], plotStyles[i], label=method)
+        plt.ylabel("MAE Test")
+        plt.legend(loc="lower left") 
+        
+        plt.figure(2)
+        plt.plot(numpy.arange(measures.shape[0]), measures[:, 0], plotStyles[i], label=method)
+        plt.legend() 
+        plt.ylabel("RMSE Train")
+        
+        plt.figure(3)
+        plt.plot(numpy.arange(metadata.shape[0]), metadata[:, 0], plotStyles[i], label=method)
+        plt.legend() 
+        plt.ylabel("Rank")
+    except: 
+        logging.debug("Missing results : " + str(fileName))
+       
 
 plt.show()
