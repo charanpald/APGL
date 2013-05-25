@@ -12,8 +12,6 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 #dataset = "NetflixDataset"
 dataset = "SyntheticDataset1"
 outputDir = PathDefaults.getOutputDir() + "recommend/" + dataset + "/"
-ks = numpy.array(2**numpy.arange(3, 8.5, 0.5), numpy.int)
-logging.debug(ks)
 
 plotStyles = ['k-', 'k--', 'k-.', 'r--', 'r-', 'g-', 'b-', 'b--', 'b-.', 'g--', 'g--', 'g-.', 'r-', 'r--', 'r-.']
 methods = ["propack", "arpack", "rsvd", "svdUpdate"]
@@ -31,22 +29,32 @@ for i, method in enumerate(methods):
         plt.figure(0)
         plt.plot(numpy.arange(measures.shape[0]), measures[:, 1], plotStyles[i], label=method)
         plt.ylabel("RMSE Test")
+        plt.xlabel("Graph no.")
         plt.legend(loc="lower left") 
         
         plt.figure(1)
         plt.plot(numpy.arange(measures.shape[0]), measures[:, 2], plotStyles[i], label=method)
         plt.ylabel("MAE Test")
+        plt.xlabel("Graph no.")
         plt.legend(loc="lower left") 
         
         plt.figure(2)
         plt.plot(numpy.arange(measures.shape[0]), measures[:, 0], plotStyles[i], label=method)
         plt.legend() 
+        plt.xlabel("Graph no.")
         plt.ylabel("RMSE Train")
         
         plt.figure(3)
         plt.plot(numpy.arange(metadata.shape[0]), metadata[:, 0], plotStyles[i], label=method)
         plt.legend() 
+        plt.xlabel("Graph no.")
         plt.ylabel("Rank")
+        
+        plt.figure(4)
+        plt.plot(numpy.arange(metadata.shape[0]), metadata[:, 2], plotStyles[i], label=method)
+        plt.legend() 
+        plt.xlabel("Graph no.")
+        plt.ylabel("Time (s)")
     except: 
         logging.debug("Missing results : " + str(fileName))
        
