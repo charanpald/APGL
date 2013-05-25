@@ -1,3 +1,4 @@
+import gc 
 import numpy
 import logging
 import itertools
@@ -260,22 +261,23 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         if (numpy.flipud(numpy.sort(rhos)) != rhos).all(): 
             raise ValueError("rhos must be in descending order")    
 
-        Xcoo = X.tocoo()
+        X = X.tocoo()
+        gc.collect()
         errors = numpy.zeros((rhos.shape[0], ks.shape[0], len(cvInds)))
 
         for i, (trainInds, testInds) in enumerate(cvInds):
             Util.printIteration(i, 1, len(cvInds), "Fold: ")
 
             trainX = scipy.sparse.coo_matrix(X.shape)
-            trainX.data = Xcoo.data[trainInds]
-            trainX.row = Xcoo.row[trainInds]
-            trainX.col = Xcoo.col[trainInds]
+            trainX.data = X.data[trainInds]
+            trainX.row = X.row[trainInds]
+            trainX.col = X.col[trainInds]
             trainX = trainX.tocsc()
 
             testX = scipy.sparse.coo_matrix(X.shape)
-            testX.data = Xcoo.data[testInds]
-            testX.row = Xcoo.row[testInds]
-            testX.col = Xcoo.col[testInds]
+            testX.data = X.data[testInds]
+            testX.row = X.row[testInds]
+            testX.col = X.col[testInds]
             testX = testX.tocsc()
 
             assert trainX.nnz == trainInds.shape[0]
@@ -289,9 +291,10 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                 learner.setK(k)
                 paramList.append((learner, trainX, testX, rhos)) 
                 
-            pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
-            results = pool.imap(learnPredict, paramList)
-            #results = itertools.imap(learnPredict, paramList)
+            #pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
+            #results = pool.imap(learnPredict, paramList)
+            #pool.close()
+            results = itertools.imap(learnPredict, paramList)
             
             for m, rhoErrors in enumerate(results): 
                 errors[:, m, i] = rhoErrors
