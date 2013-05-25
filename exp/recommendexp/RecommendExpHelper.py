@@ -105,6 +105,8 @@ class RecommendExpHelper(object):
     def getTrainIterator(self): 
         """
         Return the training iterator wrapped in an iterator which centers the rows. 
+        Note that the original iterator must generate *new* matrices on repeated 
+        calls since the original ones are modified by centering. 
         """
         return CenterMatrixIterator(self.trainXIteratorFunc())            
             
@@ -127,16 +129,13 @@ class RecommendExpHelper(object):
                 break 
             
             trainX = next(trainIterator)
-            testX = trainIterator.centerMatrix(next(testIterator)) 
-            
-            predTrainX = learner.predictOne(Z, trainX.nonzero())
-            predTestX = learner.predictOne(Z, testX.nonzero())
-            
-            #Uncenter all matrices 
-            trainX = trainIterator.uncenter(trainX)
-            testX = trainIterator.uncenter(testX)
+            predTrainX = learner.predictOne(Z, trainX.nonzero())  
             predTrainX = trainIterator.uncenter(predTrainX)
-            predTestX = trainIterator.uncenter(predTrainX)
+            trainX = trainIterator.uncenter(trainX)
+            
+            testX = next(testIterator)
+            predTestX = learner.predictOne(Z, testX.nonzero())
+            predTestX = trainIterator.uncenter(predTestX)
             
             currentMeasures = [MCEvaluator.rootMeanSqError(trainX, predTrainX)]
             currentMeasures.extend([MCEvaluator.rootMeanSqError(testX, predTestX), MCEvaluator.meanAbsError(testX, predTestX)])
@@ -170,9 +169,9 @@ class RecommendExpHelper(object):
                 fileLock.lock()
                 
                 learner = IterativeSoftImpute(svdAlg=self.algoArgs.svdAlg, logStep=self.logStep, kmax=self.algoArgs.kmax, postProcess=self.algoArgs.postProcess)
-                trainIterator = self.getTrainIterator()
                 
                 if self.algoArgs.modelSelect: 
+                    trainIterator = self.getTrainIterator()
                     #Let's find the optimal lambda using the first matrix 
                     X = trainIterator.next() 
                     X = scipy.sparse.csc_matrix(X, dtype=numpy.float)
