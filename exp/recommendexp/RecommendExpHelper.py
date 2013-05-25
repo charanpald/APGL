@@ -29,6 +29,7 @@ class RecommendExpHelper(object):
     defaultAlgoArgs.svdAlg = "propack"
     defaultAlgoArgs.modelSelect = False
     defaultAlgoArgs.postProcess = False 
+    defaultAlgoArgs.trainError = False 
     
     def __init__(self, trainXIteratorFunc, testXIteratorFunc, cmdLine=None, defaultAlgoArgs = None, dirName=""):
         """ priority for default args
@@ -82,6 +83,7 @@ class RecommendExpHelper(object):
         algoParser.add_argument("--svdAlg", type=str, help="Algorithm to compute SVD for each iteration of soft impute (default: %(default)s)", default=defaultAlgoArgs.svdAlg)
         algoParser.add_argument("--modelSelect", action="store_true", help="Weather to do model selection on the 1st iteration (default: %(default)s)", default=defaultAlgoArgs.modelSelect)
         algoParser.add_argument("--postProcess", action="store_true", help="Weather to do post processing for soft impute (default: %(default)s)", default=defaultAlgoArgs.postProcess)
+        algoParser.add_argument("--trainError", action="store_true", help="Weather to compute the error on the training matrices (default: %(default)s)", default=defaultAlgoArgs.trainError)
         return(algoParser)
     
     # update current algoArgs with values from user and then from command line
@@ -129,16 +131,22 @@ class RecommendExpHelper(object):
                 break 
             
             trainX = next(trainIterator)
-            predTrainX = learner.predictOne(Z, trainX.nonzero())  
-            predTrainX = trainIterator.uncenter(predTrainX)
-            trainX = trainIterator.uncenter(trainX)
-            
             testX = next(testIterator)
             predTestX = learner.predictOne(Z, testX.nonzero())
+            predTestX.eliminate_zeros()
             predTestX = trainIterator.uncenter(predTestX)
             
-            currentMeasures = [MCEvaluator.rootMeanSqError(trainX, predTrainX)]
-            currentMeasures.extend([MCEvaluator.rootMeanSqError(testX, predTestX), MCEvaluator.meanAbsError(testX, predTestX)])
+            currentMeasures = [MCEvaluator.rootMeanSqError(testX, predTestX), MCEvaluator.meanAbsError(testX, predTestX)]
+            
+            if self.algoArgs.trainError:
+                assert trainX.shape == testX.shape
+                predTrainX = learner.predictOne(Z, trainX.nonzero())  
+                predTrainX.eliminate_zeros()
+                predTrainX = trainIterator.uncenter(predTrainX)
+                trainX.eliminate_zeros()
+                trainX = trainIterator.uncenter(trainX)
+                currentMeasures.append(MCEvaluator.rootMeanSqError(trainX, predTrainX))
+            
             logging.debug("Error measures: " + str(currentMeasures))
             logging.debug("Standard deviation of test set " + str(testX.data.std()))
             measures.append(currentMeasures)
