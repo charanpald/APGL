@@ -59,11 +59,6 @@ class SyntheticDataset1(object):
             
             X = scipy.sparse.csc_matrix((currentVals, (currentRowInds, currentColInds)), dtype=numpy.float, shape=(endM, endN))
             
-            logging.debug("Centering rows and cols of X with shape " + str(X.shape))
-            tempRowInds, tempColInds = X.nonzero()
-            X, muRows = SparseUtils.centerRows(X)
-            X, muCols = SparseUtils.centerCols(X, inds=(tempRowInds, tempColInds))   
-    
             trainX = X.multiply(XMaskTrain)[0:startM, 0:startN]
             trainX.eliminate_zeros()
             trainX.prune() 
@@ -81,11 +76,6 @@ class SyntheticDataset1(object):
         nStepList = numpy.linspace(startN, endN, numMatrices)
     
         X = scipy.sparse.csc_matrix((vals, (rowInds, colInds)), dtype=numpy.float, shape=(endM, endN))
-        
-        logging.debug("Centering rows and cols of X with shape " + str(X.shape))
-        rowInds, colInds = X.nonzero()
-        X, muRows = SparseUtils.centerRows(X)
-        X, muCols = SparseUtils.centerCols(X, inds=(rowInds, colInds))       
     
         for i in range(numMatrices): 
             trainX = X.multiply(XMaskTrain)[0:mStepList[i], :][:, 0:nStepList[i]]
