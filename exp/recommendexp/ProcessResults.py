@@ -24,25 +24,26 @@ for i, method in enumerate(methods):
         measures = data["arr_0"]
         metadata = data["arr_1"]
         
-        print(metadata[0,1])
+        print("lambda = " + str(metadata[0,1]) +  " rank = " + str(metadata[0, 0])) 
         
         plt.figure(0)
-        plt.plot(numpy.arange(measures.shape[0]), measures[:, 1], plotStyles[i], label=method)
+        plt.plot(numpy.arange(measures.shape[0]), measures[:, 0], plotStyles[i], label=method)
+        plt.xlabel("Graph no.")        
         plt.ylabel("RMSE Test")
-        plt.xlabel("Graph no.")
         plt.legend(loc="lower left") 
         
         plt.figure(1)
-        plt.plot(numpy.arange(measures.shape[0]), measures[:, 2], plotStyles[i], label=method)
+        plt.plot(numpy.arange(measures.shape[0]), measures[:, 1], plotStyles[i], label=method)
+        plt.xlabel("Graph no.")        
         plt.ylabel("MAE Test")
-        plt.xlabel("Graph no.")
         plt.legend(loc="lower left") 
         
-        plt.figure(2)
-        plt.plot(numpy.arange(measures.shape[0]), measures[:, 0], plotStyles[i], label=method)
-        plt.legend() 
-        plt.xlabel("Graph no.")
-        plt.ylabel("RMSE Train")
+        if measures.shape[1] == 3:
+            plt.figure(2)
+            plt.plot(numpy.arange(measures.shape[0]), measures[:, 2], plotStyles[i], label=method)
+            plt.legend() 
+            plt.xlabel("Graph no.")
+            plt.ylabel("RMSE Train")
         
         plt.figure(3)
         plt.plot(numpy.arange(metadata.shape[0]), metadata[:, 0], plotStyles[i], label=method)
