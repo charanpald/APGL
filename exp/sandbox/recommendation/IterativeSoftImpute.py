@@ -1,8 +1,10 @@
 import numpy
 import logging
+import itertools
 import scipy.sparse.linalg
 import exp.util.SparseUtils as ExpSU
 import numpy.testing as nptst 
+import multiprocessing 
 from exp.sandbox.RandomisedSVD import RandomisedSVD
 from exp.util.MCEvaluator import MCEvaluator
 from apgl.util.Util import Util
@@ -12,6 +14,33 @@ from exp.util.SparseUtilsCython import SparseUtilsCython
 from exp.sandbox.SVDUpdate import SVDUpdate
 from exp.util.LinOperatorUtils import LinOperatorUtils
 from exp.util.SparseUtils import SparseUtils
+
+def learnPredict(args): 
+    """
+    A function to train on a training set and test on a test set, for a number 
+    of values of rho. 
+    """
+    learner, trainX, testX, rhos = args 
+    logging.debug("k=" + str(learner.getK()))
+    
+    testInds = testX.nonzero()
+    trainXIter = []
+    testIndList = []    
+    
+    for rho in rhos: 
+        trainXIter.append(trainX)
+        testIndList.append(testInds)
+    
+    trainXIter = iter(trainXIter)
+
+    ZIter = learner.learnModel(trainXIter, iter(rhos))
+    predXIter = learner.predict(ZIter, testIndList)
+    
+    errors = numpy.zeros(rhos.shape[0])
+    for j, predX in enumerate(predXIter): 
+        errors[j] = MCEvaluator.rootMeanSqError(testX, predX)
+        
+    return errors 
 
 class IterativeSoftImpute(AbstractMatrixCompleter):
     """
@@ -55,6 +84,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         self.postProcess = postProcess 
         self.postProcessSamples = 10**6
         self.maxIterations = 30
+
 
     def learnModel(self, XIterator, rhos=None):
         """
@@ -248,31 +278,23 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
             testX.col = Xcoo.col[testInds]
             testX = testX.tocsc()
 
-
             assert trainX.nnz == trainInds.shape[0]
             assert testX.nnz == testInds.shape[0]
             nptst.assert_array_almost_equal((testX+trainX).data, X.data)
 
-            testInds2 = testX.nonzero()
+            paramList = []
             
             for m, k in enumerate(ks): 
-                #Create lists 
-                trainXIter = []
-                testIndList = []
+                learner = self.copy()
+                learner.setK(k)
+                paramList.append((learner, trainX, testX, rhos)) 
                 
-                self.setK(k)
-                logging.debug("k=" + str(k))
-                
-                for rho in rhos: 
-                    trainXIter.append(trainX)
-                    testIndList.append(testInds2)
-                trainXIter = iter(trainXIter)
-                
-                ZIter = self.learnModel(trainXIter, iter(rhos))
-                predXIter = self.predict(ZIter, testIndList)
-                
-                for j, predX in enumerate(predXIter): 
-                    errors[j, m, i] = MCEvaluator.rootMeanSqError(testX, predX)
+            pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
+            results = pool.imap(learnPredict, paramList)
+            #results = itertools.imap(learnPredict, paramList)
+            
+            for m, rhoErrors in enumerate(results): 
+                errors[:, m, i] = rhoErrors
 
         meanErrors = errors.mean(2)
         stdErrors = errors.std(2)
@@ -327,7 +349,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         """
         Return a new copied version of this object.
         """
-        iterativeSoftImpute = IterativeSoftImpute(rho=self.rho, eps=self.eps, k=self.k)
+        iterativeSoftImpute = IterativeSoftImpute(rho=self.rho, eps=self.eps, k=self.k, svdAlg=self.svdAlg, updateAlg=self.updateAlg, r=self.r, logStep=self.logStep, kmax=self.kmax, postProcess=self.postProcess)
 
         return iterativeSoftImpute
 
