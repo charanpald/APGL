@@ -6,6 +6,7 @@ import logging
 import numpy
 import argparse
 import scipy.sparse
+import time 
 from copy import copy
 from apgl.util.PathDefaults import PathDefaults
 from apgl.util import Util
@@ -15,6 +16,7 @@ from exp.sandbox.recommendation.IterativeMeanRating import IterativeMeanRating
 from exp.util.SparseUtils import SparseUtils 
 from apgl.util.Sampling import Sampling 
 from apgl.util.FileLock import FileLock 
+from exp.recommendexp.CenterMatrixIterator import CenterMatrixIterator
 
 class RecommendExpHelper(object):
     defaultAlgoArgs = argparse.Namespace()
@@ -79,7 +81,7 @@ class RecommendExpHelper(object):
         algoParser.add_argument("--kmax", type=int, help="Max number of Krylov/Lanczos vectors for PROPACK/ARPACK (default: %(default)s)", default=defaultAlgoArgs.kmax)
         algoParser.add_argument("--svdAlg", type=str, help="Algorithm to compute SVD for each iteration of soft impute (default: %(default)s)", default=defaultAlgoArgs.svdAlg)
         algoParser.add_argument("--modelSelect", action="store_true", help="Weather to do model selection on the 1st iteration (default: %(default)s)", default=defaultAlgoArgs.modelSelect)
-        algoParser.add_argument("--postProcess", action="store_true", help="Weather to do model selection on the 1st iteration (default: %(default)s)", default=defaultAlgoArgs.postProcess)
+        algoParser.add_argument("--postProcess", action="store_true", help="Weather to do post processing for soft impute (default: %(default)s)", default=defaultAlgoArgs.postProcess)
         return(algoParser)
     
     # update current algoArgs with values from user and then from command line
@@ -99,26 +101,42 @@ class RecommendExpHelper(object):
         keys.sort()
         for key in keys:
             logging.info("    " + str(key) + ": " + str(self.algoArgs.__getattribute__(key)))
-    
-    def getIterator(self):
-        return self.getIteratorFunc()
-
+            
+    def getTrainIterator(self): 
+        """
+        Return the training iterator wrapped in an iterator which centers the rows. 
+        """
+        return CenterMatrixIterator(self.trainXIteratorFunc())            
+            
     def recordResults(self, ZIter, learner, fileName):
         """
         Save results for a particular recommendation 
         """
-        trainIterator = self.trainXIteratorFunc()
+        trainIterator = self.getTrainIterator()
         testIterator = self.testXIteratorFunc()
         measures = []
         metadata = []
         logging.debug("Computing recommendation errors")
-
-        for Z in ZIter:
+        
+        while True: 
+            try: 
+                start = time.time()
+                Z = next(ZIter) 
+                learnTime = time.time()-start 
+            except StopIteration: 
+                break 
+            
             trainX = next(trainIterator)
-            testX = next(testIterator)
+            testX = trainIterator.centerMatrix(next(testIterator)) 
             
             predTrainX = learner.predictOne(Z, trainX.nonzero())
             predTestX = learner.predictOne(Z, testX.nonzero())
+            
+            #Uncenter all matrices 
+            trainX = trainIterator.uncenter(trainX)
+            testX = trainIterator.uncenter(testX)
+            predTrainX = trainIterator.uncenter(predTrainX)
+            predTestX = trainIterator.uncenter(predTrainX)
             
             currentMeasures = [MCEvaluator.rootMeanSqError(trainX, predTrainX)]
             currentMeasures.extend([MCEvaluator.rootMeanSqError(testX, predTestX), MCEvaluator.meanAbsError(testX, predTestX)])
@@ -126,8 +144,8 @@ class RecommendExpHelper(object):
             logging.debug("Standard deviation of test set " + str(testX.data.std()))
             measures.append(currentMeasures)
             
-            #Store the rank of the result plus the lambda 
-            metadata.append([Z[0].shape[1], learner.getRho()])
+            #Store some metadata about the learning process 
+            metadata.append([Z[0].shape[1], learner.getRho(), learnTime])
 
         measures = numpy.array(measures)
         metadata = numpy.array(metadata)
@@ -136,6 +154,8 @@ class RecommendExpHelper(object):
         numpy.savez(fileName, measures, metadata)
         logging.debug("Saved file as " + fileName)
 
+
+
     def runExperiment(self):
         """
         Run the selected clustering experiments and save results
@@ -143,14 +163,14 @@ class RecommendExpHelper(object):
         if self.algoArgs.runSoftImpute:
             logging.debug("Running soft impute")
             
-            resultsFileName = self.resultsDir + "ResultsSoftImpute.npz"
+            resultsFileName = self.resultsDir + "ResultsSoftImpute_alg=" + self.algoArgs.svdAlg +  ".npz"
             fileLock = FileLock(resultsFileName)  
             
             if not fileLock.isLocked() and not fileLock.fileExists(): 
                 fileLock.lock()
                 
                 learner = IterativeSoftImpute(svdAlg=self.algoArgs.svdAlg, logStep=self.logStep, kmax=self.algoArgs.kmax, postProcess=self.algoArgs.postProcess)
-                trainIterator = self.trainXIteratorFunc()
+                trainIterator = self.getTrainIterator()
                 
                 if self.algoArgs.modelSelect: 
                     #Let's find the optimal lambda using the first matrix 
@@ -173,7 +193,7 @@ class RecommendExpHelper(object):
                     
                 learner.setRho(rho)            
                 logging.debug("Training with rho = " + str(rho))
-                trainIterator = self.trainXIteratorFunc()
+                trainIterator = self.getTrainIterator()
                 ZIter = learner.learnModel(trainIterator)
                 
                 self.recordResults(ZIter, learner, resultsFileName)
@@ -185,7 +205,7 @@ class RecommendExpHelper(object):
             logging.debug("Running mean recommendation")
             
             learner = IterativeMeanRating()
-            trainIterator = self.trainXIteratorFunc()
+            trainIterator = self.getTrainIterator()
             ZIter = learner.learnModel(trainIterator)
             
             resultsFileName = self.resultsDir + "ResultsMeanRating.npz"
