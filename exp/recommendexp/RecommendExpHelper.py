@@ -2,6 +2,7 @@
 """
 Some common functions used for the recommendation experiments 
 """
+import gc 
 import logging
 import numpy
 import argparse
@@ -176,35 +177,38 @@ class RecommendExpHelper(object):
             if not fileLock.isLocked() and not fileLock.fileExists(): 
                 fileLock.lock()
                 
-                learner = IterativeSoftImpute(svdAlg=self.algoArgs.svdAlg, logStep=self.logStep, kmax=self.algoArgs.kmax, postProcess=self.algoArgs.postProcess)
-                
-                if self.algoArgs.modelSelect: 
+                try: 
+                    learner = IterativeSoftImpute(svdAlg=self.algoArgs.svdAlg, logStep=self.logStep, kmax=self.algoArgs.kmax, postProcess=self.algoArgs.postProcess)
+                    
+                    if self.algoArgs.modelSelect: 
+                        trainIterator = self.getTrainIterator()
+                        #Let's find the optimal lambda using the first matrix 
+                        X = trainIterator.next() 
+                        #X = scipy.sparse.csc_matrix(X, dtype=numpy.float)
+                        gc.collect()
+                        logging.debug("Performing model selection")
+                        cvInds = Sampling.randCrossValidation(self.algoArgs.folds, X.nnz)
+                        meanErrors, stdErrors = learner.modelSelect(X, self.algoArgs.rhos, self.algoArgs.ks, cvInds)
+                        
+                        logging.debug("Mean errors = " + str(meanErrors))
+                        logging.debug("Std errors = " + str(stdErrors))
+                        rho = self.algoArgs.rhos[numpy.unravel_index(numpy.argmin(meanErrors), meanErrors.shape)[0]]
+                        k = self.algoArgs.ks[numpy.unravel_index(numpy.argmin(meanErrors), meanErrors.shape)[1]]
+                    else: 
+                        rho = self.algoArgs.rhos[0]
+                        k = self.algoArgs.ks[0]
+                        
+                    learner.setK(k)            
+                    logging.debug("Training with k = " + str(k))                    
+                        
+                    learner.setRho(rho)            
+                    logging.debug("Training with rho = " + str(rho))
                     trainIterator = self.getTrainIterator()
-                    #Let's find the optimal lambda using the first matrix 
-                    X = trainIterator.next() 
-                    X = scipy.sparse.csc_matrix(X, dtype=numpy.float)
-                    logging.debug("Performing model selection")
-                    cvInds = Sampling.randCrossValidation(self.algoArgs.folds, X.nnz)
-                    meanErrors, stdErrors = learner.modelSelect(X, self.algoArgs.rhos, self.algoArgs.ks, cvInds)
+                    ZIter = learner.learnModel(trainIterator)
                     
-                    logging.debug("Mean errors = " + str(meanErrors))
-                    logging.debug("Std errors = " + str(stdErrors))
-                    rho = self.algoArgs.rhos[numpy.unravel_index(numpy.argmin(meanErrors), meanErrors.shape)[0]]
-                    k = self.algoArgs.ks[numpy.unravel_index(numpy.argmin(meanErrors), meanErrors.shape)[1]]
-                else: 
-                    rho = self.algoArgs.rhos[0]
-                    k = self.algoArgs.ks[0]
-                    
-                learner.setK(k)            
-                logging.debug("Training with k = " + str(k))                    
-                    
-                learner.setRho(rho)            
-                logging.debug("Training with rho = " + str(rho))
-                trainIterator = self.getTrainIterator()
-                ZIter = learner.learnModel(trainIterator)
-                
-                self.recordResults(ZIter, learner, resultsFileName)
-                fileLock.unlock()
+                    self.recordResults(ZIter, learner, resultsFileName)
+                finally: 
+                    fileLock.unlock()
             else: 
                 logging.debug("File is locked or already computed: " + resultsFileName)
             
