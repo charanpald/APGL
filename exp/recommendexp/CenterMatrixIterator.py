@@ -9,6 +9,7 @@ class CenterMatrixIterator(object):
     """
     def __init__(self, iterator): 
         self.iterator = iterator  
+        self.i = 0
     
     def next(self): 
         X = next(self.iterator)
@@ -17,6 +18,8 @@ class CenterMatrixIterator(object):
         X, self.muRows = SparseUtils.centerRows(X)
         X.eliminate_zeros()
         X.prune() 
+        
+        self.i += 1 
         
         return X 
 
@@ -39,6 +42,6 @@ class CenterMatrixIterator(object):
         """
         Uncenter a training or test matrix. 
         """
-        logging.debug("Uncentering matrix of size: " + str(X.shape))
+        #logging.debug("Uncentering matrix of size: " + str(X.shape))
         return SparseUtils.uncenterRows(X, self.muRows)
         
