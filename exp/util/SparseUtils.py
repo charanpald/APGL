@@ -315,8 +315,27 @@ class SparseUtils(object):
         X.data -= vals 
         
         return X, mu 
-     
-    
+ 
+    @staticmethod 
+    def center(X, mu1=None, mu2=None, inds=None):
+        """
+        Center both the rows and cols of a sparse matrix at the same time. 
+       TODO: Look at || X . Y - ab^T . Y||_F where Y is indicator and dot is 
+        hadamard product. 
+        """
+        pass 
+         
+    @staticmethod 
+    def uncenterRows(X, mu):
+        rowInds, colInds = X.nonzero()
+        rowInds = numpy.array(rowInds, numpy.int)
+        colInds = numpy.array(colInds, numpy.int)
+        
+        vals = SparseUtilsCython.partialOuterProduct(rowInds, colInds, numpy.array(mu, numpy.float), numpy.ones(X.shape[1]))
+        X.data += vals 
+        
+        return X 
+  
     @staticmethod
     def uncenter(X, mu1, mu2): 
         """
