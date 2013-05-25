@@ -11,6 +11,9 @@ from exp.util.SparseUtilsCython import SparseUtilsCython
 
 class SyntheticDataset1(object): 
     def __init__(self): 
+        pass 
+    
+    def generateMatrices(self):
         """
         This function returns a list of 20 train/test matrices for incremental 
         collaborative filtering. Each item in the list is (trainX, testX).
@@ -88,18 +91,19 @@ class SyntheticDataset1(object):
             
             trainXList.append(trainX)
             testXList.append(testX)
-            
-        self.trainXList = trainXList
-        self.testXList = testXList 
+                    
+        return trainXList, testXList
         
     def getTrainIteratorFunc(self):
         def trainIteratorFunc(): 
-            return iter(self.trainXList)
+            trainXList, testXList = self.generateMatrices()       
+            return iter(trainXList)
         
         return trainIteratorFunc
         
     def getTestIteratorFunc(self):
         def testIteratorFunc(): 
-            return iter(self.testXList)
+            trainXList, testXList = self.generateMatrices()   
+            return iter(testXList)
         
         return testIteratorFunc
