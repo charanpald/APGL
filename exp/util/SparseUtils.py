@@ -327,6 +327,13 @@ class SparseUtils(object):
          
     @staticmethod 
     def uncenterRows(X, mu):
+        """
+        Take a matrix with rows centered using mu, and return them to their original 
+        state. Note that one should call X.eliminate_zeros() beforehand. 
+        """
+        if X.shape[0] != mu.shape[0]: 
+            raise ValueError("Invalid number of rows")
+        
         rowInds, colInds = X.nonzero()
         rowInds = numpy.array(rowInds, numpy.int)
         colInds = numpy.array(colInds, numpy.int)
@@ -352,7 +359,4 @@ class SparseUtils(object):
         
         return X 
         
-        
-
-      
     kmaxMultiplier = 15 
