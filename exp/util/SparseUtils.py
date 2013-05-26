@@ -113,7 +113,13 @@ class SparseUtils(object):
         """
         (m, n) = (P.shape[0], Q.shape[0])  
         
-        rowInds, colInds = numpy.unravel_index(inds, (m, n))
+        if type(inds) == tuple:
+            rowInds, colInds = inds
+            rowInds = numpy.array(rowInds, numpy.int)
+            colInds = numpy.array(colInds, numpy.int)
+        else: 
+            rowInds, colInds = numpy.unravel_index(inds, (m, n))
+            
         X = SparseUtilsCython.partialReconstructPQ((rowInds, colInds), P, Q)
         
         return X 
