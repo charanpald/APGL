@@ -77,7 +77,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         self.svdAlg = svdAlg
         self.updateAlg = updateAlg
         self.r = r
-        self.p = 50
+        self.p = 30
         self.q = 2
         if k != None:
             self.kmax = k*5
