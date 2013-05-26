@@ -13,7 +13,7 @@ from apgl.util.PathDefaults import PathDefaults
 from apgl.util import Util
 from exp.util.MCEvaluator import MCEvaluator 
 from exp.sandbox.recommendation.IterativeSoftImpute import IterativeSoftImpute 
-from exp.sandbox.recommendation.IterativeMeanRating import IterativeMeanRating 
+from exp.sandbox.recommendation.IterativeSGDNorm2Reg import IterativeSGDNorm2Reg 
 from exp.util.SparseUtils import SparseUtils 
 from apgl.util.Sampling import Sampling 
 from apgl.util.FileLock import FileLock 
@@ -22,7 +22,7 @@ from exp.recommendexp.CenterMatrixIterator import CenterMatrixIterator
 class RecommendExpHelper(object):
     defaultAlgoArgs = argparse.Namespace()
     defaultAlgoArgs.runSoftImpute = False
-    defaultAlgoArgs.runMean = False
+    defaultAlgoArgs.runSgdMf = False
     defaultAlgoArgs.rhos = numpy.linspace(0.5, 0.0, 10)     
     defaultAlgoArgs.folds = 3
     defaultAlgoArgs.ks = numpy.array(2**numpy.arange(3, 7, 0.5), numpy.int)
@@ -31,6 +31,7 @@ class RecommendExpHelper(object):
     defaultAlgoArgs.modelSelect = False
     defaultAlgoArgs.postProcess = False 
     defaultAlgoArgs.trainError = False 
+    defaultAlgoArgs.lmbda = 0.001
     
     def __init__(self, trainXIteratorFunc, testXIteratorFunc, cmdLine=None, defaultAlgoArgs = None, dirName=""):
         """ priority for default args
@@ -76,7 +77,7 @@ class RecommendExpHelper(object):
         
         # define parser
         algoParser = argparse.ArgumentParser(description="", add_help=add_help)
-        for method in ["runSoftImpute", "runMean"]:
+        for method in ["runSoftImpute", "runSgdMf"]:
             algoParser.add_argument("--" + method, action="store_true", default=defaultAlgoArgs.__getattribute__(method))
         algoParser.add_argument("--rhos", type=float, nargs="+", help="Regularisation parameter (default: %(default)s)", default=defaultAlgoArgs.rhos)
         algoParser.add_argument("--ks", type=int, nargs="+", help="Max number of singular values/vectors (default: %(default)s)", default=defaultAlgoArgs.ks)
@@ -153,7 +154,10 @@ class RecommendExpHelper(object):
             measures.append(currentMeasures)
             
             #Store some metadata about the learning process 
-            metadata.append([Z[0].shape[1], learner.getRho(), learnTime])
+            if type(learner) == IterativeSoftImpute: 
+                metadata.append([Z[0].shape[1], learner.getRho(), learnTime])
+            elif type(learner) == IterativeSGDNorm2Reg: 
+                metadata.append([Z[0][0].shape[1], learner.getLambda(), learnTime])
 
         measures = numpy.array(measures)
         metadata = numpy.array(metadata)
@@ -184,8 +188,6 @@ class RecommendExpHelper(object):
                         trainIterator = self.getTrainIterator()
                         #Let's find the optimal lambda using the first matrix 
                         X = trainIterator.next() 
-                        #X = scipy.sparse.csc_matrix(X, dtype=numpy.float)
-                        gc.collect()
                         logging.debug("Performing model selection")
                         cvInds = Sampling.randCrossValidation(self.algoArgs.folds, X.nnz)
                         meanErrors, stdErrors = learner.modelSelect(X, self.algoArgs.rhos, self.algoArgs.ks, cvInds)
@@ -198,11 +200,9 @@ class RecommendExpHelper(object):
                         rho = self.algoArgs.rhos[0]
                         k = self.algoArgs.ks[0]
                         
-                    learner.setK(k)            
-                    logging.debug("Training with k = " + str(k))                    
-                        
-                    learner.setRho(rho)            
-                    logging.debug("Training with rho = " + str(rho))
+                    learner.setK(k)  
+                    learner.setRho(rho)   
+                    logging.debug("Training with k = " + str(k) + " and rho = " + str(rho))                    
                     trainIterator = self.getTrainIterator()
                     ZIter = learner.learnModel(trainIterator)
                     
@@ -211,15 +211,26 @@ class RecommendExpHelper(object):
                     fileLock.unlock()
             else: 
                 logging.debug("File is locked or already computed: " + resultsFileName)
+                
+                
+        if self.algoArgs.runSgdMf:
+            logging.debug("Running SGD MF")
             
-        if self.algoArgs.runMean: 
-            logging.debug("Running mean recommendation")
+            resultsFileName = self.resultsDir + "ResultsSgdMf.npz"
+            fileLock = FileLock(resultsFileName)  
             
-            learner = IterativeMeanRating()
-            trainIterator = self.getTrainIterator()
-            ZIter = learner.learnModel(trainIterator)
-            
-            resultsFileName = self.resultsDir + "ResultsMeanRating.npz"
-            self.recordResults(ZIter, learner, resultsFileName)
+            if not fileLock.isLocked() and not fileLock.fileExists(): 
+                fileLock.lock()
+                
+                try: 
+                    learner = IterativeSGDNorm2Reg(k=self.algoArgs.ks[0], lmbda=self.algoArgs.lmbda)               
+                    trainIterator = self.getTrainIterator()
+                    ZIter = learner.learnModel(trainIterator)
+                    
+                    self.recordResults(ZIter, learner, resultsFileName)
+                finally: 
+                    fileLock.unlock()
+            else: 
+                logging.debug("File is locked or already computed: " + resultsFileName)            
             
         logging.info("All done: see you around!")
