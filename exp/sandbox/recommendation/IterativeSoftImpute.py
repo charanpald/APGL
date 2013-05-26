@@ -40,6 +40,8 @@ def learnPredict(args):
     errors = numpy.zeros(rhos.shape[0])
     for j, predX in enumerate(predXIter): 
         errors[j] = MCEvaluator.rootMeanSqError(testX, predX)
+        del predX 
+        gc.collect()
         
     return errors 
 
@@ -293,13 +295,15 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                 learner.setK(k)
                 paramList.append((learner, trainX, testX, rhos)) 
                 
-            #pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
-            #results = pool.imap(learnPredict, paramList)
-            #pool.close()
-            results = itertools.imap(learnPredict, paramList)
+            pool = multiprocessing.Pool(processes=multiprocessing.cpu_count()/2)
+            results = pool.imap(learnPredict, paramList)
+
+            #results = itertools.imap(learnPredict, paramList)
             
             for m, rhoErrors in enumerate(results): 
                 errors[:, m, i] = rhoErrors
+                
+            pool.terminate()
 
         meanErrors = errors.mean(2)
         stdErrors = errors.std(2)
