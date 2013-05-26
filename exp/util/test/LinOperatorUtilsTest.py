@@ -77,10 +77,17 @@ class LinOperatorUtilsTest(unittest.TestCase):
             u = numpy.random.rand(m)
             v = numpy.random.rand(n)
             
+            r = 10 
+            W = numpy.random.rand(m, r)
+            X = numpy.random.rand(n, r)
+            
             B = numpy.array(A+(U*s).dot(V.T))            
             
             nptst.assert_array_almost_equal(L.matvec(v), B.dot(v))
             nptst.assert_array_almost_equal(L.rmatvec(u), B.T.dot(u))
+            nptst.assert_array_almost_equal(L.matmat(X), B.dot(X))
+            nptst.assert_array_almost_equal(L.rmatmat(W), B.T.dot(W))
+            
       
 if __name__ == '__main__':
     unittest.main()

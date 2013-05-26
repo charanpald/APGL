@@ -51,41 +51,81 @@ class LinOperatorUtils(object):
     @staticmethod 
     def parallelSparseLowRankOp(X, U, s, V): 
         numProcesses = multiprocessing.cpu_count()
-        pool = multiprocessing.Pool(processes=numProcesses) 
-        rowInds = numpy.array(numpy.linspace(0, X.shape[0], numProcesses+1), numpy.int) 
         colInds = numpy.array(numpy.linspace(0, X.shape[1], numProcesses+1), numpy.int)
         
         def matvec(w): 
+            pool = multiprocessing.Pool(processes=numProcesses) 
             paramList = [] 
             for i in range(numProcesses): 
-                paramList.append((X[rowInds[i]:rowInds[i+1], :], U[rowInds[i]:rowInds[i+1], :], s, V, w))
+                paramList.append((X[:, colInds[i]:colInds[i+1]], U, s, V[colInds[i]:colInds[i+1], :], w[colInds[i]:colInds[i+1]]))
 
-            iterator = pool.imap(dotSVD, paramList)
+            iterator = pool.imap(dotSVD, paramList, chunksize=1)
 
             #iterator = itertools.imap(dotSVD, paramList)
             p = numpy.zeros(X.shape[0])
             
             for i in range(numProcesses): 
-                p[rowInds[i]:rowInds[i+1]] = iterator.next()
-            
+                p += iterator.next()
+                
+            pool.terminate()
             
             return p
         
         def rmatvec(w):
+            pool = multiprocessing.Pool(processes=numProcesses) 
             paramList = [] 
             for i in range(numProcesses): 
                 paramList.append((X[:, colInds[i]:colInds[i+1]], U, s, V[colInds[i]:colInds[i+1], :], w))
         
-            iterator = pool.imap(dotSVDT, paramList)
+            iterator = pool.imap(dotSVDT, paramList, chunksize=1)
+            
             #iterator = itertools.imap(dotSVDT, paramList)
             p = numpy.zeros(X.shape[1])
             
             for i in range(numProcesses): 
                 p[colInds[i]:colInds[i+1]] = iterator.next()
             
-            return p      
+            pool.terminate()            
             
-        return scipy.sparse.linalg.LinearOperator(X.shape, matvec, rmatvec, dtype=X.dtype)   
+            return p     
+            
+        def matmat(W): 
+            pool = multiprocessing.Pool(processes=numProcesses) 
+            paramList = [] 
+            for i in range(numProcesses): 
+                paramList.append((X[:, colInds[i]:colInds[i+1]], U, s, V[colInds[i]:colInds[i+1], :], W[colInds[i]:colInds[i+1], :]))
+
+            iterator = pool.imap(dotSVD, paramList, chunksize=1)
+
+            #iterator = itertools.imap(dotSVD, paramList)
+            P = numpy.zeros((X.shape[0], W.shape[1])) 
+            
+            for i in range(numProcesses):
+                P += iterator.next()
+                
+            pool.terminate()
+                
+            return P
+            
+        def rmatmat(W): 
+            pool = multiprocessing.Pool(processes=numProcesses) 
+            paramList = [] 
+            for i in range(numProcesses): 
+                paramList.append((X[:, colInds[i]:colInds[i+1]], U, s, V[colInds[i]:colInds[i+1], :], W))
+
+            iterator = pool.imap(dotSVDT, paramList, chunksize=1)
+
+            #iterator = itertools.imap(dotSVD, paramList)
+            P = numpy.zeros((X.shape[1], W.shape[1])) 
+            
+            for i in range(numProcesses): 
+                P[colInds[i]:colInds[i+1], :] = iterator.next()
+                
+            pool.terminate()
+            
+            return P
+            
+        return GeneralLinearOperator(X.shape, matvec, rmatvec, matmat, rmatmat, dtype=X.dtype)     
         
         
     @staticmethod 
