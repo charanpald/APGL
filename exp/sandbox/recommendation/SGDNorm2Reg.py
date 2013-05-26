@@ -32,9 +32,11 @@ class SGDNorm2Reg(object):
         self.gamma = 1
         
         
-    def learnModel(self, X, P=None, Q=None): 
+    def learnModel(self, X, P=None, Q=None, storeAll=True): 
         """
         Learn the matrix completion using a sparse matrix X.
+        
+        :param storeAll: Store and return a list of intermediate solutions P, Q 
         """
         
         if P == None:
@@ -69,7 +71,10 @@ class SGDNorm2Reg(object):
                     break;
                     
 #            ZList.append(scipy.sparse.csr_matrix(P).dot(scipy.sparse.csr_matrix(Q).T))
-            ZList.append((P, Q))
+            if storeAll: 
+                ZList.append((P, Q))
+            else: 
+                Z = P, Q
             
             # stop due to no change after a bunch of gradient steps
             logging.debug("norm of DeltaP: " + str(scipy.linalg.norm(P - oldP)))
@@ -84,7 +89,10 @@ class SGDNorm2Reg(object):
         if __debug__:
             logging.info("nb grad: " + str(t-1))
 
-        return ZList 
+        if storeAll: 
+            return ZList 
+        else: 
+            return [Z] 
 
     def predict(self, ZList, inds, i=-1):
         """
