@@ -301,7 +301,6 @@ class SVDUpdate:
         Ures = numpy.c_[U, Q1].dot(UW)
         sres = sW
         Vres = numpy.c_[V, Q2].dot(VWT.T)
-        print(sres)
         
         return Ures, sres, Vres 
         
