@@ -1,5 +1,5 @@
 from cython.operator cimport dereference as deref, preincrement as inc 
-
+import cython
 import struct
 import numpy 
 cimport numpy
@@ -31,7 +31,8 @@ class SparseUtilsCython(object):
         return values
         
     @staticmethod 
-    def partialReconstructValsPQ(numpy.ndarray[numpy.long_t, ndim=1] rowInds, numpy.ndarray[numpy.long_t, ndim=1] colInds, numpy.ndarray[numpy.float_t, ndim=2] P, numpy.ndarray[numpy.float_t, ndim=2] Q): 
+    @cython.boundscheck(False)
+    def partialReconstructValsPQ(numpy.ndarray[numpy.long_t, ndim=1] rowInds, numpy.ndarray[numpy.long_t, ndim=1] colInds, numpy.ndarray[numpy.float_t, ndim=2, mode="c"] P, numpy.ndarray[numpy.float_t, ndim=2, mode="c"] Q): 
         """
         Given an array of unique indices inds, partially reconstruct $P*Q^T$.
         """ 
@@ -43,8 +44,8 @@ class SparseUtilsCython(object):
         for i in range(rowInds.shape[0]):
             j = rowInds[i]
             k = colInds[i]
-            
-            values[i] = P[j, :].dot(Q[k,:])            
+
+            values[i] = numpy.inner(P[j, :], Q[k, :])            
             
         return values
         

@@ -109,7 +109,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
 
             def __iter__(self):
                 return self
-
+            
             def next(self):
                 X = self.XIterator.next()
                 logging.debug("Learning on matrix with shape: " + str(X.shape) + " and " + str(X.nnz) + " non-zeros")                
@@ -121,8 +121,9 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                     raise ValueError("X must be a csc_matrix")
                     
                 #Figure out what lambda should be 
-                X = scipy.sparse.csc_matrix(X, dtype=numpy.float)
-                U, s, V = SparseUtils.svdArpack(X, 1, kmax=20)
+                #X = scipy.sparse.csc_matrix(X, dtype=numpy.float)
+                #U, s, V = SparseUtils.svdArpack(X, 1, kmax=20)
+                U, s, V = SparseUtils.svdPropack(X, 1, kmax=20)
                 lmbda = s[0]*self.iterativeSoftImpute.rho
                 logging.debug("Largest singular value : " + str(s[0]) + " and lambda: " + str(lmbda))
 
@@ -167,7 +168,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                         logging.debug("Maximum number of iterations reached")
                         break 
                     
-                    ZOmega = SparseUtilsCython.partialReconstruct2((rowInds, colInds), self.oldU, self.oldS, self.oldV)
+                    ZOmega = SparseUtilsCython.partialReconstructPQ((rowInds, colInds), self.oldU*self.oldS, self.oldV)
                     Y = X - ZOmega
                     Y = Y.tocsc()
 
@@ -178,6 +179,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                     elif self.iterativeSoftImpute.svdAlg=="svdUpdate":
                         newU, newS, newV = SVDUpdate.addSparseProjected(self.oldU, self.oldS, self.oldV, Y, self.iterativeSoftImpute.k)
                     elif self.iterativeSoftImpute.svdAlg=="rsvd":
+                        #L = LinOperatorUtils.parallelSparseLowRankOp(Y, self.oldU, self.oldS, self.oldV)
                         L = LinOperatorUtils.sparseLowRankOp(Y, self.oldU, self.oldS, self.oldV)
                         newU, newS, newV = RandomisedSVD.svd(L, self.iterativeSoftImpute.k, p=self.iterativeSoftImpute.p, q=self.iterativeSoftImpute.q)
                     else:
