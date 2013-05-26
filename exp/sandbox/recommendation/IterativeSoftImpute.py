@@ -123,9 +123,10 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                     raise ValueError("X must be a csc_matrix")
                     
                 #Figure out what lambda should be 
-                #X = scipy.sparse.csc_matrix(X, dtype=numpy.float)
-                #U, s, V = SparseUtils.svdArpack(X, 1, kmax=20)
-                U, s, V = SparseUtils.svdPropack(X, 1, kmax=20)
+                #PROPACK has problems with convergence 
+                X = scipy.sparse.csc_matrix(X, dtype=numpy.float)
+                U, s, V = SparseUtils.svdArpack(X, 1, kmax=20)
+                #U, s, V = SparseUtils.svdPropack(X, 1, kmax=20)
                 lmbda = s[0]*self.iterativeSoftImpute.rho
                 logging.debug("Largest singular value : " + str(s[0]) + " and lambda: " + str(lmbda))
 
@@ -272,17 +273,8 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         for i, (trainInds, testInds) in enumerate(cvInds):
             Util.printIteration(i, 1, len(cvInds), "Fold: ")
 
-            trainX = scipy.sparse.coo_matrix(X.shape)
-            trainX.data = X.data[trainInds]
-            trainX.row = X.row[trainInds]
-            trainX.col = X.col[trainInds]
-            trainX = trainX.tocsc()
-
-            testX = scipy.sparse.coo_matrix(X.shape)
-            testX.data = X.data[testInds]
-            testX.row = X.row[testInds]
-            testX.col = X.col[testInds]
-            testX = testX.tocsc()
+            trainX = SparseUtils.submatrix(X, trainInds)
+            testX = SparseUtils.submatrix(X, testInds)
 
             assert trainX.nnz == trainInds.shape[0]
             assert testX.nnz == testInds.shape[0]
@@ -290,16 +282,13 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
 
             paramList = []
             
-            
-            trainXArrays = SparseUtils.cscToArrays(trainX)
-            testXArrays = SparseUtils.cscToArrays(testX)
-            pool = multiprocessing.Pool(processes=multiprocessing.cpu_count()/2, initializer=initProcess,initargs=(trainXArrays,testXArrays))
+            pool = multiprocessing.Pool(processes=multiprocessing.cpu_count()/2)
             
             
             for m, k in enumerate(ks): 
                 learner = self.copy()
                 learner.setK(k)
-                paramList.append((learner, rhos)) 
+                paramList.append((learner, trainX, testX, rhos)) 
                 
             pool = multiprocessing.Pool(processes=multiprocessing.cpu_count()/2)
             results = pool.imap(learnPredict, paramList)
