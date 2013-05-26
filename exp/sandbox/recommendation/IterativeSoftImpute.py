@@ -290,10 +290,16 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
 
             paramList = []
             
+            
+            trainXArrays = SparseUtils.cscToArrays(trainX)
+            testXArrays = SparseUtils.cscToArrays(testX)
+            pool = multiprocessing.Pool(processes=multiprocessing.cpu_count()/2, initializer=initProcess,initargs=(trainXArrays,testXArrays))
+            
+            
             for m, k in enumerate(ks): 
                 learner = self.copy()
                 learner.setK(k)
-                paramList.append((learner, trainX, testX, rhos)) 
+                paramList.append((learner, rhos)) 
                 
             pool = multiprocessing.Pool(processes=multiprocessing.cpu_count()/2)
             results = pool.imap(learnPredict, paramList)
