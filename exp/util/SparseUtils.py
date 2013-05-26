@@ -1,6 +1,8 @@
 import os 
 import sys 
 import numpy 
+import ctypes 
+import multiprocessing 
 import scipy.sparse 
 import scipy.sparse.linalg 
 from scipy.sparse.linalg import LinearOperator  
@@ -364,5 +366,35 @@ class SparseUtils(object):
         X.data += vals1 + vals2
         
         return X 
+      
+    @staticmethod 
+    def submatrix(X, inds): 
+        """
+        Take a sparse matrix in coo format and pick out inds indices relative to
+        X.data. Returns a csc matrix. 
+        """
+        newX = scipy.sparse.coo_matrix(X.shape)
+        newX.data = X.data[inds]
+        newX.row = X.row[inds]
+        newX.col = X.col[inds]
+        newX = newX.tocsc()
         
+        return newX 
+      
+    @staticmethod 
+    def cscToArrays(X): 
+        """
+        Convert a scipy.csc_matrix to a tuple of multiprocessing.Array objects + 
+        shape 
+        """
+        data = multiprocessing.Array(ctypes.c_double, X.data.shape[0], lock=False)
+        data[:] = X.data
+        indices = multiprocessing.Array(ctypes.c_long, X.indices.shape[0], lock=False)
+        indices[:] = X.indices 
+        indptr = multiprocessing.Array(ctypes.c_long, X.indptr.shape[0], lock=False)
+        indptr[:] = X.indptr 
+        
+        return ((data, indices, indptr), X.shape)
+        
+       
     kmaxMultiplier = 15 
