@@ -57,8 +57,8 @@ class SGDNorm2Reg(object):
             logging.debug("one pass on the training matrix")
             for u,i in zip(omega[0], omega[1]):
                 error = X[u,i] - P[u,:].dot(Q[i,:])
-                if error > self.eps:
-                    logging.debug(str(u) + " " + str(i) + ": " + str(error))
+                #if error > self.eps:
+                #    logging.debug(str(u) + " " + str(i) + ": " + str(error))
                 grad_weight = 1.*self.gamma/(t+self.t0)
 #                grad_weight = 1.self.gamma/scipy.sqrt(t+self.t0)
                 oldProw = P[u,:].copy()
