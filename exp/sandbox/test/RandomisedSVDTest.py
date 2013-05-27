@@ -44,6 +44,33 @@ class  RandomisedSVDTest(unittest.TestCase):
             error2 = numpy.linalg.norm(A - Ak)
             self.assertTrue(error2 <= error)
 
+    def testSvd2(self): 
+        """
+        We test the situation in which one gives an initial omega matrix 
+        for the random projections. 
+        """
+        numRuns = 10 
+        
+        for i in range(numRuns): 
+            m, n = numpy.random.randint(10, 100), numpy.random.randint(10, 100) 
+            X = numpy.random.rand(m, n)
+            
+            k = numpy.random.randint(5, min(m, n)) 
+            U, s, V = RandomisedSVD.svd(X, k)
+    
+            D = numpy.random.rand(m, n)*0.1
+    
+            Y = X + D 
+            U2, s2, V2 = RandomisedSVD.svd(Y, k, p=0, q=0)
+    
+            U3, s3, V3 = RandomisedSVD.svd(Y, k, p=0, q=0, omega=V)
+            
+            error1 = numpy.linalg.norm(Y - (U2*s2).dot(V2.T)) 
+            error2 = numpy.linalg.norm(Y - (U3*s3).dot(V3.T))
+            
+            self.assertTrue(error1 >= error2)
+
+
 if __name__ == '__main__':
     unittest.main()
 
