@@ -37,7 +37,7 @@ class Sampling(object):
         return indexList 
 
     @staticmethod
-    def randCrossValidation(folds, numExamples):
+    def randCrossValidation(folds, numExamples, dtype=numpy.int32):
         """
         Returns a list of tuples (trainIndices, testIndices) using k-fold cross
         validation. In this case we randomise the indices and then split into 
@@ -55,7 +55,7 @@ class Sampling(object):
         foldSize = float(numExamples)/folds
         indexList = []
 
-        inds = numpy.random.permutation(numExamples)
+        inds = numpy.array(numpy.random.permutation(numExamples), dtype)
 
         for i in range(0, folds):
             testIndices = inds[int(foldSize*i): int(foldSize*(i+1))]
