@@ -103,7 +103,9 @@ class SparseUtils(object):
             inds = numpy.unique(inds)
             rowInds, colInds = numpy.unravel_index(inds, (m, n))
 
-        X = SparseUtilsCython.partialReconstruct2((rowInds, colInds), U, s, V)
+        U = numpy.ascontiguousarray(U)
+        V = numpy.ascontiguousarray(V)
+        X = SparseUtilsCython.partialReconstructPQ((rowInds, colInds), U*s, V)
         
         return X 
         
