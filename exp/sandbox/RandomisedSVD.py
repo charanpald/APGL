@@ -15,32 +15,38 @@ class RandomisedSVD(object):
         pass
     
     @staticmethod
-    def svd(X, k, p=10, q=2): 
+    def svd(X, k, p=10, q=2, omega=None): 
         """
         Compute the SVD of a sparse or dense matrix X, finding the first k 
         singular vectors/values, using exponent q. Returns the left and right singular 
         vectors, and the singular values. The resulting matrix can be approximated 
         using X ~ U s V.T. 
         
-        :param X: A matrix of GeneralLinearOperator 
+        :param X: A matrix or GeneralLinearOperator 
         
         :param k: The number of singular values and random projections
         
         :param p: The oversampling parameter 
         
-        :param q: The exponent for the projections. 
+        :param q: The exponent for the projections.
+        
+        :param omega: An initial matrix to perform random projections onto with at least k columns 
         """
         Parameter.checkInt(k, 1, float("inf"))
         Parameter.checkInt(p, 0, float("inf"))
-        Parameter.checkInt(q, 1, float("inf"))        
+        Parameter.checkInt(q, 0, float("inf"))        
 
-        if scipy.sparse.isspmatrix(X): 
+        if scipy.sparse.isspmatrix(X) or type(X) == numpy.ndarray: 
             L = GeneralLinearOperator.asLinearOperator(X) 
         else: 
             L = X
         
         n = L.shape[1]
-        omega = numpy.random.randn(n, k+p)
+        if omega == None: 
+            omega = numpy.random.randn(n, k+p)
+        else: 
+            omega = numpy.c_[omega, numpy.random.randn(n, p+k - omega.shape[1])]
+        
         Y = L.matmat(omega)
         del omega 
 
