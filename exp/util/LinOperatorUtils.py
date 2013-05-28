@@ -138,26 +138,32 @@ class LinOperatorUtils(object):
         if not scipy.sparse.isspmatrix_csc(X): 
             raise ValueError("Currently only supports csc_matrices")
         
+        #This doubles memory here but saves memory when on many CPUs and results in faster calculations when we do matmat 
+        Xr = X.tocsc()
         numProcesses = multiprocessing.cpu_count()
-        pool = multiprocessing.Pool(processes=numProcesses) 
         numJobs = numProcesses
+        rowInds = numpy.array(numpy.linspace(0, X.shape[0], numJobs+1), numpy.int)
         colInds = numpy.array(numpy.linspace(0, X.shape[1], numJobs+1), numpy.int)
         
+        
         def matvec(w): 
+            pool = multiprocessing.Pool(processes=numProcesses) 
             paramList = [] 
             for i in range(numJobs): 
-                paramList.append((X[:, colInds[i]:colInds[i+1]], w[colInds[i]:colInds[i+1]]))
+                paramList.append((Xr[rowInds[i]:rowInds[i+1], :], w))
             
             iterator = pool.imap(dot, paramList, chunksize=1)
             #iterator = itertools.imap(dot, paramList)
             p = numpy.zeros(X.shape[0])
             
             for i in range(numJobs): 
-                p += iterator.next()
+                p[rowInds[i]:rowInds[i+1]] = iterator.next()
             
+            pool.terminate()
             return p
         
         def rmatvec(w): 
+            pool = multiprocessing.Pool(processes=numProcesses) 
             paramList = [] 
             for i in range(numJobs): 
                 paramList.append((X[:, colInds[i]:colInds[i+1]], w))
@@ -169,23 +175,27 @@ class LinOperatorUtils(object):
             for i in range(numJobs): 
                 p[colInds[i]:colInds[i+1]] = iterator.next()
             
+            pool.terminate()
             return p      
         
         def matmat(W): 
+            pool = multiprocessing.Pool(processes=numProcesses) 
             paramList = [] 
             for i in range(numJobs): 
-                paramList.append((X[:, colInds[i]:colInds[i+1]], W[colInds[i]:colInds[i+1], :]))
+                paramList.append((Xr[rowInds[i]:rowInds[i+1], :], W))
                 
             iterator = pool.imap(dot, paramList, chunksize=1)
             #iterator = itertools.imap(dot, paramList)
             P = numpy.zeros((X.shape[0], W.shape[1])) 
             
             for i in range(numJobs): 
-                P += iterator.next()
+                P[rowInds[i]:rowInds[i+1], :] = iterator.next()
             
+            pool.terminate()
             return P    
             
         def rmatmat(W): 
+            pool = multiprocessing.Pool(processes=numProcesses) 
             paramList = [] 
             for i in range(numJobs): 
                 paramList.append((X[:, colInds[i]:colInds[i+1]], W))
@@ -197,6 +207,7 @@ class LinOperatorUtils(object):
             for i in range(numJobs): 
                 P[colInds[i]:colInds[i+1], :] = iterator.next()
             
+            pool.terminate()
             return P             
             
         return GeneralLinearOperator(X.shape, matvec, rmatvec, matmat, rmatmat, dtype=X.dtype)   
