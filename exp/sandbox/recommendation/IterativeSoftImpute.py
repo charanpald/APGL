@@ -192,7 +192,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                         if i == 0: 
                             newU, newS, newV = RandomisedSVD.svd(L, self.iterativeSoftImpute.k, p=self.iterativeSoftImpute.p, q=self.iterativeSoftImpute.q)
                         else: 
-                            newU, newS, newV = RandomisedSVD.svd(L, self.iterativeSoftImpute.k, p=self.iterativeSoftImpute.p, q=2, omega=self.oldV)
+                            newU, newS, newV = RandomisedSVD.svd(L, self.iterativeSoftImpute.k, p=0, q=1, omega=self.oldV)
                     else:
                         raise ValueError("Unknown SVD algorithm: " + self.iterativeSoftImpute.svdAlg)
 
