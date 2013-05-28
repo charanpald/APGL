@@ -18,7 +18,7 @@ class LinOperatorUtilsProfile(object):
         n = 100000 
         m = 100000 
         self.r = 200 
-        k = 10**6
+        k = 10**8
         
         self.X = SparseUtils.generateSparseLowRank((n, m), self.r, k)
 
@@ -39,12 +39,12 @@ class LinOperatorUtilsProfile(object):
     def profileParallelSparseOp2(self):
         L = LinOperatorUtils.parallelSparseOp(self.X)
         
+        p = 300
+        W = numpy.random.rand(self.X.shape[1], p)        
+        
         def run(): 
-            numRuns = 10 
+            numRuns = 1
             for i in range(numRuns): 
-                p = 200
-                W = numpy.random.rand(self.X.shape[1], p)
-                
                 L.matmat(W)
         
         ProfileUtils.profile('run()', globals(), locals())
@@ -67,18 +67,17 @@ class LinOperatorUtilsProfile(object):
     def profileAsLinearOperator2(self):
         L = scipy.sparse.linalg.aslinearoperator(self.X)
         
+        p = 300
+        W = numpy.random.rand(self.X.shape[1], p)
+        
         def run(): 
-            numRuns = 10 
+            numRuns = 1 
             for i in range(numRuns): 
-                p = 200
-                W = numpy.random.rand(self.X.shape[1], p)
-                
                 L.matmat(W)
         
         ProfileUtils.profile('run()', globals(), locals())
         
 profiler = LinOperatorUtilsProfile()
-profiler.profileParallelSparseOp()
-#profiler.profileAsLinearOperator()
-#profiler.profileParallelSparseOp2() # 78.77
-#profiler.profileAsLinearOperator2() #44 
+#An advantage to be parallel when nnz > 10^8 
+profiler.profileAsLinearOperator2() #42s 
+#profiler.profileParallelSparseOp2() #37s
