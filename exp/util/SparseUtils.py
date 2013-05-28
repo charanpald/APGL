@@ -26,6 +26,11 @@ class SparseUtils(object):
         """
         U, s, V = SparseUtils.generateLowRank(shape, r)
         X = SparseUtils.reconstructLowRank(U, s, V, k)
+        
+        if not verbose: 
+            del U
+            del s
+            del V
 
         X.data += numpy.random.randn(X.data.shape[0])*noise        
         
