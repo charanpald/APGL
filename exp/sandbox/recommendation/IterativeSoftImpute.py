@@ -124,8 +124,9 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                     
                 #Figure out what lambda should be 
                 #PROPACK has problems with convergence 
-                X = scipy.sparse.csc_matrix(X, dtype=numpy.float)
-                U, s, V = SparseUtils.svdArpack(X, 1, kmax=20)
+                Y = scipy.sparse.csc_matrix(X, dtype=numpy.float)
+                U, s, V = SparseUtils.svdArpack(Y, 1, kmax=20)
+                del Y
                 #U, s, V = SparseUtils.svdPropack(X, 1, kmax=20)
                 lmbda = s[0]*self.iterativeSoftImpute.rho
                 logging.debug("Largest singular value : " + str(s[0]) + " and lambda: " + str(lmbda))
@@ -185,6 +186,12 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                         #L = LinOperatorUtils.parallelSparseLowRankOp(Y, self.oldU, self.oldS, self.oldV)
                         L = LinOperatorUtils.sparseLowRankOp(Y, self.oldU, self.oldS, self.oldV)
                         newU, newS, newV = RandomisedSVD.svd(L, self.iterativeSoftImpute.k, p=self.iterativeSoftImpute.p, q=self.iterativeSoftImpute.q)
+                    elif self.iterativeSoftImpute.svdAlg=="rsvdUpdate": 
+                        L = LinOperatorUtils.sparseLowRankOp(Y, self.oldU, self.oldS, self.oldV)
+                        if i == 0: 
+                            newU, newS, newV = RandomisedSVD.svd(L, self.iterativeSoftImpute.k, p=self.iterativeSoftImpute.p, q=self.iterativeSoftImpute.q)
+                        else: 
+                            newU, newS, newV = RandomisedSVD.svd(L, self.iterativeSoftImpute.k, p=self.iterativeSoftImpute.p, q=2, omega=self.oldV)
                     else:
                         raise ValueError("Unknown SVD algorithm: " + self.iterativeSoftImpute.svdAlg)
 
@@ -263,6 +270,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         squared error). The rhos must be in decreasing order and we use 
         warm restarts. 
         """
+        print("nbytes = " + str(X.data.nbytes + X.indices.nbytes + X.indptr.nbytes))
         if (numpy.flipud(numpy.sort(rhos)) != rhos).all(): 
             raise ValueError("rhos must be in descending order")    
 
@@ -281,24 +289,21 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
             nptst.assert_array_almost_equal((testX+trainX).data, X.data)
 
             paramList = []
-            
-            pool = multiprocessing.Pool(processes=multiprocessing.cpu_count()/2)
-            
-            
+        
             for m, k in enumerate(ks): 
                 learner = self.copy()
                 learner.setK(k)
                 paramList.append((learner, trainX, testX, rhos)) 
                 
-            pool = multiprocessing.Pool(processes=multiprocessing.cpu_count()/2)
-            results = pool.imap(learnPredict, paramList)
+            #pool = multiprocessing.Pool(processes=multiprocessing.cpu_count()/2, maxtasksperchild=10)
+            #results = pool.imap(learnPredict, paramList)
 
-            #results = itertools.imap(learnPredict, paramList)
+            results = itertools.imap(learnPredict, paramList)
             
             for m, rhoErrors in enumerate(results): 
                 errors[:, m, i] = rhoErrors
                 
-            pool.terminate()
+            #pool.terminate()
 
         meanErrors = errors.mean(2)
         stdErrors = errors.std(2)
