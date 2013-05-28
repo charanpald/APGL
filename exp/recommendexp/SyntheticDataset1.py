@@ -10,8 +10,13 @@ from exp.util.SparseUtils import SparseUtils
 from exp.util.SparseUtilsCython import SparseUtilsCython
 
 class SyntheticDataset1(object): 
-    def __init__(self): 
-        pass 
+    def __init__(self, startM=500, endM=600, startN=1000, endN=1200, pnz=0.01): 
+        self.startM = startM 
+        self.endM = endM 
+        self.startN = startN 
+        self.endN = endN 
+        
+        self.pnz = pnz
     
     def generateMatrices(self):
         """
@@ -19,23 +24,19 @@ class SyntheticDataset1(object):
         collaborative filtering. Each item in the list is (trainX, testX).
         """    
         numpy.random.seed(21)    
-        startM = 500 
-        startN = 1000 
-        endM = 600
-        endN = 1200
         r = 50 
         
         noise = 0.2
-        U, s, V = SparseUtils.generateLowRank((endM, endN), r)
+        U, s, V = SparseUtils.generateLowRank((self.endM, self.endN), r)
         
-        startNumInds = 90000
-        endNumInds = 120000
-        inds = numpy.random.randint(0, endM*endN-1, endNumInds)
+        self.startNumInds = self.pnz*self.startM*self.startN
+        self.endNumInds = self.pnz*self.endM*self.endN
+        inds = numpy.random.randint(0, self.endM*self.endN-1, self.endNumInds)
         inds = numpy.unique(inds)
         numpy.random.shuffle(inds)
-        endNumInds = inds.shape[0]
+        self.endNumInds = inds.shape[0]
         
-        rowInds, colInds = numpy.unravel_index(inds, (endM, endN))
+        rowInds, colInds = numpy.unravel_index(inds, (self.endM, self.endN))
         vals = SparseUtilsCython.partialReconstructVals(rowInds, colInds, U, s, V)
         vals /= vals.std()
         vals +=  numpy.random.randn(vals.shape[0])*noise
@@ -45,13 +46,13 @@ class SyntheticDataset1(object):
         
         assert (trainSplit - isTrainInd.sum()/float(isTrainInd.shape[0]))
         
-        XMaskTrain = scipy.sparse.csc_matrix((isTrainInd, (rowInds, colInds)), dtype=numpy.bool, shape=(endM, endN))
-        XMaskTest = scipy.sparse.csc_matrix((numpy.logical_not(isTrainInd), (rowInds, colInds)), dtype=numpy.bool, shape=(endM, endN))
+        XMaskTrain = scipy.sparse.csc_matrix((isTrainInd, (rowInds, colInds)), dtype=numpy.bool, shape=(self.endM, self.endN))
+        XMaskTest = scipy.sparse.csc_matrix((numpy.logical_not(isTrainInd), (rowInds, colInds)), dtype=numpy.bool, shape=(self.endM, self.endN))
 
         #In the first phase, the matrices stay the same size but there are more nonzero 
         #entries   
         numMatrices = 10 
-        stepList = numpy.linspace(startNumInds, endNumInds, numMatrices) 
+        stepList = numpy.linspace(self.startNumInds, self.endNumInds, numMatrices) 
         trainXList = []
         testXList = []    
         
@@ -60,13 +61,13 @@ class SyntheticDataset1(object):
             currentRowInds = rowInds[0:stepList[i]]
             currentColInds = colInds[0:stepList[i]]
             
-            X = scipy.sparse.csc_matrix((currentVals, (currentRowInds, currentColInds)), dtype=numpy.float, shape=(endM, endN))
+            X = scipy.sparse.csc_matrix((currentVals, (currentRowInds, currentColInds)), dtype=numpy.float, shape=(self.endM, self.endN))
             
-            trainX = X.multiply(XMaskTrain)[0:startM, 0:startN]
+            trainX = X.multiply(XMaskTrain)[0:self.startM, 0:self.startN]
             trainX.eliminate_zeros()
             trainX.prune() 
             
-            testX = X.multiply(XMaskTest)[0:startM, 0:startN]
+            testX = X.multiply(XMaskTest)[0:self.startM, 0:self.startN]
             testX.eliminate_zeros()
             testX.prune() 
             
@@ -75,10 +76,10 @@ class SyntheticDataset1(object):
             
         #Now we increase the size of matrix 
         numMatrices = 10 
-        mStepList = numpy.linspace(startM, endM, numMatrices)
-        nStepList = numpy.linspace(startN, endN, numMatrices)
+        mStepList = numpy.linspace(self.startM, self.endM, numMatrices)
+        nStepList = numpy.linspace(self.startN, self.endN, numMatrices)
     
-        X = scipy.sparse.csc_matrix((vals, (rowInds, colInds)), dtype=numpy.float, shape=(endM, endN))
+        X = scipy.sparse.csc_matrix((vals, (rowInds, colInds)), dtype=numpy.float, shape=(self.endM, self.endN))
     
         for i in range(numMatrices): 
             trainX = X.multiply(XMaskTrain)[0:mStepList[i], :][:, 0:nStepList[i]]
