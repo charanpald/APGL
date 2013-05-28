@@ -8,13 +8,13 @@ from apgl.util.PathDefaults import PathDefaults
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 #For now just print some results for a particular dataset 
-#dataset = "MovieLensDataset"
+dataset = "MovieLensDataset"
 #dataset = "NetflixDataset"
-dataset = "SyntheticDataset1"
+#dataset = "SyntheticDataset1"
 outputDir = PathDefaults.getOutputDir() + "recommend/" + dataset + "/"
 
 plotStyles = ['k-', 'k--', 'k-.', 'r--', 'r-', 'g-', 'b-', 'b--', 'b-.', 'g--', 'g--', 'g-.', 'r-', 'r--', 'r-.']
-methods = ["propack", "arpack", "rsvd", "svdUpdate"]
+methods = ["propack", "arpack", "rsvd", "svdUpdate", "rsvdUpdate"]
 
 for i, method in enumerate(methods): 
 
