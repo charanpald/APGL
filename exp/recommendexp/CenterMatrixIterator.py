@@ -1,3 +1,4 @@
+import gc
 import logging 
 from exp.util.SparseUtils import SparseUtils 
 
@@ -18,6 +19,7 @@ class CenterMatrixIterator(object):
         X, self.muRows = SparseUtils.centerRows(X)
         X.eliminate_zeros()
         X.prune() 
+        gc.collect()
         
         self.i += 1 
         

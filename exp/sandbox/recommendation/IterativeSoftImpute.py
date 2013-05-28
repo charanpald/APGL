@@ -88,7 +88,6 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         self.postProcessSamples = 10**6
         self.maxIterations = 30
 
-
     def learnModel(self, XIterator, rhos=None):
         """
         Learn the matrix completion using an iterator which outputs
@@ -175,6 +174,8 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                     ZOmega = SparseUtilsCython.partialReconstructPQ((rowInds, colInds), self.oldU*self.oldS, self.oldV)
                     Y = X - ZOmega
                     Y = Y.tocsc()
+                    del ZOmega
+                    gc.collect()
 
                     if self.iterativeSoftImpute.svdAlg=="propack":
                         newU, newS, newV = ExpSU.SparseUtils.svdSparseLowRank(Y, self.oldU, self.oldS, self.oldV, k=self.iterativeSoftImpute.k, kmax=self.iterativeSoftImpute.kmax)

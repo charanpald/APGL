@@ -113,7 +113,7 @@ class RecommendExpHelper(object):
         calls since the original ones are modified by centering. 
         """
         return CenterMatrixIterator(self.trainXIteratorFunc())            
-            
+          
     def recordResults(self, ZIter, learner, fileName):
         """
         Save results for a particular recommendation 
@@ -133,11 +133,14 @@ class RecommendExpHelper(object):
                 break 
             
             trainX = next(trainIterator)
+            if not self.algoArgs.trainError: 
+                del trainX 
+                gc.collect()
+            
             testX = next(testIterator)
             predTestX = learner.predictOne(Z, testX.nonzero())
             predTestX.eliminate_zeros()
             predTestX = trainIterator.uncenter(predTestX)
-            
             currentMeasures = [MCEvaluator.rootMeanSqError(testX, predTestX), MCEvaluator.meanAbsError(testX, predTestX)]
             
             if self.algoArgs.trainError:
@@ -148,6 +151,8 @@ class RecommendExpHelper(object):
                 trainX.eliminate_zeros()
                 trainX = trainIterator.uncenter(trainX)
                 currentMeasures.append(MCEvaluator.rootMeanSqError(trainX, predTrainX))
+                del trainX 
+                gc.collect()
             
             logging.debug("Error measures: " + str(currentMeasures))
             logging.debug("Standard deviation of test set " + str(testX.data.std()))
@@ -165,7 +170,6 @@ class RecommendExpHelper(object):
         logging.debug(measures)
         numpy.savez(fileName, measures, metadata)
         logging.debug("Saved file as " + fileName)
-
 
 
     def runExperiment(self):
