@@ -4,16 +4,50 @@ import itertools
 import scipy.sparse.linalg
 from exp.util.GeneralLinearOperator import GeneralLinearOperator
 
+XrData = 0 
+XrIndices = 0 
+XrIntptr = 0 
+XShape = 0 
+WArray = 0 
+WShape = 0
+
+def initProcess(data, indices, indptr, shape, Warr, Wshp):
+    global XrData 
+    XrData = data 
+    global XrIndices 
+    XrIndices = indices 
+    global XrIntptr 
+    XrIntptr = indptr 
+    global Xshape 
+    Xshape = shape 
+    
+    global WArray
+    WArray = Warr 
+    global WShape 
+    WShape = Wshp 
+
 def dot(args): 
     X, w = args 
     return X.dot(w)
     
-def dot2(data, indices, indptr, shape, rowInds, i, W, queue): 
-    data = numpy.array(data)
-    indices = numpy.array(indices)
-    indptr = numpy.array(indptr)
-    Xr = scipy.sparse.csr_matrix((data, indices, indptr), shape=shape)
-    queue.put((i, Xr[rowInds[i]:rowInds[i+1], :].dot(W)))
+def dot2(args):
+    rowInds, i = args     
+    
+    global XrData 
+    global XrIndices
+    global XrIntptr 
+    global Xshape 
+
+    data = numpy.frombuffer(XrData, dtype=numpy.float)
+    indices = numpy.frombuffer(XrIndices, dtype=numpy.int32)
+    indptr = numpy.frombuffer(XrIntptr, dtype=numpy.int32)
+    Xr = scipy.sparse.csr_matrix((data, indices, indptr), shape=Xshape)
+    
+    global WArray
+    global WShape 
+    W = numpy.frombuffer(WArray, dtype=numpy.float).reshape(WShape)
+
+    return Xr[rowInds[i]:rowInds[i+1], :].dot(W)
 
 def dotT(args): 
     X, w = args 
@@ -102,13 +136,13 @@ class LinOperatorUtils(object):
             for i in range(numProcesses): 
                 paramList.append((X[:, colInds[i]:colInds[i+1]], U, s, V[colInds[i]:colInds[i+1], :], W[colInds[i]:colInds[i+1], :]))
 
-            iterator = pool.imap(dotSVD, paramList, chunksize=1)
+            iterator = pool.map(dotSVD, paramList, chunksize=1)
 
             #iterator = itertools.imap(dotSVD, paramList)
             P = numpy.zeros((X.shape[0], W.shape[1])) 
             
             for i in range(numProcesses):
-                P += iterator.next()
+                P += iterator[i]
                 
             pool.terminate()
                 
@@ -152,10 +186,10 @@ class LinOperatorUtils(object):
         rowInds = numpy.array(numpy.linspace(0, X.shape[0], numJobs+1), numpy.int)
         colInds = numpy.array(numpy.linspace(0, X.shape[1], numJobs+1), numpy.int)
         
-        XrData = multiprocessing.Array("d", Xr.data)
-        XrIndices = multiprocessing.Array("i", Xr.indices)
-        XrIndptr = multiprocessing.Array("i", Xr.indptr)
-        
+        XrData = multiprocessing.RawArray("d", numpy.array(Xr.data))
+        XrIndices = multiprocessing.RawArray("i", Xr.indices)
+        XrIndptr = multiprocessing.RawArray("i", Xr.indptr)
+
         def matvec(w): 
             pool = multiprocessing.Pool(processes=numProcesses) 
             paramList = [] 
@@ -189,27 +223,19 @@ class LinOperatorUtils(object):
             return p      
         
         def matmat(W): 
-            queue = multiprocessing.Queue()
-            workers = [] 
+            WArray = multiprocessing.RawArray("d", W.flatten())
+            pool = multiprocessing.Pool(processes=numProcesses, initializer=initProcess, initargs=(XrData, XrIndices, XrIndptr, X.shape, WArray, W.shape)) 
+            params = [] 
             
             for i in range(numJobs): 
-                workers.append(multiprocessing.Process(target=dot2, args=(XrData, XrIndices, XrIndptr, X.shape, rowInds, i, W, queue)))
-                
+                params.append((rowInds, i))
+            
+            iterator = pool.map(dot2, params)
             P = numpy.zeros((X.shape[0], W.shape[1])) 
             
-            for worker in workers:
-                worker.start()
+            for i in range(numJobs): 
+                P[rowInds[i]:rowInds[i+1], :] = iterator[i]
                 
-            for worker in workers:
-                worker.join()
-                
-            while not queue.empty():
-                i, result = queue.get()     
-                P[rowInds[i]:rowInds[i+1], :] = result 
-                
-            for worker in workers:
-                worker.terminate()
-            
             return P    
             
         def rmatmat(W): 
