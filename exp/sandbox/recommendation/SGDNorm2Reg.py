@@ -32,17 +32,36 @@ class SGDNorm2Reg(object):
         self.gamma = 1
         
         
-    def learnModel(self, X, P=None, Q=None, storeAll=True): 
+    def learnModel(self, X, P=None, Q=None, Z=None, storeAll=True): 
         """
         Learn the matrix completion using a sparse matrix X.
         
-        :param storeAll: Store and return a list of intermediate solutions P, Q 
+        :param storeAll: Store and return a list of intermediate solutions P, Q
+        
+        When no initial point is given, expect the matrix to be centered
+        in rows and columns. 
         """
         
-        if P == None:
-            P = numpy.random.randn(X.shape[0], self.k)
-        if Q == None:
-            Q = numpy.random.randn(X.shape[1], self.k)
+        if Z == None:
+            if P == None and Q == None:
+                sX = X.data.std()
+                sP = sQ = numpy.sqrt(sX / numpy.sqrt(self.k))
+                P = numpy.random.randn(X.shape[0], self.k) * sP 
+                Q = numpy.random.randn(X.shape[1], self.k) * sQ
+            else:
+                if P == None:
+                    sX = X.data.std()
+                    sQ = Q.std()
+                    sP = sX / sQ / numpy.sqrt(self.k)
+                    P = numpy.random.randn(X.shape[0], self.k) * sP 
+                if Q == None:
+                    sX = X.data.std()
+                    sP = P.std()
+                    sQ = sX / sP / numpy.sqrt(self.k)
+                    Q = numpy.random.randn(X.shape[1], self.k) * sQ
+        else:
+            P,Q = Z[-1]
+                    
         omega = X.nonzero()
 #        tol = 10**-6
         t = 1

@@ -6,7 +6,7 @@ An iterative version of matrix factoisation using frobenius norm penalisation.
 """
 
 class IterativeSGDNorm2Reg(object): 
-    def __init__(self, k, lmbda, eps=0.01, tmax=1-00): 
+    def __init__(self, k, lmbda, eps=0.01, tmax=100): 
         self.baseLearner = SGDNorm2Reg(k, lmbda, eps, tmax)
         
     def learnModel(self, XIterator): 
@@ -15,6 +15,7 @@ class IterativeSGDNorm2Reg(object):
             def __init__(self, XIterator, baseLearner):
                 self.XIterator = XIterator 
                 self.baseLearner = baseLearner 
+                self.ZListSGD = None
 
             def __iter__(self):
                 return self
@@ -22,8 +23,13 @@ class IterativeSGDNorm2Reg(object):
             def next(self):
                 X = self.XIterator.next()
                 
-                #Return the matrices P, Q as the learnt model 
-                return self.baseLearner.learnModel(X, storeAll=False)
+                #Return the matrices P, Q as the learnt model
+                if self.ZListSGD == None:
+                    # assumption : training matrix centered by row and column
+                    self.ZListSGD = self.baseLearner.learnModel(X, storeAll=False)
+                else:
+                    self.ZListSGD = self.baseLearner.learnModel(X, Z=self.ZListSGD, storeAll=False)
+                return self.ZListSGD
                 
         return ZIterator(XIterator, self.baseLearner)
         
