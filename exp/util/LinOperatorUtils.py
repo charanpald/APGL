@@ -7,6 +7,13 @@ from exp.util.GeneralLinearOperator import GeneralLinearOperator
 def dot(args): 
     X, w = args 
     return X.dot(w)
+    
+def dot2(data, indices, indptr, shape, rowInds, i, W, queue): 
+    data = numpy.array(data)
+    indices = numpy.array(indices)
+    indptr = numpy.array(indptr)
+    Xr = scipy.sparse.csr_matrix((data, indices, indptr), shape=shape)
+    queue.put((i, Xr[rowInds[i]:rowInds[i+1], :].dot(W)))
 
 def dotT(args): 
     X, w = args 
@@ -139,12 +146,15 @@ class LinOperatorUtils(object):
             raise ValueError("Currently only supports csc_matrices")
         
         #This doubles memory here but saves memory when on many CPUs and results in faster calculations when we do matmat 
-        Xr = X.tocsc()
+        Xr = X.tocsr()
         numProcesses = multiprocessing.cpu_count()
         numJobs = numProcesses
         rowInds = numpy.array(numpy.linspace(0, X.shape[0], numJobs+1), numpy.int)
         colInds = numpy.array(numpy.linspace(0, X.shape[1], numJobs+1), numpy.int)
         
+        XrData = multiprocessing.Array("d", Xr.data)
+        XrIndices = multiprocessing.Array("i", Xr.indices)
+        XrIndptr = multiprocessing.Array("i", Xr.indptr)
         
         def matvec(w): 
             pool = multiprocessing.Pool(processes=numProcesses) 
@@ -179,19 +189,27 @@ class LinOperatorUtils(object):
             return p      
         
         def matmat(W): 
-            pool = multiprocessing.Pool(processes=numProcesses) 
-            paramList = [] 
+            queue = multiprocessing.Queue()
+            workers = [] 
+            
             for i in range(numJobs): 
-                paramList.append((Xr[rowInds[i]:rowInds[i+1], :], W))
+                workers.append(multiprocessing.Process(target=dot2, args=(XrData, XrIndices, XrIndptr, X.shape, rowInds, i, W, queue)))
                 
-            iterator = pool.imap(dot, paramList, chunksize=1)
-            #iterator = itertools.imap(dot, paramList)
             P = numpy.zeros((X.shape[0], W.shape[1])) 
             
-            for i in range(numJobs): 
-                P[rowInds[i]:rowInds[i+1], :] = iterator.next()
+            for worker in workers:
+                worker.start()
+                
+            for worker in workers:
+                worker.join()
+                
+            while not queue.empty():
+                i, result = queue.get()     
+                P[rowInds[i]:rowInds[i+1], :] = result 
+                
+            for worker in workers:
+                worker.terminate()
             
-            pool.terminate()
             return P    
             
         def rmatmat(W): 
