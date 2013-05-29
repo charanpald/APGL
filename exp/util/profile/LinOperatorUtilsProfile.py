@@ -18,7 +18,7 @@ class LinOperatorUtilsProfile(object):
         n = 100000 
         m = 100000 
         self.r = 200 
-        k = 10**8
+        k = 10**6
         
         self.X = SparseUtils.generateSparseLowRank((n, m), self.r, k)
 
@@ -76,8 +76,9 @@ class LinOperatorUtilsProfile(object):
                 L.matmat(W)
         
         ProfileUtils.profile('run()', globals(), locals())
-        
-profiler = LinOperatorUtilsProfile()
-#An advantage to be parallel when nnz > 10^8 
-profiler.profileAsLinearOperator2() #42s 
-#profiler.profileParallelSparseOp2() #37s
+   
+if __name__ == '__main__':     
+    profiler = LinOperatorUtilsProfile()
+    #An advantage to be parallel when nnz > 10^8 
+    #profiler.profileAsLinearOperator2() #42s 
+    profiler.profileParallelSparseOp2() #37s
