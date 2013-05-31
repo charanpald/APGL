@@ -23,23 +23,28 @@ def initProcess(data, indices, indptr, shape, Warr, Wshp):
     WShape = Wshp 
 
 def dot2(args):
+    
     rowInds, i = args     
     
     global XData 
     global XIndices
     global XIntptr 
     global Xshape 
-
+    
     data = numpy.frombuffer(XData, dtype=numpy.float)
     indices = numpy.frombuffer(XIndices, dtype=numpy.int32)
     indptr = numpy.frombuffer(XIntptr, dtype=numpy.int32)
-    Xr = scipy.sparse.csr_matrix((data, indices, indptr), shape=Xshape)
     
+    Xr = scipy.sparse.csr_matrix((data, indices, indptr), shape=Xshape, copy=False)
+      
     global WArray
     global WShape 
     W = numpy.frombuffer(WArray, dtype=numpy.float).reshape(WShape)
-
-    return Xr[rowInds[i]:rowInds[i+1], :].dot(W)
+     
+    startTime = time.time()
+    result = Xr[rowInds[i]:rowInds[i+1], :].dot(W)
+    
+    return result
 
 def getMatmat(X): 
     numJobs = multiprocessing.cpu_count()
@@ -58,7 +63,8 @@ def getMatmat(X):
         for i in range(numJobs): 
             params.append((rowInds, i))
         
-        iterator = pool.map(dot2, params)
+        iterator = pool.map(dot2, params, chunksize=1)
+        #iterator = map(dot2, params)
         P = numpy.zeros((X.shape[0], W.shape[1])) 
         
         for i in range(numJobs): 
@@ -70,10 +76,12 @@ def getMatmat(X):
 
 if __name__ == '__main__':
     #Create a random sparse matrix X and a random dense one W     
-    X = scipy.sparse.rand(10000, 8000, 0.1)
+    X = scipy.sparse.rand(10000, 8000, 0.2)
     X = X.tocsr()
+    X.sort_indices()
     W = numpy.random.rand(8000, 200)
     
+    print("Starting multiplications")
     startTime = time.time()
     A = getMatmat(X)(W)
     parallelTime = time.time()-startTime 
