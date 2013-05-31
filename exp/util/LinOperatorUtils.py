@@ -41,7 +41,7 @@ def dot2(args):
     data = numpy.frombuffer(XrData, dtype=numpy.float)
     indices = numpy.frombuffer(XrIndices, dtype=numpy.int32)
     indptr = numpy.frombuffer(XrIntptr, dtype=numpy.int32)
-    Xr = scipy.sparse.csr_matrix((data, indices, indptr), shape=Xshape)
+    Xr = scipy.sparse.csr_matrix((data, indices, indptr), shape=Xshape, copy=False)
     
     global WArray
     global WShape 
