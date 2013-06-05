@@ -160,7 +160,7 @@ class SparseUtils(object):
         else: 
             U, s, V = SparseUtils.svdArpack(L, k, kmax=kmax)
    
-        logging.debug("Number of SVs: " + str(s.shape[0]) + " and min SV: " + str(numpy.min(s)))
+        #logging.debug("Number of SVs: " + str(s.shape[0]) + " and min SV: " + str(numpy.min(s)))
         
         return U, s, V 
         
