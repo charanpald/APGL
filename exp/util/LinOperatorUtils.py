@@ -70,8 +70,6 @@ class LinOperatorUtils(object):
     
     @staticmethod 
     def sparseLowRankOp(X, U, s, V): 
-        if not scipy.sparse.issparse(X): 
-            raise ValueError("X matrix should be sparse") 
         if X.shape[0] != U.shape[0] or X.shape[1] != V.shape[0]: 
             raise ValueError("X and U s V^T should have the same shape")
         
