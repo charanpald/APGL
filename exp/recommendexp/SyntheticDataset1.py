@@ -10,13 +10,14 @@ from exp.util.SparseUtils import SparseUtils
 from exp.util.SparseUtilsCython import SparseUtilsCython
 
 class SyntheticDataset1(object): 
-    def __init__(self, startM=500, endM=600, startN=1000, endN=1200, pnz=0.01): 
+    def __init__(self, startM=500, endM=600, startN=1000, endN=1200, pnz=0.01, noise=0.1): 
         self.startM = startM 
         self.endM = endM 
         self.startN = startN 
         self.endN = endN 
         
         self.pnz = pnz
+        self.noise = noise
     
     def generateMatrices(self):
         """
@@ -26,7 +27,7 @@ class SyntheticDataset1(object):
         numpy.random.seed(21)    
         r = 50 
         
-        noise = 0.2
+        
         U, s, V = SparseUtils.generateLowRank((self.endM, self.endN), r)
         
         self.startNumInds = self.pnz*self.startM*self.startN
@@ -39,7 +40,7 @@ class SyntheticDataset1(object):
         rowInds, colInds = numpy.unravel_index(inds, (self.endM, self.endN))
         vals = SparseUtilsCython.partialReconstructVals(rowInds, colInds, U, s, V)
         vals /= vals.std()
-        vals +=  numpy.random.randn(vals.shape[0])*noise
+        vals +=  numpy.random.randn(vals.shape[0])*self.noise
         
         trainSplit = 2.0/3 
         isTrainInd = numpy.array(numpy.random.rand(inds.shape[0]) <= trainSplit, numpy.bool)
