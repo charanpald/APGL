@@ -53,7 +53,7 @@ for key in keys:
     logging.info("    " + str(key) + ": " + str(dataArgs.__getattribute__(key)))
 
 # data
-generator = SyntheticDataset1()
+generator = SyntheticDataset1(startM=5000, endM=6000, startN=1000, endN=1200, pnz=0.01)
 
 # run
 logging.info("Creating the exp-runner")
