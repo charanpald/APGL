@@ -44,6 +44,23 @@ class SparseUtilsCythonTest(unittest.TestCase):
         
         self.assertEquals(A.nnz, inds[0].shape[0])
 
+    def testPartialReconstructValsPQ2(self): 
+        n = 10
+        Y = numpy.random.rand(n, n)
+        
+        U, s, V = numpy.linalg.svd(Y)
+        V = V.T 
+        
+        indices = numpy.nonzero(Y)  
+        rowInds = numpy.array(indices[0], numpy.int32)
+        colInds = numpy.array(indices[1], numpy.int32)
+        vals = SparseUtilsCython.partialReconstructValsPQ2(rowInds, colInds, numpy.ascontiguousarray(U*s), V)
+        print(vals)
+        X = numpy.reshape(vals, Y.shape)
+        
+        nptst.assert_almost_equal(X, Y)
+        
+
     def testPartialOuterProduct(self):
         m = 15        
         n = 10

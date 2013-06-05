@@ -1,12 +1,10 @@
-
+import numpy
 from distutils.core import setup
 from distutils.extension import Extension
 from Cython.Distutils import build_ext
 
 ext_modules = [Extension("exp.sandbox.predictors.TreeCriterion", ["exp/sandbox/predictors/TreeCriterion.pyx"]),
-    Extension("exp.util.SparseUtilsCython", ["exp/util/SparseUtilsCython.pyx"]), 
-    Extension("exp.util.LinOperatorExpCython", ["exp/util/LinOperatorExpCython.pyx"], extra_compile_args=['-fopenmp'],
-extra_link_args=['-fopenmp'])
+    Extension("exp.util.SparseUtilsCython", ["exp/util/SparseUtilsCython.pyx"], include_dirs=[numpy.get_include()]), 
 ]
 
 setup(

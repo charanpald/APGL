@@ -6,6 +6,9 @@ cimport numpy
 import scipy.sparse 
 numpy.import_array()
 
+cdef extern from "SparseUtilsCython.cpp": 
+    void partialReconstructValsPQCpp(int*, int*, double*, double*, double*, int, int) 
+
 class SparseUtilsCython(object): 
     """
     Some Cythonised functions for sparse matrices. 
@@ -48,6 +51,17 @@ class SparseUtilsCython(object):
             values[i] = numpy.inner(P[j, :], Q[k, :])            
             
         return values
+        
+    @staticmethod 
+    def partialReconstructValsPQ2(numpy.ndarray[int, ndim=1] rowInds, numpy.ndarray[int, ndim=1] colInds, numpy.ndarray[double, ndim=2, mode="c"] P, numpy.ndarray[double, ndim=2, mode="c"] Q): 
+        """
+        Given an array of unique indices inds, partially reconstruct $P*Q^T$.
+        """ 
+        cdef numpy.ndarray[double, ndim=1, mode="c"] values = numpy.zeros(rowInds.shape[0])
+        partialReconstructValsPQCpp(&rowInds[0], &colInds[0], &P[0,0], &Q[0,0], &values[0], rowInds.shape[0], P.shape[0])          
+            
+        return values        
+        
         
     @staticmethod
     def partialOuterProduct(numpy.ndarray[numpy.long_t, ndim=1] rowInds, numpy.ndarray[numpy.long_t, ndim=1] colInds, numpy.ndarray[numpy.float_t, ndim=1] u, numpy.ndarray[numpy.float_t, ndim=1] v):
