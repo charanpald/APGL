@@ -183,7 +183,7 @@ class IterativeSoftImputeTest(unittest.TestCase):
             nptst.assert_array_almost_equal(Xhat, self.matrixList[i].todense(), 2)
 
         #Try for larger lambda 
-        iterativeSoftImpute.setLambda(0.2)
+        iterativeSoftImpute.setRho(0.2)
         ZList = iterativeSoftImpute.learnModel(matrixIterator)
         for i, Z in enumerate(ZList):
             U, s, V = Z
