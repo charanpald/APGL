@@ -6,6 +6,7 @@ import scipy.sparse.linalg
 import exp.util.SparseUtils as ExpSU
 import numpy.testing as nptst 
 import multiprocessing 
+from sppy import csarray 
 from exp.sandbox.RandomisedSVD import RandomisedSVD
 from exp.util.MCEvaluator import MCEvaluator
 from apgl.util.Util import Util
@@ -173,8 +174,9 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                     
                     ZOmega = SparseUtilsCython.partialReconstructPQ((rowInds, colInds), self.oldU*self.oldS, self.oldV)
                     Y = X - ZOmega
-                    Y = Y.tocsc()
-                    del ZOmega
+                    #Y = Y.tocsc()
+                    #del ZOmega
+                    Y = csarray.fromScipySparse(Y, storageType="rowMajor")
                     gc.collect()
 
                     if self.iterativeSoftImpute.svdAlg=="propack":
@@ -185,6 +187,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                         newU, newS, newV = SVDUpdate.addSparseProjected(self.oldU, self.oldS, self.oldV, Y, self.iterativeSoftImpute.k)
                     elif self.iterativeSoftImpute.svdAlg=="rsvd":
                         #L = LinOperatorUtils.parallelSparseLowRankOp(Y, self.oldU, self.oldS, self.oldV)
+                        Y.dot = Y.pdot 
                         L = LinOperatorUtils.sparseLowRankOp(Y, self.oldU, self.oldS, self.oldV)
                         newU, newS, newV = RandomisedSVD.svd(L, self.iterativeSoftImpute.k, p=self.iterativeSoftImpute.p, q=self.iterativeSoftImpute.q)
                     elif self.iterativeSoftImpute.svdAlg=="rsvdUpdate": 
