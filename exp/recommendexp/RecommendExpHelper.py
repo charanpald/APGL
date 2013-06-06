@@ -27,7 +27,7 @@ class RecommendExpHelper(object):
     defaultAlgoArgs.folds = 3
     defaultAlgoArgs.ks = numpy.array(2**numpy.arange(3, 7, 0.5), numpy.int)
     defaultAlgoArgs.kmax = None 
-    defaultAlgoArgs.svdAlg = "propack"
+    defaultAlgoArgs.svdAlgs = ["rsvd", "rsvdUpdate", "propack"]
     defaultAlgoArgs.modelSelect = False
     defaultAlgoArgs.postProcess = False 
     defaultAlgoArgs.trainError = False 
@@ -82,7 +82,7 @@ class RecommendExpHelper(object):
         algoParser.add_argument("--rhos", type=float, nargs="+", help="Regularisation parameter (default: %(default)s)", default=defaultAlgoArgs.rhos)
         algoParser.add_argument("--ks", type=int, nargs="+", help="Max number of singular values/vectors (default: %(default)s)", default=defaultAlgoArgs.ks)
         algoParser.add_argument("--kmax", type=int, help="Max number of Krylov/Lanczos vectors for PROPACK/ARPACK (default: %(default)s)", default=defaultAlgoArgs.kmax)
-        algoParser.add_argument("--svdAlg", type=str, help="Algorithm to compute SVD for each iteration of soft impute (default: %(default)s)", default=defaultAlgoArgs.svdAlg)
+        algoParser.add_argument("--svdAlgs", type=str, nargs="+", help="Algorithmss to compute SVD for each iteration of soft impute (default: %(default)s)", default=defaultAlgoArgs.svdAlgs)
         algoParser.add_argument("--modelSelect", action="store_true", help="Weather to do model selection on the 1st iteration (default: %(default)s)", default=defaultAlgoArgs.modelSelect)
         algoParser.add_argument("--postProcess", action="store_true", help="Weather to do post processing for soft impute (default: %(default)s)", default=defaultAlgoArgs.postProcess)
         algoParser.add_argument("--trainError", action="store_true", help="Weather to compute the error on the training matrices (default: %(default)s)", default=defaultAlgoArgs.trainError)
@@ -179,42 +179,43 @@ class RecommendExpHelper(object):
         if self.algoArgs.runSoftImpute:
             logging.debug("Running soft impute")
             
-            resultsFileName = self.resultsDir + "ResultsSoftImpute_alg=" + self.algoArgs.svdAlg +  ".npz"
-            fileLock = FileLock(resultsFileName)  
-            
-            if not fileLock.isLocked() and not fileLock.fileExists(): 
-                fileLock.lock()
+            for svdAlg in self.algoArgs.svdAlgs: 
+                resultsFileName = self.resultsDir + "ResultsSoftImpute_alg=" + svdAlg +  ".npz"
+                fileLock = FileLock(resultsFileName)  
                 
-                try: 
-                    learner = IterativeSoftImpute(svdAlg=self.algoArgs.svdAlg, logStep=self.logStep, kmax=self.algoArgs.kmax, postProcess=self.algoArgs.postProcess)
+                if not fileLock.isLocked() and not fileLock.fileExists(): 
+                    fileLock.lock()
                     
-                    if self.algoArgs.modelSelect: 
+                    try: 
+                        learner = IterativeSoftImpute(svdAlg=svdAlg, logStep=self.logStep, kmax=self.algoArgs.kmax, postProcess=self.algoArgs.postProcess)
+                        
+                        if self.algoArgs.modelSelect: 
+                            trainIterator = self.getTrainIterator()
+                            #Let's find the optimal lambda using the first matrix 
+                            X = trainIterator.next() 
+                            logging.debug("Performing model selection")
+                            cvInds = Sampling.randCrossValidation(self.algoArgs.folds, X.nnz)
+                            meanErrors, stdErrors = learner.modelSelect(X, self.algoArgs.rhos, self.algoArgs.ks, cvInds)
+                            
+                            logging.debug("Mean errors = " + str(meanErrors))
+                            logging.debug("Std errors = " + str(stdErrors))
+                            rho = self.algoArgs.rhos[numpy.unravel_index(numpy.argmin(meanErrors), meanErrors.shape)[0]]
+                            k = self.algoArgs.ks[numpy.unravel_index(numpy.argmin(meanErrors), meanErrors.shape)[1]]
+                        else: 
+                            rho = self.algoArgs.rhos[0]
+                            k = self.algoArgs.ks[0]
+                            
+                        learner.setK(k)  
+                        learner.setRho(rho)   
+                        logging.debug("Training with k = " + str(k) + " and rho = " + str(rho))                    
                         trainIterator = self.getTrainIterator()
-                        #Let's find the optimal lambda using the first matrix 
-                        X = trainIterator.next() 
-                        logging.debug("Performing model selection")
-                        cvInds = Sampling.randCrossValidation(self.algoArgs.folds, X.nnz)
-                        meanErrors, stdErrors = learner.modelSelect(X, self.algoArgs.rhos, self.algoArgs.ks, cvInds)
+                        ZIter = learner.learnModel(trainIterator)
                         
-                        logging.debug("Mean errors = " + str(meanErrors))
-                        logging.debug("Std errors = " + str(stdErrors))
-                        rho = self.algoArgs.rhos[numpy.unravel_index(numpy.argmin(meanErrors), meanErrors.shape)[0]]
-                        k = self.algoArgs.ks[numpy.unravel_index(numpy.argmin(meanErrors), meanErrors.shape)[1]]
-                    else: 
-                        rho = self.algoArgs.rhos[0]
-                        k = self.algoArgs.ks[0]
-                        
-                    learner.setK(k)  
-                    learner.setRho(rho)   
-                    logging.debug("Training with k = " + str(k) + " and rho = " + str(rho))                    
-                    trainIterator = self.getTrainIterator()
-                    ZIter = learner.learnModel(trainIterator)
-                    
-                    self.recordResults(ZIter, learner, resultsFileName)
-                finally: 
-                    fileLock.unlock()
-            else: 
-                logging.debug("File is locked or already computed: " + resultsFileName)
+                        self.recordResults(ZIter, learner, resultsFileName)
+                    finally: 
+                        fileLock.unlock()
+                else: 
+                    logging.debug("File is locked or already computed: " + resultsFileName)
                 
                 
         if self.algoArgs.runSgdMf:
