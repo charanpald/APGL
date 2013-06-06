@@ -32,7 +32,6 @@ dataArgs.iterStartTimeStamp = time.mktime(datetime(2005,1,1).timetuple())
 # Arguments related to the algorithm
 defaultAlgoArgs = argparse.Namespace()
 defaultAlgoArgs.ks = numpy.array(2**numpy.arange(3, 7, 0.5), numpy.int)
-defaultAlgoArgs.svdAlg = "propack"
 
 # init (reading/writting command line arguments)
 # data args parser #
