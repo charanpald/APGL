@@ -14,7 +14,7 @@ import exp.util.SparseUtils as ExpSU
 
 class IterativeSGDNorm2RegTest(unittest.TestCase):
     def setUp(self):
-        #logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+        logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
         numpy.set_printoptions(precision=4, suppress=True, linewidth=200)
         
         numpy.seterr(all="raise")
@@ -74,7 +74,21 @@ class IterativeSGDNorm2RegTest(unittest.TestCase):
 
         for i, Xhat in enumerate(XList): 
             #print(Xhat)
-            print(MCEvaluator.rootMeanSqError(Xhat, self.matrixList[i]))            
+            print(MCEvaluator.rootMeanSqError(Xhat, self.matrixList[i]))
+            
+    def testModelSelect(self):
+        ks = [3,4,5]
+        lmbdas = [0.001, 0.01, 0.1, 1]
+        gammas = [0.1, 1, 10]
+        eps = 0.000001         
+        tmax = 1000
+        nFolds = 3
+        maxNTry = 2
+        
+        learner = IterativeSGDNorm2Reg(ks[0], lmbdas[0], eps, tmax)
+        
+        learner.modelSelect(self.matrixList[0], ks, lmbdas, gammas, nFolds, maxNTry) 
+        
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

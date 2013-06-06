@@ -13,9 +13,10 @@ from exp.util.MCEvaluator import MCEvaluator
 from apgl.util.Util import Util 
 import exp.util.SparseUtils as ExpSU
 import logging
+import copy
 
 class SGDNorm2Reg(object): 
-    def __init__(self, k, lmbda, eps, tmax):
+    def __init__(self, k, lmbda, eps, tmax, gamma = 1):
         """
         Initialise imputing algorithm with given parameters. lambda is the 
         regularisation parameter, eps is the convergence threshold, tmax is
@@ -26,10 +27,10 @@ class SGDNorm2Reg(object):
         self.lmbda = lmbda  
         self.eps = eps
         self.tmax = tmax
+        self.gamma = gamma
         
         # other parameters
         self.t0 = 1
-        self.gamma = 1
         
         
     def learnModel(self, X, P=None, Q=None, Z=None, storeAll=True): 
@@ -136,4 +137,12 @@ class SGDNorm2Reg(object):
 
     def getMetricMethod(self): 
         return MCEvaluator.meanSqError
+
+    def copy(self): 
+        """
+        Return a new copied version of this object. 
+        """
+
+        return copy.copy(self) 
+        
         

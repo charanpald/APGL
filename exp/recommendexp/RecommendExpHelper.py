@@ -31,7 +31,8 @@ class RecommendExpHelper(object):
     defaultAlgoArgs.modelSelect = False
     defaultAlgoArgs.postProcess = False 
     defaultAlgoArgs.trainError = False 
-    defaultAlgoArgs.lmbda = 0.001
+    defaultAlgoArgs.lmbdas = [0.001]
+    defaultAlgoArgs.gammas = [1]
     
     def __init__(self, trainXIteratorFunc, testXIteratorFunc, cmdLine=None, defaultAlgoArgs = None, dirName=""):
         """ priority for default args
@@ -86,6 +87,8 @@ class RecommendExpHelper(object):
         algoParser.add_argument("--modelSelect", action="store_true", help="Weather to do model selection on the 1st iteration (default: %(default)s)", default=defaultAlgoArgs.modelSelect)
         algoParser.add_argument("--postProcess", action="store_true", help="Weather to do post processing for soft impute (default: %(default)s)", default=defaultAlgoArgs.postProcess)
         algoParser.add_argument("--trainError", action="store_true", help="Weather to compute the error on the training matrices (default: %(default)s)", default=defaultAlgoArgs.trainError)
+        algoParser.add_argument("--lambdas", type=int, nargs="+", help="Weight of norm2 regularisation (default: %(default)s)", default=defaultAlgoArgs.lambdas)
+        algoParser.add_argument("--gammas", type=int, nargs="+", help="Weight of SGD update (default: %(default)s)", default=defaultAlgoArgs.gammas)
         return(algoParser)
     
     # update current algoArgs with values from user and then from command line
@@ -228,7 +231,13 @@ class RecommendExpHelper(object):
                 fileLock.lock()
                 
                 try: 
-                    learner = IterativeSGDNorm2Reg(k=self.algoArgs.ks[0], lmbda=self.algoArgs.lmbda)               
+                    learner = IterativeSGDNorm2Reg(k=self.algoArgs.ks[0], lmbda=self.algoArgs.lmbdas[0], gamma=self.algoArgs.gammas[0])               
+
+                    if self.algoArgs.modelSelect:
+                        # Let's find optimal parameters using the first matrix 
+                        learner.modelSelect(self.getTrainIterator().next(), self.algoArgs.ks, self.algoArgs.lmbdas, self.algoArgs.gammas, self.algoArgs.folds)
+                        trainIterator = self.getTrainIterator()
+
                     trainIterator = self.getTrainIterator()
                     ZIter = learner.learnModel(trainIterator)
                     
