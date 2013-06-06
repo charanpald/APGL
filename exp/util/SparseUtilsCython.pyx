@@ -13,30 +13,9 @@ class SparseUtilsCython(object):
     """
     Some Cythonised functions for sparse matrices. 
     """
-    @staticmethod 
-    @cython.boundscheck(False)
-    def partialReconstructValsPQ(numpy.ndarray[numpy.long_t, ndim=1] rowInds, numpy.ndarray[numpy.long_t, ndim=1] colInds, numpy.ndarray[numpy.float_t, ndim=2, mode="c"] P, numpy.ndarray[numpy.float_t, ndim=2, mode="c"] Q): 
-        """
-        Given an array of unique indices inds, partially reconstruct $P*Q^T$.
-        """ 
-        if P.shape[1] != Q.shape[1]: 
-            raise ValueError("Matrices not aligned")        
-        
-        cdef unsigned int i
-        cdef unsigned int j 
-        cdef unsigned int k
-        cdef numpy.ndarray[numpy.float_t, ndim=1, mode="c"] values = numpy.zeros(rowInds.shape[0], numpy.float)
-        
-        for i in range(rowInds.shape[0]):
-            j = rowInds[i]
-            k = colInds[i]
-
-            values[i] = numpy.inner(P[j, :], Q[k, :])            
-            
-        return values
         
     @staticmethod 
-    def partialReconstructValsPQ2(numpy.ndarray[int, ndim=1] rowInds, numpy.ndarray[int, ndim=1] colInds, numpy.ndarray[double, ndim=2, mode="c"] P, numpy.ndarray[double, ndim=2, mode="c"] Q): 
+    def partialReconstructValsPQ(numpy.ndarray[int, ndim=1] rowInds, numpy.ndarray[int, ndim=1] colInds, numpy.ndarray[double, ndim=2, mode="c"] P, numpy.ndarray[double, ndim=2, mode="c"] Q): 
         """
         Given an array of unique indices inds, partially reconstruct $P*Q^T$. Do 
         the heavy work in C++. 
@@ -54,8 +33,9 @@ class SparseUtilsCython(object):
         Given an array of unique indices inds, partially reconstruct $P*Q^T$.
         The returned matrix is a scipy csc_matrix.
         """ 
-        
-        vals = SparseUtilsCython.partialReconstructValsPQ(omega[0], omega[1], P, Q)
+        rowInds = numpy.array(omega[0], numpy.int32)
+        colInds = numpy.array(omega[1], numpy.int32)
+        vals = SparseUtilsCython.partialReconstructValsPQ(rowInds, colInds, P, Q)
         inds = numpy.c_[omega[0], omega[1]].T
         X = scipy.sparse.csc_matrix((vals, inds), shape=(P.shape[0], Q.shape[0]))
         
