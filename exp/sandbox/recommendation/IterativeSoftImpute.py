@@ -161,8 +161,6 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                         raise ValueError("Unknown SVD update algorithm: " + self.updateAlg)
 
                 rowInds, colInds = X.nonzero()
-                rowInds = numpy.array(rowInds, numpy.int)
-                colInds = numpy.array(colInds, numpy.int)
 
                 gamma = self.iterativeSoftImpute.eps + 1
                 i = 0

@@ -101,8 +101,6 @@ class SparseUtils(object):
             rowInds, colInds = numpy.unravel_index(inds, (m, n))
         elif type(k) == tuple: 
             rowInds, colInds = k 
-            rowInds = numpy.array(rowInds, numpy.int)
-            colInds = numpy.array(colInds, numpy.int)
         else: 
             inds = numpy.random.randint(0, n*m, k)
             inds = numpy.unique(inds)

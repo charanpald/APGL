@@ -62,7 +62,7 @@ class SoftImpute(AbstractMatrixCompleter):
             i = 0
             
             while gamma > self.eps:
-                ZOmega = SparseUtilsCython.partialReconstruct2((rowInds, colInds), oldU, oldS, oldV)
+                ZOmega = SparseUtilsCython.partialReconstructPQ((rowInds, colInds), oldU*oldS, oldV)
                 Y = X - ZOmega
                 Y = Y.tocsc()
                 newU, newS, newV = ExpSU.SparseUtils.svdSoft2(Y, oldU, oldS, oldV, lmbda)
