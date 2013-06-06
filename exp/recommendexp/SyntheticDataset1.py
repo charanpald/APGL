@@ -38,6 +38,8 @@ class SyntheticDataset1(object):
         self.endNumInds = inds.shape[0]
         
         rowInds, colInds = numpy.unravel_index(inds, (self.endM, self.endN))
+        rowInds = numpy.array(rowInds, numpy.int32)
+        colInds = numpy.array(colInds, numpy.int32)
         vals = SparseUtilsCython.partialReconstructValsPQ(rowInds, colInds, U*s, V)
         vals /= vals.std()
         vals +=  numpy.random.randn(vals.shape[0])*self.noise
