@@ -29,7 +29,7 @@ class MovieLensExpProfile(object):
             
             defaultAlgoArgs = argparse.Namespace()
             defaultAlgoArgs.ks = numpy.array(2**numpy.arange(6, 7, 0.5), numpy.int)
-            defaultAlgoArgs.svdAlg = "rsvd"   
+            defaultAlgoArgs.svdAlgs = ["rsvd"]   
             defaultAlgoArgs.runSoftImpute = True
             
             dataParser = argparse.ArgumentParser(description="", add_help=False)
