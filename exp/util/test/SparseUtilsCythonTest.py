@@ -13,7 +13,7 @@ class SparseUtilsCythonTest(unittest.TestCase):
         numpy.set_printoptions(suppress=True, precision=3, linewidth=150)
         numpy.random.seed(21)
 
-    def testPartialReconstructVals(self):
+    def testPartialReconstructValsPQ(self):
         n = 10
         Y = numpy.random.rand(n, n)
         
@@ -21,7 +21,7 @@ class SparseUtilsCythonTest(unittest.TestCase):
         V = V.T 
         
         indices = numpy.nonzero(Y)  
-        vals = SparseUtilsCython.partialReconstructVals(indices[0], indices[1], U, s, V)
+        vals = SparseUtilsCython.partialReconstructValsPQ(indices[0], indices[1], numpy.ascontiguousarray(U*s), V)
         X = numpy.reshape(vals, Y.shape)
         
         nptst.assert_almost_equal(X, Y)
@@ -33,7 +33,7 @@ class SparseUtilsCythonTest(unittest.TestCase):
         rowInds = numpy.array(inds[0], numpy.int)
         colInds = numpy.array(inds[1], numpy.int)
         
-        vals = SparseUtilsCython.partialReconstructVals(rowInds, colInds, U, s, V)
+        vals = SparseUtilsCython.partialReconstructValsPQ(rowInds, colInds, numpy.ascontiguousarray(U*s), V)
         
         for i in range(inds[0].shape[0]): 
             j = inds[0][i]
@@ -45,20 +45,24 @@ class SparseUtilsCythonTest(unittest.TestCase):
         self.assertEquals(A.nnz, inds[0].shape[0])
 
     def testPartialReconstructValsPQ2(self): 
-        n = 10
-        Y = numpy.random.rand(n, n)
+        numRuns = 10         
         
-        U, s, V = numpy.linalg.svd(Y)
-        V = V.T 
-        
-        indices = numpy.nonzero(Y)  
-        rowInds = numpy.array(indices[0], numpy.int32)
-        colInds = numpy.array(indices[1], numpy.int32)
-        vals = SparseUtilsCython.partialReconstructValsPQ2(rowInds, colInds, numpy.ascontiguousarray(U*s), V)
-        print(vals)
-        X = numpy.reshape(vals, Y.shape)
-        
-        nptst.assert_almost_equal(X, Y)
+        for i in range(numRuns): 
+            m = numpy.random.randint(5, 50)
+            n = numpy.random.randint(5, 50)
+            Y = numpy.random.rand(m, n)
+            
+            U, s, V = numpy.linalg.svd(Y,  full_matrices=0)
+            V = V.T 
+            
+            rowInds, colInds = numpy.nonzero(Y)  
+            rowInds = numpy.array(rowInds, numpy.int32)
+            colInds = numpy.array(colInds, numpy.int32)
+            #print(U.shape, V.shape)
+            vals = SparseUtilsCython.partialReconstructValsPQ2(rowInds, colInds, numpy.ascontiguousarray(U*s), V)
+            X = numpy.reshape(vals, Y.shape)
+            
+            nptst.assert_almost_equal(X, Y)
         
 
     def testPartialOuterProduct(self):
@@ -94,66 +98,7 @@ class SparseUtilsCythonTest(unittest.TestCase):
         
         self.assertEquals(A.nnz, inds[0].shape[0])
 
-    def testPartialReconstruct(self):
-        n = 10
-        Y = numpy.random.rand(n, n)
-        
-        U, s, V = numpy.linalg.svd(Y)
-        V = V.T 
-        
-        indices = numpy.nonzero(Y)
-        
-        X = SparseUtilsCython.partialReconstruct(indices, U, s, V)
-        X = X.todense()
-        
-        nptst.assert_almost_equal(X, Y)
-        
-        #Try just someIndices 
-        density = 0.2
-        A = scipy.sparse.rand(n, n, density)
-        inds = A.nonzero()
-        
-        X = SparseUtilsCython.partialReconstruct(inds, U, s, V)
-        
-        for i in range(inds[0].shape[0]): 
-            j = inds[0][i]
-            k = inds[1][i]
-            
-            self.assertAlmostEquals(X[j, k], Y[j, k])  
-            
-        self.assertTrue(X.nnz == inds[0].shape[0])
-        
-    def testPartialReconstruct2(self):
-        n = 10
-        Y = numpy.random.rand(n, n)
-        
-        U, s, V = numpy.linalg.svd(Y)
-        V = V.T 
-        
-        indices = numpy.nonzero(Y)
-        
-        X = SparseUtilsCython.partialReconstruct2(indices, U, s, V)
-        X = X.todense()
-        
-        nptst.assert_almost_equal(X, Y)
-        
-        #Try just someIndices 
-        density = 0.2
-        A = scipy.sparse.rand(n, n, density)
-        inds = A.nonzero()
-        rowInds = numpy.array(inds[0], numpy.int)
-        colInds = numpy.array(inds[1], numpy.int)
-        
-        X = SparseUtilsCython.partialReconstruct2((rowInds, colInds), U, s, V)
-        
-        for i in range(inds[0].shape[0]): 
-            j = inds[0][i]
-            k = inds[1][i]
-            
-            self.assertAlmostEquals(X[j, k], Y[j, k])  
-            
-        self.assertTrue(X.nnz == inds[0].shape[0])
-        self.assertTrue(scipy.sparse.isspmatrix_csc(X))
+   
 
 if __name__ == '__main__':
     unittest.main()
