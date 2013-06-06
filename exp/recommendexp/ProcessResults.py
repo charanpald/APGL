@@ -8,9 +8,9 @@ from apgl.util.PathDefaults import PathDefaults
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 #For now just print some results for a particular dataset 
-dataset = "MovieLensDataset"
+#dataset = "MovieLensDataset"
 #dataset = "NetflixDataset"
-#dataset = "SyntheticDataset1"
+dataset = "SyntheticDataset1"
 outputDir = PathDefaults.getOutputDir() + "recommend/" + dataset + "/"
 
 plotStyles = ['k-', 'k--', 'k-.', 'r--', 'r-', 'g-', 'b-', 'b--', 'b-.', 'g--', 'g--', 'g-.', 'r-', 'r--', 'r-.']
@@ -52,7 +52,7 @@ for i, method in enumerate(methods):
         plt.ylabel("Rank")
         
         plt.figure(4)
-        plt.plot(numpy.arange(metadata.shape[0]), metadata[:, 2], plotStyles[i], label=method)
+        plt.plot(numpy.arange(metadata.shape[0]), numpy.cumsum(metadata[:, 2]), plotStyles[i], label=method)
         plt.legend() 
         plt.xlabel("Graph no.")
         plt.ylabel("Time (s)")
