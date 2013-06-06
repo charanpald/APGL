@@ -184,9 +184,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                     elif self.iterativeSoftImpute.svdAlg=="svdUpdate":
                         newU, newS, newV = SVDUpdate.addSparseProjected(self.oldU, self.oldS, self.oldV, Y, self.iterativeSoftImpute.k)
                     elif self.iterativeSoftImpute.svdAlg=="rsvd":
-                        #L = LinOperatorUtils.parallelSparseLowRankOp(Y, self.oldU, self.oldS, self.oldV)
-                        Y.dot = Y.pdot 
-                        L = LinOperatorUtils.sparseLowRankOp(Y, self.oldU, self.oldS, self.oldV)
+                        L = LinOperatorUtils.sparseLowRankOp(Y, self.oldU, self.oldS, self.oldV, parallel=True)
                         newU, newS, newV = RandomisedSVD.svd(L, self.iterativeSoftImpute.k, p=self.iterativeSoftImpute.p, q=self.iterativeSoftImpute.q)
                     elif self.iterativeSoftImpute.svdAlg=="rsvdUpdate": 
                         L = LinOperatorUtils.sparseLowRankOp(Y, self.oldU, self.oldS, self.oldV)

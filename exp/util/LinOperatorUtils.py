@@ -69,21 +69,34 @@ class LinOperatorUtils(object):
         pass 
     
     @staticmethod 
-    def sparseLowRankOp(X, U, s, V): 
+    def sparseLowRankOp(X, U, s, V, parallel=False): 
         if X.shape[0] != U.shape[0] or X.shape[1] != V.shape[0]: 
             raise ValueError("X and U s V^T should have the same shape")
         
-        def matvec(w): 
-            return X.dot(w) + (U*s).dot(V.T.dot(w)) 
-        
-        def rmatvec(w): 
-            return X.T.dot(w) + (V*s).dot(U.T.dot(w))
+        if not parallel: 
+            def matvec(w): 
+                return X.dot(w) + (U*s).dot(V.T.dot(w)) 
             
-        def matmat(W): 
-            return X.dot(W) + (U*s).dot(V.T.dot(W))  
+            def rmatvec(w): 
+                return X.T.dot(w) + (V*s).dot(U.T.dot(w))
+                
+            def matmat(W): 
+                return X.dot(W) + (U*s).dot(V.T.dot(W))  
+                
+            def rmatmat(W): 
+                return X.T.dot(W) + (V*s).dot(U.T.dot(W))
+        else:
+            def matvec(w): 
+                return X.pdot(w) + (U*s).dot(V.T.dot(w)) 
             
-        def rmatmat(W): 
-            return X.T.dot(W) + (V*s).dot(U.T.dot(W))
+            def rmatvec(w): 
+                return X.T.pdot(w) + (V*s).dot(U.T.dot(w))
+                
+            def matmat(W): 
+                return X.pdot(W) + (U*s).dot(V.T.dot(W))  
+                
+            def rmatmat(W): 
+                return X.T.pdot(W) + (V*s).dot(U.T.dot(W))
         
         return GeneralLinearOperator(X.shape, matvec, rmatvec, matmat, rmatmat, dtype=X.dtype) 
     
