@@ -26,6 +26,20 @@ class SparseUtilsCythonProfile(object):
         
         ProfileUtils.profile('SparseUtilsCython.partialReconstructValsPQ(inds[0], inds[1], U, V)', globals(), locals())
 
+    def profilePartialReconstructValsPQ2(self):
+        shape = 5000, 10000
+        r = 100 
+        U, s, V = SparseUtils.generateLowRank(shape, r)
+        
+        k = 1000000 
+        inds = numpy.unravel_index(numpy.random.randint(0, shape[0]*shape[1], k), dims=shape)
+        
+        rowInds = numpy.array(inds[0], numpy.int32)
+        colInds = numpy.array(inds[1], numpy.int32)
+        
+        ProfileUtils.profile('SparseUtilsCython.partialReconstructValsPQ2(rowInds, colInds, U, V)', globals(), locals())
+
         
 profiler = SparseUtilsCythonProfile()
 profiler.profilePartialReconstructValsPQ()
+profiler.profilePartialReconstructValsPQ2() #About 10x faster 
