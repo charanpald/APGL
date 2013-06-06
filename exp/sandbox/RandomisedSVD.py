@@ -3,7 +3,6 @@ import scipy.sparse
 import gc 
 from exp.util.GeneralLinearOperator import GeneralLinearOperator
 from apgl.util.Parameter import Parameter 
-from apgl.util.ProfileUtils import ProfileUtils 
 
 class RandomisedSVD(object): 
     """
