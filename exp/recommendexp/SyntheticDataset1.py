@@ -10,7 +10,7 @@ from exp.util.SparseUtils import SparseUtils
 from exp.util.SparseUtilsCython import SparseUtilsCython
 
 class SyntheticDataset1(object): 
-    def __init__(self, startM=500, endM=600, startN=1000, endN=1200, pnz=0.01, noise=0.1): 
+    def __init__(self, startM=5000, endM=10000, startN=1000, endN=1500, pnz=0.02, noise=0.05): 
         self.startM = startM 
         self.endM = endM 
         self.startN = startN 
@@ -18,6 +18,7 @@ class SyntheticDataset1(object):
         
         self.pnz = pnz
         self.noise = noise
+        self.trainSplit = 1.0/2 
     
     def generateMatrices(self):
         """
@@ -27,8 +28,7 @@ class SyntheticDataset1(object):
         numpy.random.seed(21)    
         r = 50 
         
-        
-        U, s, V = SparseUtils.generateLowRank((self.endM, self.endN), r)
+        U, s, V = SparseUtils.generateLowRank((self.endM, self.endN), r, normalise=False)
         
         self.startNumInds = self.pnz*self.startM*self.startN
         self.endNumInds = self.pnz*self.endM*self.endN
@@ -44,8 +44,8 @@ class SyntheticDataset1(object):
         vals /= vals.std()
         vals +=  numpy.random.randn(vals.shape[0])*self.noise
         
-        trainSplit = 2.0/3 
-        isTrainInd = numpy.array(numpy.random.rand(inds.shape[0]) <= trainSplit, numpy.bool)
+        
+        isTrainInd = numpy.array(numpy.random.rand(inds.shape[0]) <= self.trainSplit, numpy.bool)
         
         assert (trainSplit - isTrainInd.sum()/float(isTrainInd.shape[0]))
         
@@ -65,6 +65,7 @@ class SyntheticDataset1(object):
             currentColInds = colInds[0:stepList[i]]
             
             X = scipy.sparse.csc_matrix((currentVals, (currentRowInds, currentColInds)), dtype=numpy.float, shape=(self.endM, self.endN))
+            #print("pnz=" + str(X.nnz/float(X.shape[0]*X.shape[1])))
             
             trainX = X.multiply(XMaskTrain)[0:self.startM, 0:self.startN]
             trainX.eliminate_zeros()
