@@ -26,12 +26,10 @@ numpy.seterr("raise", under="ignore")
 dataArgs = argparse.Namespace()
 dataArgs.maxIter = 40 
 #Set iterStartTimeStamp to None for all iterations 
-dataArgs.iterStartTimeStamp = time.mktime(datetime(2005,12,31).timetuple())
+dataArgs.iterStartTimeStamp = time.mktime(datetime(2003,12,31).timetuple())
 
 # Arguments related to the algorithm
 defaultAlgoArgs = argparse.Namespace()
-defaultAlgoArgs.k = numpy.array(2**numpy.arange(3, 8.5, 0.5), numpy.int)
-defaultAlgoArgs.svdAlg = "arpack"
 
 # init (reading/writting command line arguments)
 # data args parser #
