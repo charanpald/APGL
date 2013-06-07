@@ -297,12 +297,12 @@ class SparseUtils(object):
             nonZeroCounts = numpy.bincount(rowInds, minlength=X.shape[0])
             inds = nonZeroCounts==0
             nonZeroCounts += inds
-            mu = numpy.array(X.sum(1)).ravel()/nonZeroCounts
+            mu = numpy.array(X.sum(1), numpy.float).ravel()/nonZeroCounts
             mu[inds] = 0
 
         vals = SparseUtilsCython.partialOuterProduct(rowInds, colInds, numpy.array(mu, numpy.float), numpy.ones(X.shape[1]))
-        X.data -= vals 
-        
+        X.data = numpy.array(X.data - vals, numpy.float) 
+                
         return X, mu 
 
     @staticmethod
@@ -322,22 +322,14 @@ class SparseUtils(object):
             nonZeroCounts = numpy.bincount(colInds, minlength=X.shape[1])
             inds = nonZeroCounts==0
             nonZeroCounts += inds
-            mu = numpy.array(X.sum(0)).ravel()/nonZeroCounts
+            mu = numpy.array(X.sum(0), numpy.float).ravel()/nonZeroCounts
             mu[inds] = 0
         
         vals = SparseUtilsCython.partialOuterProduct(rowInds, colInds, numpy.ones(X.shape[0]), numpy.array(mu, numpy.float))
-        X.data -= vals 
+        X.data = numpy.array(X.data - vals, numpy.float) 
         
         return X, mu 
  
-    @staticmethod 
-    def center(X, mu1=None, mu2=None, inds=None):
-        """
-        Center both the rows and cols of a sparse matrix at the same time. 
-       TODO: Look at || X . Y - ab^T . Y||_F where Y is indicator and dot is 
-        hadamard product. 
-        """
-        pass 
          
     @staticmethod 
     def uncenterRows(X, mu):
@@ -401,6 +393,18 @@ class SparseUtils(object):
         indptr[:] = X.indptr 
         
         return ((data, indices, indptr), X.shape)
+    
+    @staticmethod 
+    def subsample(X, sampleSize): 
+        rowInds, colInds = X.nonzero() 
         
+        inds = numpy.random.permutation(rowInds.shape[0])[0:sampleSize]
+        
+        rowInds = rowInds[inds]
+        colInds = colInds[inds]
+        vals = X.data[inds]
+        
+        return scipy.sparse.csc_matrix((vals, (rowInds, colInds)), X.shape)
+      
        
     kmaxMultiplier = 15 
