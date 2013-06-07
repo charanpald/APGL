@@ -52,7 +52,7 @@ class RecommendExpHelper(object):
         self.logStep = 10
         
         #The max number of observations to use for model selection
-        self.sampleSize = 10**6
+        self.sampleSize = 2*10**6
 
         # basic resultsDir
         self.resultsDir = PathDefaults.getOutputDir() + "recommend/" + dirName + "/"
