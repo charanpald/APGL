@@ -78,7 +78,7 @@ class SGDNorm2Reg(object):
         cdef numpy.ndarray[double, ndim=1] oldProw = scipy.zeros(self.k)
         
         cdef unsigned int ii, u, i, maxIter
-        cdef double error, deltaPNorm, deltaQNorm
+        cdef double error, deltaPNorm, deltaQNorm, ge, gl
         cdef numpy.ndarray[double, ndim=2, mode="c"] oldP = scipy.zeros(P.shape)
         cdef numpy.ndarray[double, ndim=2, mode="c"] oldQ = scipy.zeros(Q.shape)
         while True:
@@ -97,10 +97,13 @@ class SGDNorm2Reg(object):
                 #if error > self.eps:
                 #    logging.debug(str(u) + " " + str(i) + ": " + str(error))
                 grad_weight = 1.*self.gamma/(t+self.t0)
+                ge = grad_weight * error
+                gl = 1. - grad_weight * self.lmbda
 #                grad_weight = 1.self.gamma/scipy.sqrt(t+self.t0)
-                oldProw[:] = P[u,:]
-                P[u,:] += grad_weight * (error*Q[i,:]-self.lmbda*P[u,:])
-                Q[i,:] += grad_weight * (error*oldProw-self.lmbda*Q[i,:])
+#                oldProw[:] = P[u,:]
+#                P[u,:] += grad_weight * (error*Q[i,:]-self.lmbda*P[u,:])
+#                Q[i,:] += grad_weight * (error*oldProw-self.lmbda*Q[i,:])
+                P[u,:], Q[i,:] = gl*P[u,:] + ge*Q[i,:], gl*Q[i,:] + ge*P[u,:]
                 
             t += maxIter
                     
