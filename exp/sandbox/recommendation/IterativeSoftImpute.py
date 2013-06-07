@@ -40,6 +40,7 @@ def learnPredict(args):
     errors = numpy.zeros(rhos.shape[0])
     for j, predX in enumerate(predXIter): 
         errors[j] = MCEvaluator.rootMeanSqError(testX, predX)
+        logging.debug("Error = " + str(errors[j]))
         del predX 
         gc.collect()
         
