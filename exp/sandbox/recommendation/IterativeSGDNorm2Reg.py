@@ -1,5 +1,6 @@
 
-from exp.sandbox.recommendation.SGDNorm2Reg import SGDNorm2Reg
+#from exp.sandbox.recommendation.SGDNorm2Reg import SGDNorm2Reg
+from exp.sandbox.recommendation.SGDNorm2RegCython import SGDNorm2Reg
 import logging
 import gc
 import scipy
@@ -57,6 +58,9 @@ class IterativeSGDNorm2Reg(object):
                     except FloatingPointError:
                         logging.warning("FloatingPointError encountered, reinitialise the matrix decomposition")
                         self.ZListSGD = self.baseLearner.learnModel(X, storeAll=False)
+                    except ValueError:
+                        logging.warning("ValueError encountered, reinitialise the matrix decomposition")
+                        self.ZListSGD = self.baseLearner.learnModel(X, storeAll=False)
                 return self.ZListSGD
                 
         return ZIterator(XIterator, self.baseLearner)
@@ -108,7 +112,7 @@ class IterativeSGDNorm2Reg(object):
             try:
                 ZIter = learner.learnModel(trainX, storeAll = False)
                 haveRes = True
-            except FloatingPointError:
+            except (FloatingPointError, ValueError):
                 pass
 
         if haveRes:

@@ -84,11 +84,14 @@ class SGDNorm2Reg(object):
                 error = val - P[u,:].dot(Q[i,:])
                 #if error > self.eps:
                 #    logging.debug(str(u) + " " + str(i) + ": " + str(error))
-                grad_weight = 1.*self.gamma/(t+self.t0)
-#                grad_weight = 1.self.gamma/scipy.sqrt(t+self.t0)
-                oldProw[:] = P[u,:]
-                P[u,:] += grad_weight * (error*Q[i,:]-self.lmbda*P[u,:])
-                Q[i,:] += grad_weight * (error*oldProw-self.lmbda*Q[i,:])
+#                grad_weight = 1.*self.gamma/(t+self.t0)
+                grad_weight = 1.*self.gamma/scipy.sqrt(t+self.t0)
+#                oldProw[:] = P[u,:]
+#                P[u,:] += grad_weight * (error*Q[i,:]-self.lmbda*P[u,:])
+#                Q[i,:] += grad_weight * (error*oldProw-self.lmbda*Q[i,:])
+                ge = grad_weight * error
+                gl = 1. - grad_weight * self.lmbda
+                P[u,:], Q[i,:] = gl*P[u,:] + ge*Q[i,:], gl*Q[i,:] + ge*P[u,:]
                 
                 t += 1
                 # stop due to limited time budget
