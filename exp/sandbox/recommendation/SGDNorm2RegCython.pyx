@@ -1,8 +1,11 @@
 
 """
-An implementation of the matrix completion algorithm based on stochastic gradient descent minimizing the objective function:
-||M-PQ||_{F on known values}^2 + \lambda (||P||_F^2 + ||Q||_F^2)
 """
+
+from cython.operator cimport dereference as deref, preincrement as inc 
+import cython
+import struct
+cimport numpy
 
 import numpy
 import numpy.random
@@ -62,26 +65,35 @@ class SGDNorm2Reg(object):
                     Q = numpy.random.randn(X.shape[1], self.k) * sQ
         else:
             P,Q = Z[-1]
-                    
+        
+        
+        cdef unsigned int nnz = X.nnz
         omega = X.nonzero()
-        nonzero = X.data
-#        tol = 10**-6
-        t = 1
+        cdef numpy.ndarray[int, ndim=1] omega0 = omega[0]
+        cdef numpy.ndarray[int, ndim=1] omega1 = omega[1]
+        cdef numpy.ndarray[double, ndim=1] nonzero = X.data
+        cdef int t = 0
         
         ZList = []
-        oldProw = scipy.zeros(self.k)
-        oldP = scipy.zeros(P.shape)
-        oldQ = scipy.zeros(Q.shape)
+        cdef numpy.ndarray[double, ndim=1] oldProw = scipy.zeros(self.k)
         
+        cdef unsigned int ii, u, i, maxIter
+        cdef double error, deltaPNorm, deltaQNorm
+        cdef numpy.ndarray[double, ndim=2, mode="c"] oldP = scipy.zeros(P.shape)
+        cdef numpy.ndarray[double, ndim=2, mode="c"] oldQ = scipy.zeros(Q.shape)
         while True:
-            if self.eps>0:
+            if self.eps > 0:
                 oldP[:] = P[:]
                 oldQ[:] = Q[:]
             
             # do one pass on known values
             logging.debug("one pass on the training matrix")
-            for u,i,val in zip(omega[0], omega[1], nonzero):
-                error = val - P[u,:].dot(Q[i,:])
+            maxIter = min(nnz, self.tmax-t)
+            for ii in range(maxIter):
+                u = omega0[ii]
+                i = omega1[ii]
+                
+                error = nonzero[ii] - P[u,:].dot(Q[i,:])
                 #if error > self.eps:
                 #    logging.debug(str(u) + " " + str(i) + ": " + str(error))
                 grad_weight = 1.*self.gamma/(t+self.t0)
@@ -90,17 +102,14 @@ class SGDNorm2Reg(object):
                 P[u,:] += grad_weight * (error*Q[i,:]-self.lmbda*P[u,:])
                 Q[i,:] += grad_weight * (error*oldProw-self.lmbda*Q[i,:])
                 
-                t += 1
-                # stop due to limited time budget
-                if t > self.tmax:
-                    break;
+            t += maxIter
                     
 #            ZList.append(scipy.sparse.csr_matrix(P).dot(scipy.sparse.csr_matrix(Q).T))
             if storeAll: 
                 ZList.append((P.copy(), Q.copy()))
             
             # stop due to no change after a bunch of gradient steps
-            if self.eps>0:
+            if self.eps > 0:
                 deltaPNorm = scipy.linalg.norm(P - oldP)
                 deltaQNorm = scipy.linalg.norm(Q - oldQ)
                 logging.debug("norm of DeltaP: " + str(deltaPNorm))
@@ -109,11 +118,11 @@ class SGDNorm2Reg(object):
                     break
             
             # stop due to limited time budget
-            if t > self.tmax:
+            if t >= self.tmax:
                 break
                 
         if __debug__:
-            logging.info("nb grad: " + str(t-1))
+            logging.info("nb grad: " + str(t))
 
         if storeAll: 
             return ZList 
