@@ -27,7 +27,7 @@ class RecommendExpHelper(object):
     defaultAlgoArgs.folds = 3
     defaultAlgoArgs.ks = numpy.array(2**numpy.arange(3, 7, 0.5), numpy.int)
     defaultAlgoArgs.kmax = None 
-    defaultAlgoArgs.svdAlgs = ["rsvd", "rsvdUpdate", "propack"]
+    defaultAlgoArgs.svdAlgs = ["propack", "rsvd", "rsvdUpdate"]
     defaultAlgoArgs.modelSelect = False
     defaultAlgoArgs.postProcess = False 
     defaultAlgoArgs.trainError = False 
