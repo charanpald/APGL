@@ -50,6 +50,9 @@ class RecommendExpHelper(object):
         
         #How often to print output 
         self.logStep = 10
+        
+        #The max number of observations to use for model selection
+        self.sampleSize = 10**6
 
         # basic resultsDir
         self.resultsDir = PathDefaults.getOutputDir() + "recommend/" + dirName + "/"
@@ -196,7 +199,10 @@ class RecommendExpHelper(object):
                             trainIterator = self.getTrainIterator()
                             #Let's find the optimal lambda using the first matrix 
                             X = trainIterator.next() 
-                            logging.debug("Performing model selection")
+                            
+                            logging.debug("Performing model selection, taking subsample of entries of size " + str(self.sampleSize))
+                            X = SparseUtils.subsample(X, self.sampleSize)
+                            
                             cvInds = Sampling.randCrossValidation(self.algoArgs.folds, X.nnz)
                             meanErrors, stdErrors = learner.modelSelect(X, self.algoArgs.rhos, self.algoArgs.ks, cvInds)
                             
