@@ -64,20 +64,23 @@ class SGDNorm2Reg(object):
             P,Q = Z[-1]
                     
         omega = X.nonzero()
+        nonzero = X.data
 #        tol = 10**-6
         t = 1
         
         ZList = []
         oldProw = scipy.zeros(self.k)
+        oldP = scipy.zeros(P.shape)
+        oldQ = scipy.zeros(Q.shape)
         
         while True: 
-            oldP = P.copy()
-            oldQ = Q.copy()
+            oldP[:] = P[:]
+            oldQ[:] = Q[:]
             
             # do one pass on known values
             logging.debug("one pass on the training matrix")
-            for u,i in zip(omega[0], omega[1]):
-                error = X[u,i] - P[u,:].dot(Q[i,:])
+            for u,i,val in zip(omega[0], omega[1], nonzero):
+                error = val - P[u,:].dot(Q[i,:])
                 #if error > self.eps:
                 #    logging.debug(str(u) + " " + str(i) + ": " + str(error))
                 grad_weight = 1.*self.gamma/(t+self.t0)
@@ -101,11 +104,11 @@ class SGDNorm2Reg(object):
             logging.debug("norm of DeltaP: " + str(scipy.linalg.norm(P - oldP)))
             logging.debug("norm of DeltaQ: " + str(scipy.linalg.norm(Q - oldQ)))
             if scipy.linalg.norm(P - oldP) < self.eps and scipy.linalg.norm(Q - oldQ) < self.eps:
-                break;
+                break
             
             # stop due to limited time budget
             if t > self.tmax:
-                break;
+                break
                 
         if __debug__:
             logging.info("nb grad: " + str(t-1))
