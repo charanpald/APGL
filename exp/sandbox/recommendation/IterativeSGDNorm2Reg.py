@@ -15,8 +15,8 @@ An iterative version of matrix factoisation using frobenius norm penalisation.
 """
 
 class IterativeSGDNorm2Reg(object): 
-    def __init__(self, k, lmbda, eps=0.000001, tmax=100000): 
-        self.baseLearner = SGDNorm2Reg(k, lmbda, eps, tmax)
+    def __init__(self, k, lmbda, eps=0.000001, tmax=100000, gamma=1): 
+        self.baseLearner = SGDNorm2Reg(k, lmbda, eps, tmax, gamma)
         
     def learnModel(self, XIterator): 
         
@@ -37,6 +37,21 @@ class IterativeSGDNorm2Reg(object):
                     # assumption : training matrix centered by row and column
                     self.ZListSGD = self.baseLearner.learnModel(X, storeAll=False)
                 else:
+                    #In the case the matrix size changes, we alter P and Q to fit the new data     
+                    P, Q = self.ZListSGD[0]
+                                        
+                    if X.shape[0] > P.shape[0]:
+                        P = Util.extendArray(P, (X.shape[0], P.shape[1]))
+                    elif X.shape[0] < P.shape[0]:
+                        P = P[0:X.shape[0], :]
+
+                    if X.shape[1] > Q.shape[0]:
+                        Q = Util.extendArray(Q, (X.shape[1], Q.shape[1]))
+                    elif X.shape[1] < Q.shape[0]:
+                        Q = Q[0:X.shape[1], :]
+                        
+                    self.ZListSGD = [(P, Q)]
+                    
                     try:
                         self.ZListSGD = self.baseLearner.learnModel(X, Z=self.ZListSGD, storeAll=False)
                     except FloatingPointError:
