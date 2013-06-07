@@ -31,8 +31,8 @@ class RecommendExpHelper(object):
     defaultAlgoArgs.modelSelect = False
     defaultAlgoArgs.postProcess = False 
     defaultAlgoArgs.trainError = False 
-    defaultAlgoArgs.lmbdas = [0.001]
-    defaultAlgoArgs.gammas = [1]
+    defaultAlgoArgs.lmbdas = [0.001, 0.002, 0.005, 0.01]
+    defaultAlgoArgs.gammas = [0.5, 1, 2]
     
     def __init__(self, trainXIteratorFunc, testXIteratorFunc, cmdLine=None, defaultAlgoArgs = None, dirName=""):
         """ priority for default args
@@ -87,7 +87,7 @@ class RecommendExpHelper(object):
         algoParser.add_argument("--modelSelect", action="store_true", help="Whether to do model selection on the 1st iteration (default: %(default)s)", default=defaultAlgoArgs.modelSelect)
         algoParser.add_argument("--postProcess", action="store_true", help="Whether to do post processing for soft impute (default: %(default)s)", default=defaultAlgoArgs.postProcess)
         algoParser.add_argument("--trainError", action="store_true", help="Whether to compute the error on the training matrices (default: %(default)s)", default=defaultAlgoArgs.trainError)
-        algoParser.add_argument("--lambdas", type=int, nargs="+", help="Weight of norm2 regularisation (default: %(default)s)", default=defaultAlgoArgs.lmbdas)
+        algoParser.add_argument("--lmbdas", type=int, nargs="+", help="Weight of norm2 regularisation (default: %(default)s)", default=defaultAlgoArgs.lmbdas)
         algoParser.add_argument("--gammas", type=int, nargs="+", help="Weight of SGD update (default: %(default)s)", default=defaultAlgoArgs.gammas)
         return(algoParser)
     
