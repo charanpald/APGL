@@ -5,7 +5,6 @@ import itertools
 import scipy.sparse.linalg
 import exp.util.SparseUtils as ExpSU
 import numpy.testing as nptst 
-import multiprocessing 
 from sppy import csarray 
 from exp.sandbox.RandomisedSVD import RandomisedSVD
 from exp.util.MCEvaluator import MCEvaluator
@@ -174,7 +173,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                     Y = X - ZOmega
                     #Y = Y.tocsc()
                     #del ZOmega
-                    Y = csarray.fromScipySparse(Y, storageType="rowMajor")
+                    Y = csarray.fromScipySparse(Y, storagetype="row")
                     gc.collect()
 
                     if self.iterativeSoftImpute.svdAlg=="propack":

@@ -47,7 +47,7 @@ class SyntheticDataset1(object):
         
         isTrainInd = numpy.array(numpy.random.rand(inds.shape[0]) <= self.trainSplit, numpy.bool)
         
-        assert (trainSplit - isTrainInd.sum()/float(isTrainInd.shape[0]))
+        assert (self.trainSplit - isTrainInd.sum()/float(isTrainInd.shape[0]))
         
         XMaskTrain = scipy.sparse.csc_matrix((isTrainInd, (rowInds, colInds)), dtype=numpy.bool, shape=(self.endM, self.endN))
         XMaskTest = scipy.sparse.csc_matrix((numpy.logical_not(isTrainInd), (rowInds, colInds)), dtype=numpy.bool, shape=(self.endM, self.endN))
