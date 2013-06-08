@@ -4,8 +4,8 @@ import sys
 from apgl.graph import *
 from apgl.generator import *
 from apgl.util.ProfileUtils import ProfileUtils
-from exp.sandbox.recommendation.SGDNorm2Reg import SGDNorm2Reg
-#from exp.sandbox.recommendation.SGDNorm2RegCython import SGDNorm2Reg
+#from exp.sandbox.recommendation.SGDNorm2Reg import SGDNorm2Reg
+from exp.sandbox.recommendation.SGDNorm2RegCython import SGDNorm2Reg
 import scipy.sparse
 from exp.util.SparseUtils import SparseUtils
 

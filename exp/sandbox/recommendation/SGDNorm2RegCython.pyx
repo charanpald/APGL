@@ -6,7 +6,9 @@ from cython.operator cimport dereference as deref, preincrement as inc
 import cython
 import struct
 cimport numpy
-
+cdef extern from "math.h":
+    double sqrt(double x)
+    
 import numpy
 import numpy.random
 import scipy.sparse
@@ -17,6 +19,18 @@ from apgl.util.Util import Util
 import exp.util.SparseUtils as ExpSU
 import logging
 import copy
+
+# for fast norm2 computation
+@cython.boundscheck(False) # turn of bounds-checking for entire function   
+cdef inline double norm2Diff(numpy.ndarray[double, ndim=2, mode="c"] M, numpy.ndarray[double, ndim=2, mode="c"] oldM):
+    cdef double norm = 0.
+    cdef double tmp
+    cdef unsigned int i,j
+    for i in range(M.shape[0]):
+        for j in range(M.shape[1]):
+            tmp = M[i,j]-oldM[i,j]
+            norm += tmp*tmp
+    return sqrt(norm)
 
 class SGDNorm2Reg(object): 
     def __init__(self, k, lmbda, eps, tmax, gamma = 1):
@@ -35,7 +49,7 @@ class SGDNorm2Reg(object):
         # other parameters
         self.t0 = 1
         
-        
+    @cython.boundscheck(False) # turn of bounds-checking for entire function   
     def learnModel(self, X, P=None, Q=None, Z=None, storeAll=True): 
         """
         Learn the matrix completion using a sparse matrix X.
@@ -45,83 +59,95 @@ class SGDNorm2Reg(object):
         When no initial point is given, expect the matrix to be centered
         in rows and columns. 
         """
-        
+        # usefull
+        cdef unsigned int m = X.shape[0]
+        cdef unsigned int n = X.shape[1]
+        cdef unsigned int k = self.k
+        cdef double gamma = self.gamma
+        cdef double lmbda = self.lmbda
+        cdef double eps = self.eps
+        cdef unsigned int tmax = self.tmax
+        cdef int t0 = self.t0
+
+        cdef double sX, sP, sQ
         if Z == None:
             if P == None and Q == None:
                 sX = X.data.std()
-                sP = sQ = numpy.sqrt(sX / numpy.sqrt(self.k))
-                P = numpy.random.randn(X.shape[0], self.k) * sP 
-                Q = numpy.random.randn(X.shape[1], self.k) * sQ
+                sP = sQ = sqrt(sX / sqrt(<double>(k)))
+                P = numpy.random.randn(X.shape[0], k) * sP 
+                Q = numpy.random.randn(X.shape[1], k) * sQ
             else:
                 if P == None:
                     sX = X.data.std()
                     sQ = Q.std()
-                    sP = sX / sQ / numpy.sqrt(self.k)
-                    P = numpy.random.randn(X.shape[0], self.k) * sP 
+                    sP = sX / sQ / sqrt(<double>(k))
+                    P = numpy.random.randn(X.shape[0], k) * sP 
                 if Q == None:
                     sX = X.data.std()
                     sP = P.std()
-                    sQ = sX / sP / numpy.sqrt(self.k)
-                    Q = numpy.random.randn(X.shape[1], self.k) * sQ
+                    sQ = sX / sP / sqrt(<double>(k))
+                    Q = numpy.random.randn(X.shape[1], k) * sQ
         else:
             P,Q = Z[-1]
         
+        # sanity check (to safely remove boundcheck)
+        assert (P.shape[0] == m)
+        assert (P.shape[1] == k)
+        assert (Q.shape[0] == n)
+        assert (Q.shape[1] == k)
+        
+        cdef numpy.ndarray[double, ndim=2, mode="c"] PP = P.copy()
+        cdef numpy.ndarray[double, ndim=2, mode="c"] QQ = Q.copy()
         
         cdef unsigned int nnz = X.nnz
         omega = X.nonzero()
         cdef numpy.ndarray[int, ndim=1] omega0 = omega[0]
         cdef numpy.ndarray[int, ndim=1] omega1 = omega[1]
         cdef numpy.ndarray[double, ndim=1] nonzero = X.data
-        cdef int t = 0
+        cdef unsigned int t = 0
         
         ZList = []
-        cdef numpy.ndarray[double, ndim=1] oldProw = scipy.zeros(self.k)
         
-        cdef unsigned int ii, u, i, maxIter
-        cdef double error, deltaPNorm, deltaQNorm, ge, gl
-        cdef numpy.ndarray[double, ndim=2, mode="c"] oldP = scipy.zeros(P.shape)
-        cdef numpy.ndarray[double, ndim=2, mode="c"] oldQ = scipy.zeros(Q.shape)
+        cdef unsigned int ii, u, i, kk, maxIter
+        cdef double error, deltaPNorm, deltaQNorm, ge, gl, tmp
+        cdef numpy.ndarray[double, ndim=2, mode="c"] oldP = scipy.zeros((m,k))
+        cdef numpy.ndarray[double, ndim=2, mode="c"] oldQ = scipy.zeros((n,k))
         while True:
-            if self.eps > 0:
-                oldP[:] = P[:]
-                oldQ[:] = Q[:]
+            if eps > 0:
+                oldP[:] = PP[:]
+                oldQ[:] = QQ[:]
             
             # do one pass on known values
             logging.debug("one pass on the training matrix")
-            maxIter = min(nnz, self.tmax-t)
+            maxIter = min(nnz, tmax-t)
             for ii in range(maxIter):
                 u = omega0[ii]
                 i = omega1[ii]
                 
-                error = nonzero[ii] - P[u,:].dot(Q[i,:])
-                #if error > self.eps:
-                #    logging.debug(str(u) + " " + str(i) + ": " + str(error))
-#                grad_weight = 1.*self.gamma/(t+self.t0)
-                grad_weight = 1.*self.gamma/scipy.sqrt(t+self.t0)
-#                oldProw[:] = P[u,:]
-#                P[u,:] += grad_weight * (error*Q[i,:]-self.lmbda*P[u,:])
-#                Q[i,:] += grad_weight * (error*oldProw-self.lmbda*Q[i,:])
+                error = nonzero[ii] - PP[u,:].dot(QQ[i,:])
+#                grad_weight = 1.*gamma/(t+t0)
+                grad_weight = 1.*gamma/sqrt(<double>(t+t0))
                 ge = grad_weight * error
-                gl = 1. - grad_weight * self.lmbda
-                P[u,:], Q[i,:] = gl*P[u,:] + ge*Q[i,:], gl*Q[i,:] + ge*P[u,:]
+                gl = 1. - grad_weight * lmbda
+                for kk in range(k): # vector addition done by hand
+                    PP[u,kk], QQ[i,kk] = gl*PP[u,kk] + ge*QQ[i,kk], gl*QQ[i,kk] + ge*PP[u,kk]
                 
                 t += 1
                     
-#            ZList.append(scipy.sparse.csr_matrix(P).dot(scipy.sparse.csr_matrix(Q).T))
             if storeAll: 
-                ZList.append((P.copy(), Q.copy()))
+                ZList.append((PP.copy(), QQ.copy()))
             
             # stop due to no change after a bunch of gradient steps
-            if self.eps > 0:
-                deltaPNorm = scipy.linalg.norm(P - oldP)
-                deltaQNorm = scipy.linalg.norm(Q - oldQ)
+            if eps > 0:
+                deltaPNorm = norm2Diff(PP, oldP)
+                deltaQNorm = norm2Diff(QQ, oldQ)
                 logging.debug("norm of DeltaP: " + str(deltaPNorm))
                 logging.debug("norm of DeltaQ: " + str(deltaQNorm))
-                if deltaPNorm < self.eps and deltaQNorm < self.eps:
+                if deltaPNorm < eps and deltaQNorm < eps:
                     break
             
             # stop due to limited time budget
-            if t >= self.tmax:
+            if t >= tmax:
                 break
                 
         if __debug__:
@@ -130,7 +156,7 @@ class SGDNorm2Reg(object):
         if storeAll: 
             return ZList 
         else: 
-            return [(P.copy(), Q.copy())] 
+            return [(PP.copy(), QQ.copy())] 
 
     def predict(self, ZList, inds, i=-1):
         """

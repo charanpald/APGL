@@ -51,18 +51,22 @@ class SGDNorm2Reg(object):
                 Q = numpy.random.randn(X.shape[1], self.k) * sQ
             else:
                 if P == None:
+                    Q = Q.copy()
                     sX = X.data.std()
                     sQ = Q.std()
                     sP = sX / sQ / numpy.sqrt(self.k)
                     P = numpy.random.randn(X.shape[0], self.k) * sP 
                 if Q == None:
+                    P = P.copy()
                     sX = X.data.std()
                     sP = P.std()
                     sQ = sX / sP / numpy.sqrt(self.k)
                     Q = numpy.random.randn(X.shape[1], self.k) * sQ
         else:
             P,Q = Z[-1]
-                    
+            P = P.copy()
+            Q = Q.copy()
+        
         omega = X.nonzero()
         nonzero = X.data
 #        tol = 10**-6
