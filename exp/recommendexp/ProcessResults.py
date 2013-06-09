@@ -8,8 +8,8 @@ from apgl.util.PathDefaults import PathDefaults
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 #For now just print some results for a particular dataset 
-#dataset = "MovieLensDataset"
-dataset = "NetflixDataset"
+dataset = "MovieLensDataset"
+#dataset = "NetflixDataset"
 #dataset = "SyntheticDataset1"
 outputDir = PathDefaults.getOutputDir() + "recommend/" + dataset + "/"
 
@@ -28,6 +28,7 @@ for i, fileName in enumerate(fileNames):
     try: 
         method = algorithms[i]
         data = numpy.load(fileName)
+        logging.debug("Loaded " + str(fileName))
         measures = data["arr_0"]
         metadata = data["arr_1"]
         
@@ -64,6 +65,7 @@ for i, fileName in enumerate(fileNames):
         plt.legend() 
         plt.xlabel("Matrix no.")
         plt.ylabel("Time (s)")
+        
     except: 
         logging.debug("Missing results : " + str(fileName))
        
