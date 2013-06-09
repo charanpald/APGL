@@ -61,6 +61,9 @@ class IterativeSGDNorm2Reg(object):
                     except ValueError:
                         logging.warning("ValueError encountered, reinitialise the matrix decomposition")
                         self.ZListSGD = self.baseLearner.learnModel(X, storeAll=False)
+                    except SGDNorm2Reg.ArithmeticError:
+                        logging.warning("ArithmeticError encountered, reinitialise the matrix decomposition")
+                        self.ZListSGD = self.baseLearner.learnModel(X, storeAll=False)
                 return self.ZListSGD
                 
         return ZIterator(XIterator, self.baseLearner)
@@ -112,7 +115,7 @@ class IterativeSGDNorm2Reg(object):
             try:
                 ZIter = learner.learnModel(trainX, storeAll = False)
                 haveRes = True
-            except (FloatingPointError, ValueError):
+            except (FloatingPointError, ValueError, SGDNorm2Reg.ArithmeticError):
                 pass
 
         if haveRes:

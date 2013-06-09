@@ -1,3 +1,4 @@
+# cython: profile=True  
 
 """
 """
@@ -32,7 +33,13 @@ cdef inline double norm2Diff(numpy.ndarray[double, ndim=2, mode="c"] M, numpy.nd
             norm += tmp*tmp
     return sqrt(norm)
 
-class SGDNorm2Reg(object): 
+class SGDNorm2Reg(object):
+    class ArithmeticError(ArithmeticError):
+        def __init__(self):
+            ArithmeticError.__init__(self)
+        def __str__(self):
+            return "infinite or NaN value encountered"
+ 
     def __init__(self, k, lmbda, eps, tmax, gamma = 1):
         """
         Initialise imputing algorithm with given parameters. lambda is the 
@@ -105,6 +112,7 @@ class SGDNorm2Reg(object):
         cdef numpy.ndarray[int, ndim=1] omega1 = omega[1]
         cdef numpy.ndarray[double, ndim=1] nonzero = X.data
         cdef unsigned int t = 0
+        cdef unsigned int nPass = 0
         
         ZList = []
         
@@ -118,14 +126,17 @@ class SGDNorm2Reg(object):
                 oldQ[:] = QQ[:]
             
             # do one pass on known values
-            logging.debug("one pass on the training matrix")
+            logging.debug("epoch " + str(nPass) + " (iteration " + str(t) + ")")
+            nPass += 1
             maxIter = min(nnz, tmax-t)
             for ii in range(maxIter):
                 u = omega0[ii]
                 i = omega1[ii]
                 
-                error = nonzero[ii] - PP[u,:].dot(QQ[i,:])
-#                grad_weight = 1.*gamma/(t+t0)
+                error = nonzero[ii]
+                for kk in range(k): # vector addition done by hand
+                    error -= PP[u,kk] * QQ[i,kk]
+                grad_weight = 1.*gamma/<double>(t+t0)
                 grad_weight = 1.*gamma/sqrt(<double>(t+t0))
                 ge = grad_weight * error
                 gl = 1. - grad_weight * lmbda
@@ -143,6 +154,8 @@ class SGDNorm2Reg(object):
                 deltaQNorm = norm2Diff(QQ, oldQ)
                 logging.debug("norm of DeltaP: " + str(deltaPNorm))
                 logging.debug("norm of DeltaQ: " + str(deltaQNorm))
+                if not scipy.isfinite(deltaPNorm) or not scipy.isfinite(deltaQNorm):
+                    raise SGDNorm2Reg.ArithmeticError()
                 if deltaPNorm < eps and deltaQNorm < eps:
                     break
             
@@ -150,8 +163,7 @@ class SGDNorm2Reg(object):
             if t >= tmax:
                 break
                 
-        if __debug__:
-            logging.info("nb grad: " + str(t))
+        logging.debug("nb grad: " + str(t))
 
         if storeAll: 
             return ZList 
