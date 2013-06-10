@@ -50,7 +50,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
     """
     Given a set of matrices X_1, ..., X_T find the completed matrices.
     """
-    def __init__(self, rho=0.1, eps=0.01, k=None, svdAlg="propack", updateAlg="initial", r=10, logStep=10, kmax=None, postProcess=False):
+    def __init__(self, rho=0.1, eps=0.01, k=None, svdAlg="propack", updateAlg="initial", r=10, logStep=10, kmax=None, postProcess=False, p=50, q=2):
         """
         Initialise imputing algorithm with given parameters. The rho is a value
         for use with the soft thresholded SVD. Eps is the convergence threshold and
@@ -68,7 +68,9 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
 
         :param r: The number of random projections to use for randomised SVD
         
-        :param q: The oversampling used for the randomised SVD 
+        :param p: The oversampling used for the randomised SVD
+        
+        :param q: The exponent used for the randomised SVD 
         """
         super(AbstractMatrixCompleter, self).__init__()
 
@@ -78,8 +80,8 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         self.svdAlg = svdAlg
         self.updateAlg = updateAlg
         self.r = r
-        self.p = 30
-        self.q = 2
+        self.p = p
+        self.q = q
         if k != None:
             self.kmax = k*5
         else:
