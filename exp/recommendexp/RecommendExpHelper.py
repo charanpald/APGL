@@ -33,6 +33,7 @@ class RecommendExpHelper(object):
     defaultAlgoArgs.trainError = False 
     defaultAlgoArgs.lmbdas = [0.001, 0.002, 0.005, 0.01]
     defaultAlgoArgs.gammas = [0.5, 1, 2]
+    defaultAlgoArgs.eps = -0.1
     
     def __init__(self, trainXIteratorFunc, testXIteratorFunc, cmdLine=None, defaultAlgoArgs = None, dirName=""):
         """ priority for default args
@@ -237,7 +238,7 @@ class RecommendExpHelper(object):
                 fileLock.lock()
                 
                 try: 
-                    learner = IterativeSGDNorm2Reg(k=self.algoArgs.ks[0], lmbda=self.algoArgs.lmbdas[0], gamma=self.algoArgs.gammas[0])               
+                    learner = IterativeSGDNorm2Reg(k=self.algoArgs.ks[0], lmbda=self.algoArgs.lmbdas[0], gamma=self.algoArgs.gammas[0], eps=self.algoArgs.eps)               
 
                     if self.algoArgs.modelSelect:
                         # Let's find optimal parameters using the first matrix 
