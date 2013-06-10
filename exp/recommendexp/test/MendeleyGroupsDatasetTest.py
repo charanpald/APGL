@@ -10,7 +10,7 @@ from datetime import datetime
 from exp.recommendexp.MendeleyGroupsDataset import MendeleyGroupsDataset 
 
 
-class  MovieLensDatasetTest(unittest.TestCase):
+class  MendeleyGroupsDatasetTest(unittest.TestCase):
     def setUp(self): 
         numpy.random.seed(21)
         logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
