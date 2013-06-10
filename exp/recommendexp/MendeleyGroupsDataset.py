@@ -9,18 +9,29 @@ import logging
 import scipy.sparse 
 import time 
 import pickle
-from datetime import datetime 
+import itertools 
+from datetime import datetime, timedelta  
 from exp.util.SparseUtils import SparseUtils 
 from exp.util.SparseUtilsCython import SparseUtilsCython
 from apgl.util.PathDefaults import PathDefaults 
 from apgl.util.Util import Util 
+from exp.recommendexp.TimeStamptedIterator import TimeStamptedIterator
+
 
 class MendeleyGroupsDataset(object): 
-    def __init__(self, ): 
+    def __init__(self, maxIter=None, iterStartTimeStamp=None): 
         outputDir = PathDefaults.getOutputDir() + "recommend/erasm/"
 
         if not os.path.exists(outputDir): 
             os.mkdir(outputDir)
+            
+        #iterStartDate is the starting date of the iterator 
+        if iterStartTimeStamp != None: 
+            self.iterStartTimeStamp = iterStartTimeStamp
+        else: 
+            self.iterStartTimeStamp = 1286229600
+            
+        self.timeStep = timedelta(30).total_seconds()             
                 
         self.ratingFileName = outputDir + "data.npz"          
         self.userDictFileName = outputDir + "userIdDict.pkl"   
@@ -30,6 +41,7 @@ class MendeleyGroupsDataset(object):
         self.dataDir = PathDefaults.getDataDir() + "erasm/"
         self.dataFileName = self.dataDir + "groupMembers-29-11-12" 
         
+        self.maxIter = maxIter 
         self.trainSplit = 4.0/5 
         
         self.processRatings()
@@ -96,10 +108,11 @@ class MendeleyGroupsDataset(object):
             groupInds = numpy.array(groupInds, numpy.uint32)
             userInds = numpy.array(userInds, numpy.uint32)
             dates = numpy.array(dates, numpy.uint32)
+                        
+            logging.debug("Converting bipartite graph to unipartite")
+            users1, users2, newDates = self.bipartiteToUni(userInds, groupInds, dates)
             
-            X = scipy.sparse.csc_matrix((numpy.ones(userInds.shape[0]), (userInds, groupInds)))
-            
-            numpy.savez(self.ratingFileName, groupInds, userInds, dates) 
+            numpy.savez(self.ratingFileName, users1, users2, newDates) 
             logging.debug("Saved ratings file as " + self.ratingFileName)
             
             pickle.dump(userIdDict, open(self.userDictFileName, 'wb'))
@@ -116,8 +129,7 @@ class MendeleyGroupsDataset(object):
         We generate a random training and test sets based on a specified split. 
         """
         if not os.path.exists(self.isTrainRatingsFileName):
-            numpy.random.seed(21)
-            custIdDict = pickle.load(open(self.userDictFileName))             
+            numpy.random.seed(21)           
             dataArr = numpy.load(self.ratingFileName)
             groupInds, userInds, dates = dataArr["arr_0"], dataArr["arr_1"], dataArr["arr_2"]
             logging.debug("Number of ratings: " + str(userInds.shape[0]))            
@@ -136,12 +148,13 @@ class MendeleyGroupsDataset(object):
         dataArr = numpy.load(self.ratingFileName)
         groupInds, userInds, self.dates = dataArr["arr_0"], dataArr["arr_1"], dataArr["arr_2"]
         self.trainInds = numpy.c_[groupInds, userInds].T
+        self.ratings = numpy.ones(groupInds.shape[0], numpy.bool)
         del groupInds
         del userInds
         self.startTimeStamp = numpy.min(self.dates)
         self.endTimeStamp = numpy.max(self.dates)
         logging.debug("Training data loaded")
-        logging.debug("Number of ratings: " + str(self.trainInds.shape[0]+1))
+        logging.debug("Number of ratings: " + str(self.trainInds.shape[1]+1))
         
         self.isTrainRating = numpy.load(self.isTrainRatingsFileName)["arr_0"]
         logging.debug("Train/test indicator loaded")              
@@ -174,31 +187,47 @@ class MendeleyGroupsDataset(object):
         users2 = array.array("I")
         newDates = array.array("L")
         
-        lastItem = -1
+        currentUserList = []
+        i = 0
+        
+        X = {} 
         
         for user, item, date in zip(userInds, itemInds, dates): 
-            if lastItem != item: 
-                for u1, d1 in currentUserList: 
-                    for u2, d2 in currentUserList: 
-                        if u1 != u2: 
-                            users1.add(u1)
-                            users2.add(u2)
-                            newDates.add(numpy.max(d1, d2))
+            if i % 1000 == 0:
+                print(i)            
+            
+            if (i != userInds.shape[0]-1 and itemInds[i+1] != item) or i == userInds.shape[0]-1: 
+                currentUserList.append((user, date)) 
+                
+                for ud1, ud2 in itertools.permutations(currentUserList, 2): 
+                    u1, d1 = ud1 
+                    u2, d2 = ud2
+                    
+                    if (u1, u2) not in X: 
+                        X[(u1, u2)] = max(d1, d2)
+                    else: 
+                        X[(u1, u2)] = min(max(d1, d2), X[(u1, u2)])
                 
                 currentUserList = []
             else: 
-                currentUserList.append((user, date)) 
+                currentUserList.append((user, date))
             
-            lastItem = item
-    
-        user1 = numpy.array(users1, numpy.uint32)
-        user2 = numpy.array(users2, numpy.uint32)
-        newDates = numpy.array(newDates, numpy.uint32)
+            i += 1
+            
+        for i, j in X.keys(): 
+            users1.append(i)
+            users2.append(j)
+            newDates.append(X[(i, j)])
         
-        return user1, user2, newDates
+        users1 = numpy.array(users1)
+        users2 = numpy.array(users2)
+        newDates = numpy.array(newDates)
         
+        inds = numpy.argsort(users1)
+        
+        users1 = users1[inds]
+        users2 = users2[inds]
+        newDates = newDates[inds]
 
-numpy.set_printoptions(suppress=True, precision=3)
-dataset = MendeleyGroupsDataset()
-dataset.processRatings()
-dataset.splitDataset()
+        return users1, users2, newDates
+        
