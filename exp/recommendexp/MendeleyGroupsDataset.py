@@ -6,13 +6,10 @@ import os
 import array 
 import numpy 
 import logging
-import scipy.sparse 
 import time 
 import pickle
 import itertools 
 from datetime import datetime, timedelta  
-from exp.util.SparseUtils import SparseUtils 
-from exp.util.SparseUtilsCython import SparseUtilsCython
 from apgl.util.PathDefaults import PathDefaults 
 from apgl.util.Util import Util 
 from exp.recommendexp.TimeStamptedIterator import TimeStamptedIterator
