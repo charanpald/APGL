@@ -4,7 +4,7 @@ import time
 import numpy.testing as nptst 
 from exp.recommendexp.CenterMatrixIterator import CenterMatrixIterator 
 from exp.util.SparseUtils import SparseUtils 
-
+from exp.recommendexp.NetflixDataset import NetflixDataset 
 
 class  CenterMatrixIteratorTest(unittest.TestCase):
     def setUp(self): 
@@ -60,7 +60,22 @@ class  CenterMatrixIteratorTest(unittest.TestCase):
                 if numpy.nonzero(Y[i, :])[0].shape[0] > 1: 
                     nptst.assert_array_almost_equal(Y[i, :], Y2[i, :])
         
+      
+    def testCenterMatrix2(self): 
+        """
+        Test centering with the Netflix iterator. 
+        """
         
+        dataset = NetflixDataset()
+        #iterator = dataset.getTrainIteratorFunc()
+        trainIterator = dataset.getTrainIteratorFunc()
+        newIterator = CenterMatrixIterator(trainIterator)   
+        X = newIterator.next()
+        
+        
+        for i in range(200): 
+            self.assertAlmostEquals(X[i, :].mean(), 0, 6)
+      
 if __name__ == '__main__':
     unittest.main()
 
