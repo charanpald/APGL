@@ -1,15 +1,17 @@
 
 #from exp.sandbox.recommendation.SGDNorm2Reg import SGDNorm2Reg
-from exp.sandbox.recommendation.SGDNorm2RegCython import SGDNorm2Reg
+
 import logging
 import gc
 import scipy
+import numpy
+import itertools
+import numpy.testing as nptst 
 from apgl.util.Sampling import Sampling 
 from apgl.util import Util
 from exp.util.SparseUtils import SparseUtils 
-import numpy.testing as nptst 
-import itertools
 from exp.util.MCEvaluator import MCEvaluator
+from exp.sandbox.recommendation.SGDNorm2RegCython import SGDNorm2Reg
 
 """
 An iterative version of matrix factoisation using frobenius norm penalisation. 
@@ -183,6 +185,7 @@ class IterativeSGDNorm2Reg(object):
         
         # compute cross validation error for each setting
         errors[errors == float("inf")] = errors[errors != float("inf")].max()
+        errors[numpy.isnan(errors)] = numpy.max(errors[numpy.logical_not(numpy.isnan(errors))])
         meanErrors = errors.mean(3)
         stdErrors = errors.std(3)
         logging.debug("Mean errors given (k, lambda, gamma):")
