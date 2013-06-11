@@ -33,7 +33,7 @@ class RecommendExpHelper(object):
     defaultAlgoArgs.trainError = False 
     defaultAlgoArgs.lmbdas = [0.001, 0.002, 0.005, 0.01]
     defaultAlgoArgs.gammas = [0.5, 1, 2]
-    defaultAlgoArgs.eps = -0.1
+    defaultAlgoArgs.eps = 0.000001
     
     def __init__(self, trainXIteratorFunc, testXIteratorFunc, cmdLine=None, defaultAlgoArgs = None, dirName=""):
         """ priority for default args
