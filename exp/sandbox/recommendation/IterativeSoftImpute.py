@@ -326,8 +326,8 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         B = numpy.zeros((a.shape[0], U.shape[1])) 
             
         rowInds, colInds = X.nonzero() 
-        rowInds = numpy.array(rowInds[inds], numpy.int)
-        colInds = numpy.array(colInds[inds], numpy.int)  
+        rowInds = numpy.array(rowInds[inds], numpy.int32)
+        colInds = numpy.array(colInds[inds], numpy.int32)  
         
         #Populate B 
         for i in range(U.shape[1]): 
