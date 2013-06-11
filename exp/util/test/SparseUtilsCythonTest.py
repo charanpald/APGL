@@ -20,8 +20,10 @@ class SparseUtilsCythonTest(unittest.TestCase):
         U, s, V = numpy.linalg.svd(Y)
         V = V.T 
         
-        indices = numpy.nonzero(Y)  
-        vals = SparseUtilsCython.partialReconstructValsPQ(indices[0], indices[1], numpy.ascontiguousarray(U*s), V)
+        rowInds, colInds = numpy.nonzero(Y)  
+        rowInds = numpy.array(rowInds, numpy.int32)
+        colInds = numpy.array(colInds, numpy.int32)
+        vals = SparseUtilsCython.partialReconstructValsPQ(rowInds, colInds, numpy.ascontiguousarray(U*s), V)
         X = numpy.reshape(vals, Y.shape)
         
         nptst.assert_almost_equal(X, Y)
@@ -30,8 +32,8 @@ class SparseUtilsCythonTest(unittest.TestCase):
         density = 0.2
         A = scipy.sparse.rand(n, n, density)
         inds = A.nonzero()
-        rowInds = numpy.array(inds[0], numpy.int)
-        colInds = numpy.array(inds[1], numpy.int)
+        rowInds = numpy.array(inds[0], numpy.int32)
+        colInds = numpy.array(inds[1], numpy.int32)
         
         vals = SparseUtilsCython.partialReconstructValsPQ(rowInds, colInds, numpy.ascontiguousarray(U*s), V)
         
@@ -59,7 +61,7 @@ class SparseUtilsCythonTest(unittest.TestCase):
             rowInds = numpy.array(rowInds, numpy.int32)
             colInds = numpy.array(colInds, numpy.int32)
             #print(U.shape, V.shape)
-            vals = SparseUtilsCython.partialReconstructValsPQ2(rowInds, colInds, numpy.ascontiguousarray(U*s), V)
+            vals = SparseUtilsCython.partialReconstructValsPQ(rowInds, colInds, numpy.ascontiguousarray(U*s), V)
             X = numpy.reshape(vals, Y.shape)
             
             nptst.assert_almost_equal(X, Y)
@@ -74,8 +76,10 @@ class SparseUtilsCythonTest(unittest.TestCase):
         v = numpy.random.rand(n)
         Y = numpy.outer(u, v)
         
-        indices = numpy.nonzero(Y)  
-        vals = SparseUtilsCython.partialOuterProduct(indices[0], indices[1], u, v)
+        inds = numpy.nonzero(Y)
+        rowInds = numpy.array(inds[0], numpy.int32)
+        colInds = numpy.array(inds[1], numpy.int32)
+        vals = SparseUtilsCython.partialOuterProduct(rowInds, colInds, u, v)
         X = numpy.reshape(vals, Y.shape)
         
         nptst.assert_almost_equal(X, Y)
@@ -84,8 +88,8 @@ class SparseUtilsCythonTest(unittest.TestCase):
         density = 0.2
         A = scipy.sparse.rand(n, n, density)
         inds = A.nonzero()
-        rowInds = numpy.array(inds[0], numpy.int)
-        colInds = numpy.array(inds[1], numpy.int)
+        rowInds = numpy.array(inds[0], numpy.int32)
+        colInds = numpy.array(inds[1], numpy.int32)
         
         vals = SparseUtilsCython.partialOuterProduct(rowInds, colInds, u, v)
         
@@ -98,7 +102,16 @@ class SparseUtilsCythonTest(unittest.TestCase):
         
         self.assertEquals(A.nnz, inds[0].shape[0])
 
-   
+    def testSumCols(self): 
+        A = scipy.sparse.rand(10, 15, 0.5)*10
+        A = scipy.sparse.csc_matrix(A, dtype=numpy.uint8)
+        
+        rowInds, colInds = A.nonzero()  
+        rowInds = numpy.array(rowInds, numpy.int32)
+        colInds = numpy.array(colInds, numpy.int32)
+        
+        sumCol = SparseUtilsCython.sumCols(rowInds, numpy.array(A[rowInds, colInds]).flatten(), A.shape[0])
+        nptst.assert_array_equal(numpy.array(A.sum(1)).flatten(), sumCol) 
 
 if __name__ == '__main__':
     unittest.main()
