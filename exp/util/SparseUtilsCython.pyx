@@ -42,7 +42,7 @@ class SparseUtilsCython(object):
         return X      
      
     @staticmethod
-    def partialOuterProduct(numpy.ndarray[numpy.long_t, ndim=1] rowInds, numpy.ndarray[numpy.long_t, ndim=1] colInds, numpy.ndarray[numpy.float_t, ndim=1] u, numpy.ndarray[numpy.float_t, ndim=1] v):
+    def partialOuterProduct(numpy.ndarray[int, ndim=1] rowInds, numpy.ndarray[int, ndim=1] colInds, numpy.ndarray[numpy.float_t, ndim=1] u, numpy.ndarray[numpy.float_t, ndim=1] v):
         """
         Given an array of unique indices omega, partially reconstruct a matrix 
         using two vectors u and v 
@@ -60,5 +60,15 @@ class SparseUtilsCython(object):
             
         return values    
     
+    @staticmethod
+    def sumCols(numpy.ndarray[int, ndim=1] rowInds, numpy.ndarray[unsigned char, ndim=1] vals, int numRows): 
+        """
+        Take the sum along each row of the given matrix and reduce overflow issues by storing the results in a float array. 
+        """
+        cdef numpy.ndarray[numpy.float_t, ndim=1, mode="c"] result = numpy.zeros(numRows, numpy.float)
+        cdef unsigned int i
+    
+        for i in range(rowInds.shape[0]): 
+            result[rowInds[i]] += vals[i]
 
-        
+        return result 
