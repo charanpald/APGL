@@ -24,7 +24,7 @@ class RecommendExpHelper(object):
     defaultAlgoArgs.runSoftImpute = False
     defaultAlgoArgs.runSgdMf = False
     defaultAlgoArgs.rhos = numpy.linspace(0.5, 0.0, 10)     
-    defaultAlgoArgs.folds = 5
+    defaultAlgoArgs.folds = 4
     defaultAlgoArgs.ks = numpy.array(2**numpy.arange(3, 7, 0.5), numpy.int)
     defaultAlgoArgs.kmax = None 
     defaultAlgoArgs.svdAlgs = ["propack", "rsvd", "rsvdUpdate"]
