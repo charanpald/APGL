@@ -14,7 +14,7 @@ class CenterMatrixIterator(object):
     
     def next(self): 
         X = next(self.iterator)
-        logging.debug("Centering train matrix of size: " + str(X.shape))
+        logging.debug("Centering train matrix of size: " + str(X.shape) + " and dtype " + str(X.dtype))
         tempRowInds, tempColInds = X.nonzero()    
         X, self.muRows = SparseUtils.centerRows(X)
         X.eliminate_zeros()
