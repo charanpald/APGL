@@ -289,15 +289,22 @@ class SparseUtils(object):
             rowInds, colInds = X.nonzero()
         else: 
             rowInds, colInds = inds
-        rowInds = numpy.array(rowInds, numpy.int)
-        colInds = numpy.array(colInds, numpy.int)
+            
+        rowInds = numpy.array(rowInds, numpy.int32)
+        colInds = numpy.array(colInds, numpy.int32)
         
         if mu == None: 
             #This is the mean of the nonzero values in each row 
             nonZeroCounts = numpy.bincount(rowInds, minlength=X.shape[0])
             inds = nonZeroCounts==0
             nonZeroCounts += inds
-            mu = numpy.array(X.sum(1), numpy.float).ravel()/nonZeroCounts
+            #This is required because when we do X.sum(1) for centering it uses the same 
+            #dtype as X to store the sum, and this can result in overflow for e.g. uint8
+            if X.dtype == numpy.uint8: 
+                sumCol = SparseUtilsCython.sumCols(rowInds, numpy.array(X[rowInds, colInds]).flatten(), X.shape[0])
+            else: 
+                sumCol = numpy.array(X.sum(1)).flatten()
+            mu = sumCol/nonZeroCounts
             mu[inds] = 0
 
         vals = SparseUtilsCython.partialOuterProduct(rowInds, colInds, numpy.array(mu, numpy.float), numpy.ones(X.shape[1]))
@@ -341,8 +348,8 @@ class SparseUtils(object):
             raise ValueError("Invalid number of rows")
         
         rowInds, colInds = X.nonzero()
-        rowInds = numpy.array(rowInds, numpy.int)
-        colInds = numpy.array(colInds, numpy.int)
+        rowInds = numpy.array(rowInds, numpy.int32)
+        colInds = numpy.array(colInds, numpy.int32)
         
         vals = SparseUtilsCython.partialOuterProduct(rowInds, colInds, numpy.array(mu, numpy.float), numpy.ones(X.shape[1]))
         X.data += vals 
@@ -356,8 +363,8 @@ class SparseUtils(object):
         matrix. X is the centered matrix. 
         """
         rowInds, colInds = X.nonzero()
-        rowInds = numpy.array(rowInds, numpy.int)
-        colInds = numpy.array(colInds, numpy.int)
+        rowInds = numpy.array(rowInds, numpy.int32)
+        colInds = numpy.array(colInds, numpy.int32)
         
         vals1 = SparseUtilsCython.partialOuterProduct(rowInds, colInds, numpy.array(mu1, numpy.float), numpy.ones(X.shape[1]))
         vals2 = SparseUtilsCython.partialOuterProduct(rowInds, colInds, numpy.ones(X.shape[0]), numpy.array(mu2, numpy.float))
