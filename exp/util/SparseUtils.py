@@ -321,8 +321,8 @@ class SparseUtils(object):
             rowInds, colInds = X.nonzero()
         else: 
             rowInds, colInds = inds
-        rowInds = numpy.array(rowInds, numpy.int)
-        colInds = numpy.array(colInds, numpy.int)
+        rowInds = numpy.array(rowInds, numpy.int32)
+        colInds = numpy.array(colInds, numpy.int32)
         
         if mu == None: 
             #This is the mean of the nonzero values in each col 
@@ -413,5 +413,19 @@ class SparseUtils(object):
         
         return scipy.sparse.csc_matrix((vals, (rowInds, colInds)), X.shape)
       
+    @staticmethod 
+    def nonzeroRowColsProbs(X): 
+        """
+        Work out the proportion of entries in the rows/cols in sparse X. 
+        """
+        rowInds, colInds = X.nonzero()
+        u = numpy.bincount(rowInds, minlength=X.shape[0])
+        v = numpy.bincount(colInds, minlength=X.shape[1])
+        
+        u = numpy.array(u, numpy.float)/X.nnz
+        v = numpy.array(v, numpy.float)/X.nnz
+        
+        return u, v 
+        
        
     kmaxMultiplier = 15 

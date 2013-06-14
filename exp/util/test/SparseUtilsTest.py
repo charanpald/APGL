@@ -302,6 +302,19 @@ class SparseUtilsCythonTest(unittest.TestCase):
         error2 = MCEvaluator.rootMeanSqError(X, Z2)
         
         self.assertAlmostEquals(error1, error2)
+ 
+    def testNonzeroRowColProbs(self): 
+        m = 10 
+        n = 5 
+        X = scipy.sparse.rand(m, n, 0.5)
+        X = X.tocsc()
         
+        print(X.todense())
+        
+        u, v = SparseUtils.nonzeroRowColsProbs(X)
+        
+        print(u)
+        print(v)
+       
 if __name__ == '__main__':
     unittest.main()
