@@ -90,6 +90,8 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         self.postProcess = postProcess 
         self.postProcessSamples = 10**6
         self.maxIterations = 30
+        self.weighted = False 
+        self.implicit = False 
 
     def learnModel(self, XIterator, rhos=None):
         """
@@ -116,8 +118,20 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
             
             def next(self):
                 X = self.XIterator.next()
-                logging.debug("Learning on matrix with shape: " + str(X.shape) + " and " + str(X.nnz) + " non-zeros")                
+                logging.debug("Learning on matrix with shape: " + str(X.shape) + " and " + str(X.nnz) + " non-zeros")    
                 
+                if self.iterativeSoftImpute.weighted: 
+                    #Compute row and col probabilities 
+                    u, v = SparseUtils.nonzeroRowCols(X)
+
+                    U = scipy.sparse.eye(X.shape[0], format="csr")
+                    U.data = 1/u 
+                    
+                    V = scipy.sparse.eye(X.shape[1], format="csr")                    
+                    V.data = 1/v 
+                    
+                    X = U.dot(X).dot(V)                    
+                    
                 if self.rhos != None: 
                     self.iterativeSoftImpute.setRho(self.rhos.next())
 
