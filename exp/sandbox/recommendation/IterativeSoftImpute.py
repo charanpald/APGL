@@ -50,7 +50,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
     """
     Given a set of matrices X_1, ..., X_T find the completed matrices.
     """
-    def __init__(self, rho=0.1, eps=0.01, k=None, svdAlg="propack", updateAlg="initial", r=10, logStep=10, kmax=None, postProcess=False, p=50, q=2):
+    def __init__(self, rho=0.1, eps=0.01, k=None, svdAlg="propack", updateAlg="initial", r=10, logStep=10, kmax=None, postProcess=False, p=50, q=2, weighted=False):
         """
         Initialise imputing algorithm with given parameters. The rho is a value
         for use with the soft thresholded SVD. Eps is the convergence threshold and
@@ -90,7 +90,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         self.postProcess = postProcess 
         self.postProcessSamples = 10**6
         self.maxIterations = 30
-        self.weighted = False 
+        self.weighted = weighted 
         self.implicit = False 
 
     def learnModel(self, XIterator, rhos=None):
@@ -122,16 +122,14 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                 
                 if self.iterativeSoftImpute.weighted: 
                     #Compute row and col probabilities 
-                    u, v = SparseUtils.nonzeroRowCols(X)
-
-                    U = scipy.sparse.eye(X.shape[0], format="csr")
-                    U.data = 1/u 
-                    
-                    V = scipy.sparse.eye(X.shape[1], format="csr")                    
-                    V.data = 1/v 
-                    
-                    X = U.dot(X).dot(V)                    
-                    
+                    up, vp = SparseUtils.nonzeroRowColsProbs(X)
+                    nzuInds = up==0
+                    nzvInds = vp==0
+                    u = numpy.sqrt(1/(up + numpy.array(nzuInds, numpy.int))) 
+                    v = numpy.sqrt(1/(vp + numpy.array(nzvInds, numpy.int))) 
+                    u[nzuInds] = 0 
+                    v[nzvInds] = 0             
+                
                 if self.rhos != None: 
                     self.iterativeSoftImpute.setRho(self.rhos.next())
 
@@ -141,11 +139,11 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                 #Figure out what lambda should be 
                 #PROPACK has problems with convergence 
                 Y = scipy.sparse.csc_matrix(X, dtype=numpy.float)
-                U, s, V = SparseUtils.svdArpack(Y, 1, kmax=20)
+                U, s, V = ExpSU.SparseUtils.svdArpack(Y, 1, kmax=20)
                 del Y
                 #U, s, V = SparseUtils.svdPropack(X, 1, kmax=20)
-                lmbda = s[0]*self.iterativeSoftImpute.rho
-                logging.debug("Largest singular value : " + str(s[0]) + " and lambda: " + str(lmbda))
+                maxS = s[0]
+                logging.debug("Largest singular value : " + str(maxS))
 
                 (n, m) = X.shape
 
@@ -211,8 +209,19 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                     else:
                         raise ValueError("Unknown SVD algorithm: " + self.iterativeSoftImpute.svdAlg)
 
+                    if self.iterativeSoftImpute.weighted and i==0: 
+                        delta = numpy.diag((u*newU.T).dot(newU))
+                        pi = numpy.diag((v*newV.T).dot(newV))
+                        lmbda = (maxS/numpy.max(delta*pi))*self.iterativeSoftImpute.rho
+                        logging.debug("lambda: " + str(lmbda)) 
+                        print(self.iterativeSoftImpute.rho, lmbda, newS, lmbda*delta*pi) 
+                        newS = newS - lmbda*delta*pi
+                    else: 
+                        lmbda = maxS*self.iterativeSoftImpute.rho
+                        logging.debug("lambda: " + str(lmbda)) 
+                        newS = newS - lmbda
+                        
                     #Soft threshold
-                    newS = newS - lmbda
                     newS = numpy.clip(newS, 0, numpy.max(newS))
 
                     normOldZ = (self.oldS**2).sum()

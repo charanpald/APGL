@@ -15,7 +15,7 @@ import exp.util.SparseUtils as ExpSU
 class IterativeSoftImputeTest(unittest.TestCase):
     def setUp(self):
         #logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-        numpy.set_printoptions(precision=4, suppress=True, linewidth=200)
+        numpy.set_printoptions(precision=4, suppress=True, linewidth=250)
         
         numpy.seterr(all="raise")
         numpy.random.seed(21)
@@ -280,8 +280,65 @@ class IterativeSoftImputeTest(unittest.TestCase):
         
         nptst.assert_array_almost_equal(meanTestErrors.ravel(), meanTestErrors2, 1) 
 
-
+    def testWeightedLearning(self): 
+        #See if the weighted learning has any effect 
+        shape = (20, 20) 
+        r = 20 
+        numInds = 100
+        noise = 0.2
+        X = ExpSU.SparseUtils.generateSparseLowRank(shape, r, numInds, noise)
         
+        rho = 0.0
+        iterativeSoftImpute = IterativeSoftImpute(rho, k=10, weighted=True)
+        iterX = iter([X])
+        resultIter = iterativeSoftImpute.learnModel(iterX)
+        Z = resultIter.next()
+        
+        iterativeSoftImpute = IterativeSoftImpute(rho, k=10, weighted=False)
+        iterX = iter([X])
+        resultIter = iterativeSoftImpute.learnModel(iterX)
+        Z2 = resultIter.next()
+        
+        #Check results when rho=0
+        nptst.assert_array_almost_equal((Z[0]*Z[1]).dot(Z[2].T), (Z2[0]*Z2[1]).dot(Z2[2].T)) 
+        nptst.assert_array_almost_equal(Z[1], Z2[1]) 
+        
+        #Then check non-uniform matrix - entries clustered around middle indices 
+        numInds = 200  
+        maxInd = (shape[0]*shape[1]-1)
+        nzInds = numpy.array(numpy.random.randn(numInds)*maxInd/4 + maxInd/2, numpy.int) 
+        trainInds = nzInds[0:int(nzInds.shape[0]/2)]
+        testInds = nzInds[int(nzInds.shape[0]/2):] 
+        trainInds = numpy.unique(numpy.clip(trainInds, 0, maxInd)) 
+        testInds = numpy.unique(numpy.clip(testInds, 0, maxInd)) 
+
+        trainX = ExpSU.SparseUtils.generateSparseLowRank(shape, r, trainInds, noise)
+        testX = ExpSU.SparseUtils.generateSparseLowRank(shape, r, testInds, noise)
+        
+        #Error using weighted soft impute 
+        #print("Running weighted soft impute")
+        rho = 0.5
+        iterativeSoftImpute = IterativeSoftImpute(rho, k=10, weighted=True)
+        iterX = iter([trainX])
+        resultIter = iterativeSoftImpute.learnModel(iterX)
+        
+        Z = resultIter.next() 
+        iterTestX = iter([testX])
+        predX = iterativeSoftImpute.predictOne(Z, testX.nonzero())
+        
+        error = MCEvaluator.rootMeanSqError(testX, predX)
+        #print(error)
+        
+        iterativeSoftImpute = IterativeSoftImpute(rho, k=10, weighted=False)
+        iterX = iter([trainX])
+        resultIter = iterativeSoftImpute.learnModel(iterX)
+        
+        Z = resultIter.next() 
+        iterTestX = iter([testX])
+        predX = iterativeSoftImpute.predictOne(Z, testX.nonzero())
+        
+        error = MCEvaluator.rootMeanSqError(testX, predX)
+        #print(error)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
