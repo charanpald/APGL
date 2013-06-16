@@ -113,17 +113,17 @@ class IterativeSoftImputeTest(unittest.TestCase):
             nptst.assert_array_almost_equal(Xhat, self.matrixList[i].todense())
         
         #Compare solution with that of SoftImpute class 
-        lmbdaList = [0.1, 0.2, 0.5, 1.0]
+        rhoList = [0.1, 0.2, 0.5, 1.0]
         
-        for lmbda in lmbdaList: 
-            iterativeSoftImpute = IterativeSoftImpute(lmbda, k=k, eps=eps, svdAlg="rsvd", updateAlg="zero")
+        for rho in rhoList: 
+            iterativeSoftImpute = IterativeSoftImpute(rho, k=k, eps=eps, svdAlg="rsvd", updateAlg="zero")
             
             matrixIterator = iter(self.matrixList)
             ZList = iterativeSoftImpute.learnModel(matrixIterator)
             
-            lmbdas = numpy.array([lmbda])
+            rhos = numpy.array([rho])
             
-            softImpute = SoftImpute(lmbdas, k=k, eps=eps)
+            softImpute = SoftImpute(rhos, k=k, eps=eps)
             Z1 = softImpute.learnModel(self.matrixList[0])
             Z2 = softImpute.learnModel(self.matrixList[1])
             Z3 = softImpute.learnModel(self.matrixList[2])
@@ -141,6 +141,9 @@ class IterativeSoftImputeTest(unittest.TestCase):
                 rowInds, colInds = self.matrixList[j].nonzero()
                 for i in range(self.matrixList[j].nonzero()[0].shape[0]): 
                     Zomega[rowInds[i], colInds[i]] = Z[rowInds[i], colInds[i]]
+                    
+                U, s, V = ExpSU.SparseUtils.svdArpack(self.matrixList[j], 1, kmax=20)
+                lmbda = rho*numpy.max(s)
                     
                 U, s, V = ExpSU.SparseUtils.svdSoft(numpy.array(self.matrixList[j]-Zomega+Z), lmbda)      
                 
@@ -232,24 +235,27 @@ class IterativeSoftImputeTest(unittest.TestCase):
         lmbda = 0.1
         shape = (20, 20) 
         r = 20 
-        k = 50
+        numInds = 100
         noise = 0.2
-        X = ExpSU.SparseUtils.generateSparseLowRank(shape, r, k, noise)
+        X = ExpSU.SparseUtils.generateSparseLowRank(shape, r, numInds, noise)
         
         U, s, V = numpy.linalg.svd(X.todense())
 
+        k = 15
+
         iterativeSoftImpute = IterativeSoftImpute(lmbda, k=None, svdAlg="propack", updateAlg="zero")
-        lmbdas = numpy.linspace(numpy.max(s)+0.1, 0.001, 20)
-        folds = 5 
+        rhos = numpy.linspace(0.5, 0.001, 20)
+        ks = numpy.array([k], numpy.int)
+        folds = 3
         cvInds = Sampling.randCrossValidation(folds, X.nnz)
-        meanTestErrors = iterativeSoftImpute.modelSelect(X, lmbdas, cvInds)
+        meanTestErrors, meanTrainErrors = iterativeSoftImpute.modelSelect(X, rhos, ks, cvInds)
 
         #Now do model selection manually 
         (rowInds, colInds) = X.nonzero()
-        trainErrors = numpy.zeros((lmbdas.shape[0], len(cvInds)))
-        testErrors = numpy.zeros((lmbdas.shape[0], len(cvInds)))
+        trainErrors = numpy.zeros((rhos.shape[0], len(cvInds)))
+        testErrors = numpy.zeros((rhos.shape[0], len(cvInds)))
         
-        for i, lmbda in enumerate(lmbdas): 
+        for i, rho in enumerate(rhos): 
             for j, (trainInds, testInds) in enumerate(cvInds): 
                 trainX = scipy.sparse.csc_matrix(X.shape)
                 testX = scipy.sparse.csc_matrix(X.shape)
@@ -260,19 +266,19 @@ class IterativeSoftImputeTest(unittest.TestCase):
                 for p in testInds: 
                     testX[rowInds[p], colInds[p]] = X[rowInds[p], colInds[p]]
                                  
-                softImpute = SoftImpute(numpy.array([lmbda])) 
+                softImpute = SoftImpute(numpy.array([rho]), k=ks[0]) 
                 ZList = [softImpute.learnModel(trainX, fullMatrices=False)]
                 
                 predTrainX = softImpute.predict(ZList, trainX.nonzero())[0]
                 predX = softImpute.predict(ZList, testX.nonzero())[0]
 
-                
-                testErrors[i, j] = MCEvaluator.meanSqError(testX, predX)
-                trainErrors[i, j] = MCEvaluator.meanSqError(trainX, predTrainX)
+                testErrors[i, j] = MCEvaluator.rootMeanSqError(testX, predX)
+                trainErrors[i, j] = MCEvaluator.rootMeanSqError(trainX, predTrainX)
         
         meanTestErrors2 = testErrors.mean(1)   
         meanTrainErrors2 = trainErrors.mean(1)  
-        nptst.assert_array_almost_equal(meanTestErrors, meanTestErrors2, 2) 
+        
+        nptst.assert_array_almost_equal(meanTestErrors.ravel(), meanTestErrors2, 1) 
 
 
         
