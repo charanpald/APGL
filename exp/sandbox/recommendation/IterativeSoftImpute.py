@@ -23,6 +23,7 @@ def learnPredict(args):
     """
     learner, trainX, testX, rhos = args 
     logging.debug("k=" + str(learner.getK()))
+    logging.debug(learner) 
     
     testInds = testX.nonzero()
     trainXIter = []
@@ -125,10 +126,10 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                     up, vp = SparseUtils.nonzeroRowColsProbs(X)
                     nzuInds = up==0
                     nzvInds = vp==0
-                    u = numpy.sqrt(1/(up + numpy.array(nzuInds, numpy.int))) 
-                    v = numpy.sqrt(1/(vp + numpy.array(nzvInds, numpy.int))) 
+                    u = 1/(up + numpy.array(nzuInds, numpy.int)) 
+                    v = 1/(vp + numpy.array(nzvInds, numpy.int)) 
                     u[nzuInds] = 0 
-                    v[nzvInds] = 0             
+                    v[nzvInds] = 0  
                 
                 if self.rhos != None: 
                     self.iterativeSoftImpute.setRho(self.rhos.next())
@@ -214,7 +215,6 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                         pi = numpy.diag((v*newV.T).dot(newV))
                         lmbda = (maxS/numpy.max(delta*pi))*self.iterativeSoftImpute.rho
                         logging.debug("lambda: " + str(lmbda)) 
-                        print(self.iterativeSoftImpute.rho, lmbda, newS, lmbda*delta*pi) 
                         newS = newS - lmbda*delta*pi
                     else: 
                         lmbda = maxS*self.iterativeSoftImpute.rho
@@ -383,9 +383,15 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         """
         Return a new copied version of this object.
         """
-        iterativeSoftImpute = IterativeSoftImpute(rho=self.rho, eps=self.eps, k=self.k, svdAlg=self.svdAlg, updateAlg=self.updateAlg, r=self.r, logStep=self.logStep, kmax=self.kmax, postProcess=self.postProcess)
+        iterativeSoftImpute = IterativeSoftImpute(rho=self.rho, eps=self.eps, k=self.k, svdAlg=self.svdAlg, updateAlg=self.updateAlg, r=self.r, logStep=self.logStep, kmax=self.kmax, postProcess=self.postProcess, weighted=self.weighted, p=self.p, q=self.q)
 
         return iterativeSoftImpute
+
+    def __str__(self): 
+        outputStr = self.name() + ":" 
+        outputStr += " rho=" + str(self.rho)+" eps="+str(self.eps)+" k="+str(self.k) + " svdAlg="+str(self.svdAlg)+ " r="+str(self.r) + " kmax="+str(self.kmax)
+        outputStr += " postProcess=" + str(self.postProcess) + " weighted="+str(self.weighted) + " p="+str(self.p) + " q="+str(self.q)
+        return outputStr
 
     def name(self):
         return "IterativeSoftImpute"
