@@ -304,6 +304,7 @@ class IterativeSoftImputeTest(unittest.TestCase):
         nptst.assert_array_almost_equal(Z[1], Z2[1]) 
         
         #Then check non-uniform matrix - entries clustered around middle indices 
+        shape = (20, 15) 
         numInds = 200  
         maxInd = (shape[0]*shape[1]-1)
         nzInds = numpy.array(numpy.random.randn(numInds)*maxInd/4 + maxInd/2, numpy.int) 
