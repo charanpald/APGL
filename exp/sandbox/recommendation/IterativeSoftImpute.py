@@ -218,7 +218,8 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                         newS = newS - lmbda*delta*pi
                     else: 
                         lmbda = maxS*self.iterativeSoftImpute.rho
-                        logging.debug("lambda: " + str(lmbda)) 
+                        if i==0: 
+                            logging.debug("lambda: " + str(lmbda)) 
                         newS = newS - lmbda
                         
                     #Soft threshold
