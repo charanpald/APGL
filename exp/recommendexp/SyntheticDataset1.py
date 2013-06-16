@@ -10,7 +10,7 @@ from exp.util.SparseUtils import SparseUtils
 from exp.util.SparseUtilsCython import SparseUtilsCython
 
 class SyntheticDataset1(object): 
-    def __init__(self, startM=5000, endM=10000, startN=1000, endN=1500, pnz=0.02, noise=0.05): 
+    def __init__(self, startM=5000, endM=10000, startN=1000, endN=1500, pnz=0.02, noise=0.05, nonUniform=False): 
         self.startM = startM 
         self.endM = endM 
         self.startN = startN 
@@ -19,6 +19,7 @@ class SyntheticDataset1(object):
         self.pnz = pnz
         self.noise = noise
         self.trainSplit = 1.0/2 
+        self.nonUniform = nonUniform 
     
     def generateMatrices(self):
         """
@@ -32,7 +33,14 @@ class SyntheticDataset1(object):
         
         self.startNumInds = self.pnz*self.startM*self.startN
         self.endNumInds = self.pnz*self.endM*self.endN
-        inds = numpy.random.randint(0, self.endM*self.endN-1, self.endNumInds)
+        
+        if not self.nonUniform: 
+            inds = numpy.random.randint(0, self.endM*self.endN-1, self.endNumInds)
+        else:
+            logging.debug("Using non uniform dataset")
+            inds = numpy.array(numpy.random.randn(self.endNumInds)*(self.endM*self.endN-1)/4 +(self.endM*self.endN-1)/2, numpy.int)
+            inds = numpy.clip(inds, 0, (self.endM*self.endN-1))
+            
         inds = numpy.unique(inds)
         numpy.random.shuffle(inds)
         self.endNumInds = inds.shape[0]

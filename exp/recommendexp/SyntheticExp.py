@@ -43,6 +43,7 @@ if dataArgs.help:
 
 dataArgs.extendedDirName = ""
 dataArgs.extendedDirName += "SyntheticDataset1"
+dataArgs.nonUniform = True
 
 # print args #
 logging.info("Running on SyntheticDataset1")
@@ -53,7 +54,7 @@ for key in keys:
     logging.info("    " + str(key) + ": " + str(dataArgs.__getattribute__(key)))
 
 # data
-generator = SyntheticDataset1(startM=5000, endM=10000, startN=1000, endN=1500, pnz=0.02, noise=0.05)
+generator = SyntheticDataset1(startM=5000, endM=10000, startN=1000, endN=1500, pnz=0.02, noise=0.05, nonUniform=dataArgs.nonUniform)
 
 # run
 logging.info("Creating the exp-runner")
