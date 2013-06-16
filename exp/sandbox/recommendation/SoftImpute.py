@@ -16,15 +16,15 @@ from exp.sandbox.recommendation.AbstractMatrixCompleter import AbstractMatrixCom
 from exp.util.SparseUtilsCython import SparseUtilsCython
 
 class SoftImpute(AbstractMatrixCompleter): 
-    def __init__(self, lmbdas, eps=0.1, k=10):
+    def __init__(self, rhos, eps=0.01, k=10):
         """
-        Initialise imputing algorithm with given parameters. The lmbdas array 
-        is a decreasing set of lmbda values for use with soft thresholded SVD. 
+        Initialise imputing algorithm with given parameters. The rhos array 
+        is a decreasing set of rho values for use with soft thresholded SVD. 
         Eps is the convergence threshold and k is the rank of the SVD. 
         """
         super(SoftImpute, self).__init__()   
         
-        self.lmbdas = lmbdas  
+        self.rhos = rhos  
         self.eps = eps
         self.k = k        
         
@@ -57,15 +57,25 @@ class SoftImpute(AbstractMatrixCompleter):
          
         ZList = []
         
-        for lmbda in self.lmbdas:
+        for rho in self.rhos:
             gamma = self.eps + 1
             i = 0
+            
+            Y = scipy.sparse.csc_matrix(X, dtype=numpy.float)
+            U, s, V = ExpSU.SparseUtils.svdArpack(Y, 1, kmax=20)
+            lmbda = rho*numpy.max(s)
             
             while gamma > self.eps:
                 ZOmega = SparseUtilsCython.partialReconstructPQ((rowInds, colInds), oldU*oldS, oldV)
                 Y = X - ZOmega
                 Y = Y.tocsc()
-                newU, newS, newV = ExpSU.SparseUtils.svdSoft2(Y, oldU, oldS, oldV, lmbda)
+
+                newU, newS, newV = ExpSU.SparseUtils.svdSparseLowRank(Y, oldU, oldS, oldV)
+        
+                #Soft threshold 
+                newS = newS - lmbda
+                newS = numpy.clip(newS, 0, numpy.max(newS))
+                
                 
                 normOldZ = (oldS**2).sum()
                 normNewZmOldZ = (oldS**2).sum() + (newS**2).sum() - 2*numpy.trace((oldV.T.dot(newV*newS)).dot(newU.T.dot(oldU*oldS)))
@@ -85,7 +95,7 @@ class SoftImpute(AbstractMatrixCompleter):
                 logging.debug("Iteration " + str(i) + " gamma="+str(gamma)) 
                 i += 1 
                 
-            logging.debug("Number of iterations for lambda="+str(lmbda) + ": " + str(i))
+            logging.debug("Number of iterations for lambda="+str(rho) + ": " + str(i))
             
             if fullMatrices: 
                 newZ = scipy.sparse.lil_matrix((newU*newS).dot(newV.T))
@@ -93,7 +103,7 @@ class SoftImpute(AbstractMatrixCompleter):
             else: 
                 ZList.append((newU,newS,newV))
         
-        if self.lmbdas.shape[0] != 1:
+        if self.rhos.shape[0] != 1:
             return ZList
         else:
             return ZList[0]
@@ -114,7 +124,7 @@ class SoftImpute(AbstractMatrixCompleter):
          
         ZList = []
         
-        for lmbda in self.lmbdas:
+        for rho in self.rhos:
             gamma = self.eps + 1
             i = 0
             while gamma > self.eps:
@@ -122,7 +132,7 @@ class SoftImpute(AbstractMatrixCompleter):
                 Y[omega] = 0
                 Y = X + Y
                 Y = Y.tocsc()
-                U, s, V = ExpSU.SparseUtils.svdSoft(Y, lmbda)
+                U, s, V = ExpSU.SparseUtils.svdSoft(Y, rho)
                 #Get an "invalid value encountered in sqrt" warning sometimes
                 newZ = scipy.sparse.lil_matrix((U*s).dot(V.T))
                 
@@ -143,10 +153,10 @@ class SoftImpute(AbstractMatrixCompleter):
                 logging.debug("Iteration " + str(i) + " gamma="+str(gamma)) 
                 i += 1
             
-            logging.debug("Number of iterations for lambda="+str(lmbda) + ": " + str(i))
+            logging.debug("Number of iterations for lambda="+str(rho) + ": " + str(i))
             ZList.append(newZ)
         
-        if self.lmbdas.shape[0] != 1:
+        if self.rhos.shape[0] != 1:
             return ZList
         else:
             return ZList[0]
@@ -172,7 +182,7 @@ class SoftImpute(AbstractMatrixCompleter):
         """
         Return a new copied version of this object. 
         """
-        softImpute = SoftImpute(lmbdas=self.lmbdas, eps=self.eps, k=self.k)
+        softImpute = SoftImpute(rhos=self.rhos, eps=self.eps, k=self.k)
 
         return softImpute 
         
