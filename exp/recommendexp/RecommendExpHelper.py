@@ -31,6 +31,7 @@ class RecommendExpHelper(object):
     defaultAlgoArgs.modelSelect = False
     defaultAlgoArgs.postProcess = False 
     defaultAlgoArgs.trainError = False 
+    defaultAlgoArgs.weighted = False 
     defaultAlgoArgs.lmbdas = [0.001, 0.002, 0.005, 0.01]
     defaultAlgoArgs.gammas = [0.5, 1, 2]
     defaultAlgoArgs.eps = 0.000001
@@ -93,6 +94,7 @@ class RecommendExpHelper(object):
         algoParser.add_argument("--trainError", action="store_true", help="Whether to compute the error on the training matrices (default: %(default)s)", default=defaultAlgoArgs.trainError)
         algoParser.add_argument("--lmbdas", type=int, nargs="+", help="Weight of norm2 regularisation (default: %(default)s)", default=defaultAlgoArgs.lmbdas)
         algoParser.add_argument("--gammas", type=int, nargs="+", help="Weight of SGD update (default: %(default)s)", default=defaultAlgoArgs.gammas)
+        algoParser.add_argument("--weighted", action="store_true", help="Whether to use weighted soft impute (default: %(default)s)", default=defaultAlgoArgs.weighted)
         return(algoParser)
     
     # update current algoArgs with values from user and then from command line
@@ -187,14 +189,14 @@ class RecommendExpHelper(object):
             logging.debug("Running soft impute")
             
             for svdAlg in self.algoArgs.svdAlgs: 
-                resultsFileName = self.resultsDir + "ResultsSoftImpute_alg=" + svdAlg +  ".npz"
+                resultsFileName = self.resultsDir + "ResultsSoftImpute_alg=" + svdAlg + "_weighted=" + str(self.algoArgs.weighted) + ".npz"
                 fileLock = FileLock(resultsFileName)  
                 
                 if not fileLock.isLocked() and not fileLock.fileExists(): 
                     fileLock.lock()
                     
                     try: 
-                        learner = IterativeSoftImpute(svdAlg=svdAlg, logStep=self.logStep, kmax=self.algoArgs.kmax, postProcess=self.algoArgs.postProcess)
+                        learner = IterativeSoftImpute(svdAlg=svdAlg, logStep=self.logStep, kmax=self.algoArgs.kmax, postProcess=self.algoArgs.postProcess, weighted=self.algoArgs.weighted)
                         
                         if self.algoArgs.modelSelect: 
                             trainIterator = self.getTrainIterator()
@@ -217,7 +219,7 @@ class RecommendExpHelper(object):
                             
                         learner.setK(k)  
                         learner.setRho(rho)   
-                        logging.debug("Training with k = " + str(k) + " and rho = " + str(rho))                    
+                        logging.debug(learner)                
                         trainIterator = self.getTrainIterator()
                         ZIter = learner.learnModel(trainIterator)
                         
