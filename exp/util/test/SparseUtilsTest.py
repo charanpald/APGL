@@ -66,7 +66,7 @@ class SparseUtilsCythonTest(unittest.TestCase):
         inds = numpy.array([0])
         X = SparseUtils.reconstructLowRank(U, s, V, inds)
         
-        self.assertEquals(X[0, 0], (U[0, :]*s).dot(V[0, :]))
+        self.assertAlmostEquals(X[0, 0], (U[0, :]*s).dot(V[0, :]))
         
     def testSvdSoft(self): 
         A = scipy.sparse.rand(10, 10, 0.2)
@@ -309,12 +309,20 @@ class SparseUtilsCythonTest(unittest.TestCase):
         X = scipy.sparse.rand(m, n, 0.5)
         X = X.tocsc()
         
-        print(X.todense())
+        u, v = SparseUtils.nonzeroRowColsProbs(X)
+        
+        self.assertEquals(u.sum(), 1.0)
+        self.assertEquals(v.sum(), 1.0)
+        
+        X  = numpy.diag(numpy.ones(5))
+        X = scipy.sparse.csc_matrix(X)
         
         u, v = SparseUtils.nonzeroRowColsProbs(X)
         
-        print(u)
-        print(v)
+        nptst.assert_array_almost_equal(u, numpy.ones(5)/5)
+        nptst.assert_array_almost_equal(v, numpy.ones(5)/5)
+        self.assertEquals(u.sum(), 1.0)
+        self.assertEquals(v.sum(), 1.0)
        
 if __name__ == '__main__':
     unittest.main()
