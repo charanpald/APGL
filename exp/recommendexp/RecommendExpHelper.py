@@ -35,6 +35,8 @@ class RecommendExpHelper(object):
     defaultAlgoArgs.lmbdas = [0.001, 0.002, 0.005, 0.01]
     defaultAlgoArgs.gammas = [0.5, 1, 2]
     defaultAlgoArgs.eps = 0.000001
+    defaultAlgoArgs.p = 50 
+    defaultAlgoArgs.q = 2 
     
     def __init__(self, trainXIteratorFunc, testXIteratorFunc, cmdLine=None, defaultAlgoArgs = None, dirName=""):
         """ priority for default args
@@ -95,6 +97,8 @@ class RecommendExpHelper(object):
         algoParser.add_argument("--lmbdas", type=int, nargs="+", help="Weight of norm2 regularisation (default: %(default)s)", default=defaultAlgoArgs.lmbdas)
         algoParser.add_argument("--gammas", type=int, nargs="+", help="Weight of SGD update (default: %(default)s)", default=defaultAlgoArgs.gammas)
         algoParser.add_argument("--weighted", action="store_true", help="Whether to use weighted soft impute (default: %(default)s)", default=defaultAlgoArgs.weighted)
+        algoParser.add_argument("--p", type=int, help="Number of oversampling vectors for RSVD (default: %(default)s)", default=defaultAlgoArgs.p)
+        algoParser.add_argument("--q", type=int, help="Iterations for RSVD (default: %(default)s)", default=defaultAlgoArgs.q)
         return(algoParser)
     
     # update current algoArgs with values from user and then from command line
@@ -189,14 +193,18 @@ class RecommendExpHelper(object):
             logging.debug("Running soft impute")
             
             for svdAlg in self.algoArgs.svdAlgs: 
-                resultsFileName = self.resultsDir + "ResultsSoftImpute_alg=" + svdAlg + "_weighted=" + str(self.algoArgs.weighted) + ".npz"
+                if svdAlg == "rsvd" or svdAlg == "rsvdUpdate": 
+                    resultsFileName = self.resultsDir + "ResultsSoftImpute_alg=" + svdAlg + "_p=" + str(self.algoArgs.p)+ "_q=" + str(self.algoArgs.q) + ".npz"
+                else: 
+                    resultsFileName = self.resultsDir + "ResultsSoftImpute_alg=" + svdAlg + ".npz"
+                    
                 fileLock = FileLock(resultsFileName)  
                 
                 if not fileLock.isLocked() and not fileLock.fileExists(): 
                     fileLock.lock()
                     
                     try: 
-                        learner = IterativeSoftImpute(svdAlg=svdAlg, logStep=self.logStep, kmax=self.algoArgs.kmax, postProcess=self.algoArgs.postProcess, weighted=self.algoArgs.weighted)
+                        learner = IterativeSoftImpute(svdAlg=svdAlg, logStep=self.logStep, kmax=self.algoArgs.kmax, postProcess=self.algoArgs.postProcess, weighted=self.algoArgs.weighted, p=self.algoArgs.p, q=self.algoArgs.q)
                         
                         if self.algoArgs.modelSelect: 
                             trainIterator = self.getTrainIterator()
