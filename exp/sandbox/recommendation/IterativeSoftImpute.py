@@ -51,7 +51,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
     """
     Given a set of matrices X_1, ..., X_T find the completed matrices.
     """
-    def __init__(self, rho=0.1, eps=0.01, k=None, svdAlg="propack", updateAlg="initial", r=10, logStep=10, kmax=None, postProcess=False, p=50, q=2, weighted=False):
+    def __init__(self, rho=0.1, eps=0.01, k=None, svdAlg="propack", updateAlg="initial", logStep=10, kmax=None, postProcess=False, p=50, q=2, weighted=False):
         """
         Initialise imputing algorithm with given parameters. The rho is a value
         for use with the soft thresholded SVD. Eps is the convergence threshold and
@@ -66,8 +66,6 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         :param svdAlg: The algorithm to use for computing a low rank + sparse matrix
 
         :param updateAlg: The algorithm to use for updating an SVD for a new matrix
-
-        :param r: The number of random projections to use for randomised SVD
         
         :param p: The oversampling used for the randomised SVD
         
@@ -80,9 +78,10 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         self.k = k
         self.svdAlg = svdAlg
         self.updateAlg = updateAlg
-        self.r = r
         self.p = p
         self.q = q
+        #The q used for the SVD update 
+        self.qu = 0 
         if k != None:
             self.kmax = k*5
         else:
@@ -126,10 +125,10 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                     up, vp = SparseUtils.nonzeroRowColsProbs(X)
                     nzuInds = up==0
                     nzvInds = vp==0
-                    u = 1/(up + numpy.array(nzuInds, numpy.int)) 
-                    v = 1/(vp + numpy.array(nzvInds, numpy.int)) 
+                    u = numpy.sqrt(1/(up + numpy.array(nzuInds, numpy.int))) 
+                    v = numpy.sqrt(1/(vp + numpy.array(nzvInds, numpy.int)))
                     u[nzuInds] = 0 
-                    v[nzvInds] = 0  
+                    v[nzvInds] = 0 
                 
                 if self.rhos != None: 
                     self.iterativeSoftImpute.setRho(self.rhos.next())
@@ -193,20 +192,22 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                     gc.collect()
 
                     if self.iterativeSoftImpute.svdAlg=="propack":
-                        newU, newS, newV = ExpSU.SparseUtils.svdSparseLowRank(Y, self.oldU, self.oldS, self.oldV, k=self.iterativeSoftImpute.k, kmax=self.iterativeSoftImpute.kmax)
+                        L = LinOperatorUtils.sparseLowRankOp(Y, self.oldU, self.oldS, self.oldV, parallel=False)                        
+                        newU, newS, newV = SparseUtils.svdPropack(L, k=self.iterativeSoftImpute.k, kmax=self.iterativeSoftImpute.kmax)
                     elif self.iterativeSoftImpute.svdAlg=="arpack":
-                        newU, newS, newV = ExpSU.SparseUtils.svdSparseLowRank(Y, self.oldU, self.oldS, self.oldV, k=self.iterativeSoftImpute.k, kmax=self.iterativeSoftImpute.kmax, usePropack=False)
+                        L = LinOperatorUtils.sparseLowRankOp(Y, self.oldU, self.oldS, self.oldV, parallel=False)                        
+                        newU, newS, newV = SparseUtils.svdArpack(L, k=self.iterativeSoftImpute.k, kmax=self.iterativeSoftImpute.kmax)
                     elif self.iterativeSoftImpute.svdAlg=="svdUpdate":
                         newU, newS, newV = SVDUpdate.addSparseProjected(self.oldU, self.oldS, self.oldV, Y, self.iterativeSoftImpute.k)
                     elif self.iterativeSoftImpute.svdAlg=="rsvd":
                         L = LinOperatorUtils.sparseLowRankOp(Y, self.oldU, self.oldS, self.oldV, parallel=True)
                         newU, newS, newV = RandomisedSVD.svd(L, self.iterativeSoftImpute.k, p=self.iterativeSoftImpute.p, q=self.iterativeSoftImpute.q)
                     elif self.iterativeSoftImpute.svdAlg=="rsvdUpdate": 
-                        L = LinOperatorUtils.sparseLowRankOp(Y, self.oldU, self.oldS, self.oldV)
+                        L = LinOperatorUtils.sparseLowRankOp(Y, self.oldU, self.oldS, self.oldV, parallel=True)
                         if i == 0: 
                             newU, newS, newV = RandomisedSVD.svd(L, self.iterativeSoftImpute.k, p=self.iterativeSoftImpute.p, q=self.iterativeSoftImpute.q)
                         else: 
-                            newU, newS, newV = RandomisedSVD.svd(L, self.iterativeSoftImpute.k, p=0, q=1, omega=self.oldV)
+                            newU, newS, newV = RandomisedSVD.svd(L, self.iterativeSoftImpute.k, p=self.iterativeSoftImpute.p, q=self.iterativeSoftImpute.qu, omega=self.oldV)
                     else:
                         raise ValueError("Unknown SVD algorithm: " + self.iterativeSoftImpute.svdAlg)
 
@@ -214,16 +215,17 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                         delta = numpy.diag((u*newU.T).dot(newU))
                         pi = numpy.diag((v*newV.T).dot(newV))
                         lmbda = (maxS/numpy.max(delta*pi))*self.iterativeSoftImpute.rho
-                        logging.debug("lambda: " + str(lmbda)) 
-                        newS = newS - lmbda*delta*pi
-                    else: 
+                        lmbdav = lmbda*delta*pi
+                    elif not self.iterativeSoftImpute.weighted: 
                         lmbda = maxS*self.iterativeSoftImpute.rho
                         if i==0: 
-                            logging.debug("lambda: " + str(lmbda)) 
-                        newS = newS - lmbda
+                            logging.debug("lambda: " + str(lmbda))
+                        lmbdav = lmbda
                         
+                    newS = newS - lmbdav                    
                     #Soft threshold
                     newS = numpy.clip(newS, 0, numpy.max(newS))
+                    
 
                     normOldZ = (self.oldS**2).sum()
                     normNewZmOldZ = (self.oldS**2).sum() + (newS**2).sum() - 2*numpy.trace((self.oldV.T.dot(newV*newS)).dot(newU.T.dot(self.oldU*self.oldS)))
@@ -250,11 +252,11 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                     newV = numpy.c_[newV, numpy.array(X.mean(0)).ravel()]
                     newS = self.iterativeSoftImpute.unshrink(X, newU, newV)  
                     
+                    #Note that this increases the rank of U and V by 1 
                     #print("Difference in s after postprocessing: " + str(numpy.linalg.norm(previousS - newS[0:-1]))) 
                     logging.debug("Difference in s after postprocessing: " + str(numpy.linalg.norm(previousS - newS[0:-1]))) 
 
                 logging.debug("Number of iterations for rho="+str(self.iterativeSoftImpute.rho) + ": " + str(i))
-
                 self.j += 1
                 return (newU, newS, newV)
 
@@ -384,13 +386,13 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         """
         Return a new copied version of this object.
         """
-        iterativeSoftImpute = IterativeSoftImpute(rho=self.rho, eps=self.eps, k=self.k, svdAlg=self.svdAlg, updateAlg=self.updateAlg, r=self.r, logStep=self.logStep, kmax=self.kmax, postProcess=self.postProcess, weighted=self.weighted, p=self.p, q=self.q)
+        iterativeSoftImpute = IterativeSoftImpute(rho=self.rho, eps=self.eps, k=self.k, svdAlg=self.svdAlg, updateAlg=self.updateAlg, logStep=self.logStep, kmax=self.kmax, postProcess=self.postProcess, weighted=self.weighted, p=self.p, q=self.q)
 
         return iterativeSoftImpute
 
     def __str__(self): 
         outputStr = self.name() + ":" 
-        outputStr += " rho=" + str(self.rho)+" eps="+str(self.eps)+" k="+str(self.k) + " svdAlg="+str(self.svdAlg)+ " r="+str(self.r) + " kmax="+str(self.kmax)
+        outputStr += " rho=" + str(self.rho)+" eps="+str(self.eps)+" k="+str(self.k) + " svdAlg="+str(self.svdAlg) + " kmax="+str(self.kmax)
         outputStr += " postProcess=" + str(self.postProcess) + " weighted="+str(self.weighted) + " p="+str(self.p) + " q="+str(self.q)
         return outputStr
 
