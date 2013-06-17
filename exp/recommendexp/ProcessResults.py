@@ -5,7 +5,9 @@ import numpy
 import matplotlib 
 matplotlib.use("GTK3Agg")
 import matplotlib.pyplot as plt 
-
+from matplotlib import rc
+rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
+rc('text', usetex=True)
 from apgl.util.PathDefaults import PathDefaults 
 
 
@@ -49,6 +51,15 @@ for j, fileName in enumerate(fileNames):
         measures = data["arr_0"]
         metadata = data["arr_1"]
         
+        try: 
+            vectorMetadata = data["arr_2"]
+            vectorMetadata = vectorMetadata[:, 0:9, :]
+            meanVectorMetadata = vectorMetadata.mean(0)
+            stdVectorMetadata = vectorMetadata.std(0)
+            print(meanVectorMetadata)
+        except: 
+            pass 
+        
         print("rho = " + str(metadata[0,1]) +  " rank = " + str(metadata[0, 0])) 
         print(measures[:, 0])
         
@@ -85,6 +96,20 @@ for j, fileName in enumerate(fileNames):
         plt.xlabel("Matrix no.")
         plt.ylabel("Time (s)")
         plt.savefig(outputDir + dataset + "Times.eps")
+        
+        try: 
+            if labels[j] == "PROPACK":
+                print(meanVectorMetadata[:, 0])
+                plt.figure(5)
+                plt.plot(numpy.arange(meanVectorMetadata.shape[0]), numpy.log10(meanVectorMetadata[:, 0]), plotStyles[0], label=r"$\gamma$")
+                plt.plot(numpy.arange(meanVectorMetadata.shape[0]), numpy.log10(meanVectorMetadata[:, 1]), plotStyles[1], label=r"$\theta_P$")
+                plt.plot(numpy.arange(meanVectorMetadata.shape[0]), numpy.log10(meanVectorMetadata[:, 2]), plotStyles[2], label=r"$\theta_Q$")
+                plt.legend(loc="upper right") 
+                plt.xlabel("Iteration")
+                plt.ylabel("log(error)")
+                plt.savefig(outputDir + dataset + "Subspace.eps")
+        except: 
+            raise
         
         i += 1
         
