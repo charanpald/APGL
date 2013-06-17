@@ -37,6 +37,8 @@ class RecommendExpHelper(object):
     defaultAlgoArgs.eps = 0.000001
     defaultAlgoArgs.p = 50 
     defaultAlgoArgs.q = 2 
+    defaultAlgoArgs.verbose = False
+    defaultAlgoArgs.updateAlg = "zero"
     
     def __init__(self, trainXIteratorFunc, testXIteratorFunc, cmdLine=None, defaultAlgoArgs = None, dirName=""):
         """ priority for default args
@@ -99,6 +101,7 @@ class RecommendExpHelper(object):
         algoParser.add_argument("--weighted", action="store_true", help="Whether to use weighted soft impute (default: %(default)s)", default=defaultAlgoArgs.weighted)
         algoParser.add_argument("--p", type=int, help="Number of oversampling vectors for RSVD (default: %(default)s)", default=defaultAlgoArgs.p)
         algoParser.add_argument("--q", type=int, help="Iterations for RSVD (default: %(default)s)", default=defaultAlgoArgs.q)
+        algoParser.add_argument("--verbose", action="store_true", help="Whether to generate verbose algorithmic details(default: %(default)s)", default=defaultAlgoArgs.verbose)
         return(algoParser)
     
     # update current algoArgs with values from user and then from command line
@@ -135,6 +138,7 @@ class RecommendExpHelper(object):
         testIterator = self.testXIteratorFunc()
         measures = []
         metadata = []
+        vectorMetaData = []
         logging.debug("Computing recommendation errors")
         
         while True: 
@@ -144,6 +148,10 @@ class RecommendExpHelper(object):
                 learnTime = time.time()-start 
             except StopIteration: 
                 break 
+                
+            if self.algoArgs.verbose: 
+                print(learner.measures) 
+                vectorMetaData.append(learner.measures) 
             
             trainX = next(trainIterator)
             if not self.algoArgs.trainError: 
@@ -179,9 +187,10 @@ class RecommendExpHelper(object):
 
         measures = numpy.array(measures)
         metadata = numpy.array(metadata)
+        vectorMetaData = numpy.array(vectorMetaData)
         
         logging.debug(measures)
-        numpy.savez(fileName, measures, metadata)
+        numpy.savez(fileName, measures, metadata, vectorMetaData)
         logging.debug("Saved file as " + fileName)
 
 
@@ -204,7 +213,7 @@ class RecommendExpHelper(object):
                     fileLock.lock()
                     
                     try: 
-                        learner = IterativeSoftImpute(svdAlg=svdAlg, logStep=self.logStep, kmax=self.algoArgs.kmax, postProcess=self.algoArgs.postProcess, weighted=self.algoArgs.weighted, p=self.algoArgs.p, q=self.algoArgs.q)
+                        learner = IterativeSoftImpute(svdAlg=svdAlg, logStep=self.logStep, kmax=self.algoArgs.kmax, postProcess=self.algoArgs.postProcess, weighted=self.algoArgs.weighted, p=self.algoArgs.p, q=self.algoArgs.q, verbose=self.algoArgs.verbose, updateAlg=self.algoArgs.updateAlg)
                         
                         if self.algoArgs.modelSelect: 
                             trainIterator = self.getTrainIterator()

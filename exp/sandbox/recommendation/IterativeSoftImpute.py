@@ -51,7 +51,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
     """
     Given a set of matrices X_1, ..., X_T find the completed matrices.
     """
-    def __init__(self, rho=0.1, eps=0.01, k=None, svdAlg="propack", updateAlg="initial", logStep=10, kmax=None, postProcess=False, p=50, q=2, weighted=False):
+    def __init__(self, rho=0.1, eps=0.01, k=None, svdAlg="propack", updateAlg="initial", logStep=10, kmax=None, postProcess=False, p=50, q=2, weighted=False, verbose=False):
         """
         Initialise imputing algorithm with given parameters. The rho is a value
         for use with the soft thresholded SVD. Eps is the convergence threshold and
@@ -91,7 +91,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         self.postProcessSamples = 10**6
         self.maxIterations = 30
         self.weighted = weighted 
-        self.implicit = False 
+        self.verbose = verbose 
 
     def learnModel(self, XIterator, rhos=None):
         """
@@ -179,6 +179,8 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                 gamma = self.iterativeSoftImpute.eps + 1
                 i = 0
 
+                self.iterativeSoftImpute.measures = numpy.zeros((self.iterativeSoftImpute.maxIterations, 3))
+
                 while gamma > self.iterativeSoftImpute.eps:
                     if i == self.iterativeSoftImpute.maxIterations: 
                         logging.debug("Maximum number of iterations reached")
@@ -237,6 +239,11 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                         gamma = self.iterativeSoftImpute.eps + 1
                     else:
                         gamma = normNewZmOldZ/normOldZ
+                        
+                    if self.iterativeSoftImpute.verbose: 
+                        theta1 = (self.iterativeSoftImpute.k - numpy.linalg.norm(self.oldU.T.dot(newU), 'fro')**2)/self.iterativeSoftImpute.k
+                        theta2 = (self.iterativeSoftImpute.k - numpy.linalg.norm(self.oldV.T.dot(newV), 'fro')**2)/self.iterativeSoftImpute.k
+                        self.iterativeSoftImpute.measures[i, :] = numpy.array([gamma, theta1, theta2])
 
                     self.oldU = newU.copy()
                     self.oldS = newS.copy()
