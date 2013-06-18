@@ -15,17 +15,20 @@ from apgl.util.PathDefaults import PathDefaults
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 #For now just print some results for a particular dataset 
-#dataset = "MovieLensDataset"
+dataset = "MovieLensDataset"
 #dataset = "NetflixDataset"
-dataset = "SyntheticDataset1"
+#dataset = "SyntheticDataset1"
 outputDir = PathDefaults.getOutputDir() + "recommend/" + dataset + "/"
 
 plotStyles = ['k-', 'k--', 'k-.', 'r--', 'r-', 'g-', 'b-', 'b--', 'b-.', 'g--', 'g--', 'g-.', 'r-', 'r--', 'r-.']
 methods = ["propack", "arpack", "rsvd", "rsvdUpdate"]
 
-pq = [(10, 2), (10, 3), (100, 3)]
-fileNames = [outputDir + "ResultsSgdMf.npz"]
-labels = ["SgdMf"]
+#pq = [(10, 2), (50, 2), (100, 2)]
+pq = [(50, 2)]
+#fileNames = [outputDir + "ResultsSgdMf.npz"]
+#labels = ["SgdMf"]
+fileNames = []
+labels = []
 
 
 for method in methods:
@@ -91,22 +94,22 @@ for j, fileName in enumerate(fileNames):
         plt.ylabel("Rank")
         
         plt.figure(4)
-        plt.plot(numpy.arange(metadata.shape[0]), numpy.cumsum(metadata[:, 2]), plotStyles[i], label=labels[j])
+        plt.plot(numpy.arange(metadata.shape[0]), numpy.log10(numpy.cumsum(metadata[:, 2])), plotStyles[i], label=labels[j])
         plt.legend(loc="upper left") 
         plt.xlabel("Matrix no.")
-        plt.ylabel("Time (s)")
+        plt.ylabel("log(time) (s)")
         plt.savefig(outputDir + dataset + "Times.eps")
         
         try: 
-            if labels[j] == "PROPACK":
-                print(meanVectorMetadata[:, 0])
+            if labels[j] == "PROPACK" and "meanVectorMetadata" in locals():
                 plt.figure(5)
                 plt.plot(numpy.arange(meanVectorMetadata.shape[0]), numpy.log10(meanVectorMetadata[:, 0]), plotStyles[0], label=r"$\gamma$")
                 plt.plot(numpy.arange(meanVectorMetadata.shape[0]), numpy.log10(meanVectorMetadata[:, 1]), plotStyles[1], label=r"$\theta_P$")
                 plt.plot(numpy.arange(meanVectorMetadata.shape[0]), numpy.log10(meanVectorMetadata[:, 2]), plotStyles[2], label=r"$\theta_Q$")
+                plt.plot(numpy.arange(meanVectorMetadata.shape[0]), numpy.log10(meanVectorMetadata[:, 3]), plotStyles[3], label=r"$\phi_\sigma$")
                 plt.legend(loc="upper right") 
                 plt.xlabel("Iteration")
-                plt.ylabel("log(error)")
+                plt.ylabel("log(change)")
                 plt.savefig(outputDir + dataset + "Subspace.eps")
         except: 
             raise
