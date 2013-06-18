@@ -33,12 +33,12 @@ class RecommendExpHelper(object):
     defaultAlgoArgs.trainError = False 
     defaultAlgoArgs.weighted = False 
     defaultAlgoArgs.lmbdas = [0.001, 0.002, 0.005, 0.01]
-    defaultAlgoArgs.gammas = [0.5, 1, 2]
+    defaultAlgoArgs.gammas = 2**numpy.arange(-1, 1.5, 0.5)
     defaultAlgoArgs.eps = 0.000001
     defaultAlgoArgs.p = 50 
     defaultAlgoArgs.q = 2 
     defaultAlgoArgs.verbose = False
-    defaultAlgoArgs.updateAlg = "zero"
+    defaultAlgoArgs.updateAlg = "initial"
     
     def __init__(self, trainXIteratorFunc, testXIteratorFunc, cmdLine=None, defaultAlgoArgs = None, dirName=""):
         """ priority for default args
@@ -102,6 +102,7 @@ class RecommendExpHelper(object):
         algoParser.add_argument("--p", type=int, help="Number of oversampling vectors for RSVD (default: %(default)s)", default=defaultAlgoArgs.p)
         algoParser.add_argument("--q", type=int, help="Iterations for RSVD (default: %(default)s)", default=defaultAlgoArgs.q)
         algoParser.add_argument("--verbose", action="store_true", help="Whether to generate verbose algorithmic details(default: %(default)s)", default=defaultAlgoArgs.verbose)
+        algoParser.add_argument("--updateAlg", type=str, help="Which updating method to use for successive matrices (default: %(default)s)", default=defaultAlgoArgs.updateAlg)
         return(algoParser)
     
     # update current algoArgs with values from user and then from command line
