@@ -81,7 +81,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         self.p = p
         self.q = q
         #The q used for the SVD update 
-        self.qu = 0 
+        self.qu = 1 
         if k != None:
             self.kmax = k*5
         else:
@@ -179,7 +179,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                 gamma = self.iterativeSoftImpute.eps + 1
                 i = 0
 
-                self.iterativeSoftImpute.measures = numpy.zeros((self.iterativeSoftImpute.maxIterations, 3))
+                self.iterativeSoftImpute.measures = numpy.zeros((self.iterativeSoftImpute.maxIterations, 4))
 
                 while gamma > self.iterativeSoftImpute.eps:
                     if i == self.iterativeSoftImpute.maxIterations: 
@@ -206,7 +206,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                         newU, newS, newV = RandomisedSVD.svd(L, self.iterativeSoftImpute.k, p=self.iterativeSoftImpute.p, q=self.iterativeSoftImpute.q)
                     elif self.iterativeSoftImpute.svdAlg=="rsvdUpdate": 
                         L = LinOperatorUtils.sparseLowRankOp(Y, self.oldU, self.oldS, self.oldV, parallel=True)
-                        if i == 0: 
+                        if self.j == 0: 
                             newU, newS, newV = RandomisedSVD.svd(L, self.iterativeSoftImpute.k, p=self.iterativeSoftImpute.p, q=self.iterativeSoftImpute.q)
                         else: 
                             newU, newS, newV = RandomisedSVD.svd(L, self.iterativeSoftImpute.k, p=self.iterativeSoftImpute.p, q=self.iterativeSoftImpute.qu, omega=self.oldV)
@@ -243,7 +243,8 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                     if self.iterativeSoftImpute.verbose: 
                         theta1 = (self.iterativeSoftImpute.k - numpy.linalg.norm(self.oldU.T.dot(newU), 'fro')**2)/self.iterativeSoftImpute.k
                         theta2 = (self.iterativeSoftImpute.k - numpy.linalg.norm(self.oldV.T.dot(newV), 'fro')**2)/self.iterativeSoftImpute.k
-                        self.iterativeSoftImpute.measures[i, :] = numpy.array([gamma, theta1, theta2])
+                        thetaS = numpy.linalg.norm(newS - self.oldS)**2/numpy.linalg.norm(newS)**2
+                        self.iterativeSoftImpute.measures[i, :] = numpy.array([gamma, theta1, theta2, thetaS])
 
                     self.oldU = newU.copy()
                     self.oldS = newS.copy()
