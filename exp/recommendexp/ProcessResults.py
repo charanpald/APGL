@@ -24,7 +24,7 @@ plotStyles = ['k-', 'k--', 'k-.', 'r--', 'r-', 'g-', 'b-', 'b--', 'b-.', 'g--', 
 methods = ["propack", "arpack", "rsvd", "rsvdUpdate"]
 
 #pq = [(10, 2), (50, 2), (100, 2)]
-pq = [(50, 2)]
+pq = [(50, 2), (50, 3)]
 #fileNames = [outputDir + "ResultsSgdMf.npz"]
 #labels = ["SgdMf"]
 fileNames = []
