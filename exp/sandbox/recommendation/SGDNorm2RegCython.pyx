@@ -56,8 +56,7 @@ class SGDNorm2Reg(object):
         # other parameters
         self.t0 = 1
         
-    @cython.boundscheck(False) # turn of bounds-checking for entire function   
-    def learnModel(self, X, P=None, Q=None, Z=None, storeAll=True): 
+    def learnModel(self, X, P=None, Q=None, Z=None, storeAll=True, nTry=3, skipError=True): 
         """
         Learn the matrix completion using a sparse matrix X.
         
@@ -65,6 +64,20 @@ class SGDNorm2Reg(object):
         
         When no initial point is given, expect the matrix to be centered
         in rows and columns. 
+        """
+        for devNull in range(nTry):
+            try:
+                return self._learnModel(X=X, P=P, Q=Q, Z=Z, storeAll=storeAll, skipError=False)
+            except (FloatingPointError, ValueError, SGDNorm2Reg.ArithmeticError):
+                pass
+        return self._learnModel(X=X, P=P, Q=Q, Z=Z, storeAll=storeAll, skipError=skipError)
+            
+        
+
+    @cython.boundscheck(False) # turn of bounds-checking for entire function   
+    def _learnModel(self, X, P=None, Q=None, Z=None, storeAll=True, skipError=False): 
+        """
+        core of learnModel
         """
         # usefull
         cdef unsigned int m = X.shape[0]
@@ -155,7 +168,12 @@ class SGDNorm2Reg(object):
                 logging.debug("norm of DeltaP: " + str(deltaPNorm))
                 logging.debug("norm of DeltaQ: " + str(deltaQNorm))
                 if not scipy.isfinite(deltaPNorm) or not scipy.isfinite(deltaQNorm):
-                    raise SGDNorm2Reg.ArithmeticError()
+                    if skipError:
+                        PP[:] = oldP[:]
+                        QQ[:] = oldQ[:]
+                        break
+                    else:
+                        raise SGDNorm2Reg.ArithmeticError()
                 if deltaPNorm < eps and deltaQNorm < eps:
                     break
             
