@@ -378,13 +378,15 @@ class SparseUtils(object):
         Take a sparse matrix in coo format and pick out inds indices relative to
         X.data. Returns a csc matrix. 
         """
-        newX = scipy.sparse.coo_matrix(X.shape)
-        newX.data = X.data[inds]
-        newX.row = X.row[inds]
-        newX.col = X.col[inds]
-        newX = newX.tocsc()
+        if type(inds) != numpy.ndarray: 
+            inds = numpy.random.permutation(X.nnz)[0:inds]
         
-        return newX 
+        rowInds, colInds = X.nonzero() 
+        rowInds = rowInds[inds]
+        colInds = colInds[inds]
+        vals = X.data[inds]
+        
+        return scipy.sparse.csc_matrix((vals, (rowInds, colInds)), X.shape)
       
     @staticmethod 
     def cscToArrays(X): 
@@ -401,18 +403,6 @@ class SparseUtils(object):
         
         return ((data, indices, indptr), X.shape)
     
-    @staticmethod 
-    def subsample(X, sampleSize): 
-        rowInds, colInds = X.nonzero() 
-        
-        inds = numpy.random.permutation(rowInds.shape[0])[0:sampleSize]
-        
-        rowInds = rowInds[inds]
-        colInds = colInds[inds]
-        vals = X.data[inds]
-        
-        return scipy.sparse.csc_matrix((vals, (rowInds, colInds)), X.shape)
-      
     @staticmethod 
     def nonzeroRowColsProbs(X): 
         """

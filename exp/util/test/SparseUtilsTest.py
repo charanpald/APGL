@@ -323,6 +323,32 @@ class SparseUtilsCythonTest(unittest.TestCase):
         nptst.assert_array_almost_equal(v, numpy.ones(5)/5)
         self.assertEquals(u.sum(), 1.0)
         self.assertEquals(v.sum(), 1.0)
-       
+   
+    def testSubmatrix(self): 
+        numRuns = 100 
+        
+        for i in range(numRuns): 
+            m = numpy.random.randint(5, 50)
+            n = numpy.random.randint(5, 50)  
+            X = scipy.sparse.rand(m, n, 0.5)
+            X = X.tocsc()
+            
+            inds1 = numpy.arange(0, X.nnz/2)
+            inds2 = numpy.arange(X.nnz/2, X.nnz)
+            
+            X1 = SparseUtils.submatrix(X, inds1)
+            X2 = SparseUtils.submatrix(X, inds2)
+            
+            nptst.assert_array_almost_equal((X1+X2).todense(), X.todense()) 
+            
+        inds = X.nnz
+        X1 = SparseUtils.submatrix(X, inds)
+        nptst.assert_array_almost_equal((X1).todense(), X.todense()) 
+        
+        inds = 2
+        X1 = SparseUtils.submatrix(X, inds)
+        self.assertTrue(X1.nnz, 2)
+        
+        
 if __name__ == '__main__':
     unittest.main()
