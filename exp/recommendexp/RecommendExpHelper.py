@@ -23,7 +23,7 @@ class RecommendExpHelper(object):
     defaultAlgoArgs = argparse.Namespace()
     defaultAlgoArgs.runSoftImpute = False
     defaultAlgoArgs.runSgdMf = False
-    defaultAlgoArgs.rhos = numpy.linspace(0.5, 0.0, 10)     
+    defaultAlgoArgs.rhos = numpy.linspace(0.5, 0.0, 6)     
     defaultAlgoArgs.folds = 4
     defaultAlgoArgs.ks = numpy.array(2**numpy.arange(3, 7, 0.5), numpy.int)
     defaultAlgoArgs.kmax = None 
