@@ -306,7 +306,6 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         squared error). The rhos must be in decreasing order and we use 
         warm restarts. 
         """
-        print("nbytes = " + str(X.data.nbytes + X.indices.nbytes + X.indptr.nbytes))
         if (numpy.flipud(numpy.sort(rhos)) != rhos).all(): 
             raise ValueError("rhos must be in descending order")    
 
