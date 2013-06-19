@@ -205,7 +205,7 @@ class NetflixDataset(object):
     def loadProcessedData(self): 
         dataArr = numpy.load(self.ratingFileName)
         movieIds, custIds, self.ratings, self.dates = dataArr["arr_0"], dataArr["arr_1"], dataArr["arr_2"], dataArr["arr_3"]
-        self.trainInds = numpy.c_[movieIds, custIds].T
+        self.trainInds = numpy.c_[custInds, movieInds].T
         self.startTimeStamp = numpy.min(self.dates)
         self.endTimeStamp = numpy.max(self.dates)
         del movieIds

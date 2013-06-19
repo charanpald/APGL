@@ -154,7 +154,7 @@ class MovieLensDataset(object):
     def loadProcessedData(self): 
         dataArr = numpy.load(self.ratingFileName)
         movieInds, custInds, self.ratings, self.dates = dataArr["arr_0"], dataArr["arr_1"], dataArr["arr_2"], dataArr["arr_3"]
-        self.trainInds = numpy.c_[movieInds, custInds].T
+        self.trainInds = numpy.c_[custInds, movieInds].T
         del movieInds
         del custInds
         self.startTimeStamp = numpy.min(self.dates)

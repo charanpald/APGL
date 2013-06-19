@@ -163,7 +163,7 @@ class EpinionsDataset(object):
     def loadProcessedData(self): 
         dataArr = numpy.load(self.ratingFileName)
         itemInds, custInds, self.ratings, self.dates = dataArr["arr_0"], dataArr["arr_1"], dataArr["arr_2"], dataArr["arr_3"]
-        self.trainInds = numpy.c_[itemInds, custInds].T
+        self.trainInds = numpy.c_[custInds, itemInds].T
         del itemInds
         del custInds
         self.startTimeStamp = numpy.min(self.dates)
