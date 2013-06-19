@@ -15,8 +15,8 @@ from apgl.util.PathDefaults import PathDefaults
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 #For now just print some results for a particular dataset 
-dataset = "MovieLensDataset"
-#dataset = "NetflixDataset"
+#dataset = "MovieLensDataset"
+dataset = "NetflixDataset"
 #dataset = "SyntheticDataset1"
 outputDir = PathDefaults.getOutputDir() + "recommend/" + dataset + "/"
 
@@ -95,9 +95,10 @@ for j, fileName in enumerate(fileNames):
         
         plt.figure(4)
         plt.plot(numpy.arange(metadata.shape[0]), numpy.log10(numpy.cumsum(metadata[:, 2])), plotStyles[i], label=labels[j])
-        plt.legend(loc="upper left") 
+        plt.legend(loc="lower right") 
         plt.xlabel("Matrix no.")
         plt.ylabel("log(time) (s)")
+        print("time="+str(numpy.cumsum(metadata[:, 2])))
         plt.savefig(outputDir + dataset + "Times.eps")
         
         try: 
