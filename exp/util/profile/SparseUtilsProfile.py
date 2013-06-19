@@ -46,7 +46,20 @@ class SparseUtilsProfile(object):
         
         #Memory consumption is dependent on kmax and less than PROPACK 
         print("All done")
+
+    def profileSubmatrix(self): 
+        shape = (100000, 15000) 
+        r = 50
+        k = 5000000
+    
+        X = SparseUtils.generateSparseLowRank(shape, r, k) 
+        print(X.nnz, type(X))
         
+        inds = numpy.random.permutation(X.nnz)[0:1000000]
+        
+        ProfileUtils.profile('SparseUtils.submatrix(X, inds)', globals(), locals()) 
+
 profiler = SparseUtilsProfile()
 #profiler.profilePropackSvd()
-profiler.profileArpackSvd()
+#profiler.profileArpackSvd()
+profiler.profileSubmatrix()
