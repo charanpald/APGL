@@ -222,7 +222,7 @@ class RecommendExpHelper(object):
                             X = trainIterator.next() 
                             
                             logging.debug("Performing model selection, taking subsample of entries of size " + str(self.sampleSize))
-                            X = SparseUtils.subsample(X, self.sampleSize)
+                            X = SparseUtils.submatrix(X, self.sampleSize)
                             
                             cvInds = Sampling.randCrossValidation(self.algoArgs.folds, X.nnz)
                             meanErrors, stdErrors = learner.modelSelect(X, self.algoArgs.rhos, self.algoArgs.ks, cvInds)

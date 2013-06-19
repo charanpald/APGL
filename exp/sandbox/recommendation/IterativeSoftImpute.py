@@ -309,8 +309,6 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         if (numpy.flipud(numpy.sort(rhos)) != rhos).all(): 
             raise ValueError("rhos must be in descending order")    
 
-        X = X.tocoo()
-        gc.collect()
         errors = numpy.zeros((rhos.shape[0], ks.shape[0], len(cvInds)))
 
         for i, (trainInds, testInds) in enumerate(cvInds):
