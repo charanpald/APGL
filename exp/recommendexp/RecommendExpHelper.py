@@ -229,6 +229,11 @@ class RecommendExpHelper(object):
                             
                             logging.debug("Mean errors = " + str(meanErrors))
                             logging.debug("Std errors = " + str(stdErrors))
+                            
+                            modelSelectFileName = resultsFileName.replace("Results", "ModelSelect") 
+                            numpy.savez(modelSelectFileName, meanErrors, stdErrors)
+                            logging.debug("Saved model selection grid as " + modelSelectFileName)                            
+                            
                             rho = self.algoArgs.rhos[numpy.unravel_index(numpy.argmin(meanErrors), meanErrors.shape)[0]]
                             k = self.algoArgs.ks[numpy.unravel_index(numpy.argmin(meanErrors), meanErrors.shape)[1]]
                         else: 
