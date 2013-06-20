@@ -15,8 +15,8 @@ from apgl.util.PathDefaults import PathDefaults
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 #For now just print some results for a particular dataset 
-#dataset = "MovieLensDataset"
-dataset = "NetflixDataset"
+dataset = "MovieLensDataset"
+#dataset = "NetflixDataset"
 #dataset = "SyntheticDataset1"
 outputDir = PathDefaults.getOutputDir() + "recommend/" + dataset + "/"
 
@@ -114,6 +114,21 @@ for j, fileName in enumerate(fileNames):
                 plt.savefig(outputDir + dataset + "Subspace.eps")
         except: 
             raise
+            
+        data = numpy.load(fileName.replace("Results", "ModelSelect"))
+        logging.debug("Loaded " + str(fileName))
+        means = data["arr_0"]
+        stds = data["arr_1"]            
+        
+        plt.figure(6+i)
+        ks = numpy.array(2**numpy.arange(3.5, 7.5, 0.5), numpy.int) 
+        rhos = numpy.linspace(0.5, 0.0, 6) 
+        plt.contourf(ks, rhos, means, antialiased=True)
+        plt.xlabel("k")
+        plt.ylabel(r"$\rho$")
+        plt.colorbar()
+        print(means)
+        plt.savefig((outputDir + dataset + "MS_" + str(labels[j]) + ".eps").replace(" ", "_"))
         
         i += 1
         
