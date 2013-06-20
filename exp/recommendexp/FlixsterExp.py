@@ -32,7 +32,7 @@ dataArgs.iterStartTimeStamp = None
 # Arguments related to the algorithm
 defaultAlgoArgs = argparse.Namespace()
 defaultAlgoArgs.ks = numpy.array(2**numpy.arange(3.5, 7.5, 0.5), numpy.int) 
-defaultAlgoArgs.rhos = numpy.linspace(0.5, 0.0, 10) 
+defaultAlgoArgs.rhos = numpy.linspace(0.1, 0.001, 10) 
 defaultAlgoArgs.folds = 4
 
 
