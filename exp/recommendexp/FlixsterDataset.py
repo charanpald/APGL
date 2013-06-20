@@ -27,7 +27,7 @@ class FlixsterDataset(object):
         if iterStartTimeStamp != None: 
             self.iterStartTimeStamp = iterStartTimeStamp
         else: 
-            self.iterStartTimeStamp = time.mktime(datetime(2008,1,1).timetuple())
+            self.iterStartTimeStamp = time.mktime(datetime(2009,1,1).timetuple())
          
         self.numItems = 1560144
         #It says 13668319 on the site but that seems to be wrong 
