@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from apgl.util.PathDefaults import PathDefaults 
 from apgl.util.Util import Util 
 from exp.recommendexp.TimeStamptedIterator import TimeStamptedIterator
+from exp.util.SparseUtils import SparseUtils 
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)  
 
@@ -125,8 +126,21 @@ class FlixsterDataset(object):
             ratings = numpy.array(ratings, numpy.float)
             dates = numpy.array(dates, numpy.uint64)
             
-            print(ratings.shape[0])
-            assert ratings.shape[0] == self.numRatings            
+            assert ratings.shape[0] == self.numRatings   
+            logging.debug("Number of ratings " + str(ratings.shape[0]))
+
+            #Prune data             
+            X = scipy.sparse.csc_matrix((ratings, (custInds, itemInds)))
+            X2 = scipy.sparse.csc_matrix((dates, (custInds, itemInds)))
+            print(X.shape)            
+            
+            X, rowInds, colInds = SparseUtils.pruneMatrix(X, minNnzRows=10, minNnzCols=10, verbose=True)
+            X2 = X2[:, colInds][rowInds, :]
+            print(X.shape)
+            (custInds, itemInds) = X.nonzero()
+            ratings = X.data 
+            dates = X2.data
+            logging.debug("New number of ratings " + str(ratings.shape[0]))
             
             numpy.savez(self.ratingFileName, itemInds, custInds, ratings, dates) 
             logging.debug("Saved ratings file as " + self.ratingFileName)
