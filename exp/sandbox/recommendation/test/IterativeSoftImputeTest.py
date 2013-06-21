@@ -280,6 +280,48 @@ class IterativeSoftImputeTest(unittest.TestCase):
         
         nptst.assert_array_almost_equal(meanTestErrors.ravel(), meanTestErrors2, 1) 
 
+    def testModelSelect2(self): 
+        rho = 0.1
+        shape = (20, 20) 
+        r = 20 
+        numInds = 100
+        noise = 0.2
+        X = ExpSU.SparseUtils.generateSparseLowRank(shape, r, numInds, noise)
+        X = X.tocsc()
+        
+        U, s, V = numpy.linalg.svd(X.todense())
+
+        k = 15
+
+        iterativeSoftImpute = IterativeSoftImpute(rho, k=None, svdAlg="propack", updateAlg="initial")
+        rhos = numpy.linspace(0.5, 0.001, 5)
+        ks = numpy.array([5, 10, 15], numpy.int)
+        folds = 3
+        
+        cvInds = [] 
+        for i in range(folds): 
+            cvInds.append((numpy.arange(X.nnz), numpy.arange(X.nnz)))
+        
+        meanTestErrors, stdTestErrors = iterativeSoftImpute.modelSelect(X, rhos, ks, cvInds)
+       
+        self.assertAlmostEquals(numpy.linalg.norm(stdTestErrors), 0, 3)
+        
+        meanTestErrors2 = numpy.zeros((rhos.shape[0], ks.shape[0]))        
+        
+        #Now compute errors manually 
+        for j, k in enumerate(ks): 
+            iterativeSoftImpute.setK(k)
+            for i, rho in enumerate(rhos): 
+                iterativeSoftImpute.setRho(rho)
+                ZIter = iterativeSoftImpute.learnModel(iter([X]))
+                indList = [X.nonzero()]
+                outIterator = iterativeSoftImpute.predict(ZIter, indList)
+                Xhat = outIterator.next()
+    
+                meanTestErrors2[i, j] = MCEvaluator.rootMeanSqError(X, Xhat)
+
+        nptst.assert_array_almost_equal(meanTestErrors, meanTestErrors2, 2)
+
     def testWeightedLearning(self): 
         #See if the weighted learning has any effect 
         shape = (20, 20) 
