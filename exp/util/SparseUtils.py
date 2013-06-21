@@ -417,5 +417,25 @@ class SparseUtils(object):
         
         return u, v 
         
-       
+    @staticmethod 
+    def pruneMatrix(X, minNnzRows=5, minNnzCols=5, verbose=False):
+        """
+        Take a sparse matrix X and remove rows and columns with less than a 
+        certain number of non zero elements per row and column 
+        """
+        rowInds, colInds = X.nonzero()
+        u = numpy.bincount(rowInds, minlength=X.shape[0])
+        v = numpy.bincount(colInds, minlength=X.shape[1])
+        
+        newRowInds = numpy.arange(0, X.shape[0])[u >= minNnzRows]
+        newColInds = numpy.arange(0, X.shape[1])[v >= minNnzCols]
+                
+        newX = X[:, newColInds][newRowInds, :]
+        
+        if verbose: 
+            return newX, newRowInds, newColInds
+        else: 
+            return newX 
+        
+    
     kmaxMultiplier = 15 

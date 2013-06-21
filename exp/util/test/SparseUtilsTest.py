@@ -348,7 +348,28 @@ class SparseUtilsCythonTest(unittest.TestCase):
         inds = 2
         X1 = SparseUtils.submatrix(X, inds)
         self.assertTrue(X1.nnz, 2)
+    
+    def testPruneMatrix(self): 
+        m = 50 
+        n = 30 
+        density = 0.5 
+        X = scipy.sparse.rand(m, n, density)
+        X = X.tocsc()
         
+        newX = SparseUtils.pruneMatrix(X, 0, 0)
+        
+        nptst.assert_array_almost_equal(newX.todense(), X.todense())   
+        
+        X = numpy.array([[0, 0, 0.1, 0.2], [0, 0.5, 0.1, 0.2], [0, 0, 0.0, 0.2], [0, 0, 0.1, 0.2]])
+        X = scipy.sparse.csc_matrix(X)
+        
+        newX = SparseUtils.pruneMatrix(X, 2, 0)
+        
+        nptst.assert_array_almost_equal(newX.todense(), numpy.array([[0, 0, 0.1, 0.2], [0, 0.5, 0.1, 0.2], [0, 0, 0.1, 0.2]]))
+        
+        newX = SparseUtils.pruneMatrix(X, 0, 2)
+        
+        nptst.assert_array_almost_equal(newX.todense(), numpy.array([[0.1, 0.2], [0.1, 0.2], [0.0, 0.2], [0.1, 0.2]]))
         
 if __name__ == '__main__':
     unittest.main()
