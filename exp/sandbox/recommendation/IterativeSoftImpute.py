@@ -51,7 +51,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
     """
     Given a set of matrices X_1, ..., X_T find the completed matrices.
     """
-    def __init__(self, rho=0.1, eps=0.01, k=None, svdAlg="propack", updateAlg="initial", logStep=10, kmax=None, postProcess=False, p=50, q=2, weighted=False, verbose=False):
+    def __init__(self, rho=0.1, eps=0.01, k=None, svdAlg="propack", updateAlg="initial", logStep=10, kmax=None, postProcess=False, p=50, q=2, weighted=False, verbose=False, qu=1):
         """
         Initialise imputing algorithm with given parameters. The rho is a value
         for use with the soft thresholded SVD. Eps is the convergence threshold and
@@ -81,7 +81,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         self.p = p
         self.q = q
         #The q used for the SVD update 
-        self.qu = 1 
+        self.qu = qu
         if k != None:
             self.kmax = k*5
         else:
@@ -134,7 +134,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                     self.iterativeSoftImpute.setRho(self.rhos.next())
 
                 if not scipy.sparse.isspmatrix_csc(X):
-                    raise ValueError("X must be a csc_matrix")
+                    raise ValueError("X must be a csc_matrix not " + str(type(X)))
                     
                 #Figure out what lambda should be 
                 #PROPACK has problems with convergence 
