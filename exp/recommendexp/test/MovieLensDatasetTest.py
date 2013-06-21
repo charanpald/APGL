@@ -44,7 +44,7 @@ class  MovieLensDatasetTest(unittest.TestCase):
             print(trainX.shape, trainX.nnz, testX.nnz)
             self.assertEquals(trainX.shape, testX.shape)
 
-    def testIteratorFunc2(self):
+    def testIteratorFunc3(self):
         #Check to see if repeated calls generate new matrices 
         iterStartTimeStamp = time.mktime(datetime(2005,1,1).timetuple())
         dataset = MovieLensDataset(iterStartTimeStamp=iterStartTimeStamp)
