@@ -7,6 +7,7 @@ import os
 import scipy.sparse 
 import numpy.testing as nptst 
 import gc 
+import time 
 from datetime import datetime, timedelta   
 from exp.util.SparseUtils import SparseUtils 
 from apgl.util.PathDefaults import PathDefaults 
@@ -27,7 +28,7 @@ class MovieLensDataset(object):
         if iterStartTimeStamp != None: 
             self.iterStartTimeStamp = iterStartTimeStamp
         else: 
-            self.iterStartTimeStamp = 789652009
+            self.iterStartTimeStamp = time.mktime(datetime(2005,1,1).timetuple())
          
         self.numMovies = 10681
         self.numRatings = 10000054
