@@ -6,6 +6,12 @@ import time
 import numpy.testing as nptst 
 from datetime import datetime 
 from exp.recommendexp.FlixsterDataset import FlixsterDataset 
+import matplotlib 
+matplotlib.use("GTK3Agg")
+import matplotlib.pyplot as plt 
+from matplotlib import rc
+rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
+rc('text', usetex=True)
 
 
 class FlixsterDatasetTest(unittest.TestCase):
@@ -67,6 +73,24 @@ class FlixsterDatasetTest(unittest.TestCase):
         self.assertEquals(time.strftime("%D", time.localtime(dates[4])), "12/29/07")
         self.assertEquals(time.strftime("%D", time.localtime(dates[5])), "11/13/07")
         self.assertEquals(time.strftime("%D", time.localtime(dates[7])), "10/10/07")
+
+    def testData2(self): 
+        #Check numbers of rows/cols of matrix 
+        
+        dataset = FlixsterDataset()
+        trainIterator = dataset.getTrainIteratorFunc()   
+        X = trainIterator.next() 
+        
+        rowInds, colInds = X.nonzero() 
+        print("Counting rows")
+        rowCounts = numpy.bincount(rowInds)
+        colCounts = numpy.bincount(colInds)
+        print("Done counting rows")
+        print((colCounts<5000).sum(), X.shape[1])
+        
+        #plt.hist(rowCounts, bins=1000, range=) 
+        #plt.show() 
+
 
 if __name__ == '__main__':
     unittest.main()
