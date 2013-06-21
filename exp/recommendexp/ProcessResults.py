@@ -15,16 +15,18 @@ from apgl.util.PathDefaults import PathDefaults
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 #For now just print some results for a particular dataset 
-dataset = "MovieLensDataset"
+#dataset = "MovieLensDataset"
 #dataset = "NetflixDataset"
+dataset = "FlixsterDataset"
 #dataset = "SyntheticDataset1"
+#dataset = "EpinionsDataset"
 outputDir = PathDefaults.getOutputDir() + "recommend/" + dataset + "/"
 
 plotStyles = ['k-', 'k--', 'k-.', 'r--', 'r-', 'g-', 'b-', 'b--', 'b-.', 'g--', 'g--', 'g-.', 'r-', 'r--', 'r-.']
 methods = ["propack", "arpack", "rsvd", "rsvdUpdate"]
 
 #pq = [(10, 2), (50, 2), (100, 2)]
-pq = [(50, 2), (50, 3)]
+pq = [(50, 2), (50, 3), (50, 4)]
 #fileNames = [outputDir + "ResultsSgdMf.npz"]
 #labels = ["SgdMf"]
 fileNames = []
@@ -66,6 +68,7 @@ for j, fileName in enumerate(fileNames):
         print("rho = " + str(metadata[0,1]) +  " rank = " + str(metadata[0, 0])) 
         print(measures[:, 0])
         
+        print(i)
         plt.figure(0)
         plt.plot(numpy.arange(measures.shape[0]), measures[:, 0], plotStyles[i], label=labels[j])
         plt.xlabel("Matrix no.")        
@@ -101,6 +104,8 @@ for j, fileName in enumerate(fileNames):
         print("time="+str(numpy.cumsum(metadata[:, 2])))
         plt.savefig(outputDir + dataset + "Times.eps")
         
+        i += 1        
+        
         try: 
             if labels[j] == "PROPACK" and "meanVectorMetadata" in locals():
                 plt.figure(5)
@@ -120,6 +125,7 @@ for j, fileName in enumerate(fileNames):
         means = data["arr_0"]
         stds = data["arr_1"]            
         
+        """
         plt.figure(6+i)
         ks = numpy.array(2**numpy.arange(3.5, 7.5, 0.5), numpy.int) 
         rhos = numpy.linspace(0.5, 0.0, 6) 
@@ -129,8 +135,9 @@ for j, fileName in enumerate(fileNames):
         plt.colorbar()
         print(means)
         plt.savefig((outputDir + dataset + "MS_" + str(labels[j]) + ".eps").replace(" ", "_"))
+        """
         
-        i += 1
+        
         
     except IOError as e:
         logging.debug(e)
