@@ -196,7 +196,6 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                     if self.iterativeSoftImpute.svdAlg=="propack":
                         L = LinOperatorUtils.sparseLowRankOp(Y, self.oldU, self.oldS, self.oldV, parallel=False)                        
                         newU, newS, newV = SparseUtils.svdPropack(L, k=self.iterativeSoftImpute.k, kmax=self.iterativeSoftImpute.kmax)
-                        newS = newS + numpy.random.randn(newS.shape[0])*10**-6 
                     elif self.iterativeSoftImpute.svdAlg=="arpack":
                         L = LinOperatorUtils.sparseLowRankOp(Y, self.oldU, self.oldS, self.oldV, parallel=False)                        
                         newU, newS, newV = SparseUtils.svdArpack(L, k=self.iterativeSoftImpute.k, kmax=self.iterativeSoftImpute.kmax)
@@ -213,6 +212,8 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                             newU, newS, newV = RandomisedSVD.svd(L, self.iterativeSoftImpute.k, p=self.iterativeSoftImpute.p, q=self.iterativeSoftImpute.qu, omega=self.oldV)
                     else:
                         raise ValueError("Unknown SVD algorithm: " + self.iterativeSoftImpute.svdAlg)
+                        
+                    print(newS)
 
                     if self.iterativeSoftImpute.weighted and i==0: 
                         delta = numpy.diag((u*newU.T).dot(newU))
