@@ -196,7 +196,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                     if self.iterativeSoftImpute.svdAlg=="propack":
                         L = LinOperatorUtils.sparseLowRankOp(Y, self.oldU, self.oldS, self.oldV, parallel=False)                        
                         newU, newS, newV = SparseUtils.svdPropack(L, k=self.iterativeSoftImpute.k, kmax=self.iterativeSoftImpute.kmax)
-                        newS = newS + numpy.random.randn(newS.shape[0])*10**-6 
+                        newS = newS + numpy.random.randn(newS.shape[0])*10**-8 
                     elif self.iterativeSoftImpute.svdAlg=="arpack":
                         L = LinOperatorUtils.sparseLowRankOp(Y, self.oldU, self.oldS, self.oldV, parallel=False)                        
                         newU, newS, newV = SparseUtils.svdArpack(L, k=self.iterativeSoftImpute.k, kmax=self.iterativeSoftImpute.kmax)
