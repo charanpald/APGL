@@ -1,6 +1,9 @@
 
-import ctypes; 
-ctypes.cdll.LoadLibrary("/usr/local/lib/libigraph.so")
+import ctypes;
+try:  
+    ctypes.cdll.LoadLibrary("/usr/local/lib/libigraph.so")
+except: 
+    pass 
 import igraph 
 
 
@@ -17,4 +20,4 @@ scores1 = graph.eigenvector_centrality(directed=True)
 scores2 = graph.betweenness()
 scores3 = graph.pagerank()
 
-print(scores1)
+print(scores2)
