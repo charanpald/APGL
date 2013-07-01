@@ -22,9 +22,6 @@ class MaxInfluence(object):
             for vertexInd in unvisited: 
                 infSums[vertexInd]  = MaxInfluence.simulateCascades(graph, influenceSet.union([vertexInd]), numRuns, 21)  
             
-            print(i, infSums)
-            print(i, infSums - currentInfluence)                
-            
             bestVertexInd = numpy.argmax(infSums)
             currentInfluence = infSums[bestVertexInd] 
             influenceSet.add(bestVertexInd)
@@ -32,7 +29,6 @@ class MaxInfluence(object):
             unvisited.remove(bestVertexInd)
     
         return influenceList
-        
                 
     @staticmethod 
     def simulateCascade(graph, activeVertexInds): 
@@ -89,7 +85,6 @@ class MaxInfluence(object):
             
             while not valid[currentBestVertexInd]: 
                 marginalInfluence = MaxInfluence.simulateCascades(graph, influenceSet.union([currentBestVertexInd]), numRuns, 21) 
-                print(i, currentBestVertexInd, marginalInfluence, negLastInfluence)
                 marginalInfluence += negLastInfluence 
                 
                 #Note that we store the negation of the influence since heappop chooses the smallest value 
