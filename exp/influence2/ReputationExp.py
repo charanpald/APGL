@@ -14,14 +14,17 @@ dataDir = PathDefaults.getDataDir() + "reputation/"
 dataFileName = dataDir + "dataset_sample.csv" 
 
 dataFile = open(dataFileName)
-
 dataFile.readline() 
 
-authorIds = array.array("i")
+authorInds = array.array("i")
 articleInds = array.array("i")
-maxVals = 1000
+maxVals = 10000
 
-articleIndset = set([])
+authorIdSet = set([])
+authorIdDict = {}
+p = 0
+
+articleIdSet = set([])
 articleIdDict = {}
 j = 0
 
@@ -34,24 +37,32 @@ for i, line in enumerate(dataFile):
     
     authorId = int(vals[0])
     articleId = int(vals[4])
-    
-    if articleId not in articleIndset: 
-        articleIndset.add(articleId)
+   
+    if authorId not in authorIdSet: 
+        authorIdSet.add(authorId)
+        authorIdDict[authorId] = p
+        authorInd = p 
+        p += 1 
+    else: 
+        authorInd = authorIdDict[authorId]       
+   
+    if articleId not in articleIdSet: 
+        articleIdSet.add(articleId)
         articleIdDict[articleId] = j
         articleInd = j 
         j += 1 
     else: 
         articleInd = articleIdDict[articleId]    
     
-    authorIds.append(authorId)
+    authorInds.append(authorInd)
     articleInds.append(articleInd)
 
-authorIds = numpy.array(authorIds)
+authorInds = numpy.array(authorInds)
 articleInds = numpy.array(articleInds)
-edges = numpy.c_[authorIds, articleInds]
+edges = numpy.c_[authorInds, articleInds]
 
 graph = igraph.Graph()
-graph.add_vertices(numpy.max(authorIds) + numpy.max(articleInds))
+graph.add_vertices(numpy.max(authorInds) + numpy.max(articleInds))
 graph.add_edges(edges)
 
 print(graph.summary())
@@ -59,18 +70,17 @@ print(graph.summary())
 graph.es["p"] = numpy.ones(graph.ecount())*0.5
 
 k = 10
-rank1 = MaxInfluence.celf(graph, k, 5)
+#rank1 = MaxInfluence.celf(graph, k, 5)
+#print(rank1)
 
 #scores1 = graph.eigenvector_centrality(directed=True)
 scores = graph.betweenness()
 rank2 = numpy.flipud(numpy.argsort(scores)) 
+print(rank2)
 
 scores = graph.pagerank()
 rank3 = numpy.flipud(numpy.argsort(scores)) 
-
-
-print(rank1)
-print(rank2)
 print(rank3)
 
-print(graph.components())
+
+print(len(graph.components()))
