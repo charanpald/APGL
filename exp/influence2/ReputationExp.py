@@ -11,7 +11,7 @@ import array
 
 #Read in graph 
 dataDir = PathDefaults.getDataDir() + "reputation/" 
-dataFileName = dataDir + "dataset_sample.csv" 
+dataFileName = dataDir + "dataset_sample2.csv" 
 
 dataFile = open(dataFileName)
 dataFile.readline() 
@@ -29,13 +29,14 @@ articleIdDict = {}
 j = 0
 
 for i, line in enumerate(dataFile): 
-    print(i)
+    if i % 1000 == 0: 
+        print(i)
     if i == maxVals: 
         break 
     
     vals = line.split("\t")
     
-    authorId = int(vals[0])
+    authorId = vals[1].strip()
     articleId = int(vals[4])
    
     if authorId not in authorIdSet: 
@@ -61,16 +62,18 @@ authorInds = numpy.array(authorInds)
 articleInds = numpy.array(articleInds)
 edges = numpy.c_[authorInds, articleInds]
 
+print(numpy.max(authorInds), numpy.max(articleInds))
+
+
 graph = igraph.Graph()
 graph.add_vertices(numpy.max(authorInds) + numpy.max(articleInds))
 graph.add_edges(edges)
 
 print(graph.summary())
 
-graph.es["p"] = numpy.ones(graph.ecount())*0.5
 
 k = 10
-#rank1 = MaxInfluence.celf(graph, k, 5)
+#rank1 = MaxInfluence.celf(graph, k, 5, p=0.5)
 #print(rank1)
 
 #scores1 = graph.eigenvector_centrality(directed=True)
