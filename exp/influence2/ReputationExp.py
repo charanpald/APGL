@@ -7,7 +7,8 @@ except:
 import igraph 
 from exp.influence2.MaxInfluence import MaxInfluence 
 from apgl.util.PathDefaults import PathDefaults 
-import array 
+from exp.util.IdIndexer import IdIndexer 
+import array
 
 #Read in graph 
 dataDir = PathDefaults.getDataDir() + "reputation/" 
@@ -17,18 +18,10 @@ domainFileName  = dataDir + "domains.csv"
 dataFile = open(dataFileName)
 dataFile.readline() 
 
-authorInds = array.array("i")
-articleInds = array.array("i")
+authorIndexer = IdIndexer("i")
+articleIndexer = IdIndexer("i")
 domainInds = array.array("i")
 maxVals = 10000
-
-authorIdSet = set([])
-authorIdDict = {}
-p = 0
-
-articleIdSet = set([])
-articleIdDict = {}
-j = 0
 
 authorIdDomainDict = {}
 
@@ -55,32 +48,16 @@ for i, line in enumerate(dataFile):
     vals = line.split("\t")
     
     authorId = vals[1].strip()
-    articleId = int(vals[4])
-   
-    if authorId not in authorIdSet: 
-        authorIdSet.add(authorId)
-        authorIdDict[authorId] = p
-        authorInd = p 
-        p += 1 
-    else: 
-        authorInd = authorIdDict[authorId]       
-   
-    if articleId not in articleIdSet: 
-        articleIdSet.add(articleId)
-        articleIdDict[articleId] = j
-        articleInd = j 
-        j += 1 
-    else: 
-        articleInd = articleIdDict[articleId]    
+    articleId = int(vals[4]) 
     
     domainInd = authorIdDomainDict.get(authorId, -1)
     
-    authorInds.append(authorInd)
-    articleInds.append(articleInd)
+    authorIndexer.append(authorId)
+    articleIndexer.append(articleId)
     domainInds.append(domainInd)
 
-authorInds = numpy.array(authorInds)
-articleInds = numpy.array(articleInds)
+authorInds = authorIndexer.getArray()
+articleInds = articleIndexer.getArray()
 domainInds = numpy.array(domainInds)
 edges = numpy.c_[authorInds, articleInds]
 
