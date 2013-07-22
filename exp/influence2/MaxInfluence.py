@@ -1,6 +1,7 @@
 import numpy 
 import heapq 
 import logging
+from apgl.util.Util import Util 
 
 class MaxInfluence(object): 
     def __init__(self):
@@ -75,12 +76,16 @@ class MaxInfluence(object):
         """
         Maximising the influence using the CELF algorithm of Leskovec et al. 
         """
+        k = min(graph.vcount(), k)   
+        stepSize = 100 
+        
         influenceSet = set([])
         influenceList = []                
         negMarginalIncreases = []
         
         #For the initial values we compute marginal increases with respect to the empty set 
         for vertexInd in range(graph.vcount()): 
+            Util.printIteration(vertexInd, stepSize, graph.vcount())
             currentInfluence = MaxInfluence.simulateCascades(graph, influenceSet.union([vertexInd]), numRuns, p, 21)         
             #Note that we store the negation of the influence since heappop chooses the smallest value 
             heapq.heappush(negMarginalIncreases, (-currentInfluence, vertexInd))
