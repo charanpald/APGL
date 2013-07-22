@@ -1,3 +1,7 @@
+"""
+Find the reputation of authors on the American Physics Society dataset 
+"""
+
 import numpy 
 try:  
     ctypes.cdll.LoadLibrary("/usr/local/lib/libigraph.so")
@@ -8,6 +12,11 @@ from apgl.util.PathDefaults import PathDefaults
 from exp.util.IdIndexer import IdIndexer 
 import xml.etree.ElementTree as ET
 import array 
+import logging 
+import sys 
+from exp.influence2.GraphRanker import GraphRanker 
+
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 metadataDir = PathDefaults.getDataDir() + "aps/aps-dataset-metadata-2010/"
 metadataFilename = metadataDir + "PRSTAB.xml"
@@ -71,10 +80,10 @@ article1Inds = numpy.array(article1Inds)
 article2Inds = numpy.array(article2Inds)
 
 authorArticleEdges = numpy.c_[authorInds, articleInds]
-print(authorArticleEdges)
+print(authorArticleEdges.shape)
+print(len(articleIdDict))
 
 articleArticleEdges = numpy.c_[article1Inds, article2Inds]
-print(articleArticleEdges)
 
 print(articleArticleEdges.shape)
       
@@ -83,3 +92,6 @@ graph.add_vertices(numpy.max(authorInds) + numpy.max(articleInds))
 graph.add_edges(authorArticleEdges)
 
 print(graph.summary())      
+outputList = GraphRanker.rankedLists(graph)
+
+print(outputList)
