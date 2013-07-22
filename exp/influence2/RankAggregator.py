@@ -41,4 +41,63 @@ class RankAggregator(object):
         
         return numpy.flipud(numpy.argsort(totalScore))
         
-    
+    @staticmethod 
+    def MC2(lists, itemList, alpha=None ): 
+        """
+        Perform weighted rank aggregation using MC2 as given in Rank Aggregation Methods 
+        for the Web, Dwork et al. The weighting vector is given by alpha. 
+        
+        :param lists: A list of lists. Each sublist is an ordered set of a subset of the items from itemList 
+        
+        :param itemList: A list of all possible items 
+        """
+        
+
+        
+        n = len(itemList)
+        ell = len(lists)
+        
+        if alpha == None: 
+            alpha = numpy.ones(ell)/ell
+        
+        P = numpy.zeros((n, n))
+        
+        for j, lst in enumerate(lists): 
+            Pj = numpy.zeros((n, n))
+            
+            indexList = numpy.zeros(len(lst), numpy.int)            
+            
+            for i, item in enumerate(lst): 
+                indexList[i] = itemList.index(item)
+                
+            for i in range(indexList.shape[0]): 
+                validStates = indexList[0:i+1]
+                Pj[indexList[i], validStates] = 1.0/validStates.shape[0]
+
+            P += alpha[j] * Pj 
+        
+        P /= ell 
+
+        #If all lists agree on top elements then we get a stationary distribution 
+        #of 1 for that index and zero elsewhere. Therefore add a little noise. 
+        P += numpy.ones((n, n))*0.0001
+        for i in range(n): 
+            P[i, :] = P[i, :]/P[i, :].sum()
+                
+        u, V = numpy.linalg.eig(P.T)
+
+        
+        scores = numpy.abs(V[:, 0])
+        inds = numpy.flipud(numpy.argsort(scores)) 
+        
+        outputList = [] 
+        for ind in inds: 
+            outputList.append(itemList[ind])
+        
+        return outputList, scores
+                
+            
+                
+                
+                
+            

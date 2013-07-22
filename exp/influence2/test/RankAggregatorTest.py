@@ -41,6 +41,36 @@ class  RankAggregatorTest(unittest.TestCase):
         nptst.assert_array_equal(outList, numpy.array([4,5,3,2,1,0]))
         
 
+    def testMC2(self): 
+        list1 = [5, 4, 3, 2, 1, 0]
+        list2 = [5, 4, 3, 2, 1, 0]  
+        
+        lists = [list1, list2]
+        itemList = [0, 1, 2, 3, 4, 5]
+        outList, scores = RankAggregator.MC2(lists, itemList)
+        
+        self.assertEquals(outList, [5, 4, 3, 2, 1, 0])
+        
+        list1 = [2, 1, 3, 4, 5, 0]
+        list2 = [2, 1, 3, 4, 5, 0]
+        lists = [list1, list2]
+
+        outList, scores = RankAggregator.MC2(lists, itemList)
+        self.assertEquals(outList, [2, 1, 3, 4, 5, 0])
+        
+        #Now test weighting 
+        alpha = numpy.array([1, 0])
+        list1 = [2, 1, 3, 4, 5, 0]
+        list2 = [3, 2, 5, 0, 4, 1]
+        lists = [list1, list2]
+        
+        outList, scores = RankAggregator.MC2(lists, itemList, alpha)
+        self.assertEquals(outList, list1)
+        
+        alpha = numpy.array([0, 1.0])
+        outList, scores = RankAggregator.MC2(lists, itemList, alpha)
+        self.assertEquals(outList, list2)
+
 if __name__ == '__main__':
     unittest.main()
 
