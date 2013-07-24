@@ -87,7 +87,5 @@ print(rank3)
 
 
 print(len(graph.components()))
-
 compSizes = [len(x) for x in graph.components()]
-
 print(numpy.max(compSizes))
