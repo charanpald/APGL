@@ -30,8 +30,8 @@ class GraphRanker(object):
         rank = numpy.flipud(numpy.argsort(scores)) 
         outputLists.append(rank)
         
-        logging.debug("Computing influence")
-        rank = MaxInfluence.celf(graph, k, p=p)
-        outputLists.append(numpy.array(rank))
+        #logging.debug("Computing influence")
+        #rank = MaxInfluence.celf(graph, k, p=p)
+        #outputLists.append(numpy.array(rank))
         
         return outputLists 
