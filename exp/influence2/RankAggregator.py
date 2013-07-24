@@ -1,4 +1,6 @@
 import numpy 
+import logging
+from apgl.util.Util import Util 
 
 class RankAggregator(object): 
     def __init__(self): 
@@ -40,9 +42,19 @@ class RankAggregator(object):
         totalScore = score1 + score2 
         
         return numpy.flipud(numpy.argsort(totalScore))
+    
+    @staticmethod
+    def generateItemList(lists): 
+        itemList = set([])
+
+        for lst in lists: 
+            itemList = itemList.union(set(lst))
         
+        itemList = list(itemList)
+        return itemList 
+    
     @staticmethod 
-    def MC2(lists, itemList, alpha=None ): 
+    def MC2(lists, itemList, alpha=None): 
         """
         Perform weighted rank aggregation using MC2 as given in Rank Aggregation Methods 
         for the Web, Dwork et al. The weighting vector is given by alpha. 
@@ -51,8 +63,6 @@ class RankAggregator(object):
         
         :param itemList: A list of all possible items 
         """
-        
-
         
         n = len(itemList)
         ell = len(lists)
@@ -63,6 +73,7 @@ class RankAggregator(object):
         P = numpy.zeros((n, n))
         
         for j, lst in enumerate(lists): 
+            Util.printIteration(j, 1, ell)
             Pj = numpy.zeros((n, n))
             
             indexList = numpy.zeros(len(lst), numpy.int)            
@@ -84,10 +95,14 @@ class RankAggregator(object):
         for i in range(n): 
             P[i, :] = P[i, :]/P[i, :].sum()
                 
-        u, V = numpy.linalg.eig(P.T)
+        #logging.debug("Computing eigen-decomposition of P with shape" + str(P.shape))
+        #u, V = numpy.linalg.eig(P.T)
+        #scores = numpy.abs(V[:, 0])
 
-        
-        scores = numpy.abs(V[:, 0])
+        u, v = Util.powerEigs(P.T, 0.001)
+        scores = numpy.abs(v)
+        assert abs(u-1) < 0.001
+
         inds = numpy.flipud(numpy.argsort(scores)) 
         
         outputList = [] 
@@ -96,8 +111,4 @@ class RankAggregator(object):
         
         return outputList, scores
                 
-            
-                
-                
-                
-            
+ 
