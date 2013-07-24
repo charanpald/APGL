@@ -29,10 +29,14 @@ articleIndexer = IdIndexer("i")
 
 for line in coauthorFile: 
     vals = line.split(";")
-    print(vals)
     
     authorId = vals[0].strip()
+    if "_" in authorId: 
+        authorId = authorId[0:authorId.find("_")]
+    
     articleId = vals[1].strip()
+    
+    print(authorId, articleId)
     
     authorIndexer.append(authorId)
     articleIndexer.append(articleId)
@@ -60,3 +64,17 @@ itemList = RankAggregator.generateItemList(outputLists)
 outputList, scores = RankAggregator.MC2(outputLists, itemList)
 
 print(outputList[0:10])
+
+#Now load list of experts - we get 31/35 
+expertsFilename = PathDefaults.getDataDir() + "reputation/IntelligentAgentsExperts.txt"
+expertsFile = open(expertsFilename)
+
+expertsList = [] 
+for line in expertsFile: 
+    vals = line.split() 
+    key = vals[1][0].lower() + "/" + vals[1] + ":" + vals[0]
+    
+    if key in authorIndexer.getIdDict(): 
+        print(key)
+
+#Now we just measure the error between true and fake errors 
