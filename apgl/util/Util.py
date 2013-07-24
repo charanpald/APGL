@@ -702,7 +702,7 @@ class Util(object):
             
             
     @staticmethod
-    def powerEigs(A, eps=0.01): 
+    def powerEigs(A, eps=0.001): 
         """
         Compute the largest eigenvector of A using power iteration. Returns 
         the eigenvector and corresponding eigenvalue. 
@@ -718,5 +718,5 @@ class Util(object):
             error = numpy.linalg.norm(oldV - v)
             oldV = v 
             
-        return v, v.T.dot(A).dot(v) 
+        return v.T.dot(A).dot(v), v  
         

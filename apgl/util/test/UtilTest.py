@@ -391,7 +391,7 @@ class UtilTest(unittest.TestCase):
         for i in range(numRuns): 
             A = numpy.random.rand(n, n)
             
-            v, l = Util.powerEigs(A, 0.001)
+            l, v = Util.powerEigs(A, 0.001)
             nptst.assert_array_almost_equal(v*l, A.dot(v), 2)
             
             u, V = numpy.linalg.eig(A)
