@@ -383,6 +383,24 @@ class UtilTest(unittest.TestCase):
         
         for i in range(5, 10): 
             nptst.assert_array_equal(numpy.array([1, 2, 3, 4, 5]), X2[i, :])          
+  
+    def testPowerEigs(self): 
+        n = 10 
+        numRuns = 10 
+        
+        for i in range(numRuns): 
+            A = numpy.random.rand(n, n)
+            
+            v, l = Util.powerEigs(A, 0.001)
+            nptst.assert_array_almost_equal(v*l, A.dot(v), 2)
+            
+            u, V = numpy.linalg.eig(A)
+            self.assertAlmostEquals(numpy.max(u), l, 2)
+            
+            try: 
+                nptst.assert_array_almost_equal(V[:, 0], v, 2)
+            except AssertionError: 
+                nptst.assert_array_almost_equal(V[:, 0], -v, 2)
         
     
 if __name__ == "__main__":

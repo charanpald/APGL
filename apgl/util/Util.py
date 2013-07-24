@@ -699,3 +699,24 @@ class Util(object):
             yield
         finally:
             sys.stderr = old_stderr
+            
+            
+    @staticmethod
+    def powerEigs(A, eps=0.01): 
+        """
+        Compute the largest eigenvector of A using power iteration. Returns 
+        the eigenvector and corresponding eigenvalue. 
+        """
+        v = numpy.random.rand(A.shape[1])
+        oldV = v 
+        error = eps+1
+        
+        while error > eps: 
+            v = A.dot(v)
+            v = v/numpy.sqrt((v**2).sum())
+            
+            error = numpy.linalg.norm(oldV - v)
+            oldV = v 
+            
+        return v, v.T.dot(A).dot(v) 
+        
