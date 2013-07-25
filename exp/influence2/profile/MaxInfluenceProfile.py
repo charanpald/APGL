@@ -35,5 +35,5 @@ class MaxInfluenceProfile(object):
         ProfileUtils.profile('MaxInfluence.simulateCascades(graph, activeVertices, numRuns, p=0.5)', globals(), locals())  
 
 profiler = MaxInfluenceProfile()
-#profiler.profileCelf()
-profiler.profileSimulateCascades()
+profiler.profileCelf()
+#profiler.profileSimulateCascades()

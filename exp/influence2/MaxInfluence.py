@@ -48,14 +48,13 @@ class MaxInfluence(object):
         return influenceList
 
     
+    @staticmethod 
     def simulateInitialCascade(graph, p=None):
         #First, figure out which edges are present in the percolation graph according 
         #to p 
         edges = numpy.arange(graph.ecount())[numpy.random.rand(graph.ecount()) <= p]       
-        percolationGraph = graph.subgraph_edges(edges)
-        
+        percolationGraph = graph.subgraph_edges(edges, delete_vertices=False)
         influences = numpy.zeros(percolationGraph.vcount())        
-        
         components = percolationGraph.components()
         
         for component in components: 
@@ -90,9 +89,20 @@ class MaxInfluence(object):
             currentActiveInds = newActiveVertices
             
         return allActiveVertexInds 
-            
-    @staticmethod 
+   
+    @staticmethod
     def simulateCascades(graph, activeVertexInds, numRuns, p=None, seed=21): 
+        currentInfluence = 0
+        
+        for j in range(numRuns):
+            currentInfluence += len(MaxInfluence.simulateCascade(graph, activeVertexInds, p)) 
+            
+        currentInfluence /= float(numRuns)
+            
+        return currentInfluence 
+         
+    @staticmethod 
+    def simulateCascades2(graph, activeVertexInds, numRuns, p=None, seed=21): 
         numpy.random.seed(seed)        
         
         currentInfluence = 0 
@@ -100,7 +110,6 @@ class MaxInfluence(object):
         for j in range(multiprocessing.cpu_count()): 
             paramList.append((graph.copy(), activeVertexInds.copy(), p, int(numRuns/multiprocessing.cpu_count())))
         
-        print(multiprocessing.cpu_count())
         pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
         results = pool.imap(simulateCascadeSize, paramList, chunksize=1)  
         #results = itertools.imap(simulateCascadeSize, paramList)
@@ -110,7 +119,7 @@ class MaxInfluence(object):
             
         pool.terminate()
             
-        currentInfluence /= float(numRuns) 
+        currentInfluence /= float(int(numRuns/multiprocessing.cpu_count())*multiprocessing.cpu_count()) 
         
         return currentInfluence 
 
@@ -127,11 +136,16 @@ class MaxInfluence(object):
         negMarginalIncreases = []
         
         #For the initial values we compute marginal increases with respect to the empty set 
-        for vertexInd in range(graph.vcount()): 
-            Util.printIteration(vertexInd, stepSize, graph.vcount())
-            currentInfluence = MaxInfluence.simulateCascades(graph, influenceSet.union([vertexInd]), numRuns, p, 21)         
+        influences = numpy.zeros(graph.vcount())
+        
+        for i in range(numRuns): 
+            influences += MaxInfluence.simulateInitialCascade(graph, p=p)
+        
+        influences /= float(numRuns)            
+        
+        for vertexInd in range(graph.vcount()):        
             #Note that we store the negation of the influence since heappop chooses the smallest value 
-            heapq.heappush(negMarginalIncreases, (-currentInfluence, vertexInd))
+            heapq.heappush(negMarginalIncreases, (-influences[vertexInd], vertexInd))
                      
         negLastInfluence, bestVertexInd = heapq.heappop(negMarginalIncreases)
         influenceSet.add(bestVertexInd)
