@@ -222,4 +222,20 @@ class Evaluator(object):
         localAuc += beta*(1-alpha)
 
         return localAuc
+
+    @staticmethod 
+    def precision(testY, predY): 
+        """
+        Measure the precision of a predicted list given the true list. The precision is 
+        |relevant items \cup retrieved items| / |retrieved items|  
+        """
+        
+        num = len(set(testY).intersection(set(predY)))
+        den = float(len(predY))
+        
+        if den != 0: 
+            return num/den
+        else: 
+            return 0
+        
         
