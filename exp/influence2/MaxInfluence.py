@@ -1,8 +1,24 @@
 import numpy 
 import heapq 
 import logging
+import itertools 
+import multiprocessing 
+try:  
+    ctypes.cdll.LoadLibrary("/usr/local/lib/libigraph.so")
+except: 
+    pass 
+import igraph 
 from apgl.util.Util import Util 
 
+def simulateCascadeSize(args): 
+    graph, activeVertexInds, p, numRuns = args
+    
+    currentInfluence = 0 
+    for j in range(numRuns): 
+        currentInfluence += len(MaxInfluence.simulateCascade(graph, activeVertexInds, p))    
+
+    return currentInfluence 
+    
 class MaxInfluence(object): 
     def __init__(self):
         pass 
@@ -31,17 +47,32 @@ class MaxInfluence(object):
     
         return influenceList
 
-               
+    
+    def simulateInitialCascade(graph, p=None):
+        #First, figure out which edges are present in the percolation graph according 
+        #to p 
+        edges = numpy.arange(graph.ecount())[numpy.random.rand(graph.ecount()) <= p]       
+        percolationGraph = graph.subgraph_edges(edges)
+        
+        influences = numpy.zeros(percolationGraph.vcount())        
+        
+        components = percolationGraph.components()
+        
+        for component in components: 
+            influences[component] = len(component)
+        
+        return influences 
+           
     @staticmethod 
     def simulateCascade(graph, activeVertexInds, p=None): 
         allActiveVertexInds = activeVertexInds.copy() 
         currentActiveInds = activeVertexInds.copy()
-        
+            
         while len(currentActiveInds) != 0: 
             newActiveVertices = set([])            
             
             for vertexInd in currentActiveInds: 
-                vertexSet =  set(graph.neighbors(vertexInd, mode="out")).difference(allActiveVertexInds)   
+                vertexSet =  set(graph.neighbors(vertexInd, mode="out")).difference(allActiveVertexInds)
                 
                 if p==None: 
                     a = graph.get_eids([(vertexInd, vertexInd2) for vertexInd2 in vertexSet])
@@ -65,14 +96,26 @@ class MaxInfluence(object):
         numpy.random.seed(seed)        
         
         currentInfluence = 0 
-        for j in range(numRuns): 
-            currentInfluence += len(MaxInfluence.simulateCascade(graph, activeVertexInds, p))
+        paramList = []
+        for j in range(multiprocessing.cpu_count()): 
+            paramList.append((graph.copy(), activeVertexInds.copy(), p, int(numRuns/multiprocessing.cpu_count())))
+        
+        print(multiprocessing.cpu_count())
+        pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
+        results = pool.imap(simulateCascadeSize, paramList, chunksize=1)  
+        #results = itertools.imap(simulateCascadeSize, paramList)
+        
+        for item in results: 
+            currentInfluence += item 
+            
+        pool.terminate()
+            
         currentInfluence /= float(numRuns) 
         
         return currentInfluence 
 
     @staticmethod 
-    def celf(graph, k, numRuns=10, p=None): 
+    def celf(graph, k, numRuns=100, p=None): 
         """
         Maximising the influence using the CELF algorithm of Leskovec et al. 
         """
