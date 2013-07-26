@@ -8,7 +8,7 @@ class GraphRanker(object):
 
 
     @staticmethod     
-    def rankedLists(graph, k=100, p=0.5, computeInfluence=False): 
+    def rankedLists(graph, k=100, p=0.5, numRuns=1000, computeInfluence=False): 
         """
         Return a list of ranked lists. The list is: betweenness, pagerank, 
         degree and influence. 
@@ -17,6 +17,11 @@ class GraphRanker(object):
         
         logging.debug("Computing betweenness")
         scores = graph.betweenness()
+        rank = numpy.flipud(numpy.argsort(scores)) 
+        outputLists.append(rank)
+        
+        logging.debug("Computing closeness")
+        scores = graph.closeness()
         rank = numpy.flipud(numpy.argsort(scores)) 
         outputLists.append(rank)
         
@@ -32,7 +37,7 @@ class GraphRanker(object):
         
         if computeInfluence: 
             logging.debug("Computing influence")
-            rank = MaxInfluence.celf(graph, k, p=p)
+            rank = MaxInfluence.celf(graph, k, p=p, numRuns=numRuns)
             outputLists.append(numpy.array(rank))
         
         return outputLists 
