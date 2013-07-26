@@ -17,11 +17,13 @@ from apgl.util.Evaluator import Evaluator
 from exp.util.IdIndexer import IdIndexer 
 from exp.influence2.GraphRanker import GraphRanker 
 from exp.influence2.RankAggregator import RankAggregator
+from apgl.util.Latex import Latex 
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
-dirName = PathDefaults.getDataDir() + "reputation/IntelligentAgents/" 
-#dirName = PathDefaults.getDataDir() + "reputation/OntologyAlignment/" 
+#dirName = PathDefaults.getDataDir() + "reputation/Boosting/" 
+#dirName = PathDefaults.getDataDir() + "reputation/IntelligentAgents/" 
+dirName = PathDefaults.getDataDir() + "reputation/OntologyAlignment/" 
 
 coauthorFilename = dirName + "articles.csv"
 expertsFilename = dirName + "experts.txt"
@@ -33,13 +35,15 @@ articleIndexer = IdIndexer("i")
 for line in coauthorFile: 
     vals = line.split(";")
     
-    authorId = vals[0].strip()
-    if "_" in authorId: 
-        authorId = authorId[0:authorId.find("_")]    
+    authorId = vals[0].strip().strip("=")
+    #if "_" in authorId: 
+    #    authorId = authorId[0:authorId.find("_")]    
     articleId = vals[1].strip()
     
     authorIndexer.append(authorId)
     articleIndexer.append(articleId)
+
+print(sorted(authorIndexer.getIdDict().keys())) 
 
 authorInds = authorIndexer.getArray()
 articleInds = articleIndexer.getArray()
@@ -84,7 +88,7 @@ logging.debug("Number of components in graph: " + str(len(graph.components())))
 compSizes = [len(x) for x in graph.components()]
 logging.debug("Max component size: " + str(numpy.max(compSizes))) 
 
-outputLists = GraphRanker.rankedLists(graph, computeInfluence=True)
+outputLists = GraphRanker.rankedLists(graph, numRuns=1000, computeInfluence=False)
 itemList = RankAggregator.generateItemList(outputLists)
 outputList, scores = RankAggregator.MC2(outputLists, itemList)
 
@@ -95,17 +99,26 @@ i = 0
 
 for line in expertsFile: 
     vals = line.split() 
-    key = vals[1][0].lower() + "/" + vals[1] + ":" + vals[0]
-    
+    key = vals[-1][0].lower() + "/" + vals[-1] + ":" 
+    for j in range(0, len(vals)-1): 
+        if j != len(vals)-2:
+            key += vals[j].strip(".") + "_"
+        else: 
+            key += vals[j].strip(".")
+        
+    key = key.strip()
+        
     if key in authorIndexer.getIdDict(): 
         expertsList.append(authorIndexer.getIdDict()[key])
+    else: 
+        logging.debug("Key not found : " + line.strip() + " " + key)
         
     i += 1 
 
 expertsFile.close()
 logging.debug("Found " + str(len(expertsList)) + " of " + str(i) + " experts")
 
-ns = [5, 10, 15, 20, 25, 30, 35]
+ns = numpy.arange(5, 55, 5)
 numMethods = 1+len(outputLists)
 precisions = numpy.zeros((len(ns), numMethods))
 
@@ -114,5 +127,7 @@ for i, n in enumerate(ns):
     
     for j in range(len(outputLists)): 
         precisions[i, j+1] = Evaluator.precision(expertsList, outputLists[j][0:n])
+
+precisions = numpy.c_[numpy.array(ns), precisions]
     
-print(precisions)
+print(Latex.latexTable(Latex.array2DToRows(precisions)))
