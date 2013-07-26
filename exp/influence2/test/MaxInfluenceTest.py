@@ -21,12 +21,11 @@ class  MaxInfluenceTest(unittest.TestCase):
         graph.add_vertices(5)
         
         graph.add_edges([(0,1), (0,2), (1, 3), (2,3), (2,4)])
-        graph.es["p"] = numpy.array([0, 1, 1, 0, 1])
         
         k = 3
         influenceList = MaxInfluence.greedyMethod(graph, k)
         
-        self.assertEquals(set(influenceList), set([0,1,2]))
+        self.assertEquals(len(influenceList), k)
     
     def testSimulateCascade(self): 
         graph = igraph.Graph(directed=True)
@@ -34,19 +33,19 @@ class  MaxInfluenceTest(unittest.TestCase):
         graph.add_vertices(numVertices)
         
         
-        graph.add_edges([(0,1), (0,2), (1, 3), (2,3), (2,4)])
-        graph.es["p"] = numpy.array([0, 1, 1, 0, 1])
+        graph.add_edges([(0,2), (1, 3), (2,4)])
 
         activeVertexInds = set([0])        
-        outputInds = MaxInfluence.simulateCascade(graph, activeVertexInds)
+        outputInds = MaxInfluence.simulateCascade(graph, activeVertexInds, p=1)
         self.assertEquals(outputInds, set([0,2,4])) 
         
-        graph.es["p"] = numpy.array([0, 1, 0, 0, 1])
-        outputInds = MaxInfluence.simulateCascade(graph, activeVertexInds)
+        outputInds = MaxInfluence.simulateCascade(graph, activeVertexInds, p=1)
         self.assertEquals(outputInds, set([0, 2, 4])) 
         
-        graph.es["p"] = numpy.array([0, 0, 0, 0, 0])
-        outputInds = MaxInfluence.simulateCascade(graph, activeVertexInds)
+        graph = igraph.Graph(directed=True)
+        numVertices = 5        
+        graph.add_vertices(numVertices)
+        outputInds = MaxInfluence.simulateCascade(graph, activeVertexInds, p=1)
         self.assertEquals(outputInds, set([0])) 
     
     def testSimulateCascades(self): 
@@ -54,7 +53,6 @@ class  MaxInfluenceTest(unittest.TestCase):
         n = 20 
         p = 0.1
         graph = igraph.Graph.Erdos_Renyi(n, p)
-        graph.es["p"] = numpy.array(numpy.random.rand(graph.ecount()) < 0.5, numpy.bool)
         
         numRuns = 1
         influences = numpy.zeros(n)
@@ -125,20 +123,53 @@ class  MaxInfluenceTest(unittest.TestCase):
         numRuns = 10000 
                 
         influences = numpy.zeros(n)
-        
         for i in range(numRuns): 
             influences += MaxInfluence.simulateInitialCascade(graph, p=0.2)
-        
         influences /= numRuns         
-        
         
         #Now compute influence via the other way 
         influences2 = numpy.zeros(n)
-        
         for i in range(n): 
             influences2[i] = MaxInfluence.simulateCascades(graph, set([i]), numRuns, p=0.2)
-            
         nptst.assert_array_almost_equal(influences, influences2, 1)
+        
+        #Now test with p=1
+        influences = MaxInfluence.simulateInitialCascade(graph, p=1.0)
+        
+        influences2 = numpy.zeros(n)
+        for i in range(n): 
+            influences2[i] = MaxInfluence.simulateCascades(graph, set([i]), 1, p=1.0)
+            
+        nptst.assert_array_almost_equal(influences, influences2)
+        
+        #Now test with p=0
+        influences = MaxInfluence.simulateInitialCascade(graph, p=0.0)
+        
+        influences2 = numpy.zeros(n)
+        for i in range(n): 
+            influences2[i] = MaxInfluence.simulateCascades(graph, set([i]), 1, p=0.0)
+            
+        nptst.assert_array_almost_equal(influences, influences2)
+        
+        #See if we get more accurate results on a small graph 
+        numRuns = 100000 
+        graph = igraph.Graph()        
+        graph.add_vertices(8)
+        graph.add_edges([(0,1), (0,2), (1, 3), (2,3), (2,4), (5,6), (6,7), (5, 4)])
+        
+        influences = numpy.zeros(graph.vcount())
+        for i in range(numRuns): 
+            influences += MaxInfluence.simulateInitialCascade(graph, p=0.2)
+        influences /= numRuns  
+        
+        influences2 = numpy.zeros(graph.vcount())
+        for i in range(graph.vcount()): 
+            influences2[i] = MaxInfluence.simulateCascades(graph, set([i]), numRuns, p=0.2)
+
+             
+        nptst.assert_array_almost_equal(influences, influences2, 2)
+        
+        #Test on directed graphs 
 
 if __name__ == '__main__':
     unittest.main()

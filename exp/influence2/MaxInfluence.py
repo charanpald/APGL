@@ -63,7 +63,7 @@ class MaxInfluence(object):
         return influences 
            
     @staticmethod 
-    def simulateCascade(graph, activeVertexInds, p=None): 
+    def simulateCascade(graph, activeVertexInds, p=0.5): 
         allActiveVertexInds = activeVertexInds.copy() 
         currentActiveInds = activeVertexInds.copy()
             
@@ -72,13 +72,7 @@ class MaxInfluence(object):
             
             for vertexInd in currentActiveInds: 
                 vertexSet =  set(graph.neighbors(vertexInd, mode="out")).difference(allActiveVertexInds)
-                
-                if p==None: 
-                    a = graph.get_eids([(vertexInd, vertexInd2) for vertexInd2 in vertexSet])
-                    edgeVals = numpy.array(graph.es["p"])
-                    edgePropagage = numpy.random.rand(len(vertexSet)) <=  edgeVals[a]
-                else: 
-                    edgePropagage = numpy.random.rand(len(vertexSet)) <= p 
+                edgePropagage = numpy.random.rand(len(vertexSet)) <= p 
                 
                 for i, vertexInd2 in enumerate(vertexSet): 
                     #if randNums[i] <= p[graph.get_eid(vertexInd, vertexInd2)]: 
@@ -91,19 +85,21 @@ class MaxInfluence(object):
         return allActiveVertexInds 
    
     @staticmethod
-    def simulateCascades(graph, activeVertexInds, numRuns, p=None, seed=21): 
-        currentInfluence = 0
+    def simulateCascades(graph, activeVertexInds, numRuns, p=0.5, seed=None):
+        if seed != None: 
+            numpy.random.seed(seed)
         
+        currentInfluence = 0
         for j in range(numRuns):
-            currentInfluence += len(MaxInfluence.simulateCascade(graph, activeVertexInds, p)) 
-            
+            currentInfluence += len(MaxInfluence.simulateCascade(graph, activeVertexInds, p))
         currentInfluence /= float(numRuns)
-            
+        
         return currentInfluence 
          
     @staticmethod 
-    def simulateCascades2(graph, activeVertexInds, numRuns, p=None, seed=21): 
-        numpy.random.seed(seed)        
+    def simulateCascades2(graph, activeVertexInds, numRuns, p=0.5, seed=None):
+        if seed != None: 
+            numpy.random.seed(seed)        
         
         currentInfluence = 0 
         paramList = []
@@ -124,12 +120,11 @@ class MaxInfluence(object):
         return currentInfluence 
 
     @staticmethod 
-    def celf(graph, k, numRuns=100, p=None): 
+    def celf(graph, k, numRuns=100, p=0.5): 
         """
         Maximising the influence using the CELF algorithm of Leskovec et al. 
         """
         k = min(graph.vcount(), k)   
-        stepSize = 100 
         
         influenceSet = set([])
         influenceList = []                
@@ -141,23 +136,34 @@ class MaxInfluence(object):
         for i in range(numRuns): 
             influences += MaxInfluence.simulateInitialCascade(graph, p=p)
         
-        influences /= float(numRuns)            
+        influences /= float(numRuns)  
+        logging.debug("Simulated initial cascades")          
         
         for vertexInd in range(graph.vcount()):        
             #Note that we store the negation of the influence since heappop chooses the smallest value 
             heapq.heappush(negMarginalIncreases, (-influences[vertexInd], vertexInd))
-                     
+        
+        
+        """
+        for vertexInd in range(graph.vcount()):
+            print(vertexInd)
+            currentInfluence = MaxInfluence.simulateCascades(graph, influenceSet.union([vertexInd]), numRuns, p)
+            #Note that we store the negation of the influence since heappop chooses the smallest value
+            heapq.heappush(negMarginalIncreases, (-currentInfluence, vertexInd))
+        """
+           
         negLastInfluence, bestVertexInd = heapq.heappop(negMarginalIncreases)
         influenceSet.add(bestVertexInd)
         influenceList.append(bestVertexInd)
+        logging.debug("Picking additional vertices")
                 
         for i in range(1, k):
-            logging.debug(i)
+            Util.printIteration(i-1, 1, k-1)
             valid = numpy.zeros(graph.vcount(), numpy.bool) 
             negMarginalInfluence, currentBestVertexInd = heapq.heappop(negMarginalIncreases)    
             
             while not valid[currentBestVertexInd]: 
-                marginalInfluence = MaxInfluence.simulateCascades(graph, influenceSet.union([currentBestVertexInd]), numRuns, p, 21) 
+                marginalInfluence = MaxInfluence.simulateCascades(graph, influenceSet.union([currentBestVertexInd]), numRuns, p) 
                 marginalInfluence += negLastInfluence 
                 
                 #Note that we store the negation of the influence since heappop chooses the smallest value 
@@ -171,6 +177,6 @@ class MaxInfluence(object):
             
             influenceSet.add(currentBestVertexInd)
             influenceList.append(currentBestVertexInd)
-                
+        
         return influenceList
         
