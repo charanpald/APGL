@@ -9,27 +9,20 @@ except:
     pass 
 import igraph 
 from apgl.util.Util import Util 
-
-def simulateCascadeSize(args): 
-    graph, activeVertexInds, p, numRuns = args
-    
-    currentInfluence = 0 
-    for j in range(numRuns): 
-        currentInfluence += len(MaxInfluence.simulateCascade(graph, activeVertexInds, p))    
-
-    return currentInfluence 
     
 class MaxInfluence(object): 
     def __init__(self):
         pass 
     
     @staticmethod 
-    def greedyMethod(graph, k, numRuns=10, p=None): 
+    def greedyMethod(graph, k, numRuns=10, p=0.5, verbose=False): 
         """
         Use a simple greedy algorithm to maximise influence. 
         """
+        
         influenceSet = set([])
-        influenceList = []        
+        influenceList = []     
+        influenceScores = []
         unvisited = set(range(graph.vcount()))  
         currentInfluence = 0 
                 
@@ -44,10 +37,40 @@ class MaxInfluence(object):
             influenceSet.add(bestVertexInd)
             influenceList.append(bestVertexInd)
             unvisited.remove(bestVertexInd)
+            influenceScores.append(currentInfluence)
     
-        return influenceList
+        if verbose: 
+            return influenceList, influenceScores
+        else: 
+            return influenceList
 
+    @staticmethod 
+    def greedyMethod2(graph, k, numRuns=10, p=0.5, verbose=False): 
+        """
+        Use a simple greedy algorithm to maximise influence. In this case 
+        we make use of simulateAllCascades 
+        """
+        
+        influenceSet = set([])
+        influenceList = []     
+        influenceScores = []
+        currentInfluence = 0 
+                
+        for i in range(k):
+            logging.debug(i)
+            influences = MaxInfluence.simulateAllCascades(graph, influenceSet, p=p)
+            
+            bestVertexInd = numpy.argmax(influences)
+            currentInfluence = influences[bestVertexInd] 
+            influenceSet.add(bestVertexInd)
+            influenceList.append(bestVertexInd)
+            influenceScores.append(currentInfluence)
     
+        if verbose: 
+            return influenceList, influenceScores
+        else: 
+            return influenceList
+
     @staticmethod 
     def simulateInitialCascade(graph, p=None):
         #First, figure out which edges are present in the percolation graph according 
@@ -61,7 +84,40 @@ class MaxInfluence(object):
             influences[component] = len(component)
         
         return influences 
-           
+ 
+    @staticmethod 
+    def simulateAllCascades(graph, activeVertexInds, p=0.5):
+        """
+        We work out the total influence after we add each vertex to the set 
+        of active vertices. If the vertex is already in this set, no gain 
+        will be made. 
+        """        
+        
+        #First, figure out which edges are present in the percolation graph according 
+        #to p 
+        edges = numpy.arange(graph.ecount())[numpy.random.rand(graph.ecount()) <= p]       
+        percolationGraph = graph.subgraph_edges(edges, delete_vertices=False)
+        influences = numpy.zeros(percolationGraph.vcount())     
+        
+        components = percolationGraph.components()
+        
+        if len(activeVertexInds) == 0: 
+            for component in components: 
+                influences[component] = len(component)
+        else: 
+            activeVertexInds = set(activeVertexInds)
+            lastInfluence = 0             
+            
+            for component in components:
+                if len(activeVertexInds.intersection(set(component))) == 0:  
+                    influences[component] = len(component)
+                else: 
+                    lastInfluence += len(component)
+                    
+            influences += lastInfluence
+        
+        return influences
+
     @staticmethod 
     def simulateCascade(graph, activeVertexInds, p=0.5): 
         allActiveVertexInds = activeVertexInds.copy() 
@@ -97,44 +153,23 @@ class MaxInfluence(object):
         return currentInfluence 
          
     @staticmethod 
-    def simulateCascades2(graph, activeVertexInds, numRuns, p=0.5, seed=None):
-        if seed != None: 
-            numpy.random.seed(seed)        
-        
-        currentInfluence = 0 
-        paramList = []
-        for j in range(multiprocessing.cpu_count()): 
-            paramList.append((graph.copy(), activeVertexInds.copy(), p, int(numRuns/multiprocessing.cpu_count())))
-        
-        pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
-        results = pool.imap(simulateCascadeSize, paramList, chunksize=1)  
-        #results = itertools.imap(simulateCascadeSize, paramList)
-        
-        for item in results: 
-            currentInfluence += item 
-            
-        pool.terminate()
-            
-        currentInfluence /= float(int(numRuns/multiprocessing.cpu_count())*multiprocessing.cpu_count()) 
-        
-        return currentInfluence 
-
-    @staticmethod 
-    def celf(graph, k, numRuns=100, p=0.5): 
+    def celf(graph, k, numRuns=100, p=0.5, verbose=False): 
         """
         Maximising the influence using the CELF algorithm of Leskovec et al. 
         """
         k = min(graph.vcount(), k)   
         
         influenceSet = set([])
-        influenceList = []                
+        influenceList = []    
+        influenceScores = []            
         negMarginalIncreases = []
+        
         
         #For the initial values we compute marginal increases with respect to the empty set 
         influences = numpy.zeros(graph.vcount())
         
         for i in range(numRuns): 
-            influences += MaxInfluence.simulateInitialCascade(graph, p=p)
+            influences += MaxInfluence.simulateAllCascades(graph, [], p=p)
         
         influences /= float(numRuns)  
         logging.debug("Simulated initial cascades")          
@@ -146,7 +181,6 @@ class MaxInfluence(object):
         
         """
         for vertexInd in range(graph.vcount()):
-            print(vertexInd)
             currentInfluence = MaxInfluence.simulateCascades(graph, influenceSet.union([vertexInd]), numRuns, p)
             #Note that we store the negation of the influence since heappop chooses the smallest value
             heapq.heappush(negMarginalIncreases, (-currentInfluence, vertexInd))
@@ -155,12 +189,15 @@ class MaxInfluence(object):
         negLastInfluence, bestVertexInd = heapq.heappop(negMarginalIncreases)
         influenceSet.add(bestVertexInd)
         influenceList.append(bestVertexInd)
+        influenceScores.append(-negLastInfluence)
         logging.debug("Picking additional vertices")
                 
         for i in range(1, k):
             Util.printIteration(i-1, 1, k-1)
             valid = numpy.zeros(graph.vcount(), numpy.bool) 
             negMarginalInfluence, currentBestVertexInd = heapq.heappop(negMarginalIncreases)    
+            
+            j = 0             
             
             while not valid[currentBestVertexInd]: 
                 marginalInfluence = MaxInfluence.simulateCascades(graph, influenceSet.union([currentBestVertexInd]), numRuns, p) 
@@ -172,11 +209,20 @@ class MaxInfluence(object):
                 
                 negMarginalInfluence, currentBestVertexInd = heapq.heappop(negMarginalIncreases) 
                 totalInfluence = -(negMarginalInfluence + negLastInfluence)
+                j+=1 
+                #print(j)
+                
+            logging.debug("Required " + str(j) + " evaluations to find influential vertex")
             
             negLastInfluence = -totalInfluence 
             
             influenceSet.add(currentBestVertexInd)
             influenceList.append(currentBestVertexInd)
+            influenceScores.append(-negLastInfluence)
         
-        return influenceList
+        if verbose: 
+            return influenceList, influenceScores
+        else: 
+            return influenceList
+
         
