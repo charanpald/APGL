@@ -37,7 +37,7 @@ class GraphRanker(object):
         
         if computeInfluence: 
             logging.debug("Computing influence")
-            rank = MaxInfluence.celf(graph, k, p=p, numRuns=numRuns)
+            rank = MaxInfluence.greedyMethod2(graph, k, p=p, numRuns=numRuns)
             outputLists.append(numpy.array(rank))
         
         return outputLists 
