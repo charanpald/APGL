@@ -173,8 +173,8 @@ class RankAggregator(object):
         numpy.put(Gl, numpy.arange(ell+n+2*r+2), numpy.arange(ell+n+2*r+2), 1)
         hl1 = numpy.zeros(ell+n+2*r+2)        
         
-        
-        Gl2 = 
+        #Finish later 
+        #Gl2 = 
         
                 
         
