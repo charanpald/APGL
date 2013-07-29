@@ -37,6 +37,33 @@ class  MaxInfluenceTest(unittest.TestCase):
         influenceList = MaxInfluence.greedyMethod2(graph, k)
         
         self.assertEquals(len(influenceList), k)
+        
+        
+        #Now try some random graphs 
+        numReps = 10      
+        numRuns = 1
+        
+        for i in range(numReps): 
+            n = numpy.random.randint(10, 50) 
+            p = numpy.random.rand()
+            graph = igraph.Graph.Erdos_Renyi(n, p)
+            
+            k = numpy.random.randint(5, 10)
+            influenceList = MaxInfluence.greedyMethod2(graph, k, numRuns, p=1)  
+            
+            influenceList2 = MaxInfluence.greedyMethod(graph, k, numRuns, p=1)  
+            self.assertEquals(influenceList, influenceList2)
+  
+        #Test with p!=1
+        graph = igraph.Graph()        
+        graph.add_vertices(8)
+        graph.add_edges([(0,1), (0,2), (0, 3), (0, 4), (1,6), (2,5), (5,7)])
+        
+        k = 7
+        influenceList, influenceScores = MaxInfluence.greedyMethod2(graph, k, numRuns=1000, p=0.1, verbose=True)  
+        influenceList2, influenceScores2 = MaxInfluence.greedyMethod(graph, k, numRuns=1000, verbose=True, p=0.1)
+            
+        self.assertEquals(influenceList[0:3], influenceList2[0:3])  
   
     def testSimulateCascade(self): 
         graph = igraph.Graph(directed=True)
