@@ -86,7 +86,7 @@ logging.debug("Number of components in graph: " + str(len(graph.components())))
 compSizes = [len(x) for x in graph.components()]
 logging.debug("Max component size: " + str(numpy.max(compSizes))) 
 
-outputLists = GraphRanker.rankedLists(graph, numRuns=1000, computeInfluence=True, p=0.1)
+outputLists = GraphRanker.rankedLists(graph, numRuns=1000, computeInfluence=True, p=0.01)
 itemList = RankAggregator.generateItemList(outputLists)
 outputList, scores = RankAggregator.MC2(outputLists, itemList)
 
