@@ -43,7 +43,7 @@ class MaxInfluence(object):
             return influenceList, influenceScores
         else: 
             return influenceList
-
+          
     @staticmethod 
     def greedyMethod2(graph, k, numRuns=10, p=0.5, verbose=False): 
         """
@@ -58,10 +58,16 @@ class MaxInfluence(object):
                 
         for i in range(k):
             logging.debug(i)
-            influences = MaxInfluence.simulateAllCascades(graph, influenceSet, p=p)
             
+            influences = numpy.zeros(graph.vcount())
+            for j in range(numRuns): 
+                influences += MaxInfluence.simulateAllCascades(graph, influenceSet, p=p)
+            influences /= float(numRuns)
+            
+            influences[influenceList] = -1
             bestVertexInd = numpy.argmax(influences)
             currentInfluence = influences[bestVertexInd] 
+            
             influenceSet.add(bestVertexInd)
             influenceList.append(bestVertexInd)
             influenceScores.append(currentInfluence)
@@ -71,19 +77,6 @@ class MaxInfluence(object):
         else: 
             return influenceList
 
-    @staticmethod 
-    def simulateInitialCascade(graph, p=None):
-        #First, figure out which edges are present in the percolation graph according 
-        #to p 
-        edges = numpy.arange(graph.ecount())[numpy.random.rand(graph.ecount()) <= p]       
-        percolationGraph = graph.subgraph_edges(edges, delete_vertices=False)
-        influences = numpy.zeros(percolationGraph.vcount())        
-        components = percolationGraph.components()
-        
-        for component in components: 
-            influences[component] = len(component)
-        
-        return influences 
  
     @staticmethod 
     def simulateAllCascades(graph, activeVertexInds, p=0.5):
@@ -92,9 +85,7 @@ class MaxInfluence(object):
         of active vertices. If the vertex is already in this set, no gain 
         will be made. 
         """        
-        
-        #First, figure out which edges are present in the percolation graph according 
-        #to p 
+        #Figure out which edges are present in the percolation graph according to p 
         edges = numpy.arange(graph.ecount())[numpy.random.rand(graph.ecount()) <= p]       
         percolationGraph = graph.subgraph_edges(edges, delete_vertices=False)
         influences = numpy.zeros(percolationGraph.vcount())     
