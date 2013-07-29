@@ -54,7 +54,7 @@ class RankAggregator(object):
         return itemList 
     
     @staticmethod 
-    def MC2(lists, itemList, alpha=None): 
+    def MC2(lists, itemList, alpha=None, verbose=False): 
         """
         Perform weighted rank aggregation using MC2 as given in Rank Aggregation Methods 
         for the Web, Dwork et al. The weighting vector is given by alpha. 
@@ -71,6 +71,7 @@ class RankAggregator(object):
             alpha = numpy.ones(ell)/ell
         
         P = numpy.zeros((n, n))
+        PList = [] 
         
         for j, lst in enumerate(lists): 
             Util.printIteration(j, 1, ell)
@@ -86,6 +87,7 @@ class RankAggregator(object):
                 Pj[indexList[i], validStates] = 1.0/validStates.shape[0]
 
             P += alpha[j] * Pj 
+            PList.append(Pj)
         
         P /= ell 
 
@@ -109,6 +111,76 @@ class RankAggregator(object):
         for ind in inds: 
             outputList.append(itemList[ind])
         
-        return outputList, scores
+        if verbose: 
+            return outputList, scores, PList
+        else: 
+            return outputList, scores
+              
+    @staticmethod    
+    def supervisedMC2(lists, itemList, topQList): 
+        """
+        Use the supervised rank aggregation from the paper "Supervised Rank 
+        Aggregation". 
+        """
+        outputList, scores, PList = RankAggregator.MC2(lists, itemList, verbose=True)
+        ell = len(PList)
+        n = len(itemList)        
+        q = len(topQList)
+        
+        A = numpy.zeros((ell, n))
+        for i in range(ell): 
+            A[i, :] = numpy.diag(PList[i])
+        
+        notQList = list(set(itemList).difference(set(topQList)))    
+        
+        #Construct matrix H 
+        H = numpy.zeros((q*(n-q), n))
+        k = 0        
+        
+        for i in range(q): 
+            for j in range(n-q): 
+                H[itemList.indexof(topQList[i]), k] = -1 
+                H[itemList.indexof(notQList[j]), k] = 1 
+                k += 1 
+        #Might need a way to limit the size of H 
+        r = H.shape[0]
+        
+        zeroEllEll = numpy.zeros((ell, ell))
+        zeroEllR =numpy.zeros((ell, ell)) 
+        zeroNN = numpy.zeros((n, n))
+        H00 = numpy.c_[zeroEllEll, -A, zeroEllR]
+        H01 = numpy.c_[-A.T, zeroNN, numpy.zeros((n, r))]
+        H02 = numpy.c_[numpy.zeros((m, ell)), numpy.zeros((r, n)), numpy.eye(r)]
+        H0 = numpy.r_[H00, H01, H02]
+        
+        H10 = numpy.c_[-numpy.eye(ell), numpy.zeros((ell, n)), numpy.zeros((ell, r))]
+        H11 = numpy.c_[-numpy.zeros((r, ell)), numpy.zeros((r, n)), numpy.eye(r)]
+        H1 = numpy.r_[H10, H11]
+        
+        H2 = numpy.zeros((2, (ell+n+r)))
+        H2[0, 0:ell]  = 1 
+        H2[1, ell:(ell+n)] = 1
+        
+        H30 = numpy.c_[numpy.zeros((n, ell)), -numpy.eye(n), numpy.zeros((n, r))]
+        H31 = numpy.c_[numpy.zeros((r, ell)), H, -numpy.eye(r)]
+        H3 = numpy.r_[H30, H31]
+        
+        #We have vector rho = [lambda_0, lambda_1, lambda_2, lambda_3, gamma]
+        c = numpy.zeros(ell+n+2*r+3)
+        c[-1] = -1 
+        
+        Gl1 = numpy.zeros((ell+n+2*r+2, ell+n+2*r+3)) 
+        numpy.put(Gl, numpy.arange(ell+n+2*r+2), numpy.arange(ell+n+2*r+2), 1)
+        hl1 = numpy.zeros(ell+n+2*r+2)        
+        
+        
+        Gl2 = 
+        
                 
+        
+        
+        
+        
+        
+        
  
