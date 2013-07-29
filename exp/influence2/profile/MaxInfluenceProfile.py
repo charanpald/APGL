@@ -21,9 +21,31 @@ class MaxInfluenceProfile(object):
         graph = igraph.Graph.Erdos_Renyi(n, p)
         print(graph.summary())
             
-        k = 50
+        k = 5
         numpy.random.seed(21) 
         ProfileUtils.profile('MaxInfluence.celf(graph, k, p=0.5, numRuns=100)', globals(), locals())    
+
+    def profileGreedyMethod(self):
+         
+        n = 100 
+        p = 0.1
+        graph = igraph.Graph.Erdos_Renyi(n, p)
+        print(graph.summary())
+            
+        k = 5
+        numpy.random.seed(21) 
+        ProfileUtils.profile('MaxInfluence.greedyMethod(graph, k, p=0.5, numRuns=100)', globals(), locals())  
+
+    def profileGreedyMethod2(self):
+         
+        n = 1000 
+        p = 0.1
+        graph = igraph.Graph.Erdos_Renyi(n, p)
+        print(graph.summary())
+            
+        k = 5
+        numpy.random.seed(21) 
+        ProfileUtils.profile('MaxInfluence.greedyMethod2(graph, k, p=0.5, numRuns=100)', globals(), locals())  
 
     def profileSimulateCascades(self): 
         n = 500 
@@ -38,5 +60,5 @@ class MaxInfluenceProfile(object):
         ProfileUtils.profile('MaxInfluence.simulateCascades(graph, activeVertices, numRuns, p=0.5)', globals(), locals())  
 
 profiler = MaxInfluenceProfile()
-profiler.profileCelf()
+profiler.profileGreedyMethod2()
 #profiler.profileSimulateCascades()
