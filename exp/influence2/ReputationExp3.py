@@ -43,8 +43,6 @@ for line in coauthorFile:
     authorIndexer.append(authorId)
     articleIndexer.append(articleId)
 
-print(sorted(authorIndexer.getIdDict().keys())) 
-
 authorInds = authorIndexer.getArray()
 articleInds = articleIndexer.getArray()
 edges = numpy.c_[authorInds, articleInds]
@@ -88,7 +86,7 @@ logging.debug("Number of components in graph: " + str(len(graph.components())))
 compSizes = [len(x) for x in graph.components()]
 logging.debug("Max component size: " + str(numpy.max(compSizes))) 
 
-outputLists = GraphRanker.rankedLists(graph, numRuns=1000, computeInfluence=False)
+outputLists = GraphRanker.rankedLists(graph, numRuns=1000, computeInfluence=True, p=0.1)
 itemList = RankAggregator.generateItemList(outputLists)
 outputList, scores = RankAggregator.MC2(outputLists, itemList)
 
