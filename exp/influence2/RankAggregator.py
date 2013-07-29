@@ -73,6 +73,7 @@ class RankAggregator(object):
         P = numpy.zeros((n, n))
         PList = [] 
         
+        logging.debug("Computing permutation matrices")
         for j, lst in enumerate(lists): 
             Util.printIteration(j, 1, ell)
             Pj = numpy.zeros((n, n))
