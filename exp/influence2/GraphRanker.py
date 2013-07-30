@@ -6,6 +6,14 @@ class GraphRanker(object):
     def __init__(self): 
         pass 
 
+    @staticmethod
+    def getNames(computeInfluence=False): 
+        names = ["Betweenness", "Closeness", "PageRank", "Degree"]
+        
+        if computeInfluence: 
+            names.append("Influence")
+        
+        return names 
 
     @staticmethod     
     def rankedLists(graph, k=100, p=0.5, numRuns=1000, computeInfluence=False): 
