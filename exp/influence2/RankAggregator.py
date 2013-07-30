@@ -4,6 +4,7 @@ import scipy.sparse
 import scipy.sparse.linalg
 import cvxopt 
 import cvxopt.solvers
+import array 
 from apgl.util.Util import Util 
 
 class RankAggregator(object): 
@@ -60,7 +61,11 @@ class RankAggregator(object):
     @staticmethod 
     def generateTransitionMatrix(lst, itemList):     
         n = len(itemList)
-        Pj = scipy.sparse.lil_matrix((n, n))
+        #Pj = scipy.sparse.lil_matrix((n, n))
+        
+        rowInds = array.array('i')      
+        colInds = array.array('i')
+        data = array.array('f')
         
         indexList = numpy.zeros(len(lst), numpy.int)            
         
@@ -69,9 +74,13 @@ class RankAggregator(object):
             
         for i in range(indexList.shape[0]): 
             validStates = indexList[0:i+1]
-            Pj[indexList[i], validStates] = 1.0/validStates.shape[0]    
+            rowInds.extend(numpy.ones(i+1, numpy.int)*indexList[i])
+            colInds.extend(indexList[0:i+1])
+            data.extend(numpy.ones(i+1)*1.0/validStates.shape[0])
+            #Pj[indexList[i], validStates] = 1.0/validStates.shape[0]    
             
-        return Pj.tocsc() 
+        Pj = scipy.sparse.csc_matrix((data, (rowInds, colInds)), shape=(n, n))
+        return Pj
     
     @staticmethod 
     def computeOutputList(P, itemList):
