@@ -73,7 +73,7 @@ class  LatexTest(unittest.TestCase):
         outputStr = "0.049 (0.206) & 0.289 (0.051)\\\\\n"
         outputStr += "0.721 (0.302) & 0.022 (0.664)\\\\"
         
-        #print(Latex.latexTable(outputStr))
+        #print(Latex.latexTable(outputStr, colNames=["a", "b", "c"]))
 
 if __name__ == '__main__':
     unittest.main()

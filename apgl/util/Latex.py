@@ -148,7 +148,7 @@ class Latex(object):
         return newLatexTable 
         
     @staticmethod 
-    def latexTable(tableRows, caption="Insert caption here", header=False): 
+    def latexTable(tableRows, caption="Insert caption here", header=False, colNames=None): 
         """
         Take a set of rows in Latex table format and wrap the text in a table 
         with a given caption. 
@@ -160,6 +160,11 @@ class Latex(object):
         table = "\\begin{table}\n"
         table += "\\centering\n"
         table += "\\begin{tabular}{" + numRows*"l " + " }\n"
+        
+        if colNames != None: 
+            table += "\\hline\n"
+            table += Latex.listToRow(colNames) + "\n"
+        
         table += "\\hline\n"
         
         count =0 
