@@ -9,6 +9,7 @@ import numpy.testing as nptst
 class  RankAggregatorTest(unittest.TestCase):
     def setUp(self): 
         numpy.random.seed(22) 
+        numpy.set_printoptions(suppress=True, precision=4)
     
     
     def testSpearmanFootrule(self): 
@@ -70,6 +71,23 @@ class  RankAggregatorTest(unittest.TestCase):
         alpha = numpy.array([0, 1.0])
         outList, scores = RankAggregator.MC2(lists, itemList, alpha)
         self.assertEquals(outList, list2)
+
+    def testSupervisedMC22(self): 
+        list1 = [2, 1, 3, 4, 5, 0]
+        list2 = [3, 2, 5, 0, 4, 1]
+        list3 = [3, 4, 2, 5, 1, 0]
+        list4 = [5, 0, 3, 4, 1, 2]
+        lists = [list1, list2, list3, list4]
+        
+        itemList = [0, 1, 2, 3, 4, 5]
+        topQList = [5, 4, 3, 2, 1, 0]
+
+        
+        outputList, scores = RankAggregator.supervisedMC22(lists, itemList, topQList)
+        
+        print(outputList) 
+        print(scores)
+        
 
 if __name__ == '__main__':
     unittest.main()
