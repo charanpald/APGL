@@ -45,7 +45,7 @@ class MaxInfluenceProfile(object):
             
         k = 5
         numpy.random.seed(21) 
-        ProfileUtils.profile('MaxInfluence.greedyMethod2(graph, k, p=0.5, numRuns=100)', globals(), locals())  
+        ProfileUtils.profile('MaxInfluence.greedyMethod2(graph, k, p=0.5, numRuns=1000)', globals(), locals())  
 
     def profileSimulateCascades(self): 
         n = 500 

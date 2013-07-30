@@ -2,6 +2,7 @@ import numpy
 import heapq 
 import logging
 import itertools 
+import os
 import multiprocessing 
 try:  
     ctypes.cdll.LoadLibrary("/usr/local/lib/libigraph.so")
@@ -9,6 +10,14 @@ except:
     pass 
 import igraph 
 from apgl.util.Util import Util 
+
+
+def simulateAllCascades(args): 
+    graph, activeVertexInds, p, j = args
+    numpy.random.seed(j)
+    influence = MaxInfluence.simulateAllCascades(graph, activeVertexInds, p=p)
+        
+    return influence 
     
 class MaxInfluence(object): 
     def __init__(self):
@@ -55,15 +64,15 @@ class MaxInfluence(object):
         influenceList = []     
         influenceScores = []
         currentInfluence = 0 
+        
+        #Numpy messes up the CPU affinity, so here is how we fix it 
+        os.system('taskset -p 0xffffffff %d' % os.getpid())
                 
         for i in range(k):
             logging.debug(i)
             
-            influences = numpy.zeros(graph.vcount())
-            for j in range(numRuns): 
-                influences += MaxInfluence.simulateAllCascades(graph, influenceSet, p=p)
-            influences /= float(numRuns)
-            
+            influences = MaxInfluence.parallelSimulateAllCascades2(graph, influenceSet, numRuns, p=p)
+
             influences[influenceList] = -1
             bestVertexInd = numpy.argmax(influences)
             currentInfluence = influences[bestVertexInd] 
@@ -77,6 +86,36 @@ class MaxInfluence(object):
         else: 
             return influenceList
 
+    @staticmethod 
+    def parallelSimulateAllCascades(graph, activeVertexInds, numRuns, p): 
+        influences = numpy.zeros(graph.vcount())
+        
+        for j in range(numRuns): 
+            influences += MaxInfluence.simulateAllCascades(graph, activeVertexInds, p=p)
+        influences /= float(numRuns)  
+        
+        return influences 
+        
+    @staticmethod 
+    def parallelSimulateAllCascades2(graph, activeVertexInds, numRuns, p): 
+        influences = numpy.zeros(graph.vcount())
+        
+        paramList = []
+        for j in range(numRuns): 
+            paramList.append((graph, activeVertexInds, p, j)) 
+        
+        chunksize = max(1, numRuns/multiprocessing.cpu_count())
+        pool = multiprocessing.Pool()
+        resultsList = pool.imap(simulateAllCascades, paramList, chunksize=chunksize)
+        
+        for result in resultsList: 
+            influences += result 
+            
+        pool.close()
+        
+        influences /= float(numRuns)  
+        
+        return influences 
  
     @staticmethod 
     def simulateAllCascades(graph, activeVertexInds, p=0.5):
@@ -111,6 +150,9 @@ class MaxInfluence(object):
 
     @staticmethod 
     def simulateCascade(graph, activeVertexInds, p=0.5): 
+        """
+        Simulate a single cascade in the graph with the given active vertices. 
+        """
         allActiveVertexInds = activeVertexInds.copy() 
         currentActiveInds = activeVertexInds.copy()
             
@@ -133,6 +175,9 @@ class MaxInfluence(object):
    
     @staticmethod
     def simulateCascades(graph, activeVertexInds, numRuns, p=0.5, seed=None):
+        """
+        Simulate runRuns cascades in this graph. 
+        """
         if seed != None: 
             numpy.random.seed(seed)
         
