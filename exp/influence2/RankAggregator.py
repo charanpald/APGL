@@ -1,5 +1,9 @@
 import numpy 
 import logging
+import scipy.sparse 
+import scipy.sparse.linalg
+import cvxopt 
+import cvxopt.solvers
 from apgl.util.Util import Util 
 
 class RankAggregator(object): 
@@ -54,6 +58,48 @@ class RankAggregator(object):
         return itemList 
     
     @staticmethod 
+    def generateTransitionMatrix(lst, itemList):     
+        n = len(itemList)
+        Pj = scipy.sparse.lil_matrix((n, n))
+        
+        indexList = numpy.zeros(len(lst), numpy.int)            
+        
+        for i, item in enumerate(lst): 
+            indexList[i] = itemList.index(item)
+            
+        for i in range(indexList.shape[0]): 
+            validStates = indexList[0:i+1]
+            Pj[indexList[i], validStates] = 1.0/validStates.shape[0]    
+            
+        return Pj.tocsc() 
+    
+    @staticmethod 
+    def computeOutputList(P, itemList):
+        """
+        Given a transition matrix, compute an ordering. 
+        """        
+        n = len(itemList)
+        #If all lists agree on top elements then we get a stationary distribution 
+        #of 1 for that index and zero elsewhere. Therefore add a little noise. 
+        P += numpy.ones((n, n))*0.0001
+        for i in range(n): 
+            P[i, :] = P[i, :]/P[i, :].sum()
+                
+        u, v = scipy.sparse.linalg.eigs(P.T, 1)
+        v = numpy.array(v).flatten()
+        scores = numpy.abs(v)
+        assert abs(u-1) < 0.001
+
+        inds = numpy.flipud(numpy.argsort(scores)) 
+        
+        outputList = [] 
+        for ind in inds: 
+            outputList.append(itemList[ind])
+            
+        return outputList, scores 
+    
+    
+    @staticmethod 
     def MC2(lists, itemList, alpha=None, verbose=False): 
         """
         Perform weighted rank aggregation using MC2 as given in Rank Aggregation Methods 
@@ -76,41 +122,14 @@ class RankAggregator(object):
         logging.debug("Computing permutation matrices")
         for j, lst in enumerate(lists): 
             Util.printIteration(j, 1, ell)
-            Pj = numpy.zeros((n, n))
-            
-            indexList = numpy.zeros(len(lst), numpy.int)            
-            
-            for i, item in enumerate(lst): 
-                indexList[i] = itemList.index(item)
-                
-            for i in range(indexList.shape[0]): 
-                validStates = indexList[0:i+1]
-                Pj[indexList[i], validStates] = 1.0/validStates.shape[0]
+            Pj = RankAggregator.generateTransitionMatrix(lst, itemList)
 
-            P += alpha[j] * Pj 
+            P = P + alpha[j] * Pj 
             PList.append(Pj)
         
         P /= ell 
 
-        #If all lists agree on top elements then we get a stationary distribution 
-        #of 1 for that index and zero elsewhere. Therefore add a little noise. 
-        P += numpy.ones((n, n))*0.0001
-        for i in range(n): 
-            P[i, :] = P[i, :]/P[i, :].sum()
-                
-        #logging.debug("Computing eigen-decomposition of P with shape" + str(P.shape))
-        #u, V = numpy.linalg.eig(P.T)
-        #scores = numpy.abs(V[:, 0])
-
-        u, v = Util.powerEigs(P.T, 0.001)
-        scores = numpy.abs(v)
-        assert abs(u-1) < 0.001
-
-        inds = numpy.flipud(numpy.argsort(scores)) 
-        
-        outputList = [] 
-        for ind in inds: 
-            outputList.append(itemList[ind])
+        outputList,scores = RankAggregator.computeOutputList(P, itemList)
         
         if verbose: 
             return outputList, scores, PList
@@ -177,11 +196,55 @@ class RankAggregator(object):
         #Finish later 
         #Gl2 = 
         
+        
+    @staticmethod 
+    def supervisedMC22(lists, itemList, topQList, verbose=False): 
+        """
+        A supervised version of MC2 of our own invention. The idea is to find a 
+        linear combination of transition matrices to fit a given one. 
+        """
+        ell = len(lists)
+        n = len(itemList)
+        outputList, scores, PList = RankAggregator.MC2(lists, itemList, verbose=True)
+        
+        Q = cvxopt.spmatrix([], [], [], (n*n, len(lists)))
+
+        for i, P in enumerate(PList): 
+            print(P.todense())
+            Q[:, i] = cvxopt.matrix(numpy.array(P.todense()).ravel()) 
+            
+        QQ = Q.T * Q
+        
+        Py = RankAggregator.generateTransitionMatrix(topQList, itemList)
+        s = numpy.array(Py.todense()).ravel()
+        s = cvxopt.matrix(s)
+        
+        G = cvxopt.spdiag((-numpy.ones(ell)).tolist())
+        h = cvxopt.matrix(numpy.zeros(ell))
+        
+        A = cvxopt.matrix(numpy.ones(ell), (1, ell))
+        b = cvxopt.matrix(numpy.ones(1))        
                 
+        q = -Q.T * s  
         
+        sol = cvxopt.solvers.qp(QQ, q, G, h, A, b)
         
+        alpha = numpy.array(sol['x'])
         
+        #Combine the matrices 
+        P = numpy.zeros((n, n))       
         
+        for j, Pj in enumerate(PList): 
+            Util.printIteration(j, 1, ell)
+            P += alpha[j] * numpy.array(Pj.todense()) 
+
+        P /= ell 
         
+        print(alpha)
+        outputList, scores = RankAggregator.computeOutputList(P, itemList)
         
- 
+        if verbose: 
+            return outputList, scores, PList
+        else: 
+            return outputList, scores
+        
