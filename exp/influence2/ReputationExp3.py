@@ -12,6 +12,7 @@ import logging
 import sys 
 import array 
 import itertools
+import difflib 
 from apgl.util.PathDefaults import PathDefaults 
 from apgl.util.Evaluator import Evaluator 
 from exp.util.IdIndexer import IdIndexer 
@@ -21,11 +22,15 @@ from apgl.util.Latex import Latex
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
-#dirName = PathDefaults.getDataDir() + "reputation/Boosting/" 
-#dirName = PathDefaults.getDataDir() + "reputation/IntelligentAgents/" 
-dirName = PathDefaults.getDataDir() + "reputation/OntologyAlignment/" 
+field = "Boosting"
+#field = "MachineLearning"
+dirName = PathDefaults.getDataDir() + "reputation/" + field + "/" 
 
-coauthorFilename = dirName + "articles.csv"
+coauthorFilename = dirName + field.lower() + ".csv"
+trainExpertsFilename = dirName + field.lower() + "_seed_train" + ".csv"
+testExpertsFilename = dirName + field.lower() + "_seed_test" + ".csv"
+
+#This is a list of experts that match authors as written in the coauthors file 
 expertsFilename = dirName + "experts.txt"
 coauthorFile = open(coauthorFilename)
 
@@ -36,8 +41,6 @@ for line in coauthorFile:
     vals = line.split(";")
     
     authorId = vals[0].strip().strip("=")
-    #if "_" in authorId: 
-    #    authorId = authorId[0:authorId.find("_")]    
     articleId = vals[1].strip()
     
     authorIndexer.append(authorId)
@@ -86,46 +89,73 @@ logging.debug("Number of components in graph: " + str(len(graph.components())))
 compSizes = [len(x) for x in graph.components()]
 logging.debug("Max component size: " + str(numpy.max(compSizes))) 
 
-outputLists = GraphRanker.rankedLists(graph, numRuns=1000, computeInfluence=True, p=0.01)
+computeInfluence = False
+outputLists = GraphRanker.rankedLists(graph, numRuns=100, computeInfluence=computeInfluence, p=0.01)
 itemList = RankAggregator.generateItemList(outputLists)
-outputList, scores = RankAggregator.MC2(outputLists, itemList)
+methodNames = GraphRanker.getNames(computeInfluence=computeInfluence)
+
+#outputList, scores = RankAggregator.MC2(outputLists, itemList)
+#outputLists.append(outputList)
+#methodNames.append("MC2")
 
 #Now load list of experts
-expertsFile = open(expertsFilename)
-expertsList = [] 
+expertsFile = open(testExpertsFilename)
+expertsList = []
+expertsIdList = []  
 i = 0
 
 for line in expertsFile: 
     vals = line.split() 
-    key = vals[-1][0].lower() + "/" + vals[-1] + ":" 
-    for j in range(0, len(vals)-1): 
+    key = vals[0][0].lower() + "/" + vals[0].strip(",") + ":" 
+    expertName = vals[-1] + ", "    
+    
+    for j in range(1, len(vals)): 
         if j != len(vals)-2:
-            key += vals[j].strip(".") + "_"
+            key += vals[j].strip(".,") + "_"
         else: 
-            key += vals[j].strip(".")
+            key += vals[j].strip(".,")
+            
+        expertName += vals[j] + " "
         
     key = key.strip()
+    expertName = expertName.strip()
         
-    if key in authorIndexer.getIdDict(): 
-        expertsList.append(authorIndexer.getIdDict()[key])
+    possibleExperts = difflib.get_close_matches(key, authorIndexer.getIdDict().keys(), cutoff=0.8)        
+        
+    if len(possibleExperts) != 0:
+        #logging.debug("Matched key : " + key + ", " + possibleExperts[0])
+        expertsIdList.append(authorIndexer.getIdDict()[possibleExperts[0]])
+        expertsList.append(expertName) 
+        
     else: 
-        logging.debug("Key not found : " + line.strip() + " " + key)
+        logging.debug("Key not found : " + line.strip() + ": " + key)
+        possibleExperts = difflib.get_close_matches(key, authorIndexer.getIdDict().keys(), cutoff=0.6) 
+        logging.debug("Possible matches: " + str(possibleExperts))
         
     i += 1 
 
-expertsFile.close()
-logging.debug("Found " + str(len(expertsList)) + " of " + str(i) + " experts")
 
-ns = numpy.arange(5, 55, 5)
-numMethods = 1+len(outputLists)
+expertsFile.close()
+logging.debug("Found " + str(len(expertsIdList)) + " of " + str(i) + " experts")
+
+#outputList2, scores2 = RankAggregator.supervisedMC22(outputLists, itemList, expertsList)
+#outputLists.append(outputList2)
+#methodNames.append("SMC2")
+
+print(outputLists[0][0:10])
+for ind in outputLists[0][0:10]: 
+    key = (key for key,value in authorIndexer.getIdDict().items() if value==ind).next()
+    print(key)
+
+ns = numpy.arange(5, 105, 5)
+numMethods = len(outputLists)
 precisions = numpy.zeros((len(ns), numMethods))
 
-for i, n in enumerate(ns): 
-    precisions[i, 0] = Evaluator.precision(expertsList, outputList[0:n])
-    
+for i, n in enumerate(ns):     
     for j in range(len(outputLists)): 
-        precisions[i, j+1] = Evaluator.precision(expertsList, outputLists[j][0:n])
+        precisions[i, j] = Evaluator.precision(expertsIdList, outputLists[j][0:n])
 
 precisions = numpy.c_[numpy.array(ns), precisions]
     
-print(Latex.latexTable(Latex.array2DToRows(precisions)))
+    
+print(Latex.latexTable(Latex.array2DToRows(precisions), colNames=methodNames))
