@@ -14,13 +14,14 @@ from apgl.util.Latex import Latex
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 #field = "Test" 
-field = "Boosting" 
+#field = "Boosting" 
+field = "MachineLearning"
 reader = GraphReader(field)
 graph = reader.read()
-expertsList, expertsIdList = reader.readExperts()
+expertsList, expertsIdList = reader.readExperts(train=False)
 
 #First compute graph properties 
-computeInfluence = False
+computeInfluence = True
 outputLists = GraphRanker.rankedLists(graph, numRuns=100, computeInfluence=computeInfluence, p=0.01)
 itemList = RankAggregator.generateItemList(outputLists)
 methodNames = GraphRanker.getNames(computeInfluence=computeInfluence)
@@ -37,7 +38,7 @@ methodNames.append("MC2")
 
 print("\n")
 
-r = 10 
+r = 20 
 logging.debug("Top " + str(r) + " authors:")
 for ind in outputLists[0][0:r]: 
     key = (key for key,value in reader.authorIndexer.getIdDict().items() if value==ind).next()
