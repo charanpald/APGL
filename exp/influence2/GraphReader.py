@@ -100,12 +100,18 @@ class GraphReader(object):
         
         return graph
         
-    def readExperts(self): 
+    def readExperts(self, train=False): 
         """
         Read the experts from a test file. Returns two lists: expertsList is the 
         list of their names, and expertsIdList is their integer ID. 
         """
-        expertsFile = open(self.testExpertsFilename)
+        if not train:
+            logging.debug("Reading test experts list")
+            expertsFile = open(self.testExpertsFilename)
+        else: 
+            logging.debug("Reading training experts list")
+            expertsFile = open(self.trainExpertsFilename)
+            
         expertsList = []
         expertsIdList = []  
         i = 0
