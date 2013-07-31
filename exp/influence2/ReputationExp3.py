@@ -13,6 +13,7 @@ from apgl.util.Latex import Latex
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
+#field = "Test" 
 field = "Boosting" 
 reader = GraphReader(field)
 graph = reader.read()
@@ -30,14 +31,19 @@ outputLists.append(outputList)
 methodNames.append("MC2")
 
 #The supervised MC2
-#outputList2, scores2 = RankAggregator.supervisedMC22(outputLists, itemList, expertsList)
+#outputList2, scores2 = RankAggregator.supervisedMC22(outputLists, itemList, expertsIdList)
 #outputLists.append(outputList2)
 #methodNames.append("SMC2")
 
-print(outputLists[0][0:10])
-for ind in outputLists[0][0:10]: 
+print("\n")
+
+r = 10 
+logging.debug("Top " + str(r) + " authors:")
+for ind in outputLists[0][0:r]: 
     key = (key for key,value in reader.authorIndexer.getIdDict().items() if value==ind).next()
-    print(key)
+    logging.debug(key)
+
+print("\n")
 
 ns = numpy.arange(5, 105, 5)
 numMethods = len(outputLists)
