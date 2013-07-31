@@ -29,10 +29,13 @@ class GraphReader(object):
         logging.debug("Test experts filename: " + self.testExpertsFilename)
         
     def read(self): 
+        """
+        Read a list of publications and output a coauthor file. 
+        """
         coauthorFile = open(self.coauthorFilename)
         
         self.authorIndexer = IdIndexer("i")
-        articleIndexer = IdIndexer("i")
+        self.articleIndexer = IdIndexer("i")
         i = 0
         
         for line in coauthorFile: 
@@ -42,17 +45,17 @@ class GraphReader(object):
             articleId = vals[1].strip()
             
             self.authorIndexer.append(authorId)
-            articleIndexer.append(articleId)
+            self.articleIndexer.append(articleId)
             i += 1 
             
         logging.debug("Total lines read: " + str(i))
         
         authorInds = self.authorIndexer.getArray()
-        articleInds = articleIndexer.getArray()
+        articleInds = self.articleIndexer.getArray()
         edges = numpy.c_[authorInds, articleInds]
         
         logging.debug("Number of unique authors: " + str(len(self.authorIndexer.getIdDict())))
-        logging.debug("Number of unique articles: " + str(len(articleIndexer.getIdDict())))
+        logging.debug("Number of unique articles: " + str(len(self.articleIndexer.getIdDict())))
         
         author1Inds = array.array('i')
         author2Inds = array.array('i')
@@ -65,16 +68,18 @@ class GraphReader(object):
             authorInd = authorInds[i]    
             articleInd = articleInds[i] 
             
-            if articleInd != lastArticleInd:         
-                iterator = itertools.combinations(coauthorList, 2)
+            coauthorList.append(authorInd)
+                        
+            if articleInd != lastArticleInd or i==authorInds.shape[0]-1:
+                if i==authorInds.shape[0]-1 and articleInd == lastArticleInd:     
+                    iterator = itertools.combinations(coauthorList, 2)
+                else: 
+                    iterator = itertools.combinations(coauthorList[0:-1], 2)
+                    
                 for vId1, vId2 in iterator:   
                     author1Inds.append(vId1)
                     author2Inds.append(vId2)
-                
-                coauthorList = []
-                coauthorList.append(authorInd)
-            else: 
-                coauthorList.append(authorInd)
+                coauthorList = [coauthorList[-1]]
                 
             lastArticleInd = articleInd
 
@@ -96,7 +101,10 @@ class GraphReader(object):
         return graph
         
     def readExperts(self): 
-        #Now load list of experts
+        """
+        Read the experts from a test file. Returns two lists: expertsList is the 
+        list of their names, and expertsIdList is their integer ID. 
+        """
         expertsFile = open(self.testExpertsFilename)
         expertsList = []
         expertsIdList = []  
@@ -105,25 +113,20 @@ class GraphReader(object):
         for line in expertsFile: 
             vals = line.split() 
             key = vals[0][0].lower() + "/" + vals[0].strip(",") + ":" 
-            expertName = vals[-1] + ", "    
-            
+
             for j in range(1, len(vals)): 
                 if j != len(vals)-2:
                     key += vals[j].strip(".,") + "_"
                 else: 
                     key += vals[j].strip(".,")
-                    
-                expertName += vals[j] + " "
-                
-            key = key.strip()
-            expertName = expertName.strip()
-                
+                            
+            key = key.strip()                
             possibleExperts = difflib.get_close_matches(key, self.authorIndexer.getIdDict().keys(), cutoff=0.8)        
                 
             if len(possibleExperts) != 0:
                 #logging.debug("Matched key : " + key + ", " + possibleExperts[0])
                 expertsIdList.append(self.authorIndexer.getIdDict()[possibleExperts[0]])
-                expertsList.append(expertName) 
+                expertsList.append(line.strip()) 
                 
             else: 
                 logging.debug("Key not found : " + line.strip() + ": " + key)
