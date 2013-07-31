@@ -137,6 +137,7 @@ class RankAggregator(object):
             PList.append(Pj)
         
         P /= ell 
+        logging.debug("Done")
 
         outputList,scores = RankAggregator.computeOutputList(P, itemList)
         
@@ -256,4 +257,59 @@ class RankAggregator(object):
             return outputList, scores, PList
         else: 
             return outputList, scores
+
+    @staticmethod 
+    def supervisedMC23(lists, itemList, topQList, verbose=False): 
+        """
+        A supervised version of MC2 of our own invention. The idea is to find a 
+        linear combination of transition matrices to fit a given one. We just make
+        sure it fits the stationary distribution. 
+        """
+        ell = len(lists)
+        n = len(itemList)
+        outputList, scores, PList = RankAggregator.MC2(lists, itemList, verbose=True)
         
+        Py = RankAggregator.generateTransitionMatrix(topQList, itemList)
+        u, v = scipy.sparse.linalg.eigs(Py.T, 1)
+        v = numpy.array(v).flatten()
+
+        c = numpy.zeros(v.shape[0])
+
+        for i, P in enumerate(PList): 
+            Q[:, i] = cvxopt.matrix(numpy.array(P.todense()).ravel()) 
+            
+        c = cvxopt.matrix(c)
+        QQ = Q.T * Q
+        
+        Py = RankAggregator.generateTransitionMatrix(topQList, itemList)
+        s = numpy.array(Py.todense()).ravel()
+        s = cvxopt.matrix(s)
+        
+        G = cvxopt.spdiag((-numpy.ones(ell)).tolist())
+        h = cvxopt.matrix(numpy.zeros(ell))
+        
+        A = cvxopt.matrix(numpy.ones(ell), (1, ell))
+        b = cvxopt.matrix(numpy.ones(1))        
+                
+        q = -Q.T * s  
+        
+        sol = cvxopt.solvers.qp(QQ, q, G, h, A, b)
+        
+        alpha = numpy.array(sol['x'])
+        
+        #Combine the matrices 
+        P = numpy.zeros((n, n))       
+        
+        for j, Pj in enumerate(PList): 
+            Util.printIteration(j, 1, ell)
+            P += alpha[j] * numpy.array(Pj.todense()) 
+
+        P /= ell 
+        
+        print(alpha)
+        outputList, scores = RankAggregator.computeOutputList(P, itemList)
+        
+        if verbose: 
+            return outputList, scores, PList
+        else: 
+            return outputList, scores        
