@@ -15,21 +15,23 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 #field = "Test" 
 #field = "Boosting" 
-field = "IntelligentAgents"
+#field = "IntelligentAgents"
+field = "MachineLearning"
 reader = GraphReader(field)
 graph = reader.read()
-expertsList, expertsIdList = reader.readExperts(train=False)
+trainExpertsList, trainExpertsIdList = reader.readExperts(train=True)
+testExpertsList, testExpertsIdList = reader.readExperts(train=False)
 
 #First compute graph properties 
 computeInfluence = False
-outputLists = GraphRanker.rankedLists(graph, numRuns=100, computeInfluence=computeInfluence, p=0.01)
+outputLists = GraphRanker.rankedLists(graph, numRuns=100, computeInfluence=computeInfluence, p=0.05, trainExpertsIdList=trainExpertsIdList)
 itemList = RankAggregator.generateItemList(outputLists)
 methodNames = GraphRanker.getNames(computeInfluence=computeInfluence)
 
 #Then use MC2 rank aggregation 
-#outputList, scores = RankAggregator.MC2(outputLists, itemList)
-#outputLists.append(outputList)
-#methodNames.append("MC2")
+outputList, scores = RankAggregator.MC2(outputLists, itemList)
+outputLists.append(outputList)
+methodNames.append("MC2")
 
 #The supervised MC2
 #outputList2, scores2 = RankAggregator.supervisedMC22(outputLists, itemList, expertsIdList)
@@ -52,7 +54,7 @@ precisions = numpy.zeros((len(ns), numMethods))
 
 for i, n in enumerate(ns):     
     for j in range(len(outputLists)): 
-        precisions[i, j] = Evaluator.precision(expertsIdList, outputLists[j][0:n])
+        precisions[i, j] = Evaluator.precision(testExpertsIdList, outputLists[j][0:n])
 
 precisions = numpy.c_[numpy.array(ns), precisions]
 print(Latex.latexTable(Latex.array2DToRows(precisions), colNames=methodNames))
