@@ -15,21 +15,21 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 #field = "Test" 
 #field = "Boosting" 
-field = "MachineLearning"
+field = "IntelligentAgents"
 reader = GraphReader(field)
 graph = reader.read()
 expertsList, expertsIdList = reader.readExperts(train=False)
 
 #First compute graph properties 
-computeInfluence = True
+computeInfluence = False
 outputLists = GraphRanker.rankedLists(graph, numRuns=100, computeInfluence=computeInfluence, p=0.01)
 itemList = RankAggregator.generateItemList(outputLists)
 methodNames = GraphRanker.getNames(computeInfluence=computeInfluence)
 
 #Then use MC2 rank aggregation 
-outputList, scores = RankAggregator.MC2(outputLists, itemList)
-outputLists.append(outputList)
-methodNames.append("MC2")
+#outputList, scores = RankAggregator.MC2(outputLists, itemList)
+#outputLists.append(outputList)
+#methodNames.append("MC2")
 
 #The supervised MC2
 #outputList2, scores2 = RankAggregator.supervisedMC22(outputLists, itemList, expertsIdList)
@@ -40,7 +40,7 @@ print("\n")
 
 r = 20 
 logging.debug("Top " + str(r) + " authors:")
-for ind in outputLists[0][0:r]: 
+for ind in outputLists[-1][0:r]: 
     key = (key for key,value in reader.authorIndexer.getIdDict().items() if value==ind).next()
     logging.debug(key)
 
