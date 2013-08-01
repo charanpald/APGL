@@ -91,8 +91,13 @@ class GraphReader(object):
         graph = igraph.Graph()
         graph.add_vertices(numpy.max(authorInds)+1)
         graph.add_edges(edges)
+        graph.es["weight"] = numpy.ones(graph.ecount())
+        graph.simplify(combine_edges=sum)   
+        graph.es["invWeight"] = 1.0/numpy.array(graph.es["weight"]) 
         
-        #Remove vertices with degree < 5 
+        #print(graph.ecount(), edges.shape)
+        #print(graph.count_multiple())
+        #print(graph.es["weight"])
         
         logging.debug(graph.summary())
         
