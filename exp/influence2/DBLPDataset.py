@@ -137,7 +137,7 @@ class DBLPDataset(object):
         
     def writeCoauthors(self): 
         if not os.path.exists(self.coauthorsFilename): 
-            matchedExperts = self.loadMatchedExperts()
+            matchedExperts = self.loadExperts(self.trainExpertMatchesFilename)
                 
             expertCoauthors = set([])
             xml = open(self.xmlCleanFilename)
