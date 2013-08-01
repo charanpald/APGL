@@ -20,9 +20,9 @@ class GraphReader(object):
         self.field = field
         
         dirName = PathDefaults.getDataDir() + "reputation/" + self.field + "/"
-        self.coauthorFilename = dirName + self.field.lower() + ".csv"
-        self.trainExpertsFilename = dirName + self.field.lower() + "_seed_train" + ".csv"
-        self.testExpertsFilename = dirName + self.field.lower() + "_seed_test" + ".csv"
+        self.coauthorFilename = dirName + "publications.csv"
+        self.trainExpertsFilename = dirName + "experts_train_matches" + ".csv"
+        self.testExpertsFilename = dirName + "experts_test_matches" + ".csv"
         
         logging.debug("Publications filename: " + self.coauthorFilename)
         logging.debug("Training experts filename: " + self.trainExpertsFilename)
@@ -30,7 +30,7 @@ class GraphReader(object):
         
     def read(self): 
         """
-        Read a list of publications and output a coauthor file. 
+        Read a list of publications and output a coauthor graph. 
         """
         coauthorFile = open(self.coauthorFilename)
         
@@ -41,7 +41,7 @@ class GraphReader(object):
         for line in coauthorFile: 
             vals = line.split(";")
             
-            authorId = vals[0].strip().strip("=")
+            authorId = vals[0].strip()
             articleId = vals[1].strip()
             
             self.authorIndexer.append(authorId)
@@ -92,6 +92,8 @@ class GraphReader(object):
         graph.add_vertices(numpy.max(authorInds)+1)
         graph.add_edges(edges)
         
+        #Remove vertices with degree < 5 
+        
         logging.debug(graph.summary())
         
         logging.debug("Number of components in graph: " + str(len(graph.components()))) 
@@ -116,18 +118,9 @@ class GraphReader(object):
         expertsIdList = []  
         i = 0
         
-        for line in expertsFile: 
-            vals = line.split() 
-            key = vals[0][0].lower() + "/" + vals[0].strip(",") + ":" 
-
-            for j in range(1, len(vals)): 
-                if j != len(vals)-2:
-                    key += vals[j].strip(".,") + "_"
-                else: 
-                    key += vals[j].strip(".,")
-                            
-            key = key.strip()                
-            possibleExperts = difflib.get_close_matches(key, self.authorIndexer.getIdDict().keys(), cutoff=0.8)        
+        for line in expertsFile:                             
+            key = line.strip()                
+            possibleExperts = difflib.get_close_matches(key, self.authorIndexer.getIdDict().keys(), cutoff=0.9)        
                 
             if len(possibleExperts) != 0:
                 #logging.debug("Matched key : " + key + ", " + possibleExperts[0])
