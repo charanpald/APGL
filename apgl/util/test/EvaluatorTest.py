@@ -151,6 +151,12 @@ class  EvaluatorTestCase(unittest.TestCase):
         error = numpy.abs(testY - predY).mean()
         self.assertEquals(error, Evaluator.meanAbsError(testY, predY))
     
+    def testNDCG(self): 
+        testY = numpy.array([0, 2, 3, 1])   
+        predY = numpy.array([0, 2, 3, 1])
+    
+        print(Evaluator.ndcg(testY, predY, testY.shape[0]))    
+    
 if __name__ == '__main__':
     unittest.main()
 

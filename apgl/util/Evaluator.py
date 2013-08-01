@@ -237,5 +237,25 @@ class Evaluator(object):
             return num/den
         else: 
             return 0
+      
+    @staticmethod 
+    def ndcg(testY, predY, n): 
+        """
+        Compute the Normalised Discounted Cumulative Gain at N. 
+        """
+        testY = testY[0:n]
+        predY = predY[0:n]
         
+        m = max(numpy.max(testY), numpy.max(predY))+1
         
+        rel = numpy.zeros(m)
+        rel[predY] = 1
+        dcg = rel[0] + ((2**rel[1:] - 1)/numpy.log2(numpy.arange(2, m+1, dtype=numpy.float)))
+        dcg = dcg.sum()
+        
+        rel = numpy.zeros(m)
+        rel[testY] = 1
+        dcg2 = rel[0] + ((2**rel[1:] - 1)/numpy.log2(numpy.arange(2, m+1, dtype=numpy.float)))
+        dcg2 = dcg2.sum()
+        
+        return dcg/dcg2
