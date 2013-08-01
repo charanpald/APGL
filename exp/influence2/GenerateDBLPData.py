@@ -11,7 +11,8 @@ and then find all the coauthors and their publications.
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 #field = "Boosting" 
-field  = "IntelligentAgents"
+#field  = "IntelligentAgents"
+field  = "MachineLearning"
 dataset = DBLPDataset(field)
 
 
