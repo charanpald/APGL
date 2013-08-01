@@ -192,7 +192,9 @@ class DBLPDataset(object):
             logging.debug("File already generated: " + self.coauthorsFilename)        
         
     def writePublications(self): 
-        if not os.path.exists(self.publicationsFilename): 
+        if not os.path.exists(self.publicationsFilename):
+            logging.debug("Generating author-pubication list")            
+            
             #Read the set of matched experts 
             coauthors = set([])        
             coauthorsFile = open(self.coauthorsFilename)    
@@ -228,9 +230,10 @@ class DBLPDataset(object):
                     if elem.tag in self.publicationTypes and event=="end": 
                         if articleDict["save"]: 
                             for j, author in enumerate(articleDict["authors"]): 
-                                #Format: z/Zhang:Cha;journals/tmm/ZhangYRCVSPZ08;3;1;2008
-                                outputLine = author + ";" + articleDict["id"] + ";" + str(j) + ";0;" + str(articleDict["year"]) + "\n"
-                                publicationsFile.write(outputLine)
+                                if author in coauthors: 
+                                    #Format: z/Zhang:Cha;journals/tmm/ZhangYRCVSPZ08;3;1;2008
+                                    outputLine = author + ";" + articleDict["id"] + ";" + str(j) + ";0;" + str(articleDict["year"]) + "\n"
+                                    publicationsFile.write(outputLine)
     
                         elem.clear()
                     
