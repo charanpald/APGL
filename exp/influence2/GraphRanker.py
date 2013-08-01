@@ -13,10 +13,12 @@ class GraphRanker(object):
         if computeInfluence: 
             names.append("Influence")
         
+        names.append("Shortest path")
+        
         return names 
 
     @staticmethod     
-    def rankedLists(graph, k=100, p=0.5, numRuns=1000, computeInfluence=False): 
+    def rankedLists(graph, k=100, p=0.5, numRuns=1000, computeInfluence=False, trainExpertsIdList=None): 
         """
         Return a list of ranked lists. The list is: betweenness, pagerank, 
         degree and influence. 
@@ -24,22 +26,23 @@ class GraphRanker(object):
         outputLists = []
         
         logging.debug("Computing betweenness")
-        scores = graph.betweenness()
+        scores = graph.betweenness(weights="invWeight")
         rank = numpy.flipud(numpy.argsort(scores)) 
         outputLists.append(rank)
         
         logging.debug("Computing closeness")
-        scores = graph.closeness()
+        scores = graph.closeness(weights="invWeight")
         rank = numpy.flipud(numpy.argsort(scores)) 
         outputLists.append(rank)
         
         logging.debug("Computing PageRank")
-        scores = graph.pagerank()
+        scores = graph.pagerank(weights="weight")
         rank = numpy.flipud(numpy.argsort(scores)) 
         outputLists.append(rank)
         
         logging.debug("Computing degree distribution")
-        scores = graph.degree(graph.vs)
+        #scores = graph.degree(graph.vs)
+        scores = graph.strength(weights="weight")
         rank = numpy.flipud(numpy.argsort(scores)) 
         outputLists.append(rank)
         
@@ -47,5 +50,23 @@ class GraphRanker(object):
             logging.debug("Computing influence")
             rank = MaxInfluence.greedyMethod2(graph, k, p=p, numRuns=numRuns)
             outputLists.append(numpy.array(rank))
+        
+        logging.debug("Computing shortest path lengths")
+        lengths = graph.shortest_paths(trainExpertsIdList, weights="invWeight") 
+        lengths = numpy.min(lengths, 0)
+        rank = numpy.argsort(lengths)
+        outputLists.append(rank)
+        
+        logging.debug("Computing hub score")
+        scores = graph.hub_score(weights="weight") 
+        rank = numpy.flipud(numpy.argsort(scores)) 
+        rank = numpy.argsort(lengths)
+        outputLists.append(rank)
+        
+        logging.debug("Computing authority score")
+        scores = graph.authority_score(weights="weight") 
+        rank = numpy.flipud(numpy.argsort(scores)) 
+        rank = numpy.argsort(lengths)
+        outputLists.append(rank)
         
         return outputLists 
