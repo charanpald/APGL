@@ -52,8 +52,10 @@ class GraphRanker(object):
             outputLists.append(numpy.array(rank))
         
         logging.debug("Computing shortest path lengths")
-        lengths = graph.shortest_paths(trainExpertsIdList, weights="invWeight") 
-        lengths = numpy.min(lengths, 0)
+        lengths = graph.shortest_paths(trainExpertsIdList, weights="invWeight")
+        lengths = numpy.array(lengths)
+        lengths[numpy.logical_not(numpy.isfinite(lengths))] = 0
+        lengths = numpy.mean(lengths, 0)
         rank = numpy.argsort(lengths)
         outputLists.append(rank)
         
