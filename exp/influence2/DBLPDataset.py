@@ -29,6 +29,7 @@ class DBLPDataset(object):
         self.numLines = 33532888
         self.publicationTypes = set(["article" , "inproceedings", "proceedings", "book", "incollection", "phdthesis", "mastersthesis", "www"])
         self.p = 0.5     
+        self.matchCutoff = 0.95
         
         
         self.cleanXML()
@@ -117,9 +118,14 @@ class DBLPDataset(object):
                     
                 author = re.findall("<author>(.*)</author>", line)  
                 if len(author) != 0: 
-                    possibleMatches = difflib.get_close_matches(author[0], expertsSet, cutoff=0.9)
+                    possibleMatches = difflib.get_close_matches(author[0], expertsSet, cutoff=self.matchCutoff)
                     if len(possibleMatches) != 0: 
-                        expertMatches.add(author[0]) 
+                        expertMatches.add(author[0])
+                        expertsSet.remove(possibleMatches[0])
+                        
+                        if len(expertsSet) == 0: 
+                            logging.debug("Found all experts, breaking")
+                            break 
                 
                 i += 1
             
