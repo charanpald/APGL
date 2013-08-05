@@ -8,19 +8,26 @@ import sys
 from apgl.util.Evaluator import Evaluator 
 from exp.influence2.GraphRanker import GraphRanker 
 from exp.influence2.RankAggregator import RankAggregator
-from exp.influence2.GraphReader import GraphReader
+from exp.influence2.ArnetMinerDataset import ArnetMinerDataset
+from exp.influence2.GraphReader2 import GraphReader2
 from apgl.util.Latex import Latex 
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+numpy.random.seed(21)
 
 #field = "Test" 
 #field = "Boosting" 
-#field = "IntelligentAgents"
-field = "MachineLearning"
-reader = GraphReader(field)
+field = "IntelligentAgents"
+#field = "MachineLearning"
+
+dataset = ArnetMinerDataset(field)
+reader = GraphReader2(field)
 graph = reader.read()
 trainExpertsList, trainExpertsIdList = reader.readExperts(train=True)
 testExpertsList, testExpertsIdList = reader.readExperts(train=False)
+
+print(trainExpertsIdList)
+print(testExpertsIdList)
 
 #First compute graph properties 
 computeInfluence = False
@@ -39,12 +46,13 @@ methodNames.append("MC2")
 #methodNames.append("SMC2")
 
 print("\n")
-
+"""
 r = 20 
 logging.debug("Top " + str(r) + " authors:")
 for ind in outputLists[-1][0:r]: 
     key = (key for key,value in reader.authorIndexer.getIdDict().items() if value==ind).next()
     logging.debug(key)
+"""
 
 print("\n")
 
