@@ -3,6 +3,7 @@ import numpy
 import logging 
 import difflib 
 import re 
+import sklearn.feature_extraction.text 
 from apgl.util.Util import Util 
 from apgl.util.PathDefaults import PathDefaults 
 
@@ -16,6 +17,7 @@ class ArnetMinerDataset(object):
         numpy.random.seed(21)
         dataDir = PathDefaults.getDataDir() + "dblpCitation/" 
         self.dataFilename = dataDir + "DBLP-citation-Feb21.txt" 
+        #self.dataFilename = dataDir + "DBLP-citation-small.txt" 
         
         resultsDir = PathDefaults.getDataDir() + "reputation/" + field + "/"
         self.expertsFileName = resultsDir + "experts.txt"
@@ -25,12 +27,13 @@ class ArnetMinerDataset(object):
         self.trainExpertMatchesFilename = resultsDir + "experts_train_matches.csv"
         self.testExpertMatchesFilename = resultsDir + "experts_test_matches.csv"
         self.coauthorsFilename = resultsDir + "coauthors.csv"
-        self.coauthorSimilarityFilename = resultsDir + "coauthorSimilarity.csv"        
+        self.coauthorSimilarityFilename = resultsDir + "coauthorSimilarity"        
         
         self.stepSize = 100000    
         self.numLines = 15192085
         self.matchCutoff = 0.95
         self.p = 0.5
+        #self.p = 1        
         
         self.matchExperts()
         self.splitExperts()   
@@ -82,19 +85,21 @@ class ArnetMinerDataset(object):
         if not (os.path.exists(self.trainExpertMatchesFilename) and os.path.exists(self.testExpertMatchesFilename)): 
             file = open(self.expertMatchesFilename) 
             logging.debug("Splitting list of experts given in file " +  self.expertMatchesFilename)
-            trainNames = [] 
-            testNames = []
-            
-            for line in file: 
-                if numpy.random.rand() < self.p: 
-                    trainNames.append(line.strip() + "\n")
-                else: 
-                    testNames.append(line.strip() + "\n")  
-                    
+            names = file.readlines()
+            names = numpy.array([x.strip() for x in names])
             file.close() 
+            
+            inds = numpy.random.permutation((len(names)))
+            trainSize = int(self.p * len(names))
+            
+            trainNames = names[inds[0:trainSize]]
+            testNames = names[inds[trainSize:]]
             
             logging.debug("Train names: " + str(len(trainNames)) + " test names: " + str(len(testNames))) 
             
+            trainNames = numpy.array([name + "\n" for name in trainNames])  
+            testNames = numpy.array([name + "\n" for name in testNames])
+                
             trainFile = open(self.trainExpertMatchesFilename, "w") 
             trainFile.writelines(trainNames) 
             trainFile.close() 
@@ -112,7 +117,6 @@ class ArnetMinerDataset(object):
             matchedExpertsFile = open(self.trainExpertMatchesFilename)
             matchedExperts = matchedExpertsFile.readlines()
             matchedExperts = set([x.strip() for x in matchedExperts])
-            
             
             inFile = open(self.dataFilename)
             i = 0     
@@ -149,29 +153,50 @@ class ArnetMinerDataset(object):
     def writeSimilarityGraph(self): 
         """
         Run through the abstracts and compare them from each author. 
-        """
-        abstractDict = {} 
-        
+        """        
         coauthorsFile = open(self.coauthorsFilename)
         coauthors = coauthorsFile.readlines()
-        coauthors = set([x.strip() for x in coauthors])
+        coauthorsList = [x.strip() for x in coauthors]
+        coauthors = set(coauthorsList)
         
-        for coauthor in coauthors: 
-            abstractDict[coauthor] = ""    
+        titleAbstracts = []
+        for i in range(len(coauthors)): 
+            titleAbstracts.append("")   
+            
+        coauthorMatrix = numpy.ones((len(coauthors), len(coauthors)))
         
-        if not os.path.exists(self.coauthorSimilarityFilename): 
+        if not os.path.exists(self.coauthorSimilarityFilename + ".npy"): 
             inFile = open(self.dataFilename)
             i = 0     
                         
+            lastAbstract = ""
+            lastTitle = ""    
+            lastAuthors = []                    
+                        
             for line in inFile:
                 Util.printIteration(i, self.stepSize, self.numLines)
-
-                if line == "\n": 
-                    authors = []
                     
-                #Authors come before the abstract 
+                #Match the fields in the file 
+                emptyLine = line == "\n"
+                title = re.findall("#\*(.*)", line)
                 currentAuthors = re.findall("#@(.*)", line)  
-                abstract = re.findall("#!(.*)", line) 
+                abstract = re.findall("#!(.*)", line)
+                
+                if emptyLine:
+                    for author in lastAuthors:
+                        ind = coauthorsList.index(author)
+                        titleAbstracts[ind] += lastTitle + " " + lastAbstract 
+                            
+                        for author2 in lastAuthors: 
+                            ind2 = coauthorsList.index(author2)
+                            coauthorMatrix[ind, ind2] += 1    
+                            
+                    lastAbstract = ""
+                    lastTitle = ""
+                    lastAuthors = []
+ 
+                if len(title) != 0 and len(title[0]) != 0: 
+                    lastTitle = title[0]               
                 
                 if len(abstract) != 0 and len(abstract[0]) != 0: 
                     lastAbstract = abstract[0]
@@ -179,13 +204,21 @@ class ArnetMinerDataset(object):
                 if len(currentAuthors) != 0: 
                     currentAuthors = currentAuthors[0].split(",")  
                     currentAuthors = set([x.strip() for x in currentAuthors])
-                    currentAuthors = coauthors.intersection(currentAuthors)                           
-                            
-                #One of the coauthors wrote this paper 
-                if len(currentAuthors) != 0: 
-                    for author in currentAuthors: 
-                        if author in coauthors: 
-                            print(i, author, abstract)
-                            abstractDict[author] = abstractDict[author] + " " + lastAbstract
-                             
+                    currentAuthors = coauthors.intersection(currentAuthors)   
+
+                    lastAuthors = currentAuthors                     
+
                 i += 1
+                
+            print(coauthorsList)
+            vectoriser = sklearn.feature_extraction.text.TfidfVectorizer(min_df=2, ngram_range=(1,2), binary=True, sublinear_tf=True, norm="l2")
+            X = vectoriser.fit_transform(titleAbstracts)
+            K = numpy.array((X.dot(X.T)).todense())
+            
+            
+            #Save matrix 
+            numpy.save(self.coauthorSimilarityFilename, K) 
+            logging.debug("Wrote coauthors to file " + str(self.coauthorSimilarityFilename) + ".npy")
+        else: 
+            logging.debug("File already generated: " + self.coauthorSimilarityFilename + ".npy")  
+            
