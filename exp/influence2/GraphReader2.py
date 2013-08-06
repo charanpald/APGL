@@ -6,18 +6,19 @@ import igraph
 import numpy 
 from apgl.util.PathDefaults import PathDefaults 
 import logging 
+import scipy.io 
 
 class GraphReader2(object): 
     """
     A class to read the similarity graph generated from the Arnetminer dataset 
     """
-    def __init__(self, field, index): 
+    def __init__(self, field): 
         self.field = field
         self.eps = 0.1
         
         dirName = PathDefaults.getDataDir() + "reputation/" + self.field + "/"
         self.coauthorFilename = dirName + "coauthors.csv"
-        self.coauthorMatrixFilename = dirName + "coauthorSimilarity" + str(index) + ".npy"
+        self.coauthorMatrixFilename = dirName + "seedMatrix.mtx"
         self.trainExpertsFilename = dirName + "experts_train_matches" + ".csv"
         self.testExpertsFilename = dirName + "experts_test_matches" + ".csv"
         
@@ -27,8 +28,7 @@ class GraphReader2(object):
         
     def read(self):
         
-        K = numpy.load(self.coauthorMatrixFilename)
-        K = K.tolist()
+        K = scipy.io.mmread(self.coauthorMatrixFilename)
         graph = igraph.Graph.Weighted_Adjacency(K, mode="PLUS", loops=False)
         
         print(graph.summary())

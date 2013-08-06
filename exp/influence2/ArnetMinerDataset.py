@@ -4,6 +4,9 @@ import logging
 import difflib 
 import re 
 import sklearn.feature_extraction.text 
+import sklearn.cluster 
+import scipy.sparse
+import scipy.io
 from apgl.util.Util import Util 
 from apgl.util.PathDefaults import PathDefaults 
 
@@ -27,7 +30,8 @@ class ArnetMinerDataset(object):
         self.testExpertMatchesFilename = resultsDir + "experts_test_matches.csv"
         self.coauthorsFilenameL1 = resultsDir + "coauthorsL1.csv"
         self.coauthorsFilenameL2 = resultsDir + "coauthorsL2.csv"
-        self.coauthorSimilarityFilename = resultsDir + "coauthorSimilarity"        
+        self.similarAuthorsFilename = resultsDir + "similarAuthors.npy"   
+        self.expertSeedMatrixFilename = resultsDir + "seedMatrix.mtx"  
         
         self.stepSize = 100000    
         self.numLines = 15192085
@@ -114,7 +118,7 @@ class ArnetMinerDataset(object):
             logging.debug("Generated files exist: " + self.trainExpertMatchesFilename + " " + self.testExpertMatchesFilename)
             
     def writeCoauthors(self): 
-        if not os.path.exists(self.coauthorsFilenameL1) and not not os.path.exists(self.coauthorsFilenameL2): 
+        if not os.path.exists(self.coauthorsFilenameL1) and not os.path.exists(self.coauthorsFilenameL2): 
             logging.debug("Finding coauthors of path length <= 2 from experts")
             matchedExpertsFile = open(self.trainExpertMatchesFilename)
             matchedExperts = matchedExpertsFile.readlines()
@@ -171,19 +175,44 @@ class ArnetMinerDataset(object):
     def writeSimilarityGraph(self): 
         """
         Run through the abstracts and compare them from each author. 
-        """        
-        coauthorsFile = open(self.coauthorsFilename)
+        """     
+
+        
+        matchedTestExpertsFile = open(self.testExpertMatchesFilename)
+        matchedTestExperts = matchedTestExpertsFile.readlines()
+        matchedTestExperts = set([x.strip() for x in matchedTestExperts])   
+        
+        coauthorsFile = open(self.coauthorsFilenameL2)
         coauthors = coauthorsFile.readlines()
         coauthorsList = [x.strip() for x in coauthors]
         coauthors = set(coauthorsList)
+    
+        matchedExpertsFile = open(self.trainExpertMatchesFilename)
+        matchedExperts = matchedExpertsFile.readlines()
+        matchedExperts = [x.strip() for x in matchedExperts]   
+    
+        expertInds = []
+        for expert in matchedExperts: 
+            expertInds.append(coauthorsList.index(expert))
+        
+        matchedTestExpertsFile = open(self.testExpertMatchesFilename)
+        matchedTestExperts = matchedTestExpertsFile.readlines()
+        matchedTestExperts = set([x.strip() for x in matchedTestExperts]) 
+        
+        testExpertInds = []
+        for expert in matchedTestExperts: 
+            if coauthorsList.count(expert) != 0:
+                testExpertInds.append(coauthorsList.index(expert))
+            else: 
+                logging.debug("Missing test expert: " + expert)
         
         titleAbstracts = []
         for i in range(len(coauthors)): 
             titleAbstracts.append("")   
             
-        coauthorMatrix = numpy.ones((len(coauthors), len(coauthors)), numpy.int16)
+        coauthorMatrix = scipy.sparse.lil_matrix((len(coauthors), len(coauthors)))
         
-        if not os.path.exists(self.coauthorSimilarityFilename + ".npy"): 
+        if not os.path.exists(self.expertSeedMatrixFilename): 
             inFile = open(self.dataFilename)
             i = 0     
                         
@@ -227,37 +256,40 @@ class ArnetMinerDataset(object):
                     lastAuthors = currentAuthors                     
 
                 i += 1
-                
-            j = 0                
-                
-                
+                 
             min_df = 2
             ngram_max= 2
             binary = True
             sublinear = True
             norm = "l2"
-            numFeatures = 1500
-            #Try all param values
-            #Try different similarity e.g. distance (this is the case when 2-norm = 1)
+            numFeatures = 3000
             #How to combine coauthor and similarity graphs 
             #l1 norm is useless 
             
-            #titleAbstracts = titleAbstracts[0:10000]
-            print(len(titleAbstracts))
             vectoriser = sklearn.feature_extraction.text.TfidfVectorizer(min_df=min_df, ngram_range=(1,ngram_max), binary=binary, sublinear_tf=sublinear, norm=norm, max_df=0.95, max_features=numFeatures)
             X = vectoriser.fit_transform(titleAbstracts)
             logging.debug("Generated vectoriser")
-            #K = numpy.array((X.dot(X.T)).todense())
-            #numpy.save(self.coauthorSimilarityFilename + str(j), K) 
-            #logging.debug("Wrote coauthors to file " + str(self.coauthorSimilarityFilename) + str(j) + ".npy")
-            #j += 1
+            K = numpy.array((X[expertInds, :].dot(X.T)).todense())
+            print(K.shape)
             
-            clusterer = sklearn.cluster.MiniBatchKMeans(n_clusters=100, batch_size=1000, n_init=10)
-            clusterer.fit(X)
+            numAuthors = 300 
+            similarAuthors = []
+            for i, expertInd in enumerate(expertInds): 
+                similarAuthors.extend(numpy.flipud(numpy.argsort(K[i, :]))[0:numAuthors].tolist()) 
+                
             
-            #Now find all examples in same cluster as experts 
+            similarAuthors = numpy.unique(similarAuthors)
+            matchedExperts = numpy.array(list(matchedExperts))
+            matchedTestExperts = numpy.array(testExpertInds)
             
+            print(matchedExperts.shape, matchedTestExperts.shape, similarAuthors.shape)
+            print(numpy.intersect1d(similarAuthors, matchedExperts))
+            print(numpy.intersect1d(similarAuthors, matchedTestExperts))
             
+            numpy.save(self.similarAuthorsFilename, similarAuthors)
+            logging.debug("Saved similar authors as " + self.similarAuthorsFilename)
+            scipy.io.mmwrite(self.expertSeedMatrixFilename, coauthorMatrix)
+            logging.debug("Saved graph matrix as " + self.expertSeedMatrixFilename)
         else: 
-            logging.debug("File already generated: " + self.coauthorSimilarityFilename + ".npy")  
+            logging.debug("File already generated: " + self.similarAuthorsFilename + ".npy")  
             
