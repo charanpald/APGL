@@ -22,11 +22,11 @@ class ArnetMinerDataset(object):
         resultsDir = PathDefaults.getDataDir() + "reputation/" + field + "/"
         self.expertsFileName = resultsDir + "experts.txt"
         
-        resultsDir += "arnetminer/"
         self.expertMatchesFilename = resultsDir + "experts_matches.csv"
         self.trainExpertMatchesFilename = resultsDir + "experts_train_matches.csv"
         self.testExpertMatchesFilename = resultsDir + "experts_test_matches.csv"
-        self.coauthorsFilename = resultsDir + "coauthors.csv"
+        self.coauthorsFilenameL1 = resultsDir + "coauthorsL1.csv"
+        self.coauthorsFilenameL2 = resultsDir + "coauthorsL2.csv"
         self.coauthorSimilarityFilename = resultsDir + "coauthorSimilarity"        
         
         self.stepSize = 100000    
@@ -63,7 +63,8 @@ class ArnetMinerDataset(object):
                         possibleMatches = difflib.get_close_matches(author, expertsSet, cutoff=self.matchCutoff)
                         if len(possibleMatches) != 0: 
                             expertMatches.add(author)
-                            expertsSet.remove(possibleMatches[0])
+                            if author == possibleMatches[0]: 
+                                expertsSet.remove(possibleMatches[0])
                             
                             if len(expertsSet) == 0: 
                                 logging.debug("Found all experts, breaking")
@@ -113,42 +114,59 @@ class ArnetMinerDataset(object):
             logging.debug("Generated files exist: " + self.trainExpertMatchesFilename + " " + self.testExpertMatchesFilename)
             
     def writeCoauthors(self): 
-        if not os.path.exists(self.coauthorsFilename): 
+        if not os.path.exists(self.coauthorsFilenameL1) and not not os.path.exists(self.coauthorsFilenameL2): 
+            logging.debug("Finding coauthors of path length <= 2 from experts")
             matchedExpertsFile = open(self.trainExpertMatchesFilename)
             matchedExperts = matchedExpertsFile.readlines()
             matchedExperts = set([x.strip() for x in matchedExperts])
             
-            inFile = open(self.dataFilename)
-            i = 0     
+            inFile = open(self.dataFilename)  
+            expertCoauthors1 = set([])
             
-            expertCoauthors = set([])
-            
-            for line in inFile:
+            for i, line in enumerate(inFile):
                 Util.printIteration(i, self.stepSize, self.numLines)
                 authors = re.findall("#@(.*)", line)  
                                 
                 if len(authors) != 0: 
-                    authors = authors[0].split(",")  
-                    authors = [x.strip() for x in authors]     
+                    authors = [x.strip() for x in authors[0].split(",")]     
                     for author in authors: 
                         if author in matchedExperts: 
-                            expertCoauthors = expertCoauthors.union(set(authors))
-                            
-                i += 1
+                            expertCoauthors1 = expertCoauthors1.union(set(authors))
             
-            logging.debug("Found " + str(len(expertCoauthors)) + " coauthors")
+            logging.debug("Found " + str(len(expertCoauthors1)) + " coauthors at level 1")
+            inFile.close()
+            
+            coauthorsFile = open(self.coauthorsFilenameL1, "w")
+            expertCoauthors = sorted([coauthor + "\n" for coauthor in expertCoauthors1]) 
+            coauthorsFile.writelines(expertCoauthors)
+            coauthorsFile.close()
+            logging.debug("Wrote coauthors to file " + str(self.coauthorsFilenameL1))
+            
+            #Now find their coauthors
+            inFile = open(self.dataFilename)  
+            expertCoauthors2 = set([])
+            
+            for i, line in enumerate(inFile):
+                Util.printIteration(i, self.stepSize, self.numLines)
+                authors = re.findall("#@(.*)", line)  
+                                
+                if len(authors) != 0: 
+                    authors = [x.strip() for x in authors[0].split(",")]     
+                    for author in authors: 
+                        if author in expertCoauthors1: 
+                            expertCoauthors2 = expertCoauthors2.union(set(authors))
+            
+            logging.debug("Found " + str(len(expertCoauthors2)) + " coauthors at level 2")
+            inFile.close()            
             
             #Now just write out the coauthors 
-            coauthorsFile = open(self.coauthorsFilename, "w")
-            expertCoauthors = sorted(list(expertCoauthors))
-            
-            for coauthor in expertCoauthors: 
-                coauthorsFile.write(coauthor + "\n")
+            coauthorsFile = open(self.coauthorsFilenameL2, "w")
+            expertCoauthors = sorted([coauthor + "\n" for coauthor in expertCoauthors2]) 
+            coauthorsFile.writelines(expertCoauthors)
             coauthorsFile.close()
-            
-            logging.debug("Wrote coauthors to file " + str(self.coauthorsFilename))
+            logging.debug("Wrote coauthors to file " + str(self.coauthorsFilenameL2))
         else: 
-            logging.debug("File already generated: " + self.coauthorsFilename)  
+            logging.debug("Files already generated: " + self.coauthorsFilenameL1 + " " + self.coauthorsFilenameL2)  
     
     def writeSimilarityGraph(self): 
         """
@@ -163,7 +181,7 @@ class ArnetMinerDataset(object):
         for i in range(len(coauthors)): 
             titleAbstracts.append("")   
             
-        coauthorMatrix = numpy.ones((len(coauthors), len(coauthors)))
+        coauthorMatrix = numpy.ones((len(coauthors), len(coauthors)), numpy.int16)
         
         if not os.path.exists(self.coauthorSimilarityFilename + ".npy"): 
             inFile = open(self.dataFilename)
@@ -210,15 +228,36 @@ class ArnetMinerDataset(object):
 
                 i += 1
                 
-            print(coauthorsList)
-            vectoriser = sklearn.feature_extraction.text.TfidfVectorizer(min_df=2, ngram_range=(1,2), binary=True, sublinear_tf=True, norm="l2")
+            j = 0                
+                
+                
+            min_df = 2
+            ngram_max= 2
+            binary = True
+            sublinear = True
+            norm = "l2"
+            numFeatures = 1500
+            #Try all param values
+            #Try different similarity e.g. distance (this is the case when 2-norm = 1)
+            #How to combine coauthor and similarity graphs 
+            #l1 norm is useless 
+            
+            #titleAbstracts = titleAbstracts[0:10000]
+            print(len(titleAbstracts))
+            vectoriser = sklearn.feature_extraction.text.TfidfVectorizer(min_df=min_df, ngram_range=(1,ngram_max), binary=binary, sublinear_tf=sublinear, norm=norm, max_df=0.95, max_features=numFeatures)
             X = vectoriser.fit_transform(titleAbstracts)
-            K = numpy.array((X.dot(X.T)).todense())
+            logging.debug("Generated vectoriser")
+            #K = numpy.array((X.dot(X.T)).todense())
+            #numpy.save(self.coauthorSimilarityFilename + str(j), K) 
+            #logging.debug("Wrote coauthors to file " + str(self.coauthorSimilarityFilename) + str(j) + ".npy")
+            #j += 1
+            
+            clusterer = sklearn.cluster.MiniBatchKMeans(n_clusters=100, batch_size=1000, n_init=10)
+            clusterer.fit(X)
+            
+            #Now find all examples in same cluster as experts 
             
             
-            #Save matrix 
-            numpy.save(self.coauthorSimilarityFilename, K) 
-            logging.debug("Wrote coauthors to file " + str(self.coauthorSimilarityFilename) + ".npy")
         else: 
             logging.debug("File already generated: " + self.coauthorSimilarityFilename + ".npy")  
             
