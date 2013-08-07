@@ -3,12 +3,19 @@ import numpy
 import logging 
 import difflib 
 import re 
-import sklearn.feature_extraction.text 
+import sklearn.feature_extraction.text as text 
 import sklearn.cluster 
 import scipy.sparse
 import scipy.io
+import string 
+import pickle 
 from apgl.util.Util import Util 
 from apgl.util.PathDefaults import PathDefaults 
+from nltk import wordpunct_tokenize  
+from nltk.stem import WordNetLemmatizer 
+#from nltk.stem.snowball import PorterStemmer
+from nltk.stem.lancaster import LancasterStemmer
+from nltk.stem.porter import PorterStemmer
 
 class ArnetMinerDataset(object): 
     """
@@ -19,10 +26,13 @@ class ArnetMinerDataset(object):
     def __init__(self, field):
         numpy.random.seed(21)
         dataDir = PathDefaults.getDataDir() + "dblpCitation/" 
-        self.dataFilename = dataDir + "DBLP-citation-Feb21.txt" 
-        #self.dataFilename = dataDir + "DBLP-citation-small.txt" 
         
-        resultsDir = PathDefaults.getDataDir() + "reputation/" + field + "/"
+        self.field = field 
+        #self.dataFilename = dataDir + "DBLP-citation-Feb21.txt" 
+        self.dataFilename = dataDir + "DBLP-citation-1000000.txt" 
+        
+        baseDir = PathDefaults.getDataDir() + "reputation/"
+        resultsDir = baseDir + field + "/"
         self.expertsFileName = resultsDir + "experts.txt"
         
         self.expertMatchesFilename = resultsDir + "experts_matches.csv"
@@ -33,6 +43,9 @@ class ArnetMinerDataset(object):
         self.similarAuthorsFilename = resultsDir + "similarAuthors.npy"   
         self.expertSeedMatrixFilename = resultsDir + "seedMatrix.mtx"  
         
+        self.docTermMatrixFilename = baseDir + "termDocMatrix.mtx"
+        self.authorListFilename = baseDir + "authorList.pkl"
+        
         self.stepSize = 100000    
         self.numLines = 15192085
         self.matchCutoff = 0.95
@@ -42,7 +55,7 @@ class ArnetMinerDataset(object):
         self.matchExperts()
         self.splitExperts()   
         self.writeCoauthors()
-        self.writeSimilarityGraph()
+        #self.writeSimilarityGraph()
         
     def matchExperts(self): 
         expertsFile = open(self.expertsFileName)
@@ -174,7 +187,7 @@ class ArnetMinerDataset(object):
     
     def writeSimilarityGraph(self): 
         """
-        Run through the abstracts and compare them from each author. 
+        Run through the abstracts and titles and compare them from each author. 
         """     
 
         
@@ -293,3 +306,77 @@ class ArnetMinerDataset(object):
         else: 
             logging.debug("File already generated: " + self.similarAuthorsFilename + ".npy")  
             
+    def findAuthorsInField(self):
+        """
+        We want to go through the dataset and find all authors who are in the particular 
+        field. We use Gensim for this purpose. The title is concatenated to the abstract 
+        if it exists and this is used as the corpus. 
+        """
+        if not os.path.exists(self.docTermMatrixFilename) or not os.path.exists(self.authorListFilename):
+            #We load all title+abstracts 
+            inFile = open(self.dataFilename)  
+            authorList = []
+            documentList = []
+                        
+            lastAbstract = ""
+            lastTitle = ""    
+            lastAuthors = []                    
+                        
+            for i, line in enumerate(inFile):
+                Util.printIteration(i, self.stepSize, self.numLines)
+                    
+                #Match the fields in the file 
+                emptyLine = line == "\n"
+                title = re.findall("#\*(.*)", line)
+                currentAuthors = re.findall("#@(.*)", line)  
+                abstract = re.findall("#!(.*)", line)
+                
+                if emptyLine:
+                    document = lastTitle + " " + lastAbstract 
+                    documentList.append(document.translate(string.maketrans("",""), string.punctuation)) 
+                    authorList.append(lastAuthors)
+    
+                    lastAbstract = ""
+                    lastTitle = ""
+                    lastAuthors = []
+     
+                if len(title) != 0 and len(title[0]) != 0: 
+                    lastTitle = title[0]               
+                
+                if len(abstract) != 0 and len(abstract[0]) != 0: 
+                    lastAbstract = abstract[0]
+                           
+                if len(currentAuthors) != 0: 
+                    currentAuthors = currentAuthors[0].split(",")  
+                    currentAuthors = set([x.strip() for x in currentAuthors])
+                    lastAuthors = currentAuthors                     
+    
+            inFile.close()
+            
+            logging.debug("Finished reading file")            
+            
+            #Tokenise the documents                 
+            class WordNetTokeniser(object):
+                def __init__(self):
+                    self.stemmer = WordNetLemmatizer()
+                    self.minWordLength = 2
+                 
+                def __call__(self, doc):
+                    doc = doc.lower()
+                    tokens =  [self.stemmer.lemmatize(t) for t in doc.split()]  
+                    return [token for token in tokens if len(token) >= self.minWordLength]
+            
+            vectoriser = text.TfidfVectorizer(min_df=2, ngram_range=(1,2), binary=True, sublinear_tf=True, norm="l2", max_df=0.95, stop_words="english", tokenizer=WordNetTokeniser(), max_features=5000)
+            X = vectoriser.fit_transform(documentList)
+            
+            #Save matrix and authors 
+            scipy.io.mmwrite(self.docTermMatrixFilename, X)
+            logging.debug("Wrote to file " + self.docTermMatrixFilename)
+            
+            authorListFile = open(self.authorListFilename, "w")
+            pickle.dump(authorList, authorListFile) 
+            authorListFile.close()
+            logging.debug("Wrote to file " + self.authorListFilename)
+            
+        else: 
+            logging.debug("Files already generated: " + self.docTermMatrixFilename + " " + self.authorListFilename)         
