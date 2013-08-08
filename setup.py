@@ -10,8 +10,9 @@ def execfile3(file, globals=globals(), locals=locals()):
 
 execfile3('apgl/version.py')
 
-#python setup.py bdist_egg
-#python setup.py sdist
+descriptionFile = open("Description.rst")
+description = "".join(descriptionFile.readlines()) 
+descriptionFile.close()
 
 setup (
   name = 'apgl',
@@ -22,7 +23,7 @@ setup (
   author_email = 'charanpal@gmail.com',
   url = 'http://packages.python.org/apgl/',
   license = 'GNU Library or Lesser General Public License (LGPL)',
-  long_description= 'More details are given on the homepage of this project http://packages.python.org/apgl/ .',
+  long_description=description,
   classifiers=[
     'Development Status :: 4 - Beta',
     'Intended Audience :: Developers',
