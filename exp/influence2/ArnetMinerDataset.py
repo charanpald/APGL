@@ -44,7 +44,7 @@ class ArnetMinerDataset(object):
         self.dataFilename = dataDir + "DBLP-citation-2000000.txt" 
         
         baseDir = PathDefaults.getDataDir() + "reputation/"
-        resultsDir = baseDir + field + "/"
+        resultsDir = baseDir + field.replace(' ', '') + "/"
                 
         self.docTermMatrixSVDFilename = baseDir + "termDocMatrixSVD.npz"
         self.authorListFilename = baseDir + "authorList.pkl"
@@ -61,9 +61,12 @@ class ArnetMinerDataset(object):
         self.p = 0.5
         #self.p = 1      
         
-        self.similarityCutoff = 0.5 
-        self.k = 150
+        self.similarityCutoff = 0.4
+        self.k = 200
+        self.q = 3
         self.numFeatures = None
+        self.binary = True 
+        self.sublinearTf = False
         
     def matchExperts(self): 
         """
@@ -84,12 +87,11 @@ class ArnetMinerDataset(object):
             possibleMatches = difflib.get_close_matches(relevantExpert, expertsSet, cutoff=self.matchCutoff)
             if len(possibleMatches) != 0: 
                 expertMatches.add(relevantExpert)
-                logging.debug("Matched " + relevantExpert)
-                if relevantExpert == possibleMatches[0]: 
-                    expertsSet.remove(possibleMatches[0])
-                        
+                logging.debug("Matched " + relevantExpert)                        
         
         expertMatches = sorted(list(expertMatches))
+        logging.debug("Total number of matches " + str(len(expertMatches)) + " of " + str(len(expertsSet)))        
+        
         return expertMatches 
 
             
@@ -212,12 +214,13 @@ class ArnetMinerDataset(object):
             authorListFile = open(self.authorListFilename, "w")
             pickle.dump(authorList, authorListFile) 
             authorListFile.close()
-            del authorListFile
+            del authorList
             logging.debug("Wrote to file " + self.authorListFilename)            
             
-            vectoriser = text.TfidfVectorizer(min_df=2, ngram_range=(1,2), binary=False, sublinear_tf=True, norm="l2", max_df=0.95, stop_words="english", tokenizer=PorterTokeniser(), max_features=self.numFeatures)
+            vectoriser = text.TfidfVectorizer(min_df=2, ngram_range=(1,2), binary=self.binary, sublinear_tf=self.sublinearTf, norm="l2", max_df=0.95, stop_words="english", tokenizer=PorterTokeniser(), max_features=self.numFeatures)
             X = vectoriser.fit_transform(documentList)
             del documentList
+            gc.collect()
             logging.debug("Finished vectorising documents")
                 
             #Save vectoriser - note that we can't pickle the tokeniser so it needs to be reset when loaded 
@@ -230,9 +233,9 @@ class ArnetMinerDataset(object):
             gc.collect()
                 
             #Take the SVD of X (maybe better to use PROPACK here depending on size of X)
-            logging.debug("Computing the SVD of the document-term matrix of shape " + str(X.shape) + " with " + X.nnz + " non zeros")
+            logging.debug("Computing the SVD of the document-term matrix of shape " + str(X.shape) + " with " + str(X.nnz) + " non zeros")
             X = X.tocsc()
-            U, s, V = RandomisedSVD.svd(X, self.k)
+            U, s, V = RandomisedSVD.svd(X, self.k, q=self.q)
             
             numpy.savez(self.docTermMatrixSVDFilename, U, s, V)
             logging.debug("Wrote to file " + self.docTermMatrixSVDFilename)
