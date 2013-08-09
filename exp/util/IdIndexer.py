@@ -19,6 +19,7 @@ class IdIndexer(object):
             ind = self.idDict[id]   
             
         self.inds.append(ind)
+        return ind 
         
     def getArray(self): 
         return numpy.array(self.inds)
