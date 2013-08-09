@@ -19,7 +19,7 @@ class ArnetMinerDatasetProfile(object):
         dataset = ArnetMinerDataset(field)
         
         
-        ProfileUtils.profile('dataset.findAuthorsInField()', globals(), locals())  
+        ProfileUtils.profile('dataset.vectoriseDocuments()', globals(), locals())  
         
         
 profiler = ArnetMinerDatasetProfile()
