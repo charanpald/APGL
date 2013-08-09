@@ -20,7 +20,21 @@ class IdIndexer(object):
             
         self.inds.append(ind)
         return ind 
-        
+
+    def translate(self, id): 
+        """
+        Take the ID and translate it into a index without adding to the array. 
+        """
+        if id not in self.idSet: 
+            self.idSet.add(id)
+            self.idDict[id] = self.p
+            ind = self.p 
+            self.p += 1 
+        else: 
+            ind = self.idDict[id]   
+            
+        return ind         
+
     def getArray(self): 
         return numpy.array(self.inds)
         
