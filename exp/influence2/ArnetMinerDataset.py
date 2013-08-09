@@ -62,11 +62,14 @@ class ArnetMinerDataset(object):
         #self.p = 1      
         
         self.similarityCutoff = 0.4
-        self.k = 200
+        self.k = 100
         self.q = 3
         self.numFeatures = None
         self.binary = True 
         self.sublinearTf = False
+        
+        self.overwriteRelevantExperts = False
+        self.overwriteCoauthors = False
         
     def matchExperts(self): 
         """
@@ -104,7 +107,7 @@ class ArnetMinerDataset(object):
         relevantExperts = pickle.load(relevantExpertsFile)
         relevantExpertsFile.close()        
         
-        if not os.path.exists(self.coauthorsFilename): 
+        if not os.path.exists(self.coauthorsFilename) or self.overwriteCoauthors: 
             logging.debug("Finding coauthors of relevant experts")
             
             dataFile = open(self.dataFilename)  
@@ -217,7 +220,7 @@ class ArnetMinerDataset(object):
             del authorList
             logging.debug("Wrote to file " + self.authorListFilename)            
             
-            vectoriser = text.TfidfVectorizer(min_df=2, ngram_range=(1,2), binary=self.binary, sublinear_tf=self.sublinearTf, norm="l2", max_df=0.95, stop_words="english", tokenizer=PorterTokeniser(), max_features=self.numFeatures)
+            vectoriser = text.TfidfVectorizer(min_df=2, ngram_range=(1,2), binary=self.binary, sublinear_tf=self.sublinearTf, norm="l2", max_df=0.95, stop_words="english", tokenizer=PorterTokeniser(), max_features=self.numFeatures, dtype=numpy.int32)
             X = vectoriser.fit_transform(documentList)
             del documentList
             gc.collect()
@@ -246,7 +249,7 @@ class ArnetMinerDataset(object):
         """
         Find all documents within the same field. 
         """
-        if not os.path.exists(self.relevantExpertsFilename): 
+        if not os.path.exists(self.relevantExpertsFilename) or self.overwriteRelevantExperts: 
             #First load all the components 
             vectoriserFile = open(self.vectoriserFilename)
             vectoriser = pickle.load(vectoriserFile)
