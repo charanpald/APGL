@@ -6,10 +6,11 @@ import re
 import sklearn.feature_extraction.text as text 
 import gc
 import scipy.sparse
-import scipy.io
+import igraph
 import string 
 import array
 import pickle 
+import itertools 
 import Stemmer
 from apgl.util.Util import Util 
 from apgl.util.PathDefaults import PathDefaults 
@@ -40,145 +41,127 @@ class ArnetMinerDataset(object):
         
         self.field = field 
         #self.dataFilename = dataDir + "DBLP-citation-Feb21.txt" 
-        self.dataFilename = dataDir + "DBLP-citation-1000000.txt" 
+        self.dataFilename = dataDir + "DBLP-citation-2000000.txt" 
         
         baseDir = PathDefaults.getDataDir() + "reputation/"
         resultsDir = baseDir + field + "/"
-        
-        self.expertsFileName = resultsDir + "experts.txt"
+                
         self.docTermMatrixSVDFilename = baseDir + "termDocMatrixSVD.npz"
         self.authorListFilename = baseDir + "authorList.pkl"
         self.vectoriserFilename = baseDir + "vectoriser.pkl"        
         
+        self.expertsFileName = resultsDir + "experts.txt"
         self.expertMatchesFilename = resultsDir + "experts_matches.csv"
-        self.trainExpertMatchesFilename = resultsDir + "experts_train_matches.csv"
-        self.testExpertMatchesFilename = resultsDir + "experts_test_matches.csv"
-        self.coauthorsFilename = resultsDir + "coauthors.csv"
-        self.similarAuthorsFilename = resultsDir + "similarAuthors.npy"   
-        
+        self.coauthorsFilename = resultsDir + "coauthors.pkl"
         self.relevantExpertsFilename = resultsDir + "relevantExperts.pkl"          
 
         self.stepSize = 100000    
         self.numLines = 15192085
-        self.matchCutoff = 0.95
+        self.matchCutoff = 0.90
         self.p = 0.5
         #self.p = 1      
         
-        self.similarityCutoff = 0.4 
-        self.k = 100
+        self.similarityCutoff = 0.5 
+        self.k = 150
         self.numFeatures = None
         
     def matchExperts(self): 
+        """
+        Match experts in the set of relevant experts. 
+        """
         expertsFile = open(self.expertsFileName)
         expertsSet = expertsFile.readlines()
         expertsSet = set([x.strip() for x in expertsSet])
+        expertsFile.close()
         
-        if not os.path.exists(self.expertMatchesFilename): 
-            inFile = open(self.dataFilename)    
-            expertMatches = set([])
-            i = 0 
-            
-            for line in inFile:
-                Util.printIteration(i, self.stepSize, self.numLines)
-                if i % self.stepSize == 0: 
-                    logging.debug(expertMatches)
-                    
-                authors = re.findall("#@(.*)", line)  
-                                
-                if len(authors) != 0: 
-                    authors = authors[0].split(",")                        
-                    for author in authors: 
-                        possibleMatches = difflib.get_close_matches(author, expertsSet, cutoff=self.matchCutoff)
-                        if len(possibleMatches) != 0: 
-                            expertMatches.add(author)
-                            if author == possibleMatches[0]: 
-                                expertsSet.remove(possibleMatches[0])
-                            
-                            if len(expertsSet) == 0: 
-                                logging.debug("Found all experts, breaking")
-                                break  
-                i += 1
-            
-            expertMatches = sorted(list(expertMatches))
-            expertMatchesFile = open(self.expertMatchesFilename, "w")
-            
-            for expert in expertMatches: 
-                expertMatchesFile.write(expert + "\n")
-            expertMatchesFile.close()
-            
-            logging.debug("All done")
-        else: 
-            logging.debug("File already generated: " + self.expertMatchesFilename)
+        relevantExpertsFile = open(self.relevantExpertsFilename)
+        relevantExperts = pickle.load(relevantExpertsFile)
+        relevantExpertsFile.close()
+
+        expertMatches = set([])
         
-    def splitExperts(self): 
-        if not (os.path.exists(self.trainExpertMatchesFilename) and os.path.exists(self.testExpertMatchesFilename)): 
-            file = open(self.expertMatchesFilename) 
-            logging.debug("Splitting list of experts given in file " +  self.expertMatchesFilename)
-            names = file.readlines()
-            names = numpy.array([x.strip() for x in names])
-            file.close() 
+        for relevantExpert in relevantExperts: 
+            possibleMatches = difflib.get_close_matches(relevantExpert, expertsSet, cutoff=self.matchCutoff)
+            if len(possibleMatches) != 0: 
+                expertMatches.add(relevantExpert)
+                logging.debug("Matched " + relevantExpert)
+                if relevantExpert == possibleMatches[0]: 
+                    expertsSet.remove(possibleMatches[0])
+                        
+        
+        expertMatches = sorted(list(expertMatches))
+        return expertMatches 
+
             
-            inds = numpy.random.permutation((len(names)))
-            trainSize = int(self.p * len(names))
-            
-            trainNames = names[inds[0:trainSize]]
-            testNames = names[inds[trainSize:]]
-            
-            logging.debug("Train names: " + str(len(trainNames)) + " test names: " + str(len(testNames))) 
-            
-            trainNames = numpy.array([name + "\n" for name in trainNames])  
-            testNames = numpy.array([name + "\n" for name in testNames])
-                
-            trainFile = open(self.trainExpertMatchesFilename, "w") 
-            trainFile.writelines(trainNames) 
-            trainFile.close() 
-            
-            testFile = open(self.testExpertMatchesFilename, "w") 
-            testFile.writelines(testNames) 
-            testFile.close() 
-            
-            logging.debug("Wrote train and test names to " +  self.trainExpertMatchesFilename + " and " + self.testExpertMatchesFilename) 
-        else: 
-            logging.debug("Generated files exist: " + self.trainExpertMatchesFilename + " " + self.testExpertMatchesFilename)
-            
-    def writeCoauthors(self): 
+    def coauthorsGraph(self): 
         """
         Using the relevant authors we find all coauthors. 
         """
+
+        relevantExpertsFile = open(self.relevantExpertsFilename) 
+        relevantExperts = pickle.load(relevantExpertsFile)
+        relevantExpertsFile.close()        
+        
         if not os.path.exists(self.coauthorsFilename): 
             logging.debug("Finding coauthors of relevant experts")
-            
-            relevantExpertsFile = open(self.relevantExpertsFilename, "w") 
-            relevantExperts = pickle.load(relevantExpertsFile)
-            relevantExpertsFile.close()
             
             dataFile = open(self.dataFilename)  
             authorIndexer = IdIndexer()
             author1Inds = array.array("i")
             author2Inds = array.array("i")
-            expertCoauthors1 = set([])
+            
+            for relevantExpert in relevantExperts: 
+                authorIndexer.translate(relevantExpert)
             
             for i, line in enumerate(dataFile):
                 Util.printIteration(i, self.stepSize, self.numLines)
                 authors = re.findall("#@(.*)", line)  
                                 
                 if len(authors) != 0: 
-                    authors = [x.strip() for x in authors[0].split(",")]     
-                    for author in authors: 
-                        if author in relevantExperts: 
-                            expertCoauthors1 = expertCoauthors1.union(set(authors))
+                    authors = set([x.strip() for x in authors[0].split(",")]) 
+                    if len(authors.intersection(relevantExperts)) != 0: 
+                        iterator = itertools.combinations(authors, 2)
+                    
+                        for author1, author2 in iterator: 
+                            author1Ind = authorIndexer.translate(author1)   
+                            author2Ind = authorIndexer.translate(author2)
+                            
+                            author1Inds.append(author1Ind)
+                            author2Inds.append(author2Ind)
             
-            logging.debug("Found " + str(len(expertCoauthors1)) + " coauthors at level 1")
-            dataFile.close()
+            logging.debug("Found " + str(len(authorIndexer.getIdDict())) + " coauthors")
                                    
-            #Now just write out the coauthors 
+            #Coauthor graph is undirected 
+            author1Inds = numpy.array(author1Inds, numpy.int)
+            author2Inds = numpy.array(author2Inds, numpy.int)
+            edges = numpy.c_[author1Inds, author2Inds]            
+            
+            graph = igraph.Graph()
+            graph.add_vertices(len(authorIndexer.getIdDict()))
+            graph.add_edges(edges)
+            graph.es["weight"] = numpy.ones(graph.ecount())
+            graph.simplify(combine_edges=sum)   
+            graph.es["invWeight"] = 1.0/numpy.array(graph.es["weight"]) 
+            
+            #print(graph.ecount(), edges.shape)
+            #print(graph.count_multiple())
+            #print(graph.es["weight"])
+            
+            logging.debug(graph.summary())
+            
             coauthorsFile = open(self.coauthorsFilename, "w")
-            expertCoauthors = sorted([coauthor + "\n" for coauthor in expertCoauthors1]) 
-            coauthorsFile.writelines(expertCoauthors)
+            pickle.dump([graph, authorIndexer], coauthorsFile)
             coauthorsFile.close()
-            logging.debug("Wrote coauthors to file " + str(self.coauthorsFilename))
+            
+            logging.debug("Coauthors graph saved as " + self.coauthorsFilename)
         else: 
             logging.debug("Files already generated: " + self.coauthorsFilename)  
+
+        coauthorsFile = open(self.coauthorsFilename)
+        graph, authorIndexer = pickle.load(coauthorsFile)
+        coauthorsFile.close()
+            
+        return graph, authorIndexer, relevantExperts 
     
     def vectoriseDocuments(self):
         """
@@ -234,9 +217,8 @@ class ArnetMinerDataset(object):
             
             vectoriser = text.TfidfVectorizer(min_df=2, ngram_range=(1,2), binary=False, sublinear_tf=True, norm="l2", max_df=0.95, stop_words="english", tokenizer=PorterTokeniser(), max_features=self.numFeatures)
             X = vectoriser.fit_transform(documentList)
+            del documentList
             logging.debug("Finished vectorising documents")
-            
-            print(X[:, vectoriser.get_feature_names().index("boost")])
                 
             #Save vectoriser - note that we can't pickle the tokeniser so it needs to be reset when loaded 
             vectoriser.tokenizer = None 
@@ -248,7 +230,7 @@ class ArnetMinerDataset(object):
             gc.collect()
                 
             #Take the SVD of X (maybe better to use PROPACK here depending on size of X)
-            logging.debug("Computing the SVD of the document-term matrix")
+            logging.debug("Computing the SVD of the document-term matrix of shape " + str(X.shape) + " with " + X.nnz + " non zeros")
             X = X.tocsc()
             U, s, V = RandomisedSVD.svd(X, self.k)
             
@@ -297,7 +279,6 @@ class ArnetMinerDataset(object):
                 experts.extend(authorList[docInd])
                 
             experts = set(experts)
-            logging.debug("Authors: " + str(experts))
             logging.debug("Number of authors : " + str(len(experts)))
             
             relevantExpertsFile = open(self.relevantExpertsFilename, "w") 
