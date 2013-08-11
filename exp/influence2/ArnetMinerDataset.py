@@ -16,6 +16,7 @@ from apgl.util.Util import Util
 from apgl.util.PathDefaults import PathDefaults 
 from exp.sandbox.RandomisedSVD import RandomisedSVD
 from exp.util.IdIndexer import IdIndexer
+from collections import Counter 
 
 
 #Tokenise the documents                 
@@ -41,7 +42,8 @@ class ArnetMinerDataset(object):
         
         self.field = field 
         #self.dataFilename = dataDir + "DBLP-citation-Feb21.txt" 
-        self.dataFilename = dataDir + "DBLP-citation-2000000.txt" 
+        self.dataFilename = dataDir + "DBLP-citation-7000000.txt" 
+        #self.dataFilename = dataDir + "DBLP-citation-100000.txt"
         
         baseDir = PathDefaults.getDataDir() + "reputation/"
         resultsDir = baseDir + field.replace(' ', '') + "/"
@@ -55,21 +57,29 @@ class ArnetMinerDataset(object):
         self.coauthorsFilename = resultsDir + "coauthors.pkl"
         self.relevantExpertsFilename = resultsDir + "relevantExperts.pkl"          
 
-        self.stepSize = 100000    
+        self.stepSize = 500000    
         self.numLines = 15192085
-        self.matchCutoff = 0.90
-        self.p = 0.5
-        #self.p = 1      
+        self.matchCutoff = 0.90   
         
+        #Params for finding relevant authors
         self.similarityCutoff = 0.4
-        self.k = 100
-        self.q = 3
+        self.maxRelevantAuthors = 500
+
+        
+        #Params for vectoriser 
         self.numFeatures = None
         self.binary = True 
         self.sublinearTf = False
+        self.minDf = 5 
+        
+        #params for RSVD        
+        self.k = 100
+        self.q = 3
+        self.p = 20 
         
         self.overwriteRelevantExperts = False
         self.overwriteCoauthors = False
+        self.overwriteSVD = False
         
     def matchExperts(self): 
         """
@@ -90,12 +100,17 @@ class ArnetMinerDataset(object):
             possibleMatches = difflib.get_close_matches(relevantExpert, expertsSet, cutoff=self.matchCutoff)
             if len(possibleMatches) != 0: 
                 expertMatches.add(relevantExpert)
-                logging.debug("Matched " + relevantExpert)                        
+
+        for author in expertsSet.difference(expertMatches):
+            possibleMatches = difflib.get_close_matches(author, relevantExperts, cutoff=0.6)
+            if len(possibleMatches) != 0: 
+                logging.debug("Possible matches for " + author + " : " + str(possibleMatches))
+                          
         
         expertMatches = sorted(list(expertMatches))
         logging.debug("Total number of matches " + str(len(expertMatches)) + " of " + str(len(expertsSet)))        
         
-        return expertMatches 
+        return expertMatches, expertsSet 
 
             
     def coauthorsGraph(self): 
@@ -172,7 +187,9 @@ class ArnetMinerDataset(object):
         """
         We want to go through the dataset and vectorise all the title+abstracts.
         """
-        if not os.path.exists(self.docTermMatrixSVDFilename) or not os.path.exists(self.authorListFilename):
+        if not os.path.exists(self.docTermMatrixSVDFilename) or not os.path.exists(self.authorListFilename) or self.overwriteSVD:
+            logging.debug("Vectorising documents")            
+            
             #We load all title+abstracts 
             inFile = open(self.dataFilename)  
             authorList = []
@@ -220,10 +237,9 @@ class ArnetMinerDataset(object):
             del authorList
             logging.debug("Wrote to file " + self.authorListFilename)            
             
-            vectoriser = text.TfidfVectorizer(min_df=2, ngram_range=(1,2), binary=self.binary, sublinear_tf=self.sublinearTf, norm="l2", max_df=0.95, stop_words="english", tokenizer=PorterTokeniser(), max_features=self.numFeatures, dtype=numpy.int32)
+            #vectoriser = text.HashingVectorizer(ngram_range=(1,2), binary=self.binary, norm="l2", stop_words="english", tokenizer=PorterTokeniser(), dtype=numpy.float)
+            vectoriser = text.TfidfVectorizer(min_df=self.minDf, ngram_range=(1,2), binary=self.binary, sublinear_tf=self.sublinearTf, norm="l2", max_df=0.95, stop_words="english", tokenizer=PorterTokeniser(), max_features=self.numFeatures, dtype=numpy.float)
             X = vectoriser.fit_transform(documentList)
-            del documentList
-            gc.collect()
             logging.debug("Finished vectorising documents")
                 
             #Save vectoriser - note that we can't pickle the tokeniser so it needs to be reset when loaded 
@@ -232,13 +248,16 @@ class ArnetMinerDataset(object):
             pickle.dump(vectoriser, vectoriserFile)
             vectoriserFile.close()
             logging.debug("Wrote vectoriser to file " + self.vectoriserFilename)    
+            del documentList
             del vectoriser  
             gc.collect()
                 
             #Take the SVD of X (maybe better to use PROPACK here depending on size of X)
             logging.debug("Computing the SVD of the document-term matrix of shape " + str(X.shape) + " with " + str(X.nnz) + " non zeros")
             X = X.tocsc()
-            U, s, V = RandomisedSVD.svd(X, self.k, q=self.q)
+            U, s, V = RandomisedSVD.svd(X, self.k, q=self.q, p=self.p)
+            del X 
+            gc.collect()
             
             numpy.savez(self.docTermMatrixSVDFilename, U, s, V)
             logging.debug("Wrote to file " + self.docTermMatrixSVDFilename)
@@ -277,15 +296,20 @@ class ArnetMinerDataset(object):
             newU = newU/numpy.linalg.norm(newU)
             similarities = U.dot(newU).ravel()
             
-            relevantDocs = numpy.arange(similarities.shape[0])[similarities >= self.similarityCutoff]  
+            #relevantDocs = numpy.flipud(numpy.argsort(similarities))[0:self.numDocs]
+            relevantDocs = numpy.arange(similarities.shape[0])[similarities >= self.similarityCutoff]
                     
             #Now find all authors corresponding to the documents 
             experts = [] 
             for docInd in relevantDocs: 
                 experts.extend(authorList[docInd])
                 
+            counter = Counter(experts)
+            commonAuthors = counter.most_common(self.maxRelevantAuthors)
+            experts = [x for x, y in commonAuthors]
+                
             experts = set(experts)
-            logging.debug("Number of authors : " + str(len(experts)))
+            logging.debug("Number of relevant authors : " + str(len(experts)))
             
             relevantExpertsFile = open(self.relevantExpertsFilename, "w") 
             pickle.dump(experts, relevantExpertsFile)
