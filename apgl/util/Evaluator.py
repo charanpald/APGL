@@ -162,7 +162,7 @@ class Evaluator(object):
         labels. Note the order of parameters. 
         """
         try:
-            import sklearn as learn
+            import sklearn.metrics 
         except ImportError:
             raise
 
@@ -178,13 +178,13 @@ class Evaluator(object):
         if numpy.unique(trueY).shape[0] == 1:
             return 0.5
 
-        fpr, tpr, threshold = learn.metrics.roc_curve(trueY.ravel(), predY.ravel())
-        return learn.metrics.auc(fpr, tpr)
+        fpr, tpr, threshold = sklearn.metrics.roc_curve(trueY.ravel(), predY.ravel())
+        return sklearn.metrics.metrics.auc(fpr, tpr)
 
     @staticmethod
     def roc(testY, predY):
         try:
-            import sklearn as learn
+            import sklearn.metrics 
         except ImportError:
             raise
 
@@ -192,7 +192,7 @@ class Evaluator(object):
             fpr = numpy.array([])
             tpr = numpy.array([])
         else:
-            fpr, tpr, threshold = learn.metrics.roc_curve(testY.ravel(), predY.ravel())
+            fpr, tpr, threshold = sklearn.metrics.roc_curve(testY.ravel(), predY.ravel())
 
         #Insert 0,0 at the start of fpr and tpr
         if fpr[0] != 0.0 or tpr[0] != 0.0:
@@ -241,8 +241,15 @@ class Evaluator(object):
     @staticmethod 
     def ndcg(testY, predY, n): 
         """
-        Compute the Normalised Discounted Cumulative Gain at N. 
-        """
+        Compute the Normalised Discounted Cumulative Gain at N. The relevance 
+        of the items in testY is 1 otherwise the item has relevance 0. 
+        
+        :param testY: A partial list of indices 
+        
+        :param predY: A list of predicted indices
+        """       
+        raise ValueError("Method not implemented completely")
+        
         testY = testY[0:n]
         predY = predY[0:n]
         
@@ -250,12 +257,12 @@ class Evaluator(object):
         
         rel = numpy.zeros(m)
         rel[predY] = 1
-        dcg = rel[0] + ((2**rel[1:] - 1)/numpy.log2(numpy.arange(2, m+1, dtype=numpy.float)))
+        dcg = rel[0] + rel[1:]/numpy.log2(numpy.arange(2, m+1, dtype=numpy.float))
         dcg = dcg.sum()
         
         rel = numpy.zeros(m)
         rel[testY] = 1
-        dcg2 = rel[0] + ((2**rel[1:] - 1)/numpy.log2(numpy.arange(2, m+1, dtype=numpy.float)))
+        dcg2 = rel[0] + rel[1:]/numpy.log2(numpy.arange(2, m+1, dtype=numpy.float))
         dcg2 = dcg2.sum()
         
         return dcg/dcg2
