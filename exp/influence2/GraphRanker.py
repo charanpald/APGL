@@ -51,6 +51,7 @@ class GraphRanker(object):
             rank = MaxInfluence.greedyMethod2(graph, k, p=p, numRuns=numRuns)
             outputLists.append(numpy.array(rank))
         
+        """
         logging.debug("Computing shortest path lengths")
         lengths = graph.shortest_paths(trainExpertsIdList, weights="invWeight")
         lengths = numpy.array(lengths)
@@ -58,17 +59,16 @@ class GraphRanker(object):
         lengths = numpy.mean(lengths, 0)
         rank = numpy.argsort(lengths)
         outputLists.append(rank)
+        """
         
         logging.debug("Computing hub score")
         scores = graph.hub_score(weights="weight") 
         rank = numpy.flipud(numpy.argsort(scores)) 
-        rank = numpy.argsort(lengths)
         outputLists.append(rank)
         
         logging.debug("Computing authority score")
         scores = graph.authority_score(weights="weight") 
         rank = numpy.flipud(numpy.argsort(scores)) 
-        rank = numpy.argsort(lengths)
         outputLists.append(rank)
         
         return outputLists 
