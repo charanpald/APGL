@@ -6,36 +6,47 @@ as possible.
 import numpy 
 import logging 
 import sys 
-from apgl.util.Evaluator import Evaluator 
-from exp.influence2.GraphRanker import GraphRanker 
-from exp.influence2.RankAggregator import RankAggregator
 from exp.influence2.ArnetMinerDataset import ArnetMinerDataset
-from apgl.util.Latex import Latex 
+from apgl.util.PathDefaults import PathDefaults
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 numpy.random.seed(21)
 
-fields = ["Boosting", "Intelligent Agents", "Machine Learning", "Ontology Alignment", "Neural Networks" ]
-cutoffs = numpy.array([0.3, 0.4, 0.5, 0.6, 0.7])  
-coverage = numpy.zeros((len(fields), cutoffs.shape[0]))
+ks = numpy.array([100])
+maxRelevantAuthors = numpy.array([1000, 2000, 3000]) 
+fields = ["Boosting", "Intelligent Agents", "Machine Learning", "Ontology Alignment"]
+
+coverage1 = numpy.zeros((len(ks), len(fields), maxRelevantAuthors.shape[0]))
+coverage2 = numpy.zeros((len(ks), len(fields), maxRelevantAuthors.shape[0]))
 
 
-for i, field in enumerate(fields): 
-    for j, cutoff in enumerate(cutoffs): 
-        logging.debug("field=" + field + " cutoff=" + str(cutoff))
-        dataset = ArnetMinerDataset(field)
-        dataset.overwriteRelevantExperts = True
-        dataset.overwriteCoauthors = True
-        dataset.similarityCutoff = cutoff
-        
-        dataset.vectoriseDocuments()
-        dataset.findSimilarDocuments()
+for m, k in enumerate(ks): 
+    overwriteSVD = True
+    for i, field in enumerate(fields): 
+        for j, maxRelAuthors in enumerate(maxRelevantAuthors): 
+            logging.debug("k=" + str(k) + " field=" + field + " maxRelAuthors=" + str(maxRelAuthors))
+            dataset = ArnetMinerDataset(field)
+            dataset.k = k 
+            dataset.overwriteRelevantExperts = True
+            dataset.overwriteCoauthors = True
+            dataset.overwriteSVD = overwriteSVD
+            dataset.maxRelevantAuthors = maxRelAuthors
+            
+            dataset.vectoriseDocuments()
+            dataset.findSimilarDocuments()
+    
+            graph, authorIndexer, relevantExperts = dataset.coauthorsGraph()
+            expertMatches, expertsSet = dataset.matchExperts()
+            
+            coverage1[m, i, j] = float(len(expertMatches))/len(relevantExperts)
+            coverage2[m, i, j] = float(len(expertMatches))/len(expertsSet)
+            
+            overwriteSVD = False
 
-        graph, authorIndexer, relevantExperts = dataset.coauthorsGraph()
-        expertMatches = dataset.matchExperts()
-        
-        coverage[i, j] = float(len(expertMatches))/len(relevantExperts)
-        
-print(coverage)
+for m, k in enumerate(ks): 
+    print("k="+str(k))      
+    print(coverage1[m, :, :])
+    print(coverage2[m, :, :])
 
-print(numpy.mean(coverage, 0))
+resultsFilename = PathDefaults.getOutputDir() + "MatchingResults.npz"
+numpy.savez(resultsFilename, coverage1, coverage2)
