@@ -23,18 +23,18 @@ class IdIndexer(object):
 
     def translate(self, id): 
         """
-        Take the ID and translate it into a index without adding to the array. 
+        Take the ID or list of IDs and translate it into a index without adding 
+        to the array. 
         """
-        if id not in self.idSet: 
-            self.idSet.add(id)
-            self.idDict[id] = self.p
-            ind = self.p 
-            self.p += 1 
-        else: 
-            ind = self.idDict[id]   
-            
-        return ind         
-
+        try: 
+            iter(id)
+            itemList = []
+            for item in id: 
+                itemList.append(self.idDict[item]) 
+            return itemList 
+        except TypeError: 
+            return self.idDict[id]
+        
     def getArray(self): 
         return numpy.array(self.inds)
         
