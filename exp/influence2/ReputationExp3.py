@@ -13,18 +13,12 @@ from apgl.util.Latex import Latex
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 numpy.random.seed(21)
 
-#field = "Boosting" 
-#field = "Intelligent Agents"
-field = "Machine Learning"
-#field = "Ontology Alignment"
-
 fields = ["Boosting", "Intelligent Agents", "Machine Learning", "Ontology Alignment"]
 
 ks = [100]
-maxRelevantAuthors = [1000, 1500]
+maxRelevantAuthors = [500, 1000, 1500]
 similarityCutoffs = [0.4, 0.5, 0.6]
 bestAveragePrecision = numpy.zeros((len(fields), len(maxRelevantAuthors), len(similarityCutoffs)))
-
 
 for r, field in enumerate(fields): 
     for s, maxRelAuthors in enumerate(maxRelevantAuthors): 
@@ -44,15 +38,10 @@ for r, field in enumerate(fields):
             logging.debug(expertMatches)
             logging.debug(graph.summary())
             
-            expertMatchesInds = [] 
-            for expert in expertMatches: 
-                expertMatchesInds.append(authorIndexer.translate(expert))
-               
+            expertMatchesInds = authorIndexer.translate(expertMatches) 
             logging.debug(expertMatchesInds)   
-               
-            relevantAuthorInds = [] 
-            for author in relevantExperts: 
-                relevantAuthorInds.append(authorIndexer.translate(author))
+
+            relevantAuthorInds = authorIndexer.translate(relevantExperts) 
             
             assert (numpy.array(relevantAuthorInds) < len(relevantAuthorInds)).all()
             
@@ -122,8 +111,10 @@ for r, field in enumerate(fields):
             
             print(Latex.latexTable(Latex.array2DToRows(precisions), colNames=methodNames))
             print(Latex.array1DToRow(averagePrecisions))
+            print(Latex.array1DToRow(averagePrecisions*len(expertMatches)))
             
-            bestAveragePrecision[r,s,t] = numpy.max(averagePrecisions)
+            #We want good precision and a large number of expert matches 
+            bestAveragePrecision[r,s,t] = numpy.max(averagePrecisions)*len(expertMatches)
             
 for r in range(bestAveragePrecision.shape[0]): 
     print(bestAveragePrecision[r, :, :])
