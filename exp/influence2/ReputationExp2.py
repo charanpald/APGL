@@ -1,97 +1,118 @@
 """
-Find the reputation of authors on the American Physics Society dataset 
+Use the DBLP dataset to recommend experts. 
 """
-
 import numpy 
-try:  
-    ctypes.cdll.LoadLibrary("/usr/local/lib/libigraph.so")
-except: 
-    pass 
-import igraph 
-from apgl.util.PathDefaults import PathDefaults 
-from exp.util.IdIndexer import IdIndexer 
-import xml.etree.ElementTree as ET
-import array 
 import logging 
 import sys 
+import sklearn.metrics 
 from exp.influence2.GraphRanker import GraphRanker 
+from exp.influence2.RankAggregator import RankAggregator
+from exp.influence2.ArnetMinerDataset import ArnetMinerDataset
+from apgl.util.Latex import Latex 
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+numpy.random.seed(21)
 
-metadataDir = PathDefaults.getDataDir() + "aps/aps-dataset-metadata-2010/"
-metadataFilename = metadataDir + "PRSTAB.xml"
+#field = "Boosting" 
+#field = "Intelligent Agents"
+field = "Machine Learning"
+#field = "Ontology Alignment"
 
-citationsDir = PathDefaults.getDataDir() + "aps/aps-dataset-citations-2010/"
-citatonsFilename = citationsDir + "citing_cited.csv"
+k = 100
+maxRelevantAuthors = 1000
+similarityCutoff = 0.4
+            
+dataset = ArnetMinerDataset(field)
+dataset.overwriteRelevantExperts = True
+dataset.overwriteCoauthors = True
+dataset.maxRelevantAuthors = maxRelevantAuthors
+dataset.similarityCutoff = similarityCutoff
+dataset.k = k
+dataset.vectoriseDocuments()
+dataset.findSimilarDocuments()
 
-tree = ET.parse(metadataFilename)
-root = tree.getroot()
+graph, authorIndexer, relevantExperts = dataset.coauthorsGraph()
+expertMatches, expertsSet = dataset.matchExperts()
 
-authorIndexer = IdIndexer("i")
-articleIndexer = IdIndexer("i")
+logging.debug(expertMatches)
+logging.debug(graph.summary())
 
-for child in root: 
-    authorGroups = child.findall('authgrp')    
-    
-    for authorGroup in authorGroups: 
-        authors = authorGroup.findall("author")        
+expertMatchesInds = [] 
+for expert in expertMatches: 
+    expertMatchesInds.append(authorIndexer.translate(expert))
+   
+logging.debug(expertMatchesInds)   
+   
+relevantAuthorInds = [] 
+for author in relevantExperts: 
+    relevantAuthorInds.append(authorIndexer.translate(author))
+
+assert (numpy.array(relevantAuthorInds) < len(relevantAuthorInds)).all()
+
+#First compute graph properties 
+computeInfluence = False
+outputLists = GraphRanker.rankedLists(graph, numRuns=100, computeInfluence=computeInfluence, p=0.05, trainExpertsIdList=expertMatchesInds)
+itemList = RankAggregator.generateItemList(outputLists)
+methodNames = GraphRanker.getNames(computeInfluence=computeInfluence)
+
+#Then use MC2 rank aggregation 
+#outputList, scores = RankAggregator.MC2(outputLists, itemList)
+#outputLists.append(outputList)
+#methodNames.append("MC2")
+#print("outputList="+str(outputList))
+
+#The supervised MC2
+#outputList2, scores2 = RankAggregator.supervisedMC22(outputLists, itemList, expertsIdList)
+#outputLists.append(outputList2)
+#methodNames.append("SMC2")
+
+#Process outputLists to only include people from the relevant field  
+newOutputLists = []
+for lst in outputLists: 
+    lst = lst[lst < len(relevantAuthorInds)]  
+    newOutputLists.append(lst)
+
+print("\n")
+"""
+r = 20 
+logging.debug("Top " + str(r) + " authors:")
+for ind in outputLists[-1][0:r]: 
+    key = (key for key,value in reader.authorIndexer.getIdDict().items() if value==ind).next()
+    logging.debug(key)
+"""
+
+print("\n")
+
+ns = numpy.arange(5, 105, 5)
+numMethods = len(newOutputLists)
+
+precisions = numpy.zeros((len(ns), numMethods))
+averagePrecisions = numpy.zeros(numMethods)
+
+for i, n in enumerate(ns):     
+    for j in range(len(outputLists)): 
+        predY = -numpy.ones(len(relevantAuthorInds))
+        predY[expertMatchesInds] = 1
         
-        for author in authors: 
-            if author.find("givenname") != None: 
-                fullname = author.find("givenname").text
-            else: 
-                fullname = ""
-            
-            for middlename in author.findall("middlename"): 
-                fullname += " " + middlename.text
-                
-            fullname += " " + author.find("surname").text
-            
-            authorId = fullname
-            articleId = child.attrib["doi"]
-           
-            authorIndexer.append(authorId)           
-            articleIndexer.append(articleId)
-            
-authorInds = authorIndexer.getArray()
-articleInds = articleIndexer.getArray()
+        testY = -numpy.ones(len(relevantAuthorInds))
+        testY[newOutputLists[j][0:n]] = 1
+        
+        precisions[i, j] = sklearn.metrics.precision_score(testY, predY) 
+        #precisions[i, j] = sklearn.metrics.precision_score(testY, predY, labels=numpy.array([-1, 1, numpy.int]), average="micro")
 
-#We now need to read the citations file and add those edges 
-article1Inds = array.array("i") 
-article2Inds = array.array("i")
+n = 50 
 
-citationsFile = open(citatonsFilename)
-citationsFile.readline()
-
-for line in citationsFile: 
-    vals = line.split(",")
-    articleId1 = vals[0].strip()
-    articleId2 = vals[1].strip()
+for j in range(len(outputLists)): 
+    predY = -numpy.ones(len(relevantAuthorInds))
+    predY[expertMatchesInds] = 1
     
-    #print(articleId1, articleId2)
+    testY = -numpy.ones(len(relevantAuthorInds))
+    testY[newOutputLists[j][0:n]] = 1
     
-    articleIdDict = articleIndexer.getIdDict()
-    
-    if articleId1 in articleIdDict and articleId2 in articleIdDict: 
-        article1Inds.append(articleIdDict[articleId1])
-        article2Inds.append(articleIdDict[articleId2])
+    averagePrecisions[j] = sklearn.metrics.average_precision_score(testY, predY)
 
-article1Inds = numpy.array(article1Inds)
-article2Inds = numpy.array(article2Inds)
+precisions = numpy.c_[numpy.array(ns), precisions]
 
-authorArticleEdges = numpy.c_[authorInds, articleInds]
-print(authorArticleEdges.shape)
-print(len(articleIdDict))
+print(Latex.latexTable(Latex.array2DToRows(precisions), colNames=methodNames))
+print(Latex.array1DToRow(averagePrecisions))
 
-articleArticleEdges = numpy.c_[article1Inds, article2Inds]
-
-print(articleArticleEdges.shape)
-      
-graph = igraph.Graph()
-graph.add_vertices(numpy.max(authorInds) + numpy.max(articleInds))
-graph.add_edges(authorArticleEdges)
-
-print(graph.summary())      
-outputList = GraphRanker.rankedLists(graph)
-
-print(outputList)
