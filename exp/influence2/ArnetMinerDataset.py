@@ -131,7 +131,7 @@ class ArnetMinerDataset(object):
             author2Inds = array.array("i")
             
             for relevantExpert in relevantExperts: 
-                authorIndexer.translate(relevantExpert)
+                authorIndexer.append(relevantExpert)
             
             for i, line in enumerate(dataFile):
                 Util.printIteration(i, self.stepSize, self.numLines)
@@ -143,8 +143,8 @@ class ArnetMinerDataset(object):
                         iterator = itertools.combinations(authors, 2)
                     
                         for author1, author2 in iterator: 
-                            author1Ind = authorIndexer.translate(author1)   
-                            author2Ind = authorIndexer.translate(author2)
+                            author1Ind = authorIndexer.append(author1)   
+                            author2Ind = authorIndexer.append(author2)
                             
                             author1Inds.append(author1Ind)
                             author2Inds.append(author2Ind)
