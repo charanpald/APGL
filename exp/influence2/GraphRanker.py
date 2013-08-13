@@ -40,7 +40,7 @@ class GraphRanker(object):
         rank = numpy.flipud(numpy.argsort(scores)) 
         outputLists.append(rank)
         
-        logging.debug("Computing degree distribution")
+        logging.debug("Computing weighted degree distribution")
         #scores = graph.degree(graph.vs)
         scores = graph.strength(weights="weight")
         rank = numpy.flipud(numpy.argsort(scores)) 
