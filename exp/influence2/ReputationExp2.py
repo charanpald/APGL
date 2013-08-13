@@ -37,15 +37,10 @@ expertMatches, expertsSet = dataset.matchExperts()
 logging.debug(expertMatches)
 logging.debug(graph.summary())
 
-expertMatchesInds = [] 
-for expert in expertMatches: 
-    expertMatchesInds.append(authorIndexer.translate(expert))
-   
+expertMatchesInds = authorIndexer.translate(expertMatches) 
 logging.debug(expertMatchesInds)   
-   
-relevantAuthorInds = [] 
-for author in relevantExperts: 
-    relevantAuthorInds.append(authorIndexer.translate(author))
+
+relevantAuthorInds = authorIndexer.translate(relevantExperts) 
 
 assert (numpy.array(relevantAuthorInds) < len(relevantAuthorInds)).all()
 
@@ -56,10 +51,10 @@ itemList = RankAggregator.generateItemList(outputLists)
 methodNames = GraphRanker.getNames(computeInfluence=computeInfluence)
 
 #Then use MC2 rank aggregation 
-#outputList, scores = RankAggregator.MC2(outputLists, itemList)
-#outputLists.append(outputList)
-#methodNames.append("MC2")
-#print("outputList="+str(outputList))
+outputList, scores = RankAggregator.MC2(outputLists, itemList)
+outputLists.append(outputList)
+methodNames.append("MC2")
+print("outputList="+str(outputList))
 
 #The supervised MC2
 #outputList2, scores2 = RankAggregator.supervisedMC22(outputLists, itemList, expertsIdList)
