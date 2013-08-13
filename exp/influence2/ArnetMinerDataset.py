@@ -36,7 +36,7 @@ class ArnetMinerDataset(object):
     abstract similarity. The output is two graphs - collaboration and 
     abstract similarity. 
     """    
-    def __init__(self, field):
+    def __init__(self, field, k=50):
         numpy.random.seed(21)
         dataDir = PathDefaults.getDataDir() + "dblpCitation/" 
         
@@ -57,7 +57,7 @@ class ArnetMinerDataset(object):
         self.coauthorsFilename = resultsDir + "coauthors.pkl"
         self.relevantExpertsFilename = resultsDir + "relevantExperts.pkl"          
 
-        self.stepSize = 500000    
+        self.stepSize = 1000000    
         self.numLines = 15192085
         self.matchCutoff = 0.90   
         
@@ -73,7 +73,7 @@ class ArnetMinerDataset(object):
         self.minDf = 5 
         
         #params for RSVD        
-        self.k = 100
+        self.k = k
         self.q = 3
         self.p = 20 
         
@@ -263,36 +263,52 @@ class ArnetMinerDataset(object):
             logging.debug("Wrote to file " + self.docTermMatrixSVDFilename)
         else: 
             logging.debug("Files already generated: " + self.docTermMatrixSVDFilename + " " + self.authorListFilename)   
-            
+    
+    def loadVectoriser(self): 
+        vectoriserFile = open(self.vectoriserFilename)
+        self.vectoriser = pickle.load(vectoriserFile)
+        self.vectoriser.tokenizer = PorterTokeniser() 
+        vectoriserFile.close() 
+        
+        authorListFile = open(self.authorListFilename)
+        self.authorList = pickle.load(authorListFile)
+        authorListFile.close()     
+        
+        data = numpy.load(self.docTermMatrixSVDFilename)    
+        self.U, self.s, self.V = data["arr_0"], data["arr_1"], data["arr_2"] 
+        
+        logging.debug("Loaded vectoriser, author list and SVD")
+        
+    def unloadVectoriser(self): 
+        del self.vectoriser
+        del self.authorList
+        del self.U 
+        del self.s 
+        del self.V
+        
+        logging.debug("Unloaded vectoriser, author list and SVD")
+        
     def findSimilarDocuments(self): 
         """
-        Find all documents within the same field. 
+        Find all documents within the same field. Need to call loadVectoriser 
+        first. 
         """
         if not os.path.exists(self.relevantExpertsFilename) or self.overwriteRelevantExperts: 
-            #First load all the components 
-            vectoriserFile = open(self.vectoriserFilename)
-            vectoriser = pickle.load(vectoriserFile)
-            vectoriser.tokenizer = PorterTokeniser() 
-            vectoriserFile.close() 
-            
-            authorListFile = open(self.authorListFilename)
-            authorList = pickle.load(authorListFile)
-            authorListFile.close()     
-            
-            data = numpy.load(self.docTermMatrixSVDFilename)    
-            U, s, V = data["arr_0"], data["arr_1"], data["arr_2"] 
-            
+            #First load all the components if they are not already loaded 
+            if not hasattr(self, 'vectoriser'): 
+                self.loadVectoriser()
+
             #Normalised rows of U 
-            normU = numpy.sqrt((U**2).sum(1))
+            normU = numpy.sqrt((self.U**2).sum(1))
             invNormU = 1/(normU + numpy.array(normU==0, numpy.int))
-            U = (U.T*invNormU).T
+            U = (self.U.T*invNormU).T
         
             #newX = vectoriser.transform(["java"])
-            newX = vectoriser.transform([self.field])
+            newX = self.vectoriser.transform([self.field])
             if newX.nnz == 0: 
                 raise ValueError("Query term not found") 
             
-            newU = newX.dot(V*(1/s)).T
+            newU = newX.dot(self.V*(1/self.s)).T
             newU = newU/numpy.linalg.norm(newU)
             similarities = U.dot(newU).ravel()
             
@@ -302,7 +318,7 @@ class ArnetMinerDataset(object):
             #Now find all authors corresponding to the documents 
             experts = [] 
             for docInd in relevantDocs: 
-                experts.extend(authorList[docInd])
+                experts.extend(self.authorList[docInd])
                 
             counter = Counter(experts)
             commonAuthors = counter.most_common(self.maxRelevantAuthors)
