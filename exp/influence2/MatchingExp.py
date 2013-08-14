@@ -12,7 +12,7 @@ from apgl.util.PathDefaults import PathDefaults
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 numpy.random.seed(21)
 
-ks = numpy.array([50, 75, 100])
+ks = numpy.array([50, 75, 100, 150, 300])
 maxRelevantAuthors = numpy.array([100, 200, 500]) 
 fields = ["Boosting", "Intelligent Agents", "Machine Learning", "Ontology Alignment"]
 
