@@ -7,7 +7,6 @@ import numpy
 import logging 
 import sys 
 import sklearn.metrics 
-import multiprocessing 
 from exp.influence2.GraphRanker import GraphRanker 
 from exp.influence2.RankAggregator import RankAggregator
 from exp.influence2.ArnetMinerDataset import ArnetMinerDataset
@@ -51,6 +50,7 @@ for r, field in enumerate(fields):
             outputLists = GraphRanker.rankedLists(graph, numRuns=100, computeInfluence=computeInfluence, p=0.05, trainExpertsIdList=expertMatchesInds)
             itemList = RankAggregator.generateItemList(outputLists)
             #methodNames = GraphRanker.getNames(computeInfluence=computeInfluence)
+            outputLists.append(relevantExperts)
             
             #Process outputLists to only include people from the relevant field  
             newOutputLists = []
