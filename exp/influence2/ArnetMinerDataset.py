@@ -41,8 +41,8 @@ class ArnetMinerDataset(object):
         self.dataDir = PathDefaults.getDataDir() + "dblpCitation/" 
         
         self.field = field 
-        #self.dataFilename = self.dataDir + "DBLP-citation-Feb21.txt" 
-        self.dataFilename = self.dataDir + "DBLP-citation-7000000.txt" 
+        self.dataFilename = self.dataDir + "DBLP-citation-Feb21.txt" 
+        #self.dataFilename = self.dataDir + "DBLP-citation-7000000.txt" 
         #self.dataFilename = self.dataDir + "DBLP-citation-100000.txt"
         
         baseDir = PathDefaults.getDataDir() + "reputation/"
