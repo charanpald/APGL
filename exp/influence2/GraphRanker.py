@@ -66,9 +66,12 @@ class GraphRanker(object):
         rank = numpy.flipud(numpy.argsort(scores)) 
         outputLists.append(rank)
         
+        """
+        #This is the same as above for undirected graphs 
         logging.debug("Computing authority score")
         scores = graph.authority_score(weights="weight") 
         rank = numpy.flipud(numpy.argsort(scores)) 
         outputLists.append(rank)
+        """
         
         return outputLists 
