@@ -1,55 +1,58 @@
 import numpy 
 import logging
 from exp.influence2.MaxInfluence import MaxInfluence 
+from exp.influence2.RankAggregator import RankAggregator
 
 class GraphRanker(object): 
-    def __init__(self): 
-        pass 
-
-    @staticmethod
-    def getNames(computeInfluence=False): 
+    def __init__(self, k=100, p=0.5, numRuns=1000, computeInfluence=False, trainExpertsIdList=None): 
+        self.k = k 
+        self.p = p 
+        self.numRuns = numRuns
+        self.computeInfluence = computeInfluence 
+        self.trainExpertsIdList = trainExpertsIdList
+        
+    def getNames(self): 
         names = ["Betweenness", "Closeness", "PageRank", "Degree"]
         
-        if computeInfluence: 
+        if self.computeInfluence: 
             names.append("Influence")
         
-        names.append("Shortest path")
+        names.append("Hub score")
         
         return names 
-
-    @staticmethod     
-    def rankedLists(graph, k=100, p=0.5, numRuns=1000, computeInfluence=False, trainExpertsIdList=None): 
+ 
+    def vertexRankings(self, graph, relevantItems, outputLists=None): 
         """
         Return a list of ranked lists. The list is: betweenness, pagerank, 
         degree and influence. 
         """
-        outputLists = []
+        if outputLists == None: 
+            outputLists = []
         
         logging.debug("Computing betweenness")
         scores = graph.betweenness(weights="invWeight")
         rank = numpy.flipud(numpy.argsort(scores)) 
-        outputLists.append(rank)
+        outputLists.append(self.restrictRankedList(rank, relevantItems)) 
         
         logging.debug("Computing closeness")
         scores = graph.closeness(weights="invWeight")
         rank = numpy.flipud(numpy.argsort(scores)) 
-        outputLists.append(rank)
+        outputLists.append(self.restrictRankedList(rank, relevantItems))
         
         logging.debug("Computing PageRank")
         scores = graph.pagerank(weights="weight")
         rank = numpy.flipud(numpy.argsort(scores)) 
-        outputLists.append(rank)
+        outputLists.append(self.restrictRankedList(rank, relevantItems))
         
         logging.debug("Computing weighted degree distribution")
-        #scores = graph.degree(graph.vs)
         scores = graph.strength(weights="weight")
         rank = numpy.flipud(numpy.argsort(scores)) 
-        outputLists.append(rank)
+        outputLists.append(self.restrictRankedList(rank, relevantItems))
         
-        if computeInfluence: 
+        if self.computeInfluence: 
             logging.debug("Computing influence")
-            rank = MaxInfluence.greedyMethod2(graph, k, p=p, numRuns=numRuns)
-            outputLists.append(numpy.array(rank))
+            rank = MaxInfluence.greedyMethod2(graph, self.k, p=self.p, numRuns=self.numRuns)
+            outputLists.append(numpy.array(self.restrictRankedList(rank, relevantItems)))
         
         """
         logging.debug("Computing shortest path lengths")
@@ -58,20 +61,29 @@ class GraphRanker(object):
         lengths[numpy.logical_not(numpy.isfinite(lengths))] = 0
         lengths = numpy.mean(lengths, 0)
         rank = numpy.argsort(lengths)
-        outputLists.append(rank)
+        outputLists.append(self.restrictRankedList(rank, relevantItems))
         """
         
         logging.debug("Computing hub score")
         scores = graph.hub_score(weights="weight") 
         rank = numpy.flipud(numpy.argsort(scores)) 
-        outputLists.append(rank)
+        outputLists.append(self.restrictRankedList(rank, relevantItems))
         
-        """
-        #This is the same as above for undirected graphs 
-        logging.debug("Computing authority score")
-        scores = graph.authority_score(weights="weight") 
-        rank = numpy.flipud(numpy.argsort(scores)) 
+        #Now add MC2 aggregated rankings 
+        logging.debug("Computing MC2 rank aggregation")
+        rank = RankAggregator.MC2(outputLists, relevantItems)[0]
         outputLists.append(rank)
-        """
         
         return outputLists 
+
+    def restrictRankedList(self, lst, releventList):
+        """
+        Given an ordered list lst, restrict items to those in releventList, 
+        retaining the order. 
+        """
+        releventList = set(releventList)
+        newList = [] 
+        for item in lst: 
+            if item in releventList: 
+                newList.append(item)
+        return newList 
