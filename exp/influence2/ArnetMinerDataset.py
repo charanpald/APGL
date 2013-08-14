@@ -16,7 +16,7 @@ from apgl.util.Util import Util
 from apgl.util.PathDefaults import PathDefaults 
 from exp.sandbox.RandomisedSVD import RandomisedSVD
 from exp.util.IdIndexer import IdIndexer
-from collections import Counter 
+from collections import Counter, OrderedDict 
 
 
 #Tokenise the documents                 
@@ -38,12 +38,12 @@ class ArnetMinerDataset(object):
     """    
     def __init__(self, field, k=50):
         numpy.random.seed(21)
-        dataDir = PathDefaults.getDataDir() + "dblpCitation/" 
+        self.dataDir = PathDefaults.getDataDir() + "dblpCitation/" 
         
         self.field = field 
-        #self.dataFilename = dataDir + "DBLP-citation-Feb21.txt" 
-        self.dataFilename = dataDir + "DBLP-citation-7000000.txt" 
-        #self.dataFilename = dataDir + "DBLP-citation-100000.txt"
+        #self.dataFilename = self.dataDir + "DBLP-citation-Feb21.txt" 
+        self.dataFilename = self.dataDir + "DBLP-citation-7000000.txt" 
+        #self.dataFilename = self.dataDir + "DBLP-citation-100000.txt"
         
         baseDir = PathDefaults.getDataDir() + "reputation/"
         resultsDir = baseDir + field.replace(' ', '') + "/"
@@ -65,12 +65,11 @@ class ArnetMinerDataset(object):
         self.similarityCutoff = 0.4
         self.maxRelevantAuthors = 500
 
-        
         #Params for vectoriser 
         self.numFeatures = None
         self.binary = True 
         self.sublinearTf = False
-        self.minDf = 5 
+        self.minDf = 3 
         
         #params for RSVD        
         self.k = k
@@ -83,17 +82,16 @@ class ArnetMinerDataset(object):
         
     def matchExperts(self): 
         """
-        Match experts in the set of relevant experts. 
+        Match experts in the set of relevant experts. It returns expertMatches 
+        which is the name of the expert in the database, and expertSet which is 
+        the complete set of experts. 
         """
         expertsFile = open(self.expertsFileName)
         expertsSet = expertsFile.readlines()
         expertsSet = set([x.strip() for x in expertsSet])
         expertsFile.close()
         
-        relevantExpertsFile = open(self.relevantExpertsFilename)
-        relevantExperts = pickle.load(relevantExpertsFile)
-        relevantExpertsFile.close()
-
+        relevantExperts = set(Util.loadPickle(self.relevantExpertsFilename)) 
         expertMatches = set([])
         
         for relevantExpert in relevantExperts: 
@@ -112,61 +110,62 @@ class ArnetMinerDataset(object):
         
         return expertMatches, expertsSet 
 
+    def coauthorsGraphFromAuthors(self, relevantExperts): 
+        """
+        Take a set of relevant authors and return the graph. 
+        """
+        dataFile = open(self.dataFilename)  
+        authorIndexer = IdIndexer()
+        author1Inds = array.array("i")
+        author2Inds = array.array("i")
+        
+        for relevantExpert in relevantExperts: 
+            authorIndexer.append(relevantExpert)
+        
+        for i, line in enumerate(dataFile):
+            Util.printIteration(i, self.stepSize, self.numLines)
+            authors = re.findall("#@(.*)", line)  
+                            
+            if len(authors) != 0: 
+                authors = set([x.strip() for x in authors[0].split(",")]) 
+                if len(authors.intersection(relevantExperts)) != 0: 
+                    iterator = itertools.combinations(authors, 2)
+                
+                    for author1, author2 in iterator: 
+                        author1Ind = authorIndexer.append(author1) 
+                        author2Ind = authorIndexer.append(author2)
+                        
+                        author1Inds.append(author1Ind)
+                        author2Inds.append(author2Ind)
+        
+        logging.debug("Found " + str(len(authorIndexer.getIdDict())) + " coauthors")
+                               
+        #Coauthor graph is undirected 
+        author1Inds = numpy.array(author1Inds, numpy.int)
+        author2Inds = numpy.array(author2Inds, numpy.int)
+        edges = numpy.c_[author1Inds, author2Inds]            
+        
+        graph = igraph.Graph()
+        graph.add_vertices(len(authorIndexer.getIdDict()))
+        graph.add_edges(edges)
+        graph.es["weight"] = numpy.ones(graph.ecount())
+        graph.simplify(combine_edges=sum)   
+        graph.es["invWeight"] = 1.0/numpy.array(graph.es["weight"]) 
+        
+        return graph, authorIndexer
             
     def coauthorsGraph(self): 
         """
         Using the relevant authors we find all coauthors. 
-        """
-
-        relevantExpertsFile = open(self.relevantExpertsFilename) 
-        relevantExperts = pickle.load(relevantExpertsFile)
-        relevantExpertsFile.close()        
+        """ 
+        relevantExperts = Util.loadPickle(self.relevantExpertsFilename)     
         
         if not os.path.exists(self.coauthorsFilename) or self.overwriteCoauthors: 
             logging.debug("Finding coauthors of relevant experts")
-            
-            dataFile = open(self.dataFilename)  
-            authorIndexer = IdIndexer()
-            author1Inds = array.array("i")
-            author2Inds = array.array("i")
-            
-            for relevantExpert in relevantExperts: 
-                authorIndexer.append(relevantExpert)
-            
-            for i, line in enumerate(dataFile):
-                Util.printIteration(i, self.stepSize, self.numLines)
-                authors = re.findall("#@(.*)", line)  
-                                
-                if len(authors) != 0: 
-                    authors = set([x.strip() for x in authors[0].split(",")]) 
-                    if len(authors.intersection(relevantExperts)) != 0: 
-                        iterator = itertools.combinations(authors, 2)
-                    
-                        for author1, author2 in iterator: 
-                            author1Ind = authorIndexer.append(author1)   
-                            author2Ind = authorIndexer.append(author2)
-                            
-                            author1Inds.append(author1Ind)
-                            author2Inds.append(author2Ind)
-            
-            logging.debug("Found " + str(len(authorIndexer.getIdDict())) + " coauthors")
-                                   
-            #Coauthor graph is undirected 
-            author1Inds = numpy.array(author1Inds, numpy.int)
-            author2Inds = numpy.array(author2Inds, numpy.int)
-            edges = numpy.c_[author1Inds, author2Inds]            
-            
-            graph = igraph.Graph()
-            graph.add_vertices(len(authorIndexer.getIdDict()))
-            graph.add_edges(edges)
-            graph.es["weight"] = numpy.ones(graph.ecount())
-            graph.simplify(combine_edges=sum)   
-            graph.es["invWeight"] = 1.0/numpy.array(graph.es["weight"]) 
-            
+            graph, authorIndexer = self.coauthorsGraphFromAuthors(set(relevantExperts))
             #print(graph.ecount(), edges.shape)
             #print(graph.count_multiple())
             #print(graph.es["weight"])
-            
             logging.debug(graph.summary())
             
             coauthorsFile = open(self.coauthorsFilename, "w")
@@ -231,9 +230,7 @@ class ArnetMinerDataset(object):
             inFile.close() 
             logging.debug("Finished reading file")    
             
-            authorListFile = open(self.authorListFilename, "w")
-            pickle.dump(authorList, authorListFile) 
-            authorListFile.close()
+            Util.savePickle(authorList, self.authorListFilename)
             del authorList
             logging.debug("Wrote to file " + self.authorListFilename)            
             
@@ -244,9 +241,7 @@ class ArnetMinerDataset(object):
                 
             #Save vectoriser - note that we can't pickle the tokeniser so it needs to be reset when loaded 
             vectoriser.tokenizer = None 
-            vectoriserFile = open(self.vectoriserFilename, "w")
-            pickle.dump(vectoriser, vectoriserFile)
-            vectoriserFile.close()
+            Util.savePickle(vectoriser, self.vectoriserFilename)
             logging.debug("Wrote vectoriser to file " + self.vectoriserFilename)    
             del documentList
             del vectoriser  
@@ -265,14 +260,10 @@ class ArnetMinerDataset(object):
             logging.debug("Files already generated: " + self.docTermMatrixSVDFilename + " " + self.authorListFilename)   
     
     def loadVectoriser(self): 
-        vectoriserFile = open(self.vectoriserFilename)
-        self.vectoriser = pickle.load(vectoriserFile)
+        self.vectoriser = Util.loadPickle(self.vectoriserFilename)
         self.vectoriser.tokenizer = PorterTokeniser() 
-        vectoriserFile.close() 
         
-        authorListFile = open(self.authorListFilename)
-        self.authorList = pickle.load(authorListFile)
-        authorListFile.close()     
+        self.authorList = Util.loadPickle(self.authorListFilename)     
         
         data = numpy.load(self.docTermMatrixSVDFilename)    
         self.U, self.s, self.V = data["arr_0"], data["arr_1"], data["arr_2"] 
@@ -287,14 +278,36 @@ class ArnetMinerDataset(object):
         del self.V
         
         logging.debug("Unloaded vectoriser, author list and SVD")
+  
+    def expertsFromDocSimilarities(self, similarities): 
+        """
+        Given a set of similarities work out which documents are relevent 
+        and then return a list of ranked authors using these scores. 
+        """
+        relevantDocs = numpy.arange(similarities.shape[0])[similarities >= self.similarityCutoff]
         
+        #Now find all authors corresponding to the documents 
+        expertDict = {} 
+        expertsSet = set([])
+        for docInd in relevantDocs: 
+            for author in self.authorList[docInd]: 
+                if author not in expertsSet: 
+                    expertsSet.add(author)
+                    expertDict[author] = similarities[docInd]
+                else: 
+                    expertDict[author] += similarities[docInd]
+        
+        expertDict = OrderedDict(sorted(expertDict.items(), key=lambda t: t[1], reverse=True))
+        experts = expertDict.keys()[0:self.maxRelevantAuthors]
+        
+        return experts 
+      
     def findSimilarDocuments(self): 
         """
-        Find all documents within the same field. Need to call loadVectoriser 
+        Find all documents within the same field. Makes a call to loadVectoriser 
         first. 
         """
         if not os.path.exists(self.relevantExpertsFilename) or self.overwriteRelevantExperts: 
-            #First load all the components if they are not already loaded 
             if not hasattr(self, 'vectoriser'): 
                 self.loadVectoriser()
 
@@ -303,7 +316,6 @@ class ArnetMinerDataset(object):
             invNormU = 1/(normU + numpy.array(normU==0, numpy.int))
             U = (self.U.T*invNormU).T
         
-            #newX = vectoriser.transform(["java"])
             newX = self.vectoriser.transform([self.field])
             if newX.nnz == 0: 
                 raise ValueError("Query term not found") 
@@ -312,24 +324,10 @@ class ArnetMinerDataset(object):
             newU = newU/numpy.linalg.norm(newU)
             similarities = U.dot(newU).ravel()
             
-            #relevantDocs = numpy.flipud(numpy.argsort(similarities))[0:self.numDocs]
-            relevantDocs = numpy.arange(similarities.shape[0])[similarities >= self.similarityCutoff]
-                    
-            #Now find all authors corresponding to the documents 
-            experts = [] 
-            for docInd in relevantDocs: 
-                experts.extend(self.authorList[docInd])
-                
-            counter = Counter(experts)
-            commonAuthors = counter.most_common(self.maxRelevantAuthors)
-            experts = [x for x, y in commonAuthors]
-                
-            experts = set(experts)
+            experts = self.expertsFromDocSimilarities(similarities)
             logging.debug("Number of relevant authors : " + str(len(experts)))
             
-            relevantExpertsFile = open(self.relevantExpertsFilename, "w") 
-            pickle.dump(experts, relevantExpertsFile)
-            relevantExpertsFile.close()
+            Util.savePickle(experts, self.relevantExpertsFilename)
             logging.debug("Saved experts in file " + self.relevantExpertsFilename)
         else: 
             logging.debug("File already generated " + self.relevantExpertsFilename)
