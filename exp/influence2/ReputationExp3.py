@@ -60,7 +60,7 @@ for r, field in enumerate(fields):
                 precisions[i, j] = Evaluator.precisionFromIndLists(expertMatchesInds, outputLists[j][0:n]) 
                 
         for j in range(len(outputLists)):                 
-            averagePrecisions[j] = Evaluator.averagePrecisionFromLists(expertMatchesInds, outputLists[j][0:averagePrecisionN]) 
+            averagePrecisions[j] = Evaluator.averagePrecisionFromLists(expertMatchesInds, outputLists[j][0:averagePrecisionN], averagePrecisionN) 
         
         precisions = numpy.c_[numpy.array(ns), precisions]
         logging.debug(Latex.array1DToRow(averagePrecisions*len(expertMatches)))
