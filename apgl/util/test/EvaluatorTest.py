@@ -151,12 +151,37 @@ class  EvaluatorTestCase(unittest.TestCase):
         error = numpy.abs(testY - predY).mean()
         self.assertEquals(error, Evaluator.meanAbsError(testY, predY))
     
-    def testNDCG(self): 
-        testY = numpy.array([0, 2, 3, 1])   
-        predY = numpy.array([0, 2, 3, 1])
-    
-        print(Evaluator.ndcg(testY, predY, testY.shape[0]))    
-    
+
+    def testPrecisionFromIndLists(self): 
+        predList  = [4, 2, 10]
+        testList = [4, 2]
+
+        self.assertEquals(Evaluator.precisionFromIndLists(testList, predList), 2.0/3)  
+        
+        testList = [4, 2, 10]
+        self.assertEquals(Evaluator.precisionFromIndLists(testList, predList), 1) 
+        
+        predList  = [10, 2, 4]
+        self.assertEquals(Evaluator.precisionFromIndLists(testList, predList), 1)
+        
+        testList = [1, 9, 11]
+        self.assertEquals(Evaluator.precisionFromIndLists(testList, predList), 0)
+        
+        predList = [1, 2, 3, 4, 5]
+        testList = [1, 9, 11]
+        
+        self.assertEquals(Evaluator.precisionFromIndLists(testList, predList), 1.0/5)
+        
+    def testAveragePrecisionFromLists(self): 
+        predList  = [4, 2, 10]
+        testList = [4, 2, 15, 16]
+        
+        self.assertEquals(Evaluator.averagePrecisionFromLists(testList, predList), 0.5)
+        
+        predList = [0,1,2,3,4,5]
+        testList = [0, 3, 4, 5]
+        self.assertAlmostEquals(Evaluator.averagePrecisionFromLists(testList, predList), 0.691666666666)
+        
 if __name__ == '__main__':
     unittest.main()
 
