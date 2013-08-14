@@ -6,15 +6,16 @@ import os
 import numpy 
 import logging 
 import sys 
-import sklearn.metrics 
 from exp.influence2.GraphRanker import GraphRanker 
 from exp.influence2.RankAggregator import RankAggregator
 from exp.influence2.ArnetMinerDataset import ArnetMinerDataset
 from apgl.util.Latex import Latex 
+from apgl.util.Evaluator import Evaluator
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 numpy.random.seed(21)
 
+averagePrecisionN = 50 
 fields = ["Boosting", "Intelligent Agents", "Machine Learning", "Ontology Alignment"]
 #fields = ["Boosting"]
 ks = [50, 100, 150]
@@ -27,7 +28,7 @@ bestAveragePrecision = numpy.zeros((len(fields), len(maxRelevantAuthors), len(si
 ns = numpy.arange(5, 105, 5)
 
 for r, field in enumerate(fields): 
-    dataset = ArnetMinerDataset(field, k=50)    
+    dataset = ArnetMinerDataset(field, k=100)    
     for s, maxRelAuthors in enumerate(maxRelevantAuthors): 
         for t, similarityCutoff in enumerate(similarityCutoffs): 
             dataset.overwriteRelevantExperts = True
@@ -47,52 +48,27 @@ for r, field in enumerate(fields):
             
             #First compute graph properties 
             computeInfluence = False
-            outputLists = GraphRanker.rankedLists(graph, numRuns=100, computeInfluence=computeInfluence, p=0.05, trainExpertsIdList=expertMatchesInds)
+            graphRanker = GraphRanker(k=100, numRuns=100, computeInfluence=computeInfluence, p=0.05, trainExpertsIdList=expertMatchesInds)
+            outputLists = graphRanker.vertexRankings(graph, relevantAuthorInds, [relevantAuthorInds])
             itemList = RankAggregator.generateItemList(outputLists)
-            #methodNames = GraphRanker.getNames(computeInfluence=computeInfluence)
-            outputLists.append(relevantExperts)
+            #methodNames = graphRanker.getNames()
             
-            #Process outputLists to only include people from the relevant field  
-            newOutputLists = []
-            for lst in outputLists: 
-                lst = lst[lst < len(relevantAuthorInds)]  
-                newOutputLists.append(lst)
-            
-            print("\n")
-            
-            numMethods = len(newOutputLists)
+            numMethods = len(outputLists)
             precisions = numpy.zeros((len(ns), numMethods))
             averagePrecisions = numpy.zeros(numMethods)
             
             for i, n in enumerate(ns):     
                 for j in range(len(outputLists)): 
-                    predY = -numpy.ones(len(relevantAuthorInds))
-                    predY[expertMatchesInds] = 1
+                    precisions[i, j] = Evaluator.precisionFromIndLists(expertMatchesInds, outputLists[j][0:n]) 
                     
-                    testY = -numpy.ones(len(relevantAuthorInds))
-                    testY[newOutputLists[j][0:n]] = 1
-                    
-                    precisions[i, j] = sklearn.metrics.precision_score(testY, predY) 
-        
-            n = 50 
-            
-            for j in range(len(outputLists)): 
-                predY = -numpy.ones(len(relevantAuthorInds))
-                predY[expertMatchesInds] = 1
-                
-                testY = -numpy.ones(len(relevantAuthorInds))
-                testY[newOutputLists[j][0:n]] = 1
-                
-                averagePrecisions[j] = sklearn.metrics.average_precision_score(testY, predY)
+            for j in range(len(outputLists)):                 
+                averagePrecisions[j] = Evaluator.averagePrecisionFromIndLists(expertMatchesInds, outputLists[j][0:averagePrecisionN]) 
             
             precisions = numpy.c_[numpy.array(ns), precisions]
-            
             logging.debug(Latex.array1DToRow(averagePrecisions*len(expertMatches)))
             bestAveragePrecision[r,s,t] = numpy.max(averagePrecisions)*len(expertMatches) 
-            
             logging.debug("Max average precision for " + str((field, maxRelAuthors, similarityCutoff)) + " = " + str(bestAveragePrecision[r,s,t]))
 
-            
 for r in range(bestAveragePrecision.shape[0]):
     print("field = " + str(fields[r]))
     print(bestAveragePrecision[r, :, :])
