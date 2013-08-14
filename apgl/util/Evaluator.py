@@ -242,7 +242,7 @@ class Evaluator(object):
         return sklearn.metrics.precision_score(testY, predY)
         
     @staticmethod 
-    def averagePrecisionFromLists(testList, predList, k=10):
+    def averagePrecisionFromLists(testList, predList, k=100):
 
         """
         Computes the average precision at k. Borrowed from https://github.com/benhamner/Metrics. 
