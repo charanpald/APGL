@@ -224,19 +224,62 @@ class Evaluator(object):
         return localAuc
 
     @staticmethod 
-    def precision(testY, predY): 
+    def precisionFromIndLists(testList, predList): 
         """
         Measure the precision of a predicted list given the true list. The precision is 
-        |relevant items \cup retrieved items| / |retrieved items|  
+        |relevant items \cup retrieved items| / |retrieved items|. The items of the 
+        lists are indices. 
         """
+        import sklearn.metrics 
+        n  = max(numpy.max(testList), numpy.max(predList))+1
         
-        num = len(set(testY).intersection(set(predY)))
-        den = float(len(predY))
+        predY = -1*numpy.ones(n)
+        predY[predList] = 1
         
-        if den != 0: 
-            return num/den
-        else: 
-            return 0
+        testY = -1*numpy.ones(n)
+        testY[testList] = 1
+        
+        return sklearn.metrics.precision_score(testY, predY)
+        
+    @staticmethod 
+    def averagePrecisionFromLists(testList, predList, k=10):
+
+        """
+        Computes the average precision at k. Borrowed from https://github.com/benhamner/Metrics. 
+        
+        This function computes the average prescision at k between two lists of
+        items.
+        
+        Parameters
+        ----------
+        testList : list
+        A list of elements that are to be predicted (order doesn't matter)
+        predList : list
+        A list of predicted elements (order does matter)
+        k : int, optional
+        The maximum number of predicted elements
+        
+        Returns
+        -------
+        score : double
+        The average precision at k over the input lists
+        
+        """
+        if len(predList)>k:
+            predList = predList[:k]
+    
+        score = 0.0
+        num_hits = 0.0
+    
+        for i,p in enumerate(predList):
+            if p in testList and p not in predList[:i]:
+                num_hits += 1.0
+                score += num_hits / (i+1.0)
+    
+        if not testList:
+            return 1.0
+    
+        return score / min(len(testList), k)
       
     @staticmethod 
     def ndcg(testY, predY, n): 
