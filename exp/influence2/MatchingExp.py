@@ -12,8 +12,8 @@ from apgl.util.PathDefaults import PathDefaults
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 numpy.random.seed(21)
 
-ks = numpy.array([100])
-maxRelevantAuthors = numpy.array([1000, 2000, 3000]) 
+ks = numpy.array([50, 75, 100])
+maxRelevantAuthors = numpy.array([100, 200, 500]) 
 fields = ["Boosting", "Intelligent Agents", "Machine Learning", "Ontology Alignment"]
 
 coverage1 = numpy.zeros((len(ks), len(fields), maxRelevantAuthors.shape[0]))
@@ -42,6 +42,8 @@ for m, k in enumerate(ks):
             coverage2[m, i, j] = float(len(expertMatches))/len(expertsSet)
             
             overwriteSVD = False
+            
+            logging.debug("Coverage 2: " + str((k, field, maxRelAuthors)) + " = " + str(coverage2[m, i, j]))
 
 for m, k in enumerate(ks): 
     print("k="+str(k))      

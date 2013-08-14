@@ -19,9 +19,9 @@ numpy.random.seed(21)
 averagePrecisionN = 50 
 fields = ["Boosting", "Intelligent Agents", "Machine Learning", "Ontology Alignment"]
 #fields = ["Boosting"]
-similarityCutoff = 0.2
+similarityCutoff = 0.3
 k = 100
-maxRelevantAuthors = [100, 200, 500, 1000]
+maxRelevantAuthors = [100, 200, 500]
 #maxRelevantAuthors = [100, 200]
 bestAveragePrecision = numpy.zeros((len(fields), len(maxRelevantAuthors)))
 ns = numpy.arange(5, 105, 5)
