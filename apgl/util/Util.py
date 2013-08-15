@@ -331,7 +331,7 @@ class Util(object):
         file.close()
         
         if debug: 
-            logging.debug("Saved file " + filename + " containing object of type " + str(type(obj)))
+            logging.debug("Saved " + filename + " object type " + str(type(obj)))
 
     @staticmethod
     def incompleteCholesky(X, k):
