@@ -34,7 +34,6 @@ for r, field in enumerate(fields):
         dataset.maxRelevantAuthors = maxRelAuthors
         dataset.similarityCutoff = similarityCutoff
         
-        dataset.vectoriseDocuments()
         dataset.findSimilarDocuments()
         
         graph, authorIndexer, relevantExperts = dataset.coauthorsGraph()
