@@ -82,10 +82,13 @@ class ArnetMinerDataset(object):
         #params for RSVD        
         self.k = k
         self.q = 3
-        self.p = 20 
+        self.p = 30 
         
         self.overwrite = False
+        self.overwriteVectoriser = False
         self.overwriteModel = False
+        
+        self.chunksize = 5000
         
     def matchExperts(self): 
         """
@@ -182,7 +185,7 @@ class ArnetMinerDataset(object):
         We want to go through the dataset and vectorise all the title+abstracts.
         The results are saved in TDIDF format in a matrix X. 
         """
-        if not os.path.exists(self.docTermMatrixFilename) or not os.path.exists(self.authorListFilename) or not os.path.exists(self.vectoriserFilename) or self.overwrite:
+        if not os.path.exists(self.docTermMatrixFilename + ".mtx") or not os.path.exists(self.authorListFilename) or not os.path.exists(self.vectoriserFilename) or self.overwriteVectoriser:
             logging.debug("Vectorising documents")            
             
             inFile = open(self.dataFilename)  
@@ -254,7 +257,8 @@ class ArnetMinerDataset(object):
         logging.debug("Loaded vectoriser and author list")
            
     def computeSVD(self): 
-        if not os.path.exists(self.docTermMatrixSVDFilename) or self.overwriteModel: 
+        if not os.path.exists(self.docTermMatrixSVDFilename) or self.overwriteModel:
+            self.vectoriseDocuments()
             #Take the SVD of X (maybe better to use PROPACK here depending on size of X)
             X = scipy.io.mmread(self.docTermMatrixFilename)
             X = X.tocsc()
@@ -274,20 +278,21 @@ class ArnetMinerDataset(object):
         logging.debug("Loaded SVD")
 
     def computeLDA(self):
-        if not os.path.exists(self.ldaModelFilename) or self.overwriteModel: 
+        if not os.path.exists(self.ldaModelFilename) or self.overwriteModel:
+            self.vectoriseDocuments()
             self.loadVectoriser()
             X = scipy.io.mmread(self.docTermMatrixFilename)
             #corpus = gensim.matutils.MmReader(self.docTermMatrixFilename + ".mtx", True)
             corpus = gensim.matutils.Sparse2Corpus(X, documents_columns=False)
+            del X 
             id2WordDict = dict(zip(range(len(self.vectoriser.get_feature_names())), self.vectoriser.get_feature_names()))   
             
             logging.getLogger('gensim').setLevel(logging.INFO)
-            lda = LdaModel(corpus, num_topics=self.k, id2word=id2WordDict, chunksize=5000) 
-
-            corpus = gensim.matutils.Sparse2Corpus(X, documents_columns=False)     
-            index = gensim.similarities.docsim.SparseMatrixSimilarity(lda[corpus], num_docs=X.shape[0], num_features=self.k)               
+            lda = LdaModel(corpus, num_topics=self.k, id2word=id2WordDict, chunksize=self.chunksize, distributed=False) 
+            index = gensim.similarities.docsim.SparseMatrixSimilarity(lda[corpus], num_features=self.k)               
             
             Util.savePickle([lda, index], self.ldaModelFilename, debug=True)
+            gc.collect()
         else: 
             logging.debug("File already exists: " + self.ldaModelFilename)
         
@@ -325,7 +330,7 @@ class ArnetMinerDataset(object):
         Find all documents within the same field using Latent Semantic Indexing. 
         """
         if not os.path.exists(self.relevantExpertsFilename) or self.overwrite: 
-            self.vectoriseDocuments()
+            
             self.computeSVD()
             self.loadVectoriser()
             self.loadSVD()
@@ -357,7 +362,7 @@ class ArnetMinerDataset(object):
         """
 
         if not os.path.exists(self.relevantExpertsFilename) or self.overwrite: 
-            self.vectoriseDocuments()
+            
             self.computeLDA()
             self.loadVectoriser()
                                 
