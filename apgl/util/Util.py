@@ -322,14 +322,16 @@ class Util(object):
         return obj
 
     @staticmethod
-    def savePickle(obj, filename, overwrite=True):
+    def savePickle(obj, filename, overwrite=True, debug=False):
         if os.path.isfile(filename) and not overwrite:
             raise IOError("File exists: " + filename)
 
         file = open(filename, 'wb')
         pickle.dump(obj, file)
         file.close()
-        #logging.debug("Saved file " + filename + " containing object of type " + str(type(obj)))
+        
+        if debug: 
+            logging.debug("Saved file " + filename + " containing object of type " + str(type(obj)))
 
     @staticmethod
     def incompleteCholesky(X, k):
