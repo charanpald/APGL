@@ -14,13 +14,25 @@ class ArnetMinerDatasetProfile(object):
         numpy.random.seed(21)        
         igraph._igraph.set_random_number_generator(random.WichmannHill(21))
         
-    def profileFindAuthorsInField(self): 
+    def profileVectoriseDocuments(self): 
         field = "Boosting"
         dataset = ArnetMinerDataset(field)
         
         
         ProfileUtils.profile('dataset.vectoriseDocuments()', globals(), locals())  
+  
+    def profileComputeLDA(self): 
+        field = "Boosting"
+        dataset = ArnetMinerDataset(field)
+        dataset.overwrite = True
+        dataset.overwriteVectoriser = True
+        dataset.overwriteModel = True
+        dataset.maxRelevantAuthors = 100
+        dataset.k = 200
+        dataset.dataFilename = dataset.dataDir + "DBLP-citation-100000.txt"
         
+        ProfileUtils.profile('dataset.computeLDA()', globals(), locals())  
         
 profiler = ArnetMinerDatasetProfile()
-profiler.profileFindAuthorsInField() #211
+#profiler.profileVectoriseDocuments() #211
+profiler.profileComputeLDA()
