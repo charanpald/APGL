@@ -12,6 +12,12 @@ import array
 import pickle 
 import itertools 
 import Stemmer
+import gensim.matutils
+import sys 
+import scipy.io
+from gensim.models.ldamodel import LdaModel
+from gensim.models.lsimodel import LsiModel
+import gensim.similarities
 from apgl.util.Util import Util 
 from apgl.util.PathDefaults import PathDefaults 
 from exp.sandbox.RandomisedSVD import RandomisedSVD
@@ -41,16 +47,18 @@ class ArnetMinerDataset(object):
         self.dataDir = PathDefaults.getDataDir() + "dblpCitation/" 
         
         self.field = field 
-        self.dataFilename = self.dataDir + "DBLP-citation-Feb21.txt" 
-        #self.dataFilename = self.dataDir + "DBLP-citation-7000000.txt" 
+        #self.dataFilename = self.dataDir + "DBLP-citation-Feb21.txt" 
+        self.dataFilename = self.dataDir + "DBLP-citation-7000000.txt" 
         #self.dataFilename = self.dataDir + "DBLP-citation-100000.txt"
         
         baseDir = PathDefaults.getDataDir() + "reputation/"
         resultsDir = baseDir + field.replace(' ', '') + "/"
                 
         self.docTermMatrixSVDFilename = baseDir + "termDocMatrixSVD.npz"
+        self.docTermMatrixFilename = baseDir + "termDocMatrix"
         self.authorListFilename = baseDir + "authorList.pkl"
         self.vectoriserFilename = baseDir + "vectoriser.pkl"        
+        self.ldaModelFilename = baseDir + "ldaModel.pkl"
         
         self.expertsFileName = resultsDir + "experts.txt"
         self.expertMatchesFilename = resultsDir + "experts_matches.csv"
@@ -69,16 +77,15 @@ class ArnetMinerDataset(object):
         self.numFeatures = None
         self.binary = True 
         self.sublinearTf = False
-        self.minDf = 3 
+        self.minDf = 2 
         
         #params for RSVD        
         self.k = k
         self.q = 3
         self.p = 20 
         
-        self.overwriteRelevantExperts = False
-        self.overwriteCoauthors = False
-        self.overwriteSVD = False
+        self.overwrite = False
+        self.overwriteModel = False
         
     def matchExperts(self): 
         """
@@ -104,7 +111,6 @@ class ArnetMinerDataset(object):
             if len(possibleMatches) != 0: 
                 logging.debug("Possible matches for " + author + " : " + str(possibleMatches))
                           
-        
         expertMatches = sorted(list(expertMatches))
         logging.debug("Total number of matches " + str(len(expertMatches)) + " of " + str(len(expertsSet)))        
         
@@ -160,36 +166,25 @@ class ArnetMinerDataset(object):
         """ 
         relevantExperts = Util.loadPickle(self.relevantExpertsFilename)     
         
-        if not os.path.exists(self.coauthorsFilename) or self.overwriteCoauthors: 
+        if not os.path.exists(self.coauthorsFilename) or self.overwrite: 
             logging.debug("Finding coauthors of relevant experts")
             graph, authorIndexer = self.coauthorsGraphFromAuthors(set(relevantExperts))
-            #print(graph.ecount(), edges.shape)
-            #print(graph.count_multiple())
-            #print(graph.es["weight"])
             logging.debug(graph.summary())
-            
-            coauthorsFile = open(self.coauthorsFilename, "w")
-            pickle.dump([graph, authorIndexer], coauthorsFile)
-            coauthorsFile.close()
-            
-            logging.debug("Coauthors graph saved as " + self.coauthorsFilename)
+            Util.savePickle([graph, authorIndexer], self.coauthorsFilename, debug=True)
         else: 
             logging.debug("Files already generated: " + self.coauthorsFilename)  
 
-        coauthorsFile = open(self.coauthorsFilename)
-        graph, authorIndexer = pickle.load(coauthorsFile)
-        coauthorsFile.close()
-            
+        graph, authorIndexer = Util.loadPickle(self.coauthorsFilename)
         return graph, authorIndexer, relevantExperts 
     
     def vectoriseDocuments(self):
         """
         We want to go through the dataset and vectorise all the title+abstracts.
+        The results are saved in TDIDF format in a matrix X. 
         """
-        if not os.path.exists(self.docTermMatrixSVDFilename) or not os.path.exists(self.authorListFilename) or self.overwriteSVD:
+        if not os.path.exists(self.docTermMatrixFilename) or not os.path.exists(self.authorListFilename) or not os.path.exists(self.vectoriserFilename) or self.overwrite:
             logging.debug("Vectorising documents")            
             
-            #We load all title+abstracts 
             inFile = open(self.dataFilename)  
             authorList = []
             documentList = []
@@ -230,26 +225,40 @@ class ArnetMinerDataset(object):
             inFile.close() 
             logging.debug("Finished reading file")    
             
-            Util.savePickle(authorList, self.authorListFilename)
+            Util.savePickle(authorList, self.authorListFilename, debug=True)
             del authorList
-            logging.debug("Wrote to file " + self.authorListFilename)            
             
             #vectoriser = text.HashingVectorizer(ngram_range=(1,2), binary=self.binary, norm="l2", stop_words="english", tokenizer=PorterTokeniser(), dtype=numpy.float)
             vectoriser = text.TfidfVectorizer(min_df=self.minDf, ngram_range=(1,2), binary=self.binary, sublinear_tf=self.sublinearTf, norm="l2", max_df=0.95, stop_words="english", tokenizer=PorterTokeniser(), max_features=self.numFeatures, dtype=numpy.float)
+            #vectoriser = text.CountVectorizer(min_df=self.minDf, ngram_range=(1,2), binary=True, max_df=0.95, stop_words="english", max_features=self.numFeatures, dtype=numpy.float, tokenizer=PorterTokeniser())            
+            
             X = vectoriser.fit_transform(documentList)
-            logging.debug("Finished vectorising documents")
+            del documentList
+            scipy.io.mmwrite(self.docTermMatrixFilename, X)
+            logging.debug("Wrote X to file " + self.docTermMatrixFilename + ".mtx")
+            del X 
                 
             #Save vectoriser - note that we can't pickle the tokeniser so it needs to be reset when loaded 
             vectoriser.tokenizer = None 
-            Util.savePickle(vectoriser, self.vectoriserFilename)
-            logging.debug("Wrote vectoriser to file " + self.vectoriserFilename)    
-            del documentList
+            Util.savePickle(vectoriser, self.vectoriserFilename, debug=True) 
+            
             del vectoriser  
             gc.collect()
-                
+        else: 
+            logging.debug("Files already generated: " + self.docTermMatrixSVDFilename + " " + self.authorListFilename)   
+   
+    def loadVectoriser(self): 
+        self.vectoriser = Util.loadPickle(self.vectoriserFilename)
+        self.vectoriser.tokenizer = PorterTokeniser() 
+        self.authorList = Util.loadPickle(self.authorListFilename)     
+        logging.debug("Loaded vectoriser and author list")
+           
+    def computeSVD(self): 
+        if not os.path.exists(self.docTermMatrixSVDFilename) or self.overwriteModel: 
             #Take the SVD of X (maybe better to use PROPACK here depending on size of X)
-            logging.debug("Computing the SVD of the document-term matrix of shape " + str(X.shape) + " with " + str(X.nnz) + " non zeros")
+            X = scipy.io.mmread(self.docTermMatrixFilename)
             X = X.tocsc()
+            logging.debug("Computing the SVD of the document-term matrix of shape " + str(X.shape) + " with " + str(X.nnz) + " non zeros")
             U, s, V = RandomisedSVD.svd(X, self.k, q=self.q, p=self.p)
             del X 
             gc.collect()
@@ -257,27 +266,36 @@ class ArnetMinerDataset(object):
             numpy.savez(self.docTermMatrixSVDFilename, U, s, V)
             logging.debug("Wrote to file " + self.docTermMatrixSVDFilename)
         else: 
-            logging.debug("Files already generated: " + self.docTermMatrixSVDFilename + " " + self.authorListFilename)   
-    
-    def loadVectoriser(self): 
-        self.vectoriser = Util.loadPickle(self.vectoriserFilename)
-        self.vectoriser.tokenizer = PorterTokeniser() 
+            logging.debug("File already generated: " + self.docTermMatrixSVDFilename)
         
-        self.authorList = Util.loadPickle(self.authorListFilename)     
-        
+    def loadSVD(self): 
         data = numpy.load(self.docTermMatrixSVDFilename)    
-        self.U, self.s, self.V = data["arr_0"], data["arr_1"], data["arr_2"] 
+        self.U, self.s, self.V = data["arr_0"], data["arr_1"], data["arr_2"]
+        logging.debug("Loaded SVD")
+
+    def computeLDA(self):
+        if not os.path.exists(self.ldaModelFilename) or self.overwriteModel: 
+            self.loadVectoriser()
+            X = scipy.io.mmread(self.docTermMatrixFilename)
+            #corpus = gensim.matutils.MmReader(self.docTermMatrixFilename + ".mtx", True)
+            corpus = gensim.matutils.Sparse2Corpus(X, documents_columns=False)
+            id2WordDict = dict(zip(range(len(self.vectoriser.get_feature_names())), self.vectoriser.get_feature_names()))   
+            
+            logging.getLogger('gensim').setLevel(logging.INFO)
+            lda = LdaModel(corpus, num_topics=self.k, id2word=id2WordDict, chunksize=5000) 
+
+            corpus = gensim.matutils.Sparse2Corpus(X, documents_columns=False)     
+            index = gensim.similarities.docsim.SparseMatrixSimilarity(lda[corpus], num_docs=X.shape[0], num_features=self.k)               
+            
+            Util.savePickle([lda, index], self.ldaModelFilename, debug=True)
+        else: 
+            logging.debug("File already exists: " + self.ldaModelFilename)
         
-        logging.debug("Loaded vectoriser, author list and SVD")
-        
+      
     def unloadVectoriser(self): 
         del self.vectoriser
         del self.authorList
-        del self.U 
-        del self.s 
-        del self.V
-        
-        logging.debug("Unloaded vectoriser, author list and SVD")
+        logging.debug("Unloaded vectoriser, author list")
   
     def expertsFromDocSimilarities(self, similarities): 
         """
@@ -302,14 +320,15 @@ class ArnetMinerDataset(object):
         
         return experts 
       
-    def findSimilarDocuments(self): 
+    def findSimilarDocumentsLSI(self): 
         """
-        Find all documents within the same field. Makes a call to loadVectoriser 
-        first. 
+        Find all documents within the same field using Latent Semantic Indexing. 
         """
-        if not os.path.exists(self.relevantExpertsFilename) or self.overwriteRelevantExperts: 
-            if not hasattr(self, 'vectoriser'): 
-                self.loadVectoriser()
+        if not os.path.exists(self.relevantExpertsFilename) or self.overwrite: 
+            self.vectoriseDocuments()
+            self.computeSVD()
+            self.loadVectoriser()
+            self.loadSVD()
 
             #Normalised rows of U 
             normU = numpy.sqrt((self.U**2).sum(1))
@@ -327,9 +346,32 @@ class ArnetMinerDataset(object):
             experts = self.expertsFromDocSimilarities(similarities)
             logging.debug("Number of relevant authors : " + str(len(experts)))
             
-            Util.savePickle(experts, self.relevantExpertsFilename)
+            Util.savePickle(experts, self.relevantExpertsFilename, debug=True)
             logging.debug("Saved experts in file " + self.relevantExpertsFilename)
         else: 
             logging.debug("File already generated " + self.relevantExpertsFilename)
         
-        
+    def findSimilarDocumentsLDA(self): 
+        """ 
+        We use LDA in this case 
+        """
+
+        if not os.path.exists(self.relevantExpertsFilename) or self.overwrite: 
+            self.vectoriseDocuments()
+            self.computeLDA()
+            self.loadVectoriser()
+                                
+            lda, index = Util.loadPickle(self.ldaModelFilename)
+            
+            newX = self.vectoriser.transform([self.field])
+            #newX = self.vectoriser.transform(["database"])
+            newX = [(i, newX[0, i])for i in newX.nonzero()[1]]
+            result = lda[newX]             
+            similarities = index.get_similarities(result)
+            experts = self.expertsFromDocSimilarities(similarities)
+            
+            logging.debug("Number of relevant authors : " + str(len(experts)))
+            Util.savePickle(experts, self.relevantExpertsFilename, debug=True)
+        else: 
+            logging.debug("File already generated " + self.relevantExpertsFilename)
+                

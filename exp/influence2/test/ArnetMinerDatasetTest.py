@@ -26,7 +26,7 @@ class  ArnetMinerDatasetTest(unittest.TestCase):
         
         #Check document is correct as well as authors 
         self.dataset.vectoriseDocuments()
-        self.dataset.findSimilarDocuments()
+        self.dataset.findSimilarDocumentsLSI()
         
         experts = Util.loadPickle(self.dataset.relevantExpertsFilename)
         
@@ -36,7 +36,7 @@ class  ArnetMinerDatasetTest(unittest.TestCase):
         
         #Check document is correct as well as authors 
         self.dataset.vectoriseDocuments()
-        self.dataset.findSimilarDocuments()
+        self.dataset.findSimilarDocumentsLSI()
         self.dataset.coauthorsGraph()
   
 
@@ -66,6 +66,18 @@ class  ArnetMinerDatasetTest(unittest.TestCase):
         
         experts = self.dataset.expertsFromDocSimilarities(similarities)
         self.assertEquals(experts, ['Ian Hislop', 'Alfred Nobel', 'Joe Bloggs'])
+        
+    def testFindSimilarDocumentsLDA(self): 
+        field = "Database"
+        self.dataset = ArnetMinerDataset(field)
+        self.dataset.dataFilename = self.dataset.dataDir + "DBLP-citation-test.txt"
+        self.dataset.overwrite = True
+        self.dataset.overwriteModel = True
+        self.dataset.k = 10
+        
+        #Check document is correct as well as authors 
+        print("Running LDA")
+        self.dataset.findSimilarDocumentsLDA()
        
 if __name__ == '__main__':
     unittest.main()
