@@ -12,9 +12,10 @@ from apgl.util.PathDefaults import PathDefaults
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 numpy.random.seed(21)
 
-algorithms = ["lsi", "lsi2", "lda"]
+#algorithms = ["lsi", "lsi2", "lda"]
+algorithms = ["lda"]
 useTfidf = [True, False]
-ks = numpy.array([100, 150, 200])
+ks = numpy.array([200, 300, 400])
 #ks = numpy.array([50])
 maxRelevantAuthors = numpy.array([100, 200, 500]) 
 #maxRelevantAuthors = numpy.array([100]) 
