@@ -14,10 +14,10 @@ numpy.random.seed(21)
 
 algorithms = ["lsi", "lsi2", "lda"]
 useTfidf = [True, False]
-#ks = numpy.array([100, 150, 200])
-ks = numpy.array([50])
-#maxRelevantAuthors = numpy.array([100, 200, 500]) 
-maxRelevantAuthors = numpy.array([100]) 
+ks = numpy.array([100, 150, 200])
+#ks = numpy.array([50])
+maxRelevantAuthors = numpy.array([100, 200, 500]) 
+#maxRelevantAuthors = numpy.array([100]) 
 fields = ["Boosting", "Intelligent Agents", "Machine Learning", "Ontology Alignment"]
 
 coverage1 = numpy.zeros((len(useTfidf), len(algorithms), len(ks), len(fields), maxRelevantAuthors.shape[0]))
