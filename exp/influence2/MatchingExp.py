@@ -39,7 +39,7 @@ for p, tfidf in enumerate(useTfidf):
                     dataset.overwriteVectoriser = overwriteVectoriser
                     dataset.overwriteModel = overwriteModel
                     dataset.maxRelevantAuthors = maxRelAuthors
-                    dataset.dataFilename = dataset.dataDir + "DBLP-citation-100000.txt"
+                    dataset.dataFilename = dataset.dataDir + "DBLP-citation-500000.txt"
                     dataset.tfidf = tfidf
                     
                     if algorithm == "lsi":

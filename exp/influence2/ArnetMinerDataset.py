@@ -71,7 +71,7 @@ class ArnetMinerDataset(object):
         self.matchCutoff = 0.90   
         
         #Params for finding relevant authors
-        self.similarityCutoff = 0.4
+        self.similarityCutoff = 0.3
         self.maxRelevantAuthors = 500
 
         #Params for vectoriser 
@@ -382,7 +382,7 @@ class ArnetMinerDataset(object):
         """
         Compute using the LSI version in gensim 
         """
-        if not os.path.exists(self.ldaModelFilename) or self.overwriteModel:
+        if not os.path.exists(self.lsiModelFilename) or self.overwriteModel:
             self.vectoriseDocuments()
             self.loadVectoriser()
             X = scipy.io.mmread(self.docTermMatrixFilename)
@@ -398,7 +398,7 @@ class ArnetMinerDataset(object):
             Util.savePickle([lsi, index], self.lsiModelFilename, debug=True)
             gc.collect()
         else: 
-            logging.debug("File already exists: " + self.ldaModelFilename)   
+            logging.debug("File already exists: " + self.lsiModelFilename)   
 
 
     def findSimilarDocumentsLSI2(self): 
