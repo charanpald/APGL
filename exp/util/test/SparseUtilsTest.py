@@ -370,6 +370,43 @@ class SparseUtilsCythonTest(unittest.TestCase):
         newX = SparseUtils.pruneMatrix(X, 0, 2)
         
         nptst.assert_array_almost_equal(newX.todense(), numpy.array([[0.1, 0.2], [0.1, 0.2], [0.0, 0.2], [0.1, 0.2]]))
+
+    def testHellingerDistances(self): 
+        m = 10 
+        n = 5 
+        density = 0.5 
+        numRuns = 10         
         
+        for j in range(numRuns): 
+            X = scipy.sparse.rand(m, n, density)
+            X = X.tocsc()
+            
+            v = scipy.sparse.rand(1, n, density)
+            
+            distances = SparseUtils.hellingerDistances(X, v) 
+            
+            X = numpy.array(X.todense()) 
+            v = numpy.array(v.todense())
+            
+            distances2 = numpy.zeros(X.shape[0])
+            
+            for i in range(X.shape[0]): 
+                distances2[i] = numpy.linalg.norm(numpy.sqrt(X[i, :]) - numpy.sqrt(v)) * numpy.sqrt(0.5)
+          
+            nptst.assert_array_almost_equal(distances, distances2)    
+            
+    def testStandardise(self): 
+        m = 10 
+        n = 5 
+        density = 0.5 
+        numRuns = 10 
+        
+        X = scipy.sparse.rand(m, n, density)
+        X = X.tocsc()
+
+        X2 = SparseUtils.standardise(X)
+        X2.data = X2.data**2
+        nptst.assert_array_almost_equal(numpy.array(X2.sum(0)).ravel(), numpy.ones(n)) 
+     
 if __name__ == '__main__':
     unittest.main()
