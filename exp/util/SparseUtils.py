@@ -436,6 +436,45 @@ class SparseUtils(object):
             return newX, newRowInds, newColInds
         else: 
             return newX 
+
+    @staticmethod 
+    def hellingerDistances(X, v): 
+        """
+        Compute the Hellinger distances beween the rows of matrix X and a vector
+        v. This is just distance(v1, v2) = sqrt(1/2 * sum( (sqrt(v1) - sqrt(v2) )**2 ) )  . 
+        """
+        Xc = X.copy()
+        Xc.data = numpy.sqrt(Xc.data)
         
-    
+        vc = v.copy()
+        vc.data = numpy.sqrt(vc.data)
+        
+        data = numpy.tile(vc.data, X.shape[0]) 
+        rowInds = numpy.repeat(numpy.arange(X.shape[0]), vc.nnz)
+        colInds = numpy.tile(vc.nonzero()[1], X.shape[0]) 
+        
+        X2 = scipy.sparse.csc_matrix((data, (rowInds, colInds)), shape=X.shape)
+        Xc = (Xc - X2)
+
+        Xc.data = Xc.data**2
+        distances = numpy.array(numpy.sqrt(0.5 * Xc.sum(1))).flatten()
+
+        return distances 
+
+    @staticmethod 
+    def standardise(X): 
+        """
+        Scale the columns of sparse matrix X to have a unit norm. 
+        """
+        Xc = X.copy()
+        Xc.data = Xc.data**2 
+        normCols = numpy.array(Xc.sum(0) + numpy.array(Xc.sum(0)==0)).ravel()
+        normCols = numpy.sqrt(normCols)
+                
+        rowInds, colInds = Xc.nonzero()
+        for i in range(rowInds.shape[0]): 
+            Xc[rowInds[i], colInds[i]] = X[rowInds[i], colInds[i]]/normCols[colInds[i]]
+            
+        return Xc 
+   
     kmaxMultiplier = 15 
