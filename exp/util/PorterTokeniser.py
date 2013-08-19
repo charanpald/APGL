@@ -8,7 +8,7 @@ class PorterTokeniser(object):
         self.minWordLength = 2
      
     def __call__(self, doc):
-        doc = str(doc.lower())
-        doc = doc.translate(string.maketrans("",""), string.punctuation)
+        doc = doc.lower().encode('utf-8').strip()
+        doc = doc.translate(string.maketrans("",""), string.punctuation).decode("utf-8")
         tokens =  [self.stemmer.stemWord(t) for t in doc.split()]  
         return [token for token in tokens if len(token) >= self.minWordLength]
