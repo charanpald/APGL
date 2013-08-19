@@ -17,32 +17,29 @@ numpy.set_printoptions(suppress=True, precision=3, linewidth=160)
 numpy.random.seed(21)
 
 averagePrecisionN = 50 
-fields = ["Boosting", "Intelligent Agents", "Machine Learning", "Ontology Alignment"]
-#fields = ["Boosting"]
-similarityCutoff = 0.3
-k = 100
-maxRelevantAuthors = [100, 200, 500]
-#maxRelevantAuthors = [100, 200]
-bestAveragePrecision = numpy.zeros((len(fields), len(maxRelevantAuthors)))
+similarityCutoff = 0.30
 ns = numpy.arange(5, 105, 5)
 
-for r, field in enumerate(fields): 
-    dataset = ArnetMinerDataset(field, k=k)    
-    for s, maxRelAuthors in enumerate(maxRelevantAuthors): 
-        dataset.overwriteRelevantExperts = True
-        dataset.overwriteCoauthors = True
-        dataset.maxRelevantAuthors = maxRelAuthors
-        dataset.similarityCutoff = similarityCutoff
-        
-        dataset.findSimilarDocuments()
-        
-        graph, authorIndexer, relevantExperts = dataset.coauthorsGraph()
-        expertMatches, expertsSet = dataset.matchExperts()     
+dataset = ArnetMinerDataset() 
+dataset.dataFilename = dataset.dataDir + "DBLP-citation-100000.txt"
+dataset.overwrite = True
+dataset.overwriteModel = True
+dataset.overwriteVectoriser = True 
+
+dataset.modelSelectionLSI()
+
+for field in dataset.fields: 
+    logging.debug("Field = " + field)
+    relevantExperts = dataset.findSimilarDocumentsLSI(field)
     
-        expertMatchesInds = authorIndexer.translate(expertMatches) 
-        relevantAuthorInds = authorIndexer.translate(relevantExperts) 
-        assert (numpy.array(relevantAuthorInds) < len(relevantAuthorInds)).all()
-        
+    graph, authorIndexer = dataset.coauthorsGraph(field, relevantExperts)
+    expertMatches = dataset.matchExperts(relevantExperts, dataset.testExpertDict)     
+    
+    expertMatchesInds = authorIndexer.translate(expertMatches) 
+    relevantAuthorInds = authorIndexer.translate(relevantExperts) 
+    assert (numpy.array(relevantAuthorInds) < len(relevantAuthorInds)).all()
+    
+    if len(expertMatches) != 0: 
         #First compute graph properties 
         computeInfluence = False
         graphRanker = GraphRanker(k=100, numRuns=100, computeInfluence=computeInfluence, p=0.05, trainExpertsIdList=expertMatchesInds)
@@ -57,17 +54,16 @@ for r, field in enumerate(fields):
         for i, n in enumerate(ns):     
             for j in range(len(outputLists)): 
                 precisions[i, j] = Evaluator.precisionFromIndLists(expertMatchesInds, outputLists[j][0:n]) 
-                
+            
         for j in range(len(outputLists)):                 
             averagePrecisions[j] = Evaluator.averagePrecisionFromLists(expertMatchesInds, outputLists[j][0:averagePrecisionN], averagePrecisionN) 
         
         precisions = numpy.c_[numpy.array(ns), precisions]
+        
+        logging.debug(Latex.array2DToRow2(precisions*len(expertMatches)))
         logging.debug(Latex.array1DToRow(averagePrecisions*len(expertMatches)))
-        bestAveragePrecision[r,s] = numpy.max(averagePrecisions)*len(expertMatches) 
-        logging.debug("Max average precision for " + str((field, maxRelAuthors)) + " = " + str(bestAveragePrecision[r,s]))
-
-for r in range(bestAveragePrecision.shape[0]):
-    print("field = " + str(fields[r]))
-    print(bestAveragePrecision[r, :])
+    
+        resultsFilename = dataset.getResultsDir(field) + "precisions.npz"
+        numpy.savez(resultsFilename, precisions, averagePrecisions)
 
 logging.debug("All done!")

@@ -11,9 +11,12 @@ class  ArnetMinerDatasetTest(unittest.TestCase):
         numpy.set_printoptions(suppress=True, precision=3)
         logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
         
-        field = "Database"
-        self.dataset = ArnetMinerDataset(field)
+        self.field = "Database"
+        self.dataset = ArnetMinerDataset(additionalFields=[self.field])
         self.dataset.dataFilename = self.dataset.dataDir + "DBLP-citation-test.txt"
+        self.dataset.overwrite = True
+        self.dataset.overwriteModel = True
+        self.dataset.overwriteVectoriser = True        
         
     def testVectoriseDocuments(self): 
         #Check document is correct as well as authors 
@@ -26,18 +29,16 @@ class  ArnetMinerDatasetTest(unittest.TestCase):
         
         #Check document is correct as well as authors 
         self.dataset.vectoriseDocuments()
-        self.dataset.findSimilarDocumentsLSI()
+        relevantExperts = self.dataset.findSimilarDocumentsLSI(self.field)
         
-        experts = Util.loadPickle(self.dataset.relevantExpertsFilename)
-        
-        self.assertEquals(['Hector Garcia-Molina', 'Meichun Hsu'], experts[0:2])
+        self.assertEquals(['Hector Garcia-Molina', 'Meichun Hsu'], relevantExperts[0:2])
         
     def testFindCoauthors(self): 
         
         #Check document is correct as well as authors 
         self.dataset.vectoriseDocuments()
-        self.dataset.findSimilarDocumentsLSI()
-        self.dataset.coauthorsGraph()
+        relevantExperts = self.dataset.findSimilarDocumentsLSI(self.field)
+        self.dataset.coauthorsGraph(self.field, relevantExperts)
   
 
     def testCoauthorsGraphFromAuthors(self): 
@@ -55,8 +56,11 @@ class  ArnetMinerDatasetTest(unittest.TestCase):
        
     def testMatchExperts(self): 
         #TODO: 
-        expertMatches, expertsSet = self.dataset.matchExperts() 
-        
+        self.dataset.vectoriseDocuments()
+        relevantExperts = self.dataset.findSimilarDocumentsLSI(self.field)
+        expertsSet = self.dataset.expertsDict[self.field]
+        expertMatches = self.dataset.matchExperts(relevantExperts, expertsSet) 
+                     
         self.assertEquals(expertMatches, ['Hector Garcia-Molina'])
         self.assertEquals(expertsSet, set(['Hector L. Garcia-Molina', 'Jimmy Conners']))
             
@@ -68,16 +72,25 @@ class  ArnetMinerDatasetTest(unittest.TestCase):
         self.assertEquals(experts, ['Ian Hislop', 'Alfred Nobel', 'Joe Bloggs'])
         
     def testFindSimilarDocumentsLDA(self): 
-        field = "Database"
-        self.dataset = ArnetMinerDataset(field)
-        self.dataset.dataFilename = self.dataset.dataDir + "DBLP-citation-test.txt"
+        self.dataset = ArnetMinerDataset()
+        self.dataset.dataFilename = self.dataset.dataDir + "DBLP-citation-1000.txt"
         self.dataset.overwrite = True
         self.dataset.overwriteModel = True
-        self.dataset.k = 10
+        self.dataset.overwriteVectoriser = True
+        self.dataset.k = 20
         
         #Check document is correct as well as authors 
-        print("Running LDA")
-        self.dataset.findSimilarDocumentsLDA()
-       
+        self.dataset.findSimilarDocumentsLDA(self.field)
+
+    def testModelSelectionLSI(self): 
+        self.dataset.dataFilename = self.dataset.dataDir + "DBLP-citation-1000.txt"
+        self.dataset.overwrite = True
+        self.dataset.overwriteModel = True
+        self.dataset.overwriteVectoriser = True        
+        
+        self.dataset.vectoriseDocuments() 
+        
+        self.dataset.modelSelectionLSI()
+  
 if __name__ == '__main__':
     unittest.main()

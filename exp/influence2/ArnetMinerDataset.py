@@ -7,14 +7,12 @@ import sklearn.feature_extraction.text as text
 import gc
 import scipy.sparse
 import igraph
-import string 
 import array
-import pickle 
 import itertools 
-import Stemmer
 import gensim.matutils
 import sys 
 import scipy.io
+import sklearn.preprocessing 
 from gensim.models.ldamodel import LdaModel
 from gensim.models.lsimodel import LsiModel
 import gensim.similarities
@@ -23,18 +21,9 @@ from apgl.util.PathDefaults import PathDefaults
 from exp.sandbox.RandomisedSVD import RandomisedSVD
 from exp.util.IdIndexer import IdIndexer
 from collections import Counter, OrderedDict 
+from exp.util.PorterTokeniser import PorterTokeniser
+from exp.util.SparseUtils import SparseUtils
 
-
-#Tokenise the documents                 
-class PorterTokeniser(object):
-    def __init__(self):
-        self.stemmer = Stemmer.Stemmer('english')
-        self.minWordLength = 2
-     
-    def __call__(self, doc):
-        doc = doc.lower()
-        tokens =  [self.stemmer.stemWord(t) for t in doc.split()]  
-        return [token for token in tokens if len(token) >= self.minWordLength]
 
 class ArnetMinerDataset(object): 
     """
@@ -42,30 +31,27 @@ class ArnetMinerDataset(object):
     abstract similarity. The output is two graphs - collaboration and 
     abstract similarity. 
     """    
-    def __init__(self, field, k=50):
+    def __init__(self, k=50, additionalFields=[]):
         numpy.random.seed(21)
         self.dataDir = PathDefaults.getDataDir() + "dblpCitation/" 
         
-        self.field = field 
+        self.fields = ["Boosting", "Computer Vision", "Cryptography", "Data Mining"]
+        self.fields.extend(["Information Extraction", "Intelligent Agents", "Machine Learning"])
+        self.fields.extend(["Natural Language Processing", "Neural Networks", "Ontology Alignment"])
+        self.fields.extend(["Planning", "Semantic Web", "Support Vector Machine"])    
+        self.fields.extend(additionalFields)        
+        
         #self.dataFilename = self.dataDir + "DBLP-citation-Feb21.txt" 
-        self.dataFilename = self.dataDir + "DBLP-citation-7000000.txt" 
-        #self.dataFilename = self.dataDir + "DBLP-citation-100000.txt"
+        #self.dataFilename = self.dataDir + "DBLP-citation-7000000.txt" 
+        self.dataFilename = self.dataDir + "DBLP-citation-100000.txt"
         
-        baseDir = PathDefaults.getDataDir() + "reputation/"
-        resultsDir = baseDir + field.replace(' ', '') + "/"
-                
-        self.docTermMatrixSVDFilename = baseDir + "termDocMatrixSVD.npz"
-        self.docTermMatrixFilename = baseDir + "termDocMatrix"
-        self.authorListFilename = baseDir + "authorList.pkl"
-        self.vectoriserFilename = baseDir + "vectoriser.pkl"        
-        self.ldaModelFilename = baseDir + "ldaModel.pkl"
-        self.lsiModelFilename = baseDir + "lsiModel.pkl"
+        self.baseDir = PathDefaults.getDataDir() + "reputation/"
+        self.docTermMatrixFilename = self.baseDir + "termDocMatrix"        
+        self.authorListFilename = self.baseDir + "authorList.pkl"
+        self.vectoriserFilename = self.baseDir + "vectoriser.pkl"   
+        self.ldaModelFilename = self.baseDir + "ldaModel.pkl"
+        self.lsiModelFilename = self.baseDir + "lsiModel.pkl"
         
-        self.expertsFileName = resultsDir + "experts.txt"
-        self.expertMatchesFilename = resultsDir + "experts_matches.csv"
-        self.coauthorsFilename = resultsDir + "coauthors.pkl"
-        self.relevantExpertsFilename = resultsDir + "relevantExperts.pkl"          
-
         self.stepSize = 1000000    
         self.numLines = 15192085
         self.matchCutoff = 0.90   
@@ -81,10 +67,12 @@ class ArnetMinerDataset(object):
         self.minDf = 2 
         self.ngram = 2
         
-        #params for RSVD        
+        #params for LSI        
         self.k = k
         self.q = 3
         self.p = 30 
+        self.ks = [50, 100, 150, 200, 250]
+        self.sampleDocs = 1000000
         
         self.overwrite = False
         self.overwriteVectoriser = False
@@ -93,20 +81,46 @@ class ArnetMinerDataset(object):
         self.chunksize = 5000
         self.tfidf = True 
         
-    def matchExperts(self): 
-        """
-        Match experts in the set of relevant experts. It returns expertMatches 
-        which is the name of the expert in the database, and expertSet which is 
-        the complete set of experts. 
-        """
-        expertsFile = open(self.expertsFileName)
-        expertsSet = expertsFile.readlines()
-        expertsSet = set([x.strip() for x in expertsSet])
-        expertsFile.close()
+        #Load the complete set of experts 
+        self.expertsDict = {} 
+        for field in self.fields: 
+            expertsFile = open(self.getResultsDir(field) + "experts.txt")
+            self.expertsDict[field] = expertsFile.readlines()
+            self.expertsDict[field] = set([x.strip() for x in self.expertsDict[field]])
+            expertsFile.close()
+            
+        #Create a set of experts we use for training 
+        self.trainExpertDict = {}
+        self.testExpertDict = {}        
         
-        relevantExperts = set(Util.loadPickle(self.relevantExpertsFilename)) 
+        for field in self.fields: 
+            inds  = numpy.random.permutation(len(self.expertsDict[field]))            
+            
+            numTrainInds = int(0.5*len(self.expertsDict[field])) 
+            trainInds = inds[0:numTrainInds]
+            self.trainExpertDict[field] = list(numpy.array(list(self.expertsDict[field]))[trainInds]) 
+            
+            testInds = inds[numTrainInds:]
+            self.testExpertDict[field] = list(numpy.array(list(self.expertsDict[field]))[testInds]) 
+            
+    def getResultsDir(self, field):
+        return self.baseDir + field.replace(' ', '') + "/"
+        
+    def getRelevantExpertsFilename(self, field): 
+        return self.getResultsDir(field) + "relevantExperts.pkl"
+        
+    def getCoauthorsFilename(self, field): 
+        return self.getResultsDir(field) + "coauthors.pkl"
+        
+    def matchExperts(self, relevantExperts, expertsSet): 
+        """
+        Match experts in the set of relevant experts for the given field. It returns 
+        expertMatches which is the name of the expert in the database, and expertSet 
+        which is the complete set of experts. 
+        """
+        expertsSet = set(expertsSet)
         expertMatches = set([])
-        
+               
         for relevantExpert in relevantExperts: 
             possibleMatches = difflib.get_close_matches(relevantExpert, expertsSet, cutoff=self.matchCutoff)
             if len(possibleMatches) != 0: 
@@ -120,7 +134,7 @@ class ArnetMinerDataset(object):
         expertMatches = sorted(list(expertMatches))
         logging.debug("Total number of matches " + str(len(expertMatches)) + " of " + str(len(expertsSet)))        
         
-        return expertMatches, expertsSet 
+        return expertMatches 
 
     def coauthorsGraphFromAuthors(self, relevantExperts): 
         """
@@ -162,26 +176,24 @@ class ArnetMinerDataset(object):
         graph.add_edges(edges)
         graph.es["weight"] = numpy.ones(graph.ecount())
         graph.simplify(combine_edges=sum)   
-        graph.es["invWeight"] = 1.0/numpy.array(graph.es["weight"]) 
+        graph.es["invWeight"] = 1.0/(numpy.array(graph.es["weight"])) 
         
         return graph, authorIndexer
             
-    def coauthorsGraph(self): 
+    def coauthorsGraph(self, field, relevantExperts): 
         """
         Using the relevant authors we find all coauthors. 
-        """ 
-        relevantExperts = Util.loadPickle(self.relevantExpertsFilename)     
-        
-        if not os.path.exists(self.coauthorsFilename) or self.overwrite: 
+        """  
+        if not os.path.exists(self.getCoauthorsFilename(field)) or self.overwrite: 
             logging.debug("Finding coauthors of relevant experts")
             graph, authorIndexer = self.coauthorsGraphFromAuthors(set(relevantExperts))
             logging.debug(graph.summary())
-            Util.savePickle([graph, authorIndexer], self.coauthorsFilename, debug=True)
+            Util.savePickle([graph, authorIndexer], self.getCoauthorsFilename(field), debug=True)
         else: 
-            logging.debug("Files already generated: " + self.coauthorsFilename)  
+            logging.debug("Files already generated: " + self.getCoauthorsFilename(field))  
 
-        graph, authorIndexer = Util.loadPickle(self.coauthorsFilename)
-        return graph, authorIndexer, relevantExperts 
+        graph, authorIndexer = Util.loadPickle(self.getCoauthorsFilename(field))
+        return graph, authorIndexer 
 
     def expertsFromDocSimilarities(self, similarities): 
         """
@@ -206,6 +218,50 @@ class ArnetMinerDataset(object):
         
         return experts 
 
+    def readAuthorsAndDocuments(self): 
+        logging.debug("About to read file " + self.dataFilename)
+        inFile = open(self.dataFilename)  
+        authorList = []
+        documentList = []
+                    
+        lastAbstract = ""
+        lastTitle = ""    
+        lastAuthors = []                    
+                    
+        for i, line in enumerate(inFile):
+            Util.printIteration(i, self.stepSize, self.numLines)
+                
+            #Match the fields in the file 
+            emptyLine = line == "\n"
+            title = re.findall("#\*(.*)", line)
+            currentAuthors = re.findall("#@(.*)", line)  
+            abstract = re.findall("#!(.*)", line)
+            
+            if emptyLine:
+                document = lastTitle + " " + lastAbstract 
+                documentList.append(document) 
+                authorList.append(lastAuthors)
+
+                lastAbstract = ""
+                lastTitle = ""
+                lastAuthors = []
+ 
+            if len(title) != 0 and len(title[0]) != 0: 
+                lastTitle = title[0]               
+            
+            if len(abstract) != 0 and len(abstract[0]) != 0: 
+                lastAbstract = abstract[0]
+                       
+            if len(currentAuthors) != 0: 
+                currentAuthors = currentAuthors[0].split(",")  
+                currentAuthors = set([x.strip() for x in currentAuthors])
+                lastAuthors = currentAuthors                     
+
+        inFile.close() 
+        logging.debug("Finished reading file")    
+
+        return authorList, documentList
+
     def vectoriseDocuments(self):
         """
         We want to go through the dataset and vectorise all the title+abstracts.
@@ -214,48 +270,8 @@ class ArnetMinerDataset(object):
         if not os.path.exists(self.docTermMatrixFilename + ".mtx") or not os.path.exists(self.authorListFilename) or not os.path.exists(self.vectoriserFilename) or self.overwriteVectoriser:
             logging.debug("Vectorising documents")            
             
-            inFile = open(self.dataFilename)  
-            authorList = []
-            documentList = []
-                        
-            lastAbstract = ""
-            lastTitle = ""    
-            lastAuthors = []                    
-                        
-            for i, line in enumerate(inFile):
-                Util.printIteration(i, self.stepSize, self.numLines)
-                    
-                #Match the fields in the file 
-                emptyLine = line == "\n"
-                title = re.findall("#\*(.*)", line)
-                currentAuthors = re.findall("#@(.*)", line)  
-                abstract = re.findall("#!(.*)", line)
-                
-                if emptyLine:
-                    document = lastTitle + " " + lastAbstract 
-                    documentList.append(document.translate(string.maketrans("",""), string.punctuation)) 
-                    authorList.append(lastAuthors)
-    
-                    lastAbstract = ""
-                    lastTitle = ""
-                    lastAuthors = []
-     
-                if len(title) != 0 and len(title[0]) != 0: 
-                    lastTitle = title[0]               
-                
-                if len(abstract) != 0 and len(abstract[0]) != 0: 
-                    lastAbstract = abstract[0]
-                           
-                if len(currentAuthors) != 0: 
-                    currentAuthors = currentAuthors[0].split(",")  
-                    currentAuthors = set([x.strip() for x in currentAuthors])
-                    lastAuthors = currentAuthors                     
-    
-            inFile.close() 
-            logging.debug("Finished reading file")    
-            
+            authorList, documentList = self.readAuthorsAndDocuments()
             Util.savePickle(authorList, self.authorListFilename, debug=True)
-            del authorList
             
             #vectoriser = text.HashingVectorizer(ngram_range=(1,2), binary=self.binary, norm="l2", stop_words="english", tokenizer=PorterTokeniser(), dtype=numpy.float)
             
@@ -276,7 +292,7 @@ class ArnetMinerDataset(object):
             del vectoriser  
             gc.collect()
         else: 
-            logging.debug("Files already generated: " + self.docTermMatrixSVDFilename + " " + self.authorListFilename)   
+            logging.debug("Author list, document-term matrix and vectoriser already generated: ")   
    
     def loadVectoriser(self): 
         self.vectoriser = Util.loadPickle(self.vectoriserFilename)
@@ -284,59 +300,6 @@ class ArnetMinerDataset(object):
         self.authorList = Util.loadPickle(self.authorListFilename)     
         logging.debug("Loaded vectoriser and author list")
            
-    def computeLSI(self): 
-        if not os.path.exists(self.docTermMatrixSVDFilename) or self.overwriteModel:
-            self.vectoriseDocuments()
-            #Take the SVD of X (maybe better to use PROPACK here depending on size of X)
-            X = scipy.io.mmread(self.docTermMatrixFilename)
-            X = X.tocsc()
-            logging.debug("Computing the SVD of the document-term matrix of shape " + str(X.shape) + " with " + str(X.nnz) + " non zeros")
-            U, s, V = RandomisedSVD.svd(X, self.k, q=self.q, p=self.p)
-            del X 
-            gc.collect()
-            
-            numpy.savez(self.docTermMatrixSVDFilename, U, s, V)
-            logging.debug("Wrote to file " + self.docTermMatrixSVDFilename)
-        else: 
-            logging.debug("File already generated: " + self.docTermMatrixSVDFilename)
-        
-    def loadLSI(self): 
-        data = numpy.load(self.docTermMatrixSVDFilename)    
-        self.U, self.s, self.V = data["arr_0"], data["arr_1"], data["arr_2"]
-        logging.debug("Loaded SVD")
-      
-    def findSimilarDocumentsLSI(self): 
-        """
-        Find all documents within the same field using Latent Semantic Indexing
-        and the cosine similarity metric. 
-        """
-        if not os.path.exists(self.relevantExpertsFilename) or self.overwrite: 
-            self.computeLSI()
-            self.loadVectoriser()
-            self.loadLSI()
-
-            #Normalised rows of U 
-            normU = numpy.sqrt((self.U**2).sum(1))
-            invNormU = 1/(normU + numpy.array(normU==0, numpy.int))
-            U = (self.U.T*invNormU).T
-        
-            newX = self.vectoriser.transform([self.field])
-            if newX.nnz == 0: 
-                raise ValueError("Query term not found") 
-            
-            newU = newX.dot(self.V*(1/self.s)).T
-            newU = newU/numpy.linalg.norm(newU)
-            similarities = U.dot(newU).ravel()
-            
-            experts = self.expertsFromDocSimilarities(similarities)
-            logging.debug("Number of relevant authors : " + str(len(experts)))
-            
-            Util.savePickle(experts, self.relevantExpertsFilename, debug=True)
-            logging.debug("Saved experts in file " + self.relevantExpertsFilename)
-        else: 
-            logging.debug("File already generated " + self.relevantExpertsFilename)
-
-
     def computeLDA(self):
         if not os.path.exists(self.ldaModelFilename) or self.overwriteModel:
             self.vectoriseDocuments()
@@ -349,36 +312,38 @@ class ArnetMinerDataset(object):
             
             logging.getLogger('gensim').setLevel(logging.INFO)
             lda = LdaModel(corpus, num_topics=self.k, id2word=id2WordDict, chunksize=self.chunksize, distributed=False) 
-            index = gensim.similarities.docsim.SparseMatrixSimilarity(lda[corpus], num_features=len(self.vectoriser.get_feature_names()))             
+            index = gensim.similarities.docsim.SparseMatrixSimilarity(lda[corpus], num_features=self.k)             
             
             Util.savePickle([lda, index], self.ldaModelFilename, debug=True)
             gc.collect()
         else: 
             logging.debug("File already exists: " + self.ldaModelFilename)
    
-    def findSimilarDocumentsLDA(self): 
+    def findSimilarDocumentsLDA(self, field): 
         """ 
         We use LDA in this case 
         """
-        if not os.path.exists(self.relevantExpertsFilename) or self.overwrite: 
+        if not os.path.exists(self.getRelevantExpertsFilename(field)) or self.overwrite: 
             self.computeLDA()
             self.loadVectoriser()
                                 
             lda, index = Util.loadPickle(self.ldaModelFilename)
             
-            newX = self.vectoriser.transform([self.field])
+            newX = self.vectoriser.transform([field])
             #newX = self.vectoriser.transform(["database"])
             newX = [(i, newX[0, i])for i in newX.nonzero()[1]]
-            result = lda[newX]             
+            result = lda[newX]    
+            
+            #Cosine similarity 
             similarities = index[result]
             experts = self.expertsFromDocSimilarities(similarities)
             
             logging.debug("Number of relevant authors : " + str(len(experts)))
-            Util.savePickle(experts, self.relevantExpertsFilename, debug=True)
+            Util.savePickle(experts, self.getRelevantExpertsFilename(field), debug=True)
         else: 
-            logging.debug("File already generated " + self.relevantExpertsFilename)
+            logging.debug("File already generated " + self.getRelevantExpertsFilename(field))
 
-    def computeLSI2(self):
+    def computeLSI(self):
         """
         Compute using the LSI version in gensim 
         """
@@ -391,7 +356,7 @@ class ArnetMinerDataset(object):
             del X 
             id2WordDict = dict(zip(range(len(self.vectoriser.get_feature_names())), self.vectoriser.get_feature_names()))   
             
-            logging.getLogger('gensim').setLevel(logging.INFO)
+            logging.getLogger('gensim').setLevel(logging.ERROR)
             lsi = LsiModel(corpus, num_topics=self.k, id2word=id2WordDict, chunksize=self.chunksize, distributed=False) 
             index = gensim.similarities.docsim.SparseMatrixSimilarity(lsi[corpus], num_features=len(self.vectoriser.get_feature_names()))             
             
@@ -401,24 +366,65 @@ class ArnetMinerDataset(object):
             logging.debug("File already exists: " + self.lsiModelFilename)   
 
 
-    def findSimilarDocumentsLSI2(self): 
+    def findSimilarDocumentsLSI(self, field): 
         """ 
         We use LSI from gensim in this case 
         """
-        if not os.path.exists(self.relevantExpertsFilename) or self.overwrite: 
-            self.computeLSI2()
-            self.loadVectoriser()
-                                
-            lsi, index = Util.loadPickle(self.lsiModelFilename)
+        self.computeLSI()
+        self.loadVectoriser()
+                            
+        lsi, index = Util.loadPickle(self.lsiModelFilename)
+        
+        newX = self.vectoriser.transform([field])
+        #newX = self.vectoriser.transform(["database"])
+        newX = [(i, newX[0, i])for i in newX.nonzero()[1]]
+        result = lsi[newX]             
+        similarities = index[result]
+        relevantExperts = self.expertsFromDocSimilarities(similarities)
+        
+        return relevantExperts
+             
             
-            newX = self.vectoriser.transform([self.field])
-            #newX = self.vectoriser.transform(["database"])
-            newX = [(i, newX[0, i])for i in newX.nonzero()[1]]
-            result = lsi[newX]             
-            similarities = index[result]
-            experts = self.expertsFromDocSimilarities(similarities)
-            
-            logging.debug("Number of relevant authors : " + str(len(experts)))
-            Util.savePickle(experts, self.relevantExpertsFilename, debug=True)
-        else: 
-            logging.debug("File already generated " + self.relevantExpertsFilename)            
+    def modelSelectionLSI(self): 
+        """
+        Lets find the optimal parameters for LSI for all fields. We see the optimal 
+        number of parameters for the training set of experts. 
+        """
+        self.computeLSI()
+        self.loadVectoriser()
+        X = scipy.io.mmread(self.docTermMatrixFilename)
+        X = X.tocsr()
+        
+        #inds = numpy.random.permutation(X.shape[0])[0:self.sampleDocs]
+        #X = X[inds, :]
+        corpus = gensim.matutils.Sparse2Corpus(X, documents_columns=False)
+        id2WordDict = dict(zip(range(len(self.vectoriser.get_feature_names())), self.vectoriser.get_feature_names()))
+        
+        errors = numpy.zeros((len(self.ks), len(self.fields)))
+        logging.getLogger('gensim').setLevel(logging.ERROR) 
+        
+        logging.debug("Starting model selection")
+        
+        for i, k in enumerate(self.ks): 
+            for j, field in enumerate(self.fields): 
+                logging.debug("k="+str(k) + " and field=" + str(field))
+                
+                lsi = LsiModel(corpus, num_topics=k, id2word=id2WordDict, chunksize=self.chunksize, distributed=False) 
+                index = gensim.similarities.docsim.SparseMatrixSimilarity(lsi[corpus], num_features=k)
+                
+                newX = self.vectoriser.transform([field])
+                newX = [(s, newX[0, s])for s in newX.nonzero()[1]]
+                result = lsi[newX]             
+                similarities = index[result]
+                relevantExperts = self.expertsFromDocSimilarities(similarities)
+                
+                expertMatches = self.matchExperts(relevantExperts, set(self.trainExpertDict[field]))
+                errors[i, j] = float(len(expertMatches))/len(self.trainExpertDict[field])
+        
+        meanErrors = numpy.mean(errors, 1)
+        logging.debug(meanErrors)
+        
+        self.k = self.ks[numpy.argmin(meanErrors)]
+        logging.debug("Chosen k=" + str(self.k))
+        
+        
