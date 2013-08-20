@@ -39,7 +39,7 @@ class ArnetMinerDataset(object):
         
         #self.dataFilename = self.dataDir + "DBLP-citation-Feb21.txt" 
         #self.dataFilename = self.dataDir + "DBLP-citation-7000000.txt" 
-        self.dataFilename = self.dataDir + "DBLP-citation-100000.txt"        
+        self.dataFilename = self.dataDir + "DBLP-citation-1000000.txt"        
         self.baseDir = PathDefaults.getDataDir() + "reputation/"
         
         if runLSI: 
