@@ -41,13 +41,14 @@ class ArnetMinerDataset(object):
         #self.dataFilename = self.dataDir + "DBLP-citation-7000000.txt" 
         self.dataFilename = self.dataDir + "DBLP-citation-100000.txt"        
         self.baseDir = PathDefaults.getDataDir() + "reputation/"
-        self.authorListFilename = self.baseDir + "authorList.pkl"
         
         if runLSI: 
+            self.authorListFilename = self.baseDir + "authorListLSI.pkl"
             self.vectoriserFilename = self.baseDir + "vectoriserLSI.pkl"   
             self.modelFilename = self.baseDir + "modelLSI.pkl"
             self.docTermMatrixFilename = self.baseDir + "termDocMatrixLSI" 
         else: 
+            self.authorListFilename = self.baseDir + "authorListLDA.pkl"
             self.vectoriserFilename = self.baseDir + "vectoriserLDA.pkl" 
             self.modelFilename = self.baseDir + "modelLDA.pkl"     
             self.docTermMatrixFilename = self.baseDir + "termDocMatrixLDA"
