@@ -411,12 +411,11 @@ class ArnetMinerDataset(object):
         logging.debug("Starting model selection")
         
         for i, k in enumerate(self.ks): 
+            lsi = LsiModel(corpus, num_topics=k, id2word=id2WordDict, chunksize=self.chunksize, distributed=False)    
+            index = gensim.similarities.docsim.SparseMatrixSimilarity(lsi[corpus], num_features=k)
+            
             for j, field in enumerate(self.fields): 
-                logging.debug("k="+str(k) + " and field=" + str(field))
-                
-                lsi = LsiModel(corpus, num_topics=k, id2word=id2WordDict, chunksize=self.chunksize, distributed=False) 
-                index = gensim.similarities.docsim.SparseMatrixSimilarity(lsi[corpus], num_features=k)
-                
+                logging.debug("k="+str(k) + " and field=" + str(field))                
                 newX = self.vectoriser.transform([field])
                 newX = [(s, newX[0, s])for s in newX.nonzero()[1]]
                 result = lsi[newX]             
