@@ -27,7 +27,7 @@ ns = numpy.arange(5, 105, 5)
 runLSI = args.runLSI
 
 dataset = ArnetMinerDataset(runLSI=runLSI) 
-dataset.dataFilename = dataset.dataDir + "DBLP-citation-1000000.txt"
+dataset.dataFilename = dataset.dataDir + "DBLP-citation-100000.txt"
 dataset.overwrite = True
 dataset.overwriteModel = True
 
@@ -43,7 +43,7 @@ for field in dataset.fields:
     relevantExperts = dataset.findSimilarDocuments(field)
     
     graph, authorIndexer = dataset.coauthorsGraph(field, relevantExperts)
-    expertMatches = dataset.matchExperts(relevantExperts, dataset.testExpertDict)     
+    expertMatches = dataset.matchExperts(relevantExperts, dataset.testExpertDict[field])     
     
     expertMatchesInds = authorIndexer.translate(expertMatches) 
     relevantAuthorInds = authorIndexer.translate(relevantExperts) 
