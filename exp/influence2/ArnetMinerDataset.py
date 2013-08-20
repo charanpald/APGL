@@ -71,7 +71,7 @@ class ArnetMinerDataset(object):
         self.k = k
         self.q = 3
         self.p = 30 
-        self.ks = [50, 100, 150, 200, 250]
+        self.ks = [50, 100, 150]
         self.sampleDocs = 1000000
         
         self.overwrite = False
@@ -225,6 +225,7 @@ class ArnetMinerDataset(object):
         documentList = []
                     
         lastAbstract = ""
+        lastVenue = ""
         lastTitle = ""    
         lastAuthors = []                    
                     
@@ -236,9 +237,10 @@ class ArnetMinerDataset(object):
             title = re.findall("#\*(.*)", line)
             currentAuthors = re.findall("#@(.*)", line)  
             abstract = re.findall("#!(.*)", line)
+            venue = re.findall("#conf(.*)", line)
             
             if emptyLine:
-                document = lastTitle + " " + lastAbstract 
+                document = lastTitle + " " + lastVenue + " " + lastAbstract 
                 documentList.append(document) 
                 authorList.append(lastAuthors)
 
@@ -247,7 +249,10 @@ class ArnetMinerDataset(object):
                 lastAuthors = []
  
             if len(title) != 0 and len(title[0]) != 0: 
-                lastTitle = title[0]               
+                lastTitle = title[0]
+                
+            if len(venue) != 0 and len(venue[0]) != 0: 
+                lastVenue = venue[0]  
             
             if len(abstract) != 0 and len(abstract[0]) != 0: 
                 lastAbstract = abstract[0]
@@ -258,7 +263,7 @@ class ArnetMinerDataset(object):
                 lastAuthors = currentAuthors                     
 
         inFile.close() 
-        logging.debug("Finished reading file")    
+        logging.debug("Finished reading file")  
 
         return authorList, documentList
 

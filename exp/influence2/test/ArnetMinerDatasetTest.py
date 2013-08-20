@@ -9,7 +9,7 @@ class  ArnetMinerDatasetTest(unittest.TestCase):
     def setUp(self): 
         numpy.random.seed(22) 
         numpy.set_printoptions(suppress=True, precision=3)
-        logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+        #logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
         
         self.field = "Database"
         self.dataset = ArnetMinerDataset(additionalFields=[self.field])
@@ -23,15 +23,15 @@ class  ArnetMinerDatasetTest(unittest.TestCase):
         self.dataset.vectoriseDocuments()
         
     def testFindSimilarDocuments(self): 
-        field = "Database"
-        self.dataset = ArnetMinerDataset(field)
+        field = "Object"
+        self.dataset = ArnetMinerDataset()
         self.dataset.dataFilename = self.dataset.dataDir + "DBLP-citation-test.txt"
         
         #Check document is correct as well as authors 
         self.dataset.vectoriseDocuments()
-        relevantExperts = self.dataset.findSimilarDocumentsLSI(self.field)
+        relevantExperts = self.dataset.findSimilarDocumentsLSI(field)
         
-        self.assertEquals(['Hector Garcia-Molina', 'Meichun Hsu'], relevantExperts[0:2])
+        self.assertEquals(['Jos\xc3\xa9 A. Blakeley', 'Alfons Kemper', 'Guido Moerkotte'], relevantExperts)
         
     def testFindCoauthors(self): 
         
@@ -57,12 +57,12 @@ class  ArnetMinerDatasetTest(unittest.TestCase):
     def testMatchExperts(self): 
         #TODO: 
         self.dataset.vectoriseDocuments()
-        relevantExperts = self.dataset.findSimilarDocumentsLSI(self.field)
+        relevantExperts = self.dataset.findSimilarDocumentsLSI("Object")
         expertsSet = self.dataset.expertsDict[self.field]
-        expertMatches = self.dataset.matchExperts(relevantExperts, expertsSet) 
+        expertMatches = self.dataset.matchExperts(relevantExperts, expertsSet)
                      
-        self.assertEquals(expertMatches, ['Hector Garcia-Molina'])
-        self.assertEquals(expertsSet, set(['Hector L. Garcia-Molina', 'Jimmy Conners']))
+        self.assertEquals(expertMatches, ['Alfons Kemper', 'Guido Moerkotte'])
+        self.assertEquals(expertsSet, set(['Jimmy Conners', 'Alfons Kemper', 'Guido Moerkotte']))
             
     def testExpertsFromDocSimilarities(self):
         self.dataset.authorList = [["Joe Bloggs", "Alfred Nobel"], ["Ian Hislop"], ["Alfred Nobel", "Ian Hislop"]]
