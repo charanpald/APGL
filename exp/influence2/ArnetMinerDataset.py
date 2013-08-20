@@ -10,20 +10,15 @@ import igraph
 import array
 import itertools 
 import gensim.matutils
-import sys 
 import scipy.io
-import sklearn.preprocessing 
 from gensim.models.ldamodel import LdaModel
 from gensim.models.lsimodel import LsiModel
 import gensim.similarities
 from apgl.util.Util import Util 
 from apgl.util.PathDefaults import PathDefaults 
-from exp.sandbox.RandomisedSVD import RandomisedSVD
 from exp.util.IdIndexer import IdIndexer
 from collections import Counter, OrderedDict 
 from exp.util.PorterTokeniser import PorterTokeniser
-from exp.util.SparseUtils import SparseUtils
-
 
 class ArnetMinerDataset(object): 
     """
@@ -310,7 +305,6 @@ class ArnetMinerDataset(object):
             self.vectoriseDocuments()
             self.loadVectoriser()
             X = scipy.io.mmread(self.docTermMatrixFilename)
-            #corpus = gensim.matutils.MmReader(self.docTermMatrixFilename + ".mtx", True)
             corpus = gensim.matutils.Sparse2Corpus(X, documents_columns=False)
             del X 
             id2WordDict = dict(zip(range(len(self.vectoriser.get_feature_names())), self.vectoriser.get_feature_names()))   
@@ -335,7 +329,6 @@ class ArnetMinerDataset(object):
             lda, index = Util.loadPickle(self.ldaModelFilename)
             
             newX = self.vectoriser.transform([field])
-            #newX = self.vectoriser.transform(["database"])
             newX = [(i, newX[0, i])for i in newX.nonzero()[1]]
             result = lda[newX]    
             
@@ -363,7 +356,7 @@ class ArnetMinerDataset(object):
             
             logging.getLogger('gensim').setLevel(logging.ERROR)
             lsi = LsiModel(corpus, num_topics=self.k, id2word=id2WordDict, chunksize=self.chunksize, distributed=False) 
-            index = gensim.similarities.docsim.SparseMatrixSimilarity(lsi[corpus], num_features=len(self.vectoriser.get_feature_names()))             
+            index = gensim.similarities.docsim.SparseMatrixSimilarity(lsi[corpus], num_features=self.k)             
             
             Util.savePickle([lsi, index], self.lsiModelFilename, debug=True)
             gc.collect()
@@ -379,23 +372,20 @@ class ArnetMinerDataset(object):
         self.loadVectoriser()
                             
         lsi, index = Util.loadPickle(self.lsiModelFilename)
-        
         newX = self.vectoriser.transform([field])
-        #newX = self.vectoriser.transform(["database"])
         newX = [(i, newX[0, i])for i in newX.nonzero()[1]]
         result = lsi[newX]             
         similarities = index[result]
         relevantExperts = self.expertsFromDocSimilarities(similarities)
         
         return relevantExperts
-             
-            
+
     def modelSelectionLSI(self): 
         """
         Lets find the optimal parameters for LSI for all fields. We see the optimal 
         number of parameters for the training set of experts. 
         """
-        self.computeLSI()
+        self.vectoriseDocuments()
         self.loadVectoriser()
         X = scipy.io.mmread(self.docTermMatrixFilename)
         X = X.tocsr()
@@ -411,7 +401,9 @@ class ArnetMinerDataset(object):
         logging.debug("Starting model selection")
         
         for i, k in enumerate(self.ks): 
+            logging.debug("Starting LSI")
             lsi = LsiModel(corpus, num_topics=k, id2word=id2WordDict, chunksize=self.chunksize, distributed=False)    
+            logging.debug("Creating index")
             index = gensim.similarities.docsim.SparseMatrixSimilarity(lsi[corpus], num_features=k)
             
             for j, field in enumerate(self.fields): 
