@@ -6,6 +6,7 @@ import os
 import numpy 
 import logging 
 import sys 
+import argparse
 from exp.influence2.GraphRanker import GraphRanker 
 from exp.influence2.RankAggregator import RankAggregator
 from exp.influence2.ArnetMinerDataset import ArnetMinerDataset
@@ -16,21 +17,30 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 numpy.set_printoptions(suppress=True, precision=3, linewidth=160)
 numpy.random.seed(21)
 
+parser = argparse.ArgumentParser(description='Run reputation evaluation experiments')
+parser.add_argument("-r", "--runLSI", action="store_true", help="Run Latent Semantic Indexing")
+args = parser.parse_args()
+
 averagePrecisionN = 50 
 similarityCutoff = 0.30
 ns = numpy.arange(5, 105, 5)
+runLSI = args.runLSI
 
-dataset = ArnetMinerDataset() 
-dataset.dataFilename = dataset.dataDir + "DBLP-citation-1000000.txt"
+dataset = ArnetMinerDataset(runLSI=runLSI) 
+dataset.dataFilename = dataset.dataDir + "DBLP-citation-100000.txt"
 dataset.overwrite = True
 dataset.overwriteModel = True
-dataset.overwriteVectoriser = True 
 
-dataset.modelSelectionLSI()
+dataset.overwriteVectoriser = True 
+dataset.vectoriseDocuments()
+dataset.overwriteVectoriser = False
+
+dataset.modelSelection()
 
 for field in dataset.fields: 
     logging.debug("Field = " + field)
-    relevantExperts = dataset.findSimilarDocumentsLSI(field)
+    dataset.learnModel() 
+    relevantExperts = dataset.findSimilarDocuments(field)
     
     graph, authorIndexer = dataset.coauthorsGraph(field, relevantExperts)
     expertMatches = dataset.matchExperts(relevantExperts, dataset.testExpertDict)     
