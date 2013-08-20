@@ -70,7 +70,7 @@ for field in dataset.fields:
         
         precisions = numpy.c_[numpy.array(ns), precisions]
         
-        logging.debug(Latex.array2DToRow2(precisions*len(expertMatches)))
+        logging.debug(Latex.array2DToRows(precisions*len(expertMatches)))
         logging.debug(Latex.array1DToRow(averagePrecisions*len(expertMatches)))
     
         resultsFilename = dataset.getResultsDir(field) + "precisions.npz"
