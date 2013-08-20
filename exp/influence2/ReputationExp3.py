@@ -27,7 +27,7 @@ ns = numpy.arange(5, 105, 5)
 runLSI = args.runLSI
 
 dataset = ArnetMinerDataset(runLSI=runLSI) 
-dataset.dataFilename = dataset.dataDir + "DBLP-citation-1000000.txt"
+dataset.dataFilename = dataset.dataDir + "DBLP-citation-5000000.txt"
 dataset.overwrite = True
 dataset.overwriteModel = True
 
