@@ -322,9 +322,9 @@ class ArnetMinerDataset(object):
             
     def findSimilarDocuments(self, field): 
         if self.runLSI: 
-            self.findSimilarDocumentsLSI(field)
+            return self.findSimilarDocumentsLSI(field)
         else: 
-            self.findSimilarDocumentsLDA(field)        
+            return self.findSimilarDocumentsLDA(field)        
       
     def computeLDA(self):
         if not os.path.exists(self.modelFilename) or self.overwriteModel:
@@ -359,9 +359,10 @@ class ArnetMinerDataset(object):
         
         #Cosine similarity 
         similarities = index[result]
-        experts = self.expertsFromDocSimilarities(similarities)
+        relevantExperts = self.expertsFromDocSimilarities(similarities)
         
-        logging.debug("Number of relevant authors : " + str(len(experts)))
+        logging.debug("Number of relevant authors : " + str(len(relevantExperts)))
+        return relevantExperts
 
 
     def modelSelectionLDA(self): 
