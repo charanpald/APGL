@@ -461,7 +461,7 @@ class ArnetMinerDataset(object):
         corpus = gensim.matutils.Sparse2Corpus(X, documents_columns=False)
         id2WordDict = dict(zip(range(len(self.vectoriser.get_feature_names())), self.vectoriser.get_feature_names()))
         
-        errors = numpy.zeros((len(self.ks), len(self.fields)))
+        coverges = numpy.zeros((len(self.ks), len(self.fields)))
         logging.getLogger('gensim').setLevel(logging.ERROR) 
         
         logging.debug("Starting model selection")
@@ -481,12 +481,12 @@ class ArnetMinerDataset(object):
                 relevantExperts = self.expertsFromDocSimilarities(similarities)
                 
                 expertMatches = self.matchExperts(relevantExperts, set(self.trainExpertDict[field]))
-                errors[i, j] = float(len(expertMatches))/len(self.trainExpertDict[field])
+                coverges[i, j] = float(len(expertMatches))/len(self.trainExpertDict[field])
         
-        meanErrors = numpy.mean(errors, 1)
-        logging.debug(meanErrors)
+        meanCoverges = numpy.mean(coverges, 1)
+        logging.debug(meanCoverges)
         
-        self.k = self.ks[numpy.argmin(meanErrors)]
+        self.k = self.ks[numpy.argmax(meanCoverges)]
         logging.debug("Chosen k=" + str(self.k))
         
         
