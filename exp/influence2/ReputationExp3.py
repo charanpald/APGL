@@ -27,6 +27,7 @@ ns = numpy.arange(5, 105, 5)
 runLSI = args.runLSI
 
 dataset = ArnetMinerDataset(runLSI=runLSI) 
+#dataset.dataFilename = dataset.dataDir + "DBLP-citation-100000.txt"
 dataset.dataFilename = dataset.dataDir + "DBLP-citation-5000000.txt"
 dataset.ks = [50, 100, 150, 200, 250, 300]
 dataset.overwriteGraph = True
@@ -70,12 +71,13 @@ for field in dataset.fields:
         for j in range(len(outputLists)):                 
             averagePrecisions[j] = Evaluator.averagePrecisionFromLists(expertMatchesInds, outputLists[j][0:averagePrecisionN], averagePrecisionN) 
         
-        precisions = numpy.c_[numpy.array(ns), precisions]
+        precisions2 = numpy.c_[numpy.array(ns), precisions]
         
-        logging.debug(Latex.array2DToRows(precisions*len(expertMatches)))
-        logging.debug(Latex.array1DToRow(averagePrecisions*len(expertMatches)))
+        logging.debug(Latex.array2DToRows(precisions2))
+        logging.debug(Latex.array1DToRow(averagePrecisions))
     
         resultsFilename = dataset.getResultsDir(field) + "precisions.npz"
         numpy.savez(resultsFilename, precisions, averagePrecisions)
+        logging.debug("Saved precisions as " + resultsFilename)
 
 logging.debug("All done!")
