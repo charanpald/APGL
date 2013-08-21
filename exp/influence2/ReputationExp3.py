@@ -28,7 +28,8 @@ runLSI = args.runLSI
 
 dataset = ArnetMinerDataset(runLSI=runLSI) 
 dataset.dataFilename = dataset.dataDir + "DBLP-citation-5000000.txt"
-dataset.overwrite = True
+dataset.ks = [50, 100, 150, 200, 250, 300]
+dataset.overwriteGraph = True
 dataset.overwriteModel = True
 
 dataset.overwriteVectoriser = True 
@@ -36,6 +37,7 @@ dataset.vectoriseDocuments()
 dataset.overwriteVectoriser = False
 
 dataset.modelSelection()
+dataset.overwriteModel = False
 
 for field in dataset.fields: 
     logging.debug("Field = " + field)
