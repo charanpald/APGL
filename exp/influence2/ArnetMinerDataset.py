@@ -76,7 +76,7 @@ class ArnetMinerDataset(object):
         self.ks = [50, 100, 150, 200]
         self.sampleDocs = 1000000
         
-        self.overwrite = False
+        self.overwriteGraph = False
         self.overwriteVectoriser = False
         self.overwriteModel = False
         
@@ -187,7 +187,7 @@ class ArnetMinerDataset(object):
         """
         Using the relevant authors we find all coauthors. 
         """  
-        if not os.path.exists(self.getCoauthorsFilename(field)) or self.overwrite: 
+        if not os.path.exists(self.getCoauthorsFilename(field)) or self.overwriteGraph: 
             logging.debug("Finding coauthors of relevant experts")
             graph, authorIndexer = self.coauthorsGraphFromAuthors(set(relevantExperts))
             logging.debug(graph.summary())
@@ -464,13 +464,13 @@ class ArnetMinerDataset(object):
         id2WordDict = dict(zip(range(len(self.vectoriser.get_feature_names())), self.vectoriser.get_feature_names()))
         
         coverges = numpy.zeros((len(self.ks), len(self.fields)))
-        logging.getLogger('gensim').setLevel(logging.ERROR) 
+        logging.getLogger('gensim').setLevel(logging.INFO) 
         
         logging.debug("Starting model selection")
         
         maxK = numpy.max(self.ks)
         logging.debug("Running LSI with " + str(maxK) + " dimensions")
-        lsi = LsiModel(corpus, num_topics=maxK, id2word=id2WordDict, chunksize=self.chunksize, distributed=False)    
+        lsi = LsiModel(corpus, num_topics=maxK, id2word=id2WordDict, chunksize=self.chunksize, distributed=False, onepass=False)    
         
         for i, k in enumerate(self.ks): 
             lsi.num_topics = k
@@ -493,5 +493,10 @@ class ArnetMinerDataset(object):
         
         self.k = self.ks[numpy.argmax(meanCoverges)]
         logging.debug("Chosen k=" + str(self.k))
+        
+        #Save the chosen model 
+        lsi.num_topics = self.k
+        index = gensim.similarities.docsim.SparseMatrixSimilarity(lsi[corpus], num_features=self.k)
+        Util.savePickle([lsi, index], self.modelFilename, debug=True)
         
         
