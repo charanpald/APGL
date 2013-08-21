@@ -34,7 +34,7 @@ class ArnetMinerDatasetProfile(object):
         ProfileUtils.profile('dataset.computeLDA()', globals(), locals()) 
         
     def profileModelSelection(self): 
-        dataset = ArnetMinerDataset(runLSI=True)   
+        dataset = ArnetMinerDataset(runLSI=False)   
         dataset.overwrite = True
         dataset.overwriteVectoriser = True
         dataset.overwriteModel = True
@@ -46,4 +46,4 @@ class ArnetMinerDatasetProfile(object):
         
 profiler = ArnetMinerDatasetProfile()
 #profiler.profileVectoriseDocuments() #211
-profiler.profileModelSelection() # 238 
+profiler.profileModelSelection() # 121 
