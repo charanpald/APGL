@@ -31,8 +31,19 @@ class ArnetMinerDatasetProfile(object):
         dataset.k = 200
         dataset.dataFilename = dataset.dataDir + "DBLP-citation-100000.txt"
         
-        ProfileUtils.profile('dataset.computeLDA()', globals(), locals())  
+        ProfileUtils.profile('dataset.computeLDA()', globals(), locals()) 
+        
+    def profileModelSelection(self): 
+        dataset = ArnetMinerDataset(runLSI=True)   
+        dataset.overwrite = True
+        dataset.overwriteVectoriser = True
+        dataset.overwriteModel = True
+        
+        dataset.dataFilename = dataset.dataDir + "DBLP-citation-100000.txt"
+        
+        ProfileUtils.profile('dataset.modelSelection()', globals(), locals())
+        
         
 profiler = ArnetMinerDatasetProfile()
 #profiler.profileVectoriseDocuments() #211
-profiler.profileComputeLDA()
+profiler.profileModelSelection() # 238 

@@ -60,6 +60,7 @@ class ArnetMinerDataset(object):
         #Params for finding relevant authors
         self.similarityCutoff = 0.3
         self.maxRelevantAuthors = 500
+        self.printPossibleMatches = False
 
         #Params for vectoriser 
         self.numFeatures = None
@@ -126,11 +127,12 @@ class ArnetMinerDataset(object):
             possibleMatches = difflib.get_close_matches(relevantExpert, expertsSet, cutoff=self.matchCutoff)
             if len(possibleMatches) != 0: 
                 expertMatches.add(relevantExpert)
-
-        for author in expertsSet.difference(expertMatches):
-            possibleMatches = difflib.get_close_matches(author, relevantExperts, cutoff=0.6)
-            if len(possibleMatches) != 0: 
-                logging.debug("Possible matches for " + author + " : " + str(possibleMatches))
+        
+        if self.printPossibleMatches: 
+            for author in expertsSet.difference(expertMatches):
+                possibleMatches = difflib.get_close_matches(author, relevantExperts, cutoff=0.7)
+                if len(possibleMatches) != 0: 
+                    logging.debug("Possible matches for " + author + " : " + str(possibleMatches))
                           
         expertMatches = sorted(list(expertMatches))
         logging.debug("Total number of matches " + str(len(expertMatches)) + " of " + str(len(expertsSet)))        
@@ -466,9 +468,12 @@ class ArnetMinerDataset(object):
         
         logging.debug("Starting model selection")
         
+        maxK = numpy.max(self.ks)
+        logging.debug("Running LSI with " + str(maxK) + " dimensions")
+        lsi = LsiModel(corpus, num_topics=maxK, id2word=id2WordDict, chunksize=self.chunksize, distributed=False)    
+        
         for i, k in enumerate(self.ks): 
-            logging.debug("Starting LSI")
-            lsi = LsiModel(corpus, num_topics=k, id2word=id2WordDict, chunksize=self.chunksize, distributed=False)    
+            lsi.num_topics = k
             logging.debug("Creating index")
             index = gensim.similarities.docsim.SparseMatrixSimilarity(lsi[corpus], num_features=k)
             
