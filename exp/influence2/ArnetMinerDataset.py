@@ -80,7 +80,7 @@ class ArnetMinerDataset(object):
         self.overwriteVectoriser = False
         self.overwriteModel = False
         
-        self.chunksize = 5000
+        self.chunksize = 2000
         self.tfidf = runLSI 
         
         #Load the complete set of experts 
@@ -293,7 +293,7 @@ class ArnetMinerDataset(object):
             X = vectoriser.fit_transform(documentList)
             del documentList
             scipy.io.mmwrite(self.docTermMatrixFilename, X)
-            logging.debug("Wrote X to file " + self.docTermMatrixFilename + ".mtx")
+            logging.debug("Wrote X with shape " + str(X.shape) + " and " + str(X.nnz) + " nonzeros to file " + self.docTermMatrixFilename + ".mtx")
             del X 
                 
             #Save vectoriser - note that we can't pickle the tokeniser so it needs to be reset when loaded 
@@ -332,9 +332,7 @@ class ArnetMinerDataset(object):
         if not os.path.exists(self.modelFilename) or self.overwriteModel:
             self.vectoriseDocuments()
             self.loadVectoriser()
-            X = scipy.io.mmread(self.docTermMatrixFilename)
-            corpus = gensim.matutils.Sparse2Corpus(X, documents_columns=False)
-            del X 
+            corpus = gensim.corpora.mmcorpus.MmCorpus(self.docTermMatrixFilename + ".mtx")
             id2WordDict = dict(zip(range(len(self.vectoriser.get_feature_names())), self.vectoriser.get_feature_names()))   
             
             logging.getLogger('gensim').setLevel(logging.INFO)
@@ -366,7 +364,6 @@ class ArnetMinerDataset(object):
         logging.debug("Number of relevant authors : " + str(len(relevantExperts)))
         return relevantExperts
 
-
     def modelSelectionLDA(self): 
         """
         Lets find the optimal parameters for LDA for all fields. We see the optimal 
@@ -374,12 +371,7 @@ class ArnetMinerDataset(object):
         """
         self.vectoriseDocuments()
         self.loadVectoriser()
-        X = scipy.io.mmread(self.docTermMatrixFilename)
-        X = X.tocsr()
-        
-        #inds = numpy.random.permutation(X.shape[0])[0:self.sampleDocs]
-        #X = X[inds, :]
-        corpus = gensim.matutils.Sparse2Corpus(X, documents_columns=False)
+        corpus = gensim.corpora.mmcorpus.MmCorpus(self.docTermMatrixFilename + ".mtx")
         id2WordDict = dict(zip(range(len(self.vectoriser.get_feature_names())), self.vectoriser.get_feature_names()))
         
         errors = numpy.zeros((len(self.ks), len(self.fields)))
@@ -417,10 +409,10 @@ class ArnetMinerDataset(object):
         if not os.path.exists(self.modelFilename) or self.overwriteModel:
             self.vectoriseDocuments()
             self.loadVectoriser()
-            X = scipy.io.mmread(self.docTermMatrixFilename)
+            #X = scipy.io.mmread(self.docTermMatrixFilename)
             #corpus = gensim.matutils.MmReader(self.docTermMatrixFilename + ".mtx", True)
-            corpus = gensim.matutils.Sparse2Corpus(X, documents_columns=False)
-            del X 
+            #corpus = gensim.matutils.Sparse2Corpus(X, documents_columns=False)
+            corpus = gensim.corpora.mmcorpus.MmCorpus(self.docTermMatrixFilename + ".mtx")
             id2WordDict = dict(zip(range(len(self.vectoriser.get_feature_names())), self.vectoriser.get_feature_names()))   
             
             logging.getLogger('gensim').setLevel(logging.ERROR)
@@ -455,12 +447,10 @@ class ArnetMinerDataset(object):
         """
         self.vectoriseDocuments()
         self.loadVectoriser()
-        X = scipy.io.mmread(self.docTermMatrixFilename)
-        X = X.tocsr()
-        
-        #inds = numpy.random.permutation(X.shape[0])[0:self.sampleDocs]
-        #X = X[inds, :]
-        corpus = gensim.matutils.Sparse2Corpus(X, documents_columns=False)
+        #X = scipy.io.mmread(self.docTermMatrixFilename)
+        #X = X.tocsr()
+        #corpus = gensim.matutils.Sparse2Corpus(X, documents_columns=False)
+        corpus = gensim.corpora.mmcorpus.MmCorpus(self.docTermMatrixFilename + ".mtx")
         id2WordDict = dict(zip(range(len(self.vectoriser.get_feature_names())), self.vectoriser.get_feature_names()))
         
         coverges = numpy.zeros((len(self.ks), len(self.fields)))
