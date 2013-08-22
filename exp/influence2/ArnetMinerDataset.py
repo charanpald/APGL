@@ -64,7 +64,8 @@ class ArnetMinerDataset(object):
         self.printPossibleMatches = False
 
         #Params for vectoriser 
-        self.numFeatures = psutil.virtual_memory()[1]/(8*500*3)
+        #self.numFeatures = psutil.virtual_memory()[1]/(8*500*3)
+        self.numFeatures = 750000
         self.binary = True 
         self.sublinearTf = False
         self.minDf = 2 
