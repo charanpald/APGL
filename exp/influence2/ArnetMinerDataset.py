@@ -11,6 +11,7 @@ import array
 import itertools 
 import gensim.matutils
 import scipy.io
+import psutil 
 from gensim.models.ldamodel import LdaModel
 from gensim.models.lsimodel import LsiModel
 import gensim.similarities
@@ -63,11 +64,13 @@ class ArnetMinerDataset(object):
         self.printPossibleMatches = False
 
         #Params for vectoriser 
-        self.numFeatures = None
+        self.numFeatures = psutil.virtual_memory()[1]/(8*500*3)
         self.binary = True 
         self.sublinearTf = False
         self.minDf = 2 
         self.ngram = 2
+        
+        logging.debug("Limiting BOW/TFIDF features to " + str(self.numFeatures))
         
         #params for LSI        
         self.k = k
