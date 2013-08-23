@@ -344,7 +344,7 @@ class ArnetMinerDataset(object):
             logging.getLogger('gensim').setLevel(logging.INFO)
             lda = LdaModel(corpus, num_topics=self.k, id2word=id2WordDict, chunksize=self.chunksize, distributed=False) 
             #index = gensim.similarities.docsim.SparseMatrixSimilarity(lda[corpus], num_features=self.k) 
-            index = gensim.similarities.docsim.Similarity(self.indexFilename, lda[corpus], num_features=k)            
+            index = gensim.similarities.docsim.Similarity(self.indexFilename, lda[corpus], num_features=self.k)            
             
             Util.savePickle([lda, index], self.modelFilename, debug=True)
             gc.collect()
@@ -409,6 +409,11 @@ class ArnetMinerDataset(object):
         
         self.k = self.ks[numpy.argmin(meanErrors)]
         logging.debug("Chosen k=" + str(self.k))
+        
+        #Save the chosen model 
+        lda.num_topics = self.k
+        index = gensim.similarities.docsim.Similarity(self.indexFilename, lda[corpus], num_features=self.k)
+        Util.savePickle([lda, index], self.modelFilename, debug=True)
 
     def computeLSI(self):
         """
@@ -425,7 +430,7 @@ class ArnetMinerDataset(object):
             
             logging.getLogger('gensim').setLevel(logging.ERROR)
             lsi = LsiModel(corpus, num_topics=self.k, id2word=id2WordDict, chunksize=self.chunksize, distributed=False) 
-            index = gensim.similarities.docsim.Similarity(self.indexFilename, lsi[corpus], num_features=k)          
+            index = gensim.similarities.docsim.Similarity(self.indexFilename, lsi[corpus], num_features=self.k)          
             
             Util.savePickle([lsi, index], self.modelFilename, debug=True)
             gc.collect()
@@ -495,7 +500,7 @@ class ArnetMinerDataset(object):
         
         #Save the chosen model 
         lsi.num_topics = self.k
-        index = gensim.similarities.docsim.SparseMatrixSimilarity(lsi[corpus], num_features=self.k)
+        index = gensim.similarities.docsim.Similarity(self.indexFilename, lsi[corpus], num_features=self.k)
         Util.savePickle([lsi, index], self.modelFilename, debug=True)
         
         
