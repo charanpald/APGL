@@ -48,18 +48,20 @@ class ArnetMinerDataset(object):
             self.vectoriserFilename = self.baseDir + "vectoriserLSI.pkl"   
             self.modelFilename = self.baseDir + "modelLSI.pkl"
             self.docTermMatrixFilename = self.baseDir + "termDocMatrixLSI" 
+            self.indexFilename = self.baseDir + "indexLSI" 
         else: 
             self.authorListFilename = self.baseDir + "authorListLDA.pkl"
             self.vectoriserFilename = self.baseDir + "vectoriserLDA.pkl" 
             self.modelFilename = self.baseDir + "modelLDA.pkl"     
             self.docTermMatrixFilename = self.baseDir + "termDocMatrixLDA"
+            self.indexFilename = self.baseDir + "indexLDA"
         
         self.stepSize = 1000000    
         self.numLines = 15192085
         self.matchCutoff = 0.90   
         
         #Params for finding relevant authors
-        self.similarityCutoff = 0.3
+        self.similarityCutoff = 0.4
         self.maxRelevantAuthors = 500
         self.printPossibleMatches = False
 
@@ -341,7 +343,8 @@ class ArnetMinerDataset(object):
             
             logging.getLogger('gensim').setLevel(logging.INFO)
             lda = LdaModel(corpus, num_topics=self.k, id2word=id2WordDict, chunksize=self.chunksize, distributed=False) 
-            index = gensim.similarities.docsim.SparseMatrixSimilarity(lda[corpus], num_features=self.k)             
+            #index = gensim.similarities.docsim.SparseMatrixSimilarity(lda[corpus], num_features=self.k) 
+            index = gensim.similarities.docsim.Similarity(self.indexFilename, lda[corpus], num_features=k)            
             
             Util.savePickle([lda, index], self.modelFilename, debug=True)
             gc.collect()
@@ -387,7 +390,8 @@ class ArnetMinerDataset(object):
             logging.debug("Starting LDA")
             lda = LdaModel(corpus, num_topics=k, id2word=id2WordDict, chunksize=self.chunksize, distributed=False)    
             logging.debug("Creating index")
-            index = gensim.similarities.docsim.SparseMatrixSimilarity(lda[corpus], num_features=k)
+            #index = gensim.similarities.docsim.SparseMatrixSimilarity(lda[corpus], num_features=k)
+            index = gensim.similarities.docsim.Similarity(self.indexFilename, lda[corpus], num_features=k)
             
             for j, field in enumerate(self.fields): 
                 logging.debug("k="+str(k) + " and field=" + str(field))                
@@ -421,7 +425,7 @@ class ArnetMinerDataset(object):
             
             logging.getLogger('gensim').setLevel(logging.ERROR)
             lsi = LsiModel(corpus, num_topics=self.k, id2word=id2WordDict, chunksize=self.chunksize, distributed=False) 
-            index = gensim.similarities.docsim.SparseMatrixSimilarity(lsi[corpus], num_features=self.k)             
+            index = gensim.similarities.docsim.Similarity(self.indexFilename, lsi[corpus], num_features=k)          
             
             Util.savePickle([lsi, index], self.modelFilename, debug=True)
             gc.collect()
@@ -469,7 +473,8 @@ class ArnetMinerDataset(object):
         for i, k in enumerate(self.ks): 
             lsi.num_topics = k
             logging.debug("Creating index")
-            index = gensim.similarities.docsim.SparseMatrixSimilarity(lsi[corpus], num_features=k)
+            #index = gensim.similarities.docsim.SparseMatrixSimilarity(lsi[corpus], num_features=k)
+            index = gensim.similarities.docsim.Similarity(self.indexFilename, lsi[corpus], num_features=k)
             
             for j, field in enumerate(self.fields): 
                 logging.debug("k="+str(k) + " and field=" + str(field))                
