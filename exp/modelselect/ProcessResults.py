@@ -5,6 +5,8 @@ import scipy.stats
 from apgl.util.Latex import Latex
 from apgl.util.PathDefaults import PathDefaults
 from exp.modelselect.ModelSelectUtils import ModelSelectUtils
+import matplotlib
+matplotlib.use("GTK3Agg")
 import matplotlib.pyplot as plt
 
 #Produce latex tables from the benchmark results
@@ -41,7 +43,7 @@ def getIdealWins(errors, testErrors, p=0.1):
     return stdWins
     
 
-def getWins(errors, p = 0.1):
+def getWins(errors, p = 0.01):
     """
     Want to compute the number of wins/ties/losses versus CV 
     """
@@ -61,7 +63,7 @@ def getWins(errors, p = 0.1):
                 s1Mean = numpy.mean(s1)
                 s2Mean = numpy.mean(s2)                
                 
-                t, prob = scipy.stats.ttest_ind(s1, s2)
+                t, prob = scipy.stats.wilcoxon(s1, s2)
                 if prob < p: 
                     if s1Mean > s2Mean: 
                         if k==4 and j==0: 
@@ -317,7 +319,7 @@ def plotAlphas(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, f
             foldInd = 4 
     
             for i in range(sampleSizes.shape[0]):
-                plt.plot(cvScalings, meanMeasures[i, foldInd, 2:8], next(linecycler), label=datasetName+" m="+str(sampleSizes[i]))
+                plt.plot(cvScalings, meanMeasures[i, foldInd, 2:8], next(linecycler), label="m="+str(sampleSizes[i]))
                     
             plt.xlabel("Alpha")
             plt.ylabel('Error')
@@ -325,7 +327,7 @@ def plotAlphas(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, f
             plt.xlim((xmin,xmax))
 
         
-            #plt.legend()
+            plt.legend(loc="upper left")
     plt.show()
     
     
@@ -412,7 +414,7 @@ def plotErrorGrids(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethod
 
 
 showCART = False  
-showSVR = True  
+showSVR = True 
 
 from itertools import cycle
 lines = ["k-","k--","k-.","k:","k-x", "k-+"]
@@ -430,7 +432,7 @@ if showSVR:
     fileNameSuffix = 'Results'
     summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
     
-    plotDatasetNames = [datasetNames[0], datasetNames[7]]
+    plotDatasetNames = [datasetNames[7]]
     plotAlphas(plotDatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)    
     
     sampleSizes = numpy.array([25, 50, 100])
@@ -455,10 +457,11 @@ if showCART:
     fileNameSuffix = 'Results'
     summary(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
     
-    #plotDatasetNames = [datasetNames[7], datasetNames[9]]
-    #plotAlphas(plotDatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)    
-    plotDatasetNames = [datasetNames[0]]    
-    plotPenalty(plotDatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)  
+    print(datasetNames)
+    plotDatasetNames = [datasetNames[7]]
+    plotAlphas(plotDatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)    
+    #plotDatasetNames = [datasetNames[0]]    
+    #plotPenalty(plotDatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)  
     #plotDatasetNames = [datasetNames[0]]    
     #plotErrorGrids(plotDatasetNames, sampleSizes, foldsSet, cvScalings, sampleMethods, fileNameSuffix)
     
