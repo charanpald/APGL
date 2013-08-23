@@ -104,8 +104,7 @@ There is also a `PDF version  <AnotherPythonGraphLibrary.pdf>`_.
 Support
 --------
 
-For any questions or comments please email me at <my first name> at gmail dot com. Documentation and code improvements/additions are especially welcome. The mailing list is accessible `here  
-<https://lists.sourceforge.net/lists/listinfo/apythongraphlib-users>`_. 
+For any questions or comments please email me at <my first name> at gmail dot com, or post on the `mailing list <https://groups.google.com/forum/#!forum/apgl-users>`_. 
 
 
 Indices and tables
