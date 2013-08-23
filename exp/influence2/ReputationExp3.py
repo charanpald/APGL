@@ -31,7 +31,7 @@ dataset = ArnetMinerDataset(runLSI=runLSI)
 #dataset.dataFilename = dataset.dataDir + "DBLP-citation-5000000.txt"
 #dataset.dataFilename = dataset.dataDir + "DBLP-citation-7000000.txt"
 dataset.dataFilename = dataset.dataDir + "DBLP-citation-Feb21.txt" 
-dataset.ks = [100, 150, 200, 250, 300, 350, 400]
+dataset.ks = [300, 350, 400, 450, 500, 550, 600]
 dataset.overwriteGraph = True
 dataset.overwriteModel = True
 
