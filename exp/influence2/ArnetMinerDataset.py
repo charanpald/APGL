@@ -62,7 +62,7 @@ class ArnetMinerDataset(object):
         
         #Params for finding relevant authors
         self.similarityCutoff = 0.4
-        self.maxRelevantAuthors = 500
+        self.maxRelevantAuthors = 1000
         self.printPossibleMatches = False
 
         #Params for vectoriser 
