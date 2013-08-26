@@ -62,7 +62,7 @@ class ArnetMinerDataset(object):
         
         #Params for finding relevant authors
         self.similarityCutoff = 0.4
-        self.maxRelevantAuthors = 1000
+        self.maxRelevantAuthors = 500
         self.printPossibleMatches = False
 
         #Params for vectoriser 
@@ -289,12 +289,12 @@ class ArnetMinerDataset(object):
             
             #vectoriser = text.HashingVectorizer(ngram_range=(1,2), binary=self.binary, norm="l2", stop_words="english", tokenizer=PorterTokeniser(), dtype=numpy.float)
             
-            if self.tfidf: 
-                logging.debug("Generating TFIDF features")
-                vectoriser = text.TfidfVectorizer(min_df=self.minDf, ngram_range=(1,self.ngram), binary=self.binary, sublinear_tf=self.sublinearTf, norm="l2", max_df=0.95, stop_words="english", tokenizer=PorterTokeniser(), max_features=self.numFeatures, dtype=numpy.float)
-            else: 
-                logging.debug("Generating bag of word features")
-                vectoriser = text.CountVectorizer(min_df=self.minDf, ngram_range=(1,self.ngram), binary=self.binary, max_df=0.95, stop_words="english", max_features=self.numFeatures, dtype=numpy.float, tokenizer=PorterTokeniser())            
+            #if self.tfidf: 
+            logging.debug("Generating TFIDF features")
+            vectoriser = text.TfidfVectorizer(min_df=self.minDf, ngram_range=(1,self.ngram), binary=self.binary, sublinear_tf=self.sublinearTf, norm="l2", max_df=0.95, stop_words="english", tokenizer=PorterTokeniser(), max_features=self.numFeatures, dtype=numpy.float)
+            #else: 
+            #    logging.debug("Generating bag of word features")
+            #    vectoriser = text.CountVectorizer(min_df=self.minDf, ngram_range=(1,self.ngram), binary=False, max_df=0.95, stop_words="english", max_features=self.numFeatures, dtype=numpy.float, tokenizer=PorterTokeniser())            
             
             X = vectoriser.fit_transform(documentList)
             del documentList
@@ -381,14 +381,13 @@ class ArnetMinerDataset(object):
         corpus = gensim.corpora.mmcorpus.MmCorpus(self.docTermMatrixFilename + ".mtx")
         id2WordDict = dict(zip(range(len(self.vectoriser.get_feature_names())), self.vectoriser.get_feature_names()))
         
-        errors = numpy.zeros((len(self.ks), len(self.fields)))
-        logging.getLogger('gensim').setLevel(logging.INFO) 
-        
+        logging.getLogger('gensim').setLevel(logging.INFO)         
         logging.debug("Starting model selection")
-        
+        errors = numpy.zeros((len(self.ks), len(self.fields)))
+                
         for i, k in enumerate(self.ks): 
             logging.debug("Starting LDA")
-            lda = LdaModel(corpus, num_topics=k, id2word=id2WordDict, chunksize=self.chunksize, distributed=False)    
+            lda = LdaModel(corpus, num_topics=k, id2word=id2WordDict, chunksize=self.chunksize, distributed=False)  
             logging.debug("Creating index")
 
             index = gensim.similarities.docsim.Similarity(self.indexFilename, lda[corpus], num_features=k)
@@ -411,7 +410,7 @@ class ArnetMinerDataset(object):
         logging.debug("Chosen k=" + str(self.k))
         
         #Save the chosen model 
-        lda.num_topics = self.k
+        lda = LdaModel(corpus, num_topics=self.k, id2word=id2WordDict, chunksize=self.chunksize, distributed=False) 
         index = gensim.similarities.docsim.Similarity(self.indexFilename, lda[corpus], num_features=self.k)
         Util.savePickle([lda, index], self.modelFilename, debug=True)
 
@@ -460,16 +459,13 @@ class ArnetMinerDataset(object):
         """
         self.vectoriseDocuments()
         self.loadVectoriser()
-        #X = scipy.io.mmread(self.docTermMatrixFilename)
-        #X = X.tocsr()
-        #corpus = gensim.matutils.Sparse2Corpus(X, documents_columns=False)
         corpus = gensim.corpora.mmcorpus.MmCorpus(self.docTermMatrixFilename + ".mtx")
         id2WordDict = dict(zip(range(len(self.vectoriser.get_feature_names())), self.vectoriser.get_feature_names()))
         
         coverges = numpy.zeros((len(self.ks), len(self.fields)))
         logging.getLogger('gensim').setLevel(logging.INFO) 
         
-        logging.debug("Starting model selection")
+        logging.debug("Starting model selection for LSI")
         
         maxK = numpy.max(self.ks)
         logging.debug("Running LSI with " + str(maxK) + " dimensions")
