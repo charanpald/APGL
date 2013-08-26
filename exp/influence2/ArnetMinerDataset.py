@@ -382,7 +382,7 @@ class ArnetMinerDataset(object):
         id2WordDict = dict(zip(range(len(self.vectoriser.get_feature_names())), self.vectoriser.get_feature_names()))
         
         errors = numpy.zeros((len(self.ks), len(self.fields)))
-        logging.getLogger('gensim').setLevel(logging.ERROR) 
+        logging.getLogger('gensim').setLevel(logging.INFO) 
         
         logging.debug("Starting model selection")
         
@@ -390,7 +390,7 @@ class ArnetMinerDataset(object):
             logging.debug("Starting LDA")
             lda = LdaModel(corpus, num_topics=k, id2word=id2WordDict, chunksize=self.chunksize, distributed=False)    
             logging.debug("Creating index")
-            #index = gensim.similarities.docsim.SparseMatrixSimilarity(lda[corpus], num_features=k)
+
             index = gensim.similarities.docsim.Similarity(self.indexFilename, lda[corpus], num_features=k)
             
             for j, field in enumerate(self.fields): 
