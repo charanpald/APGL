@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
-def getIdealWins(errors, testErrors, p=0.1): 
+def getIdealWins(errors, testErrors, p=0.01): 
     """
     Figure out whether the ideal error obtained using the test set is an improvement 
     over model selection using CV. 
@@ -30,7 +30,7 @@ def getIdealWins(errors, testErrors, p=0.1):
             s1Mean = numpy.mean(s1)
             s2Mean = numpy.mean(s2)                
             
-            t, prob = scipy.stats.ttest_ind(s1, s2)
+            t, prob = scipy.stats.wilcoxon(s1, s2)
             if prob < p: 
                 if s1Mean > s2Mean: 
                     stdWins[i, j, 2] = 1 
@@ -413,8 +413,8 @@ def plotErrorGrids(datasetNames, sampleSizes, foldsSet, cvScalings, sampleMethod
     plt.show()  
 
 
-showCART = False  
-showSVR = True 
+showCART = True  
+showSVR = False 
 
 from itertools import cycle
 lines = ["k-","k--","k-.","k:","k-x", "k-+"]
