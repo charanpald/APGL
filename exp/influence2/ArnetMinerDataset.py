@@ -383,7 +383,7 @@ class ArnetMinerDataset(object):
         
         logging.getLogger('gensim').setLevel(logging.INFO)         
         logging.debug("Starting model selection")
-        errors = numpy.zeros((len(self.ks), len(self.fields)))
+        coverages = numpy.zeros((len(self.ks), len(self.fields)))
                 
         for i, k in enumerate(self.ks): 
             logging.debug("Starting LDA")
@@ -401,12 +401,12 @@ class ArnetMinerDataset(object):
                 relevantExperts = self.expertsFromDocSimilarities(similarities)
                 
                 expertMatches = self.matchExperts(relevantExperts, set(self.trainExpertDict[field]))
-                errors[i, j] = float(len(expertMatches))/len(self.trainExpertDict[field])
+                coverages[i, j] = float(len(expertMatches))/len(self.trainExpertDict[field])
         
-        meanErrors = numpy.mean(errors, 1)
-        logging.debug(meanErrors)
+        meanCoverages = numpy.mean(coverages, 1)
+        logging.debug(meanCoverages)
         
-        self.k = self.ks[numpy.argmin(meanErrors)]
+        self.k = self.ks[numpy.argmax(meanCoverages)]
         logging.debug("Chosen k=" + str(self.k))
         
         #Save the chosen model 
