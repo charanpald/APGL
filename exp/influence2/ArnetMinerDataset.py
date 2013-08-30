@@ -70,8 +70,9 @@ class ArnetMinerDataset(object):
         self.numFeatures = 500000
         self.binary = True 
         self.sublinearTf = False
-        self.minDf = 2 
+        self.minDf = 0.001 
         self.ngram = 2
+        self.minDfs = [0.05, 0.01, 0.005, 0.001]
         
         logging.debug("Limiting BOW/TFIDF features to " + str(self.numFeatures))
         
@@ -79,7 +80,7 @@ class ArnetMinerDataset(object):
         self.k = k
         self.q = 3
         self.p = 30 
-        self.ks = [50, 100, 150, 200]
+        self.ks = [100, 200, 300, 400, 500, 600]
         self.sampleDocs = 1000000
         
         self.overwriteGraph = False
@@ -457,46 +458,63 @@ class ArnetMinerDataset(object):
         Lets find the optimal parameters for LSI for all fields. We see the optimal 
         number of parameters for the training set of experts. 
         """
-        self.vectoriseDocuments()
-        self.loadVectoriser()
-        corpus = gensim.corpora.mmcorpus.MmCorpus(self.docTermMatrixFilename + ".mtx")
-        id2WordDict = dict(zip(range(len(self.vectoriser.get_feature_names())), self.vectoriser.get_feature_names()))
-        
-        coverges = numpy.zeros((len(self.ks), len(self.fields)))
+       
+        coverages = numpy.zeros((len(self.ks), len(self.minDfs), len(self.fields)))
         logging.getLogger('gensim').setLevel(logging.INFO) 
-        
-        logging.debug("Starting model selection for LSI")
-        
         maxK = numpy.max(self.ks)
-        logging.debug("Running LSI with " + str(maxK) + " dimensions")
-        lsi = LsiModel(corpus, num_topics=maxK, id2word=id2WordDict, chunksize=self.chunksize, distributed=False, onepass=False)    
         
-        for i, k in enumerate(self.ks): 
-            lsi.num_topics = k
-            logging.debug("Creating index")
-            #index = gensim.similarities.docsim.SparseMatrixSimilarity(lsi[corpus], num_features=k)
-            index = gensim.similarities.docsim.Similarity(self.indexFilename, lsi[corpus], num_features=k)
+        logging.debug("Starting model selection for LSI")       
+       
+        for t, minDf in enumerate(self.minDfs): 
+            logging.debug("Using minDf=" + str(minDf))
+            self.minDf = minDf
             
-            for j, field in enumerate(self.fields): 
-                logging.debug("k="+str(k) + " and field=" + str(field))                
-                newX = self.vectoriser.transform([field])
-                newX = [(s, newX[0, s])for s in newX.nonzero()[1]]
-                result = lsi[newX]             
-                similarities = index[result]
-                relevantExperts = self.expertsFromDocSimilarities(similarities)
+            self.vectoriseDocuments()
+            self.loadVectoriser()
+            corpus = gensim.corpora.mmcorpus.MmCorpus(self.docTermMatrixFilename + ".mtx")
+            id2WordDict = dict(zip(range(len(self.vectoriser.get_feature_names())), self.vectoriser.get_feature_names()))
+            
+            logging.debug("Running LSI with " + str(maxK) + " dimensions")
+            lsi = LsiModel(corpus, num_topics=maxK, id2word=id2WordDict, chunksize=self.chunksize, distributed=False, onepass=False)    
+            
+            for i, k in enumerate(self.ks): 
+                lsi.num_topics = k
+                logging.debug("Creating index")
+                index = gensim.similarities.docsim.Similarity(self.indexFilename, lsi[corpus], num_features=k)
                 
-                expertMatches = self.matchExperts(relevantExperts, set(self.trainExpertDict[field]))
-                coverges[i, j] = float(len(expertMatches))/len(self.trainExpertDict[field])
-        
-        meanCoverges = numpy.mean(coverges, 1)
+                for j, field in enumerate(self.fields): 
+                    logging.debug("k="+str(k) + " and field=" + str(field))                
+                    newX = self.vectoriser.transform([field])
+                    newX = [(s, newX[0, s])for s in newX.nonzero()[1]]
+                    result = lsi[newX]             
+                    similarities = index[result]
+                    relevantExperts = self.expertsFromDocSimilarities(similarities)
+                    
+                    expertMatches = self.matchExperts(relevantExperts, set(self.trainExpertDict[field]))
+                    coverages[i, t, j] = float(len(expertMatches))/len(self.trainExpertDict[field])
+                    
+                    logging.debug("Coverage=" + str(coverages[i, t, j]))
+            
+        meanCoverges = numpy.mean(coverages, 2)
         logging.debug(meanCoverges)
         
-        self.k = self.ks[numpy.argmax(meanCoverges)]
+        bestInds = numpy.unravel_index(numpy.argmax(meanCoverges), meanCoverges.shape)           
+        
+        self.k = self.ks[bestInds[0]]
         logging.debug("Chosen k=" + str(self.k))
         
-        #Save the chosen model 
-        lsi.num_topics = self.k
+        self.minDf = self.minDfs[bestInds[1]]
+        logging.debug("Chosen minDf=" + str(self.minDf))
+        
+        self.vectoriseDocuments()
+        self.loadVectoriser()
+        
+        corpus = gensim.corpora.mmcorpus.MmCorpus(self.docTermMatrixFilename + ".mtx")
+        id2WordDict = dict(zip(range(len(self.vectoriser.get_feature_names())), self.vectoriser.get_feature_names()))
+        lsi = LsiModel(corpus, num_topics=self.k, id2word=id2WordDict, chunksize=self.chunksize, distributed=False, onepass=False)                
         index = gensim.similarities.docsim.Similarity(self.indexFilename, lsi[corpus], num_features=self.k)
         Util.savePickle([lsi, index], self.modelFilename, debug=True)
+        
+        return meanCoverges
         
         
