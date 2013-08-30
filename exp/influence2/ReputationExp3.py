@@ -21,9 +21,9 @@ parser = argparse.ArgumentParser(description='Run reputation evaluation experime
 parser.add_argument("-r", "--runLDA", action="store_true", help="Run Latent Dirchlet Allocation")
 args = parser.parse_args()
 
-averagePrecisionN = 50 
+averagePrecisionN = 20 
 similarityCutoff = 0.30
-ns = numpy.arange(5, 105, 5)
+ns = numpy.arange(5, 55, 5)
 runLSI = not args.runLDA
 
 dataset = ArnetMinerDataset(runLSI=runLSI) 
@@ -33,7 +33,8 @@ dataset = ArnetMinerDataset(runLSI=runLSI)
 dataset.dataFilename = dataset.dataDir + "DBLP-citation-5000000.txt"
 #dataset.dataFilename = dataset.dataDir + "DBLP-citation-7000000.txt"
 #dataset.dataFilename = dataset.dataDir + "DBLP-citation-Feb21.txt" 
-dataset.ks = [300, 350, 400, 450, 500, 550, 600]
+dataset.ks = [100, 200, 300, 400, 500, 600]
+dataset.minDfs = [0.05, 0.01, 0.005, 0.001]
 dataset.overwriteGraph = True
 dataset.overwriteModel = True
 
