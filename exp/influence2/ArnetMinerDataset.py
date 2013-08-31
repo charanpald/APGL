@@ -377,43 +377,61 @@ class ArnetMinerDataset(object):
         Lets find the optimal parameters for LDA for all fields. We see the optimal 
         number of parameters for the training set of experts. 
         """
-        self.vectoriseDocuments()
-        self.loadVectoriser()
-        corpus = gensim.corpora.mmcorpus.MmCorpus(self.docTermMatrixFilename + ".mtx")
-        id2WordDict = dict(zip(range(len(self.vectoriser.get_feature_names())), self.vectoriser.get_feature_names()))
+        coverages = numpy.zeros((len(self.ks), len(self.minDfs), len(self.fields)))
+        logging.getLogger('gensim').setLevel(logging.INFO) 
         
-        logging.getLogger('gensim').setLevel(logging.INFO)         
-        logging.debug("Starting model selection")
-        coverages = numpy.zeros((len(self.ks), len(self.fields)))
-                
-        for i, k in enumerate(self.ks): 
-            logging.debug("Starting LDA")
-            lda = LdaModel(corpus, num_topics=k, id2word=id2WordDict, chunksize=self.chunksize, distributed=False)  
-            logging.debug("Creating index")
-
-            index = gensim.similarities.docsim.Similarity(self.indexFilename, lda[corpus], num_features=k)
+        logging.debug("Starting model selection for LSI")       
+       
+        for t, minDf in enumerate(self.minDfs): 
+            logging.debug("Using minDf=" + str(minDf))
+            self.minDf = minDf
             
-            for j, field in enumerate(self.fields): 
-                logging.debug("k="+str(k) + " and field=" + str(field))                
-                newX = self.vectoriser.transform([field])
-                newX = [(s, newX[0, s])for s in newX.nonzero()[1]]
-                result = lda[newX]             
-                similarities = index[result]
-                relevantExperts = self.expertsFromDocSimilarities(similarities)
+            self.vectoriseDocuments()
+            self.loadVectoriser()
+            corpus = gensim.corpora.mmcorpus.MmCorpus(self.docTermMatrixFilename + ".mtx")
+            id2WordDict = dict(zip(range(len(self.vectoriser.get_feature_names())), self.vectoriser.get_feature_names()))
+                            
+            for i, k in enumerate(self.ks): 
+                logging.debug("Running LDA with " + str(k) + " dimensions")
+                lda = LdaModel(corpus, num_topics=k, id2word=id2WordDict, chunksize=self.chunksize, distributed=False)  
+                logging.debug("Creating index")
+    
+                index = gensim.similarities.docsim.Similarity(self.indexFilename, lda[corpus], num_features=k)
                 
-                expertMatches = self.matchExperts(relevantExperts, set(self.trainExpertDict[field]))
-                coverages[i, j] = float(len(expertMatches))/len(self.trainExpertDict[field])
+                for j, field in enumerate(self.fields): 
+                    logging.debug("k="+str(k) + " and field=" + str(field))                
+                    newX = self.vectoriser.transform([field])
+                    newX = [(s, newX[0, s])for s in newX.nonzero()[1]]
+                    result = lda[newX]             
+                    similarities = index[result]
+                    relevantExperts = self.expertsFromDocSimilarities(similarities)
+                    
+                    expertMatches = self.matchExperts(relevantExperts, set(self.trainExpertDict[field]))
+                    coverages[i, t, j] = float(len(expertMatches))/len(self.trainExpertDict[field])
+                    
+                logging.debug("Mean coverage=" + str(numpy.mean(coverages[i, t, :])))
+            
+        meanCoverges = numpy.mean(coverages, 2)
+        logging.debug(meanCoverges)
         
-        meanCoverages = numpy.mean(coverages, 1)
-        logging.debug(meanCoverages)
+        bestInds = numpy.unravel_index(numpy.argmax(meanCoverges), meanCoverges.shape)           
         
-        self.k = self.ks[numpy.argmax(meanCoverages)]
+        self.k = self.ks[bestInds[0]]
         logging.debug("Chosen k=" + str(self.k))
         
-        #Save the chosen model 
-        lda = LdaModel(corpus, num_topics=self.k, id2word=id2WordDict, chunksize=self.chunksize, distributed=False) 
+        self.minDf = self.minDfs[bestInds[1]]
+        logging.debug("Chosen minDf=" + str(self.minDf))
+        
+        self.vectoriseDocuments()
+        self.loadVectoriser()
+        
+        corpus = gensim.corpora.mmcorpus.MmCorpus(self.docTermMatrixFilename + ".mtx")
+        id2WordDict = dict(zip(range(len(self.vectoriser.get_feature_names())), self.vectoriser.get_feature_names()))
+        lda = LdaModel(corpus, num_topics=self.k, id2word=id2WordDict, chunksize=self.chunksize, distributed=False, onepass=False)                
         index = gensim.similarities.docsim.Similarity(self.indexFilename, lda[corpus], num_features=self.k)
         Util.savePickle([lda, index], self.modelFilename, debug=True)
+        
+        return meanCoverges
 
     def computeLSI(self):
         """
