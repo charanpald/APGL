@@ -493,7 +493,7 @@ class ArnetMinerDataset(object):
                     expertMatches = self.matchExperts(relevantExperts, set(self.trainExpertDict[field]))
                     coverages[i, t, j] = float(len(expertMatches))/len(self.trainExpertDict[field])
                     
-                    logging.debug("Coverage=" + str(coverages[i, t, j]))
+                logging.debug("Mean coverage=" + str(numpy.mean(coverages[i, t, :])))
             
         meanCoverges = numpy.mean(coverages, 2)
         logging.debug(meanCoverges)
