@@ -427,7 +427,7 @@ class ArnetMinerDataset(object):
         
         corpus = gensim.corpora.mmcorpus.MmCorpus(self.docTermMatrixFilename + ".mtx")
         id2WordDict = dict(zip(range(len(self.vectoriser.get_feature_names())), self.vectoriser.get_feature_names()))
-        lda = LdaModel(corpus, num_topics=self.k, id2word=id2WordDict, chunksize=self.chunksize, distributed=False, onepass=False)                
+        lda = LdaModel(corpus, num_topics=self.k, id2word=id2WordDict, chunksize=self.chunksize, distributed=False)                
         index = gensim.similarities.docsim.Similarity(self.indexFilename, lda[corpus], num_features=self.k)
         Util.savePickle([lda, index], self.modelFilename, debug=True)
         
