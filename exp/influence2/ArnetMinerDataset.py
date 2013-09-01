@@ -72,7 +72,7 @@ class ArnetMinerDataset(object):
         self.sublinearTf = False
         self.minDf = 0.001 
         self.ngram = 2
-        self.minDfs = [0.05, 0.01, 0.005, 0.001]
+        self.minDfs = [0.1, 0.01, 0.001, 0.0001]
         
         logging.debug("Limiting BOW/TFIDF features to " + str(self.numFeatures))
         
