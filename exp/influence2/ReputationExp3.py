@@ -37,12 +37,12 @@ dataset.ks = [100, 200, 300, 400, 500, 600]
 dataset.minDfs = [0.2, 0.1, 0.01, 0.001, 0.0001]
 dataset.overwriteGraph = True
 dataset.overwriteModel = True
-
 dataset.overwriteVectoriser = True 
-dataset.vectoriseDocuments()
-dataset.overwriteVectoriser = False
 
+dataset.vectoriseDocuments()
 dataset.modelSelection()
+
+dataset.overwriteVectoriser = False
 dataset.overwriteModel = False
 
 for field in dataset.fields: 
