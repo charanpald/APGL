@@ -12,6 +12,7 @@ from exp.influence2.RankAggregator import RankAggregator
 from exp.influence2.ArnetMinerDataset import ArnetMinerDataset
 from apgl.util.Latex import Latex 
 from apgl.util.Evaluator import Evaluator
+from apgl.util.Util import Util
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 numpy.set_printoptions(suppress=True, precision=3, linewidth=160)
@@ -28,7 +29,6 @@ runLSI = not args.runLDA
 
 dataset = ArnetMinerDataset(runLSI=runLSI) 
 #dataset.dataFilename = dataset.dataDir + "DBLP-citation-100000.txt"
-
 #dataset.dataFilename = dataset.dataDir + "DBLP-citation-1000000.txt"
 #dataset.dataFilename = dataset.dataDir + "DBLP-citation-5000000.txt"
 #dataset.dataFilename = dataset.dataDir + "DBLP-citation-7000000.txt"
@@ -58,11 +58,17 @@ for field in dataset.fields:
     
     if len(expertMatches) != 0: 
         #First compute graph properties 
-        computeInfluence = False
+        computeInfluence = True
         graphRanker = GraphRanker(k=100, numRuns=100, computeInfluence=computeInfluence, p=0.05, trainExpertsIdList=expertMatchesInds)
         outputLists = graphRanker.vertexRankings(graph, relevantAuthorInds, [relevantAuthorInds])
         itemList = RankAggregator.generateItemList(outputLists)
         #methodNames = graphRanker.getNames()
+        
+        if runLSI: 
+            outputFilename = dataset.getResultsDir(field) + "outputListsLSI.npz"
+        else: 
+            outputFilename = dataset.getResultsDir(field) + "outputListsLDA.npz"
+        Util.savePickle([outputLists, expertMatchesInds], outputFilename)
         
         numMethods = len(outputLists)
         precisions = numpy.zeros((len(ns), numMethods))
@@ -79,9 +85,5 @@ for field in dataset.fields:
         
         logging.debug(Latex.array2DToRows(precisions2))
         logging.debug(Latex.array1DToRow(averagePrecisions))
-    
-        resultsFilename = dataset.getResultsDir(field) + "precisions.npz"
-        numpy.savez(resultsFilename, precisions, averagePrecisions)
-        logging.debug("Saved precisions as " + resultsFilename)
 
 logging.debug("All done!")
