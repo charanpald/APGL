@@ -43,18 +43,17 @@ class ArnetMinerDataset(object):
         self.dataFilename = self.dataDir + "DBLP-citation-1000000.txt"        
         self.baseDir = PathDefaults.getDataDir() + "reputation/"
         
-        if runLSI: 
-            self.authorListFilename = self.baseDir + "authorListLSI.pkl"
-            self.vectoriserFilename = self.baseDir + "vectoriserLSI.pkl"   
-            self.modelFilename = self.baseDir + "modelLSI.pkl"
-            self.docTermMatrixFilename = self.baseDir + "termDocMatrixLSI" 
-            self.indexFilename = self.baseDir + "indexLSI" 
+        if runLSI:
+            methodName = "LSI"
         else: 
-            self.authorListFilename = self.baseDir + "authorListLDA.pkl"
-            self.vectoriserFilename = self.baseDir + "vectoriserLDA.pkl" 
-            self.modelFilename = self.baseDir + "modelLDA.pkl"     
-            self.docTermMatrixFilename = self.baseDir + "termDocMatrixLDA"
-            self.indexFilename = self.baseDir + "indexLDA"
+            methodName = "LDA"
+            
+        self.authorListFilename = self.baseDir + "authorList" + methodName +".pkl"
+        self.vectoriserFilename = self.baseDir + "vectoriser" + methodName +".pkl"   
+        self.modelFilename = self.baseDir + "model" + methodName + ".pkl"
+        self.docTermMatrixFilename = self.baseDir + "termDocMatrix" + methodName
+        self.indexFilename = self.baseDir + "index" + methodName 
+        self.coverageFilename = self.baseDir + "meanCoverages" + methodName + ".npy"
         
         self.stepSize = 1000000    
         self.numLines = 15192085
@@ -232,12 +231,14 @@ class ArnetMinerDataset(object):
         logging.debug("About to read file " + self.dataFilename)
         inFile = open(self.dataFilename)  
         authorList = []
+        citationList = []
         documentList = []
                     
         lastAbstract = ""
         lastVenue = ""
         lastTitle = ""    
-        lastAuthors = []                    
+        lastAuthors = []     
+        lastCitationNo = 0                
                     
         for i, line in enumerate(inFile):
             Util.printIteration(i, self.stepSize, self.numLines)
@@ -248,15 +249,18 @@ class ArnetMinerDataset(object):
             currentAuthors = re.findall("#@(.*)", line)  
             abstract = re.findall("#!(.*)", line)
             venue = re.findall("#conf(.*)", line)
+            citationNo = re.findall("#citation(.*)", line)
             
             if emptyLine:
                 document = lastTitle + " " + lastVenue + " " + lastAbstract 
                 documentList.append(document) 
                 authorList.append(lastAuthors)
+                citationList.append(lastCitationNo)
 
                 lastAbstract = ""
                 lastTitle = ""
                 lastAuthors = []
+                lastCitationNo = 0   
  
             if len(title) != 0 and len(title[0]) != 0: 
                 lastTitle = title[0]
@@ -266,6 +270,9 @@ class ArnetMinerDataset(object):
             
             if len(abstract) != 0 and len(abstract[0]) != 0: 
                 lastAbstract = abstract[0]
+                
+            if len(citationNo) != 0 and len(citationNo[0]) != 0: 
+                lastCitationNo = int(citationNo[0])
                        
             if len(currentAuthors) != 0: 
                 currentAuthors = currentAuthors[0].split(",")  
@@ -275,7 +282,7 @@ class ArnetMinerDataset(object):
         inFile.close() 
         logging.debug("Finished reading file")  
 
-        return authorList, documentList
+        return authorList, documentList, citationList
 
     def vectoriseDocuments(self):
         """
@@ -285,7 +292,7 @@ class ArnetMinerDataset(object):
         if not os.path.exists(self.docTermMatrixFilename + ".mtx") or not os.path.exists(self.authorListFilename) or not os.path.exists(self.vectoriserFilename) or self.overwriteVectoriser:
             logging.debug("Vectorising documents")            
             
-            authorList, documentList = self.readAuthorsAndDocuments()
+            authorList, documentList, citationList = self.readAuthorsAndDocuments()
             Util.savePickle(authorList, self.authorListFilename, debug=True)
             
             #vectoriser = text.HashingVectorizer(ngram_range=(1,2), binary=self.binary, norm="l2", stop_words="english", tokenizer=PorterTokeniser(), dtype=numpy.float)
@@ -319,9 +326,12 @@ class ArnetMinerDataset(object):
   
     def modelSelection(self): 
         if self.runLSI: 
-            self.modelSelectionLSI()
+            meanCoverages = self.modelSelectionLSI()
         else: 
-            self.modelSelectionLDA()
+            meanCoverages = self.modelSelectionLDA()
+            
+        numpy.save(self.coverageFilename, meanCoverages)
+        logging.debug("Saved coverages as " + self.coverageFilename)
    
     def learnModel(self):
         if self.runLSI: 
