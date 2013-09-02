@@ -39,7 +39,6 @@ dataset.overwriteGraph = True
 dataset.overwriteModel = True
 dataset.overwriteVectoriser = True 
 
-dataset.vectoriseDocuments()
 dataset.modelSelection()
 
 dataset.overwriteVectoriser = False
