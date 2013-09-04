@@ -65,9 +65,9 @@ for field in dataset.fields:
         #methodNames = graphRanker.getNames()
         
         if runLSI: 
-            outputFilename = dataset.getResultsDir(field) + "outputListsLSI.npz"
+            outputFilename = dataset.getOutputFieldDir(field) + "outputListsLSI.npz"
         else: 
-            outputFilename = dataset.getResultsDir(field) + "outputListsLDA.npz"
+            outputFilename = dataset.getOutputFieldDir(field) + "outputListsLDA.npz"
         Util.savePickle([outputLists, expertMatchesInds], outputFilename)
         
         numMethods = len(outputLists)
