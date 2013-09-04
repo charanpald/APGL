@@ -41,28 +41,30 @@ class ArnetMinerDataset(object):
         #self.dataFilename = self.dataDir + "DBLP-citation-Feb21.txt" 
         #self.dataFilename = self.dataDir + "DBLP-citation-7000000.txt" 
         self.dataFilename = self.dataDir + "DBLP-citation-1000000.txt"        
-        self.baseDir = PathDefaults.getDataDir() + "reputation/"
+        self.outputDir = PathDefaults.getOutputDir() + "reputation/"
+        self.dataDir = PathDefaults.getDataDir() + "reputation/"
         
         if runLSI:
             methodName = "LSI"
         else: 
             methodName = "LDA"
             
-        self.authorListFilename = self.baseDir + "authorList" + methodName +".pkl"
-        self.vectoriserFilename = self.baseDir + "vectoriser" + methodName +".pkl"   
-        self.modelFilename = self.baseDir + "model" + methodName + ".pkl"
-        self.docTermMatrixFilename = self.baseDir + "termDocMatrix" + methodName
-        self.indexFilename = self.baseDir + "index" + methodName 
-        self.coverageFilename = self.baseDir + "meanCoverages" + methodName + ".npy"
+        self.authorListFilename = self.outputDir + "authorList" + methodName +".pkl"
+        self.vectoriserFilename = self.outputDir + "vectoriser" + methodName +".pkl"   
+        self.modelFilename = self.outputDir + "model" + methodName + ".pkl"
+        self.docTermMatrixFilename = self.outputDir + "termDocMatrix" + methodName
+        self.indexFilename = self.outputDir + "index" + methodName 
+        self.coverageFilename = self.outputDir + "meanCoverages" + methodName + ".npy"
         
         self.stepSize = 1000000    
         self.numLines = 15192085
         self.matchCutoff = 0.90   
         
         #Params for finding relevant authors
-        self.similarityCutoff = 0.4
+        self.gamma = 0.4
         self.maxRelevantAuthors = 500
         self.printPossibleMatches = False
+        self.gammas = numpy.arange(0.2, 2, 0.1)
 
         #Params for vectoriser 
         #self.numFeatures = psutil.virtual_memory()[1]/(8*500*3)
@@ -92,7 +94,7 @@ class ArnetMinerDataset(object):
         #Load the complete set of experts 
         self.expertsDict = {} 
         for field in self.fields: 
-            expertsFile = open(self.getResultsDir(field) + "experts.txt")
+            expertsFile = open(self.getDataFieldDir(field) + "experts.txt")
             self.expertsDict[field] = expertsFile.readlines()
             self.expertsDict[field] = set([x.strip() for x in self.expertsDict[field]])
             expertsFile.close()
@@ -111,14 +113,17 @@ class ArnetMinerDataset(object):
             testInds = inds[numTrainInds:]
             self.testExpertDict[field] = list(numpy.array(list(self.expertsDict[field]))[testInds]) 
             
-    def getResultsDir(self, field):
-        return self.baseDir + field.replace(' ', '') + "/"
-        
+    def getOutputFieldDir(self, field):
+        return self.outputDir + field.replace(' ', '') + "/"
+   
+    def getDataFieldDir(self, field):
+        return self.dataDir + field.replace(' ', '') + "/"
+     
     def getCoauthorsFilename(self, field): 
         if self.runLSI: 
-            return self.getResultsDir(field) + "coauthorsLSI.pkl"
+            return self.getOutputFieldDir(field) + "coauthorsLSI.pkl"
         else: 
-            return self.getResultsDir(field) + "coauthorsLDA.pkl"
+            return self.getOutputFieldDir(field) + "coauthorsLDA.pkl"
         
     def matchExperts(self, relevantExperts, expertsSet): 
         """
@@ -209,7 +214,8 @@ class ArnetMinerDataset(object):
         Given a set of similarities work out which documents are relevent 
         and then return a list of ranked authors using these scores. 
         """
-        relevantDocs = numpy.arange(similarities.shape[0])[similarities >= self.similarityCutoff]
+        similarities2 = similarities + 1 
+        relevantDocs = numpy.arange(similarities2.shape[0])[similarities2 >= self.gamma]
         
         #Now find all authors corresponding to the documents 
         expertDict = {} 
@@ -218,9 +224,9 @@ class ArnetMinerDataset(object):
             for author in self.authorList[docInd]: 
                 if author not in expertsSet: 
                     expertsSet.add(author)
-                    expertDict[author] = similarities[docInd]
+                    expertDict[author] = similarities2[docInd]
                 else: 
-                    expertDict[author] += similarities[docInd]
+                    expertDict[author] += similarities2[docInd] 
         
         expertDict = OrderedDict(sorted(expertDict.items(), key=lambda t: t[1], reverse=True))
         experts = expertDict.keys()[0:self.maxRelevantAuthors]
@@ -387,7 +393,7 @@ class ArnetMinerDataset(object):
         Lets find the optimal parameters for LDA for all fields. We see the optimal 
         number of parameters for the training set of experts. 
         """
-        coverages = numpy.zeros((len(self.ks), len(self.minDfs), len(self.fields)))
+        coverages = numpy.zeros((len(self.ks), len(self.minDfs), len(self.gammas), len(self.fields)))
         logging.getLogger('gensim').setLevel(logging.INFO) 
         
         logging.debug("Starting model selection for LSI")       
@@ -414,14 +420,18 @@ class ArnetMinerDataset(object):
                     newX = [(s, newX[0, s])for s in newX.nonzero()[1]]
                     result = lda[newX]             
                     similarities = index[result]
-                    relevantExperts = self.expertsFromDocSimilarities(similarities)
                     
-                    expertMatches = self.matchExperts(relevantExperts, set(self.trainExpertDict[field]))
-                    coverages[i, t, j] = float(len(expertMatches))/len(self.trainExpertDict[field])
-                    
-                logging.debug("Mean coverage=" + str(numpy.mean(coverages[i, t, :])))
+                    for u, gamma in enumerate(self.gammas): 
+                        self.gamma = gamma 
+                        relevantExperts = self.expertsFromDocSimilarities(similarities)
+                        
+                        expertMatches = self.matchExperts(relevantExperts, set(self.trainExpertDict[field]))
+                        coverages[i, t, u, j] = float(len(expertMatches))/len(self.trainExpertDict[field])
+                
+                for u, gamma in enumerate(self.gammas):
+                    logging.debug("Mean coverage for gamma=" + str(gamma) + " " + str(numpy.mean(coverages[i, t, u, :])))
             
-        meanCoverges = numpy.mean(coverages, 2)
+        meanCoverges = numpy.mean(coverages, 3)
         logging.debug(meanCoverges)
         
         bestInds = numpy.unravel_index(numpy.argmax(meanCoverges), meanCoverges.shape)           
@@ -431,6 +441,9 @@ class ArnetMinerDataset(object):
         
         self.minDf = self.minDfs[bestInds[1]]
         logging.debug("Chosen minDf=" + str(self.minDf))
+        
+        self.gamma = self.gammas[bestInds[2]]
+        logging.debug("Chosen gamma=" + str(self.gamma))        
         
         self.vectoriseDocuments()
         self.loadVectoriser()
@@ -487,7 +500,7 @@ class ArnetMinerDataset(object):
         number of parameters for the training set of experts. 
         """
        
-        coverages = numpy.zeros((len(self.ks), len(self.minDfs), len(self.fields)))
+        coverages = numpy.zeros((len(self.ks), len(self.minDfs), len(self.gammas), len(self.fields)))
         logging.getLogger('gensim').setLevel(logging.INFO) 
         maxK = numpy.max(self.ks)
         
@@ -516,14 +529,18 @@ class ArnetMinerDataset(object):
                     newX = [(s, newX[0, s])for s in newX.nonzero()[1]]
                     result = lsi[newX]             
                     similarities = index[result]
-                    relevantExperts = self.expertsFromDocSimilarities(similarities)
                     
-                    expertMatches = self.matchExperts(relevantExperts, set(self.trainExpertDict[field]))
-                    coverages[i, t, j] = float(len(expertMatches))/len(self.trainExpertDict[field])
-                    
-                logging.debug("Mean coverage=" + str(numpy.mean(coverages[i, t, :])))
+                    for u, gamma in enumerate(self.gammas): 
+                        self.gamma = gamma 
+                        relevantExperts = self.expertsFromDocSimilarities(similarities)
+                        
+                        expertMatches = self.matchExperts(relevantExperts, set(self.trainExpertDict[field]))
+                        coverages[i, t, u, j] = float(len(expertMatches))/len(self.trainExpertDict[field])
+                
+                for u, gamma in enumerate(self.gammas):
+                    logging.debug("Mean coverage for gamma=" + str(gamma) + " " + str(numpy.mean(coverages[i, t, u, :])))
             
-        meanCoverges = numpy.mean(coverages, 2)
+        meanCoverges = numpy.mean(coverages, 3)
         logging.debug(meanCoverges)
         
         bestInds = numpy.unravel_index(numpy.argmax(meanCoverges), meanCoverges.shape)           
@@ -533,6 +550,11 @@ class ArnetMinerDataset(object):
         
         self.minDf = self.minDfs[bestInds[1]]
         logging.debug("Chosen minDf=" + str(self.minDf))
+        
+        self.gamma = self.gammas[bestInds[2]]
+        logging.debug("Chosen gamma=" + str(self.gamma))   
+        
+        logging.debug("Coverage = " + str(numpy.max(meanCoverges)))
         
         self.vectoriseDocuments()
         self.loadVectoriser()
