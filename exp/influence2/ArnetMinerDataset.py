@@ -443,7 +443,9 @@ class ArnetMinerDataset(object):
         logging.debug("Chosen minDf=" + str(self.minDf))
         
         self.gamma = self.gammas[bestInds[2]]
-        logging.debug("Chosen gamma=" + str(self.gamma))        
+        logging.debug("Chosen gamma=" + str(self.gamma))  
+        
+        logging.debug("Coverage = " + str(numpy.max(meanCoverges)))
         
         self.vectoriseDocuments()
         self.loadVectoriser()
