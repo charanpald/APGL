@@ -8,37 +8,50 @@ from apgl.util.Latex import Latex
 from apgl.util.Util import Util 
 from apgl.util.Evaluator import Evaluator 
 
+ranLSI = False
 numpy.set_printoptions(suppress=True, precision=3, linewidth=100)
-dataset = ArnetMinerDataset()
+dataset = ArnetMinerDataset(runLSI=ranLSI)
 
 ns = numpy.arange(5, 55, 5)
-averagePrecisionN = 20 
+averagePrecisionN = 30 
 bestPrecisions = numpy.zeros((len(ns), len(dataset.fields)))
 bestAveragePrecisions = numpy.zeros(len(dataset.fields))
 
-for i, field in enumerate(dataset.fields): 
-    outputFilename = dataset.getResultsDir(field) + "outputLists.npz"
-    outputLists, expertMatchesInds = Util.loadPickle(outputFilename)
-    
-    numMethods = len(outputLists)
-    precisions = numpy.zeros((len(ns), numMethods))
-    averagePrecisions = numpy.zeros(numMethods)
-    
-    for i, n in enumerate(ns):     
-        for j in range(len(outputLists)): 
-            precisions[i, j] = Evaluator.precisionFromIndLists(expertMatchesInds, outputLists[j][0:n]) 
+coverages = numpy.load(dataset.coverageFilename)
+print("==== Coverages ====")
+print(coverages)
+
+for s, field in enumerate(dataset.fields): 
+    if ranLSI: 
+        outputFilename = dataset.getOutputFieldDir(field) + "outputListsLSI.npz"
+    else: 
+        outputFilename = dataset.getOutputFieldDir(field) + "outputListsLDA.npz"
         
-    for j in range(len(outputLists)):                 
-        averagePrecisions[j] = Evaluator.averagePrecisionFromLists(expertMatchesInds, outputLists[j][0:averagePrecisionN], averagePrecisionN) 
-    
-    print(field)
-    print(precisions)
-    print(averagePrecisions)
-    
-    bestInd = numpy.argmax(averagePrecisions)
-    plt.plot(ns, precisions[:, bestInd], label=field)
-    bestPrecisions[:, i] = precisions[:, bestInd]
-    bestAveragePrecisions[i] = averagePrecisions[bestInd]
+    try: 
+        outputLists, expertMatchesInds = Util.loadPickle(outputFilename)
+        
+        
+        numMethods = len(outputLists)
+        precisions = numpy.zeros((len(ns), numMethods))
+        averagePrecisions = numpy.zeros(numMethods)
+        
+        for i, n in enumerate(ns):     
+            for j in range(len(outputLists)): 
+                precisions[i, j] = Evaluator.precisionFromIndLists(expertMatchesInds, outputLists[j][0:n]) 
+            
+        for j in range(len(outputLists)):                 
+            averagePrecisions[j] = Evaluator.averagePrecisionFromLists(expertMatchesInds, outputLists[j][0:averagePrecisionN], averagePrecisionN) 
+        
+        print(field)
+        print(precisions)
+        print(averagePrecisions)
+        
+        bestInd = numpy.argmax(averagePrecisions)
+        plt.plot(ns, precisions[:, bestInd], label=field)
+        bestPrecisions[:, s] = precisions[:, bestInd]
+        bestAveragePrecisions[s] = averagePrecisions[bestInd]
+    except IOError as e: 
+        print(e)
 
 bestPrecisions2 = numpy.c_[numpy.array(ns), bestPrecisions]
 print(Latex.array2DToRows(bestPrecisions2))
