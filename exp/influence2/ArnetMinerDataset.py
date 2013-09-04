@@ -64,7 +64,7 @@ class ArnetMinerDataset(object):
         self.gamma = 0.4
         self.maxRelevantAuthors = 500
         self.printPossibleMatches = False
-        self.gammas = numpy.arange(0.2, 2, 0.1)
+        self.gammas = numpy.arange(1.0, 2, 0.1)
 
         #Params for vectoriser 
         #self.numFeatures = psutil.virtual_memory()[1]/(8*500*3)
