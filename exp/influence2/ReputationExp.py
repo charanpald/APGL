@@ -15,7 +15,6 @@ dataset = ArnetMinerDataset()
 #dataset.dataFilename = dataset.dataDir + "DBLP-citation-100000.txt" 
 
 authorList, documentList, citationList = dataset.readAuthorsAndDocuments()
-
 authorSet = set(itertools.chain.from_iterable(authorList))
 
 print("Found all authors")
@@ -31,4 +30,5 @@ for field in dataset.fields:
     expertMatchesDict[field] /= float(len(dataset.expertsDict[field]))
 
 print(expertMatchesDict)
+print(numpy.mean(expertMatchesDict.values())) 
 
