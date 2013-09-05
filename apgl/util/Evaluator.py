@@ -240,7 +240,43 @@ class Evaluator(object):
         testY[testList] = 1
         
         return sklearn.metrics.precision_score(testY, predY)
+
+    @staticmethod 
+    def recallFromIndLists(testList, predList): 
+        """
+        Measure the recall of a predicted list given the true list. The precision is 
+        |relevant items \cap retrieved items| / |relevant items|. The items of the 
+        lists are indices. 
+        """
+        import sklearn.metrics 
+        n  = max(numpy.max(testList), numpy.max(predList))+1
         
+        predY = -1*numpy.ones(n)
+        predY[predList] = 1
+        
+        testY = -1*numpy.ones(n)
+        testY[testList] = 1
+        
+        return sklearn.metrics.recall_score(testY, predY)       
+      
+    @staticmethod 
+    def f1FromIndLists(testList, predList): 
+        """
+        Measure the recall of a predicted list given the true list. The precision is 
+        |relevant items \cap retrieved items| / |relevant items|. The items of the 
+        lists are indices. 
+        """
+        import sklearn.metrics 
+        n  = max(numpy.max(testList), numpy.max(predList))+1
+        
+        predY = -1*numpy.ones(n)
+        predY[predList] = 1
+        
+        testY = -1*numpy.ones(n)
+        testY[testList] = 1
+        
+        return sklearn.metrics.f1_score(testY, predY)        
+      
     @staticmethod 
     def averagePrecisionFromLists(testList, predList, k=100):
 
@@ -280,7 +316,35 @@ class Evaluator(object):
             return 1.0
     
         return score / min(len(testList), k)
-      
+        
+    @staticmethod
+    def meanAveragePrecisionFromLists(actual, predicted, k=10):
+        """
+        Computes the mean average precision at k.
+        
+        This function computes the mean average prescision at k between two lists
+        of lists of items.
+        
+        Parameters
+        ----------
+        actual : list
+        A list of lists of elements that are to be predicted
+        (order doesn't matter in the lists)
+        predicted : list
+        A list of lists of predicted elements
+        (order matters in the lists)
+        k : int, optional
+        The maximum number of predicted elements
+        
+        Returns
+        -------
+        score : double
+        The mean average precision at k over the input lists
+        
+        """
+        print(actual, predicted)
+        return numpy.mean([Evaluator.averagePrecisionFromLists(a,p,k) for a,p in zip(actual, predicted)])     
+     
     @staticmethod 
     def ndcg(testY, predY, n): 
         """
