@@ -93,7 +93,7 @@ class ArnetMinerDataset(object):
         #Load the complete set of experts 
         self.expertsDict = {} 
         for field in self.fields: 
-            expertsFile = open(self.getDataFieldDir(field) + "experts.txt")
+            expertsFile = open(self.getDataFieldDir(field) + "matched_experts.txt")
             self.expertsDict[field] = expertsFile.readlines()
             self.expertsDict[field] = set([x.strip() for x in self.expertsDict[field]])
             expertsFile.close()
