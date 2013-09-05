@@ -27,10 +27,10 @@ class ArnetMinerDataset(object):
     abstract similarity. The output is two graphs - collaboration and 
     abstract similarity. 
     """    
-    def __init__(self, k=50, additionalFields=[], runLSI=True):
+    def __init__(self, k=300, additionalFields=[], runLSI=True):
         numpy.random.seed(21)
         self.runLSI = runLSI 
-        self.dataDir = PathDefaults.getDataDir() + "dblpCitation/" 
+        self.dataDir = PathDefaults.getDataDir() + "reputation/" 
         
         self.fields = ["Boosting", "Computer Vision", "Cryptography", "Data Mining"]
         self.fields.extend(["Information Extraction", "Intelligent Agents", "Machine Learning"])
@@ -38,9 +38,9 @@ class ArnetMinerDataset(object):
         self.fields.extend(["Planning", "Semantic Web", "Support Vector Machine"])    
         self.fields.extend(additionalFields)        
         
-        #self.dataFilename = self.dataDir + "DBLP-citation-Feb21.txt" 
+        self.dataFilename = self.dataDir + "DBLP-citation-Feb21.txt" 
         #self.dataFilename = self.dataDir + "DBLP-citation-7000000.txt" 
-        self.dataFilename = self.dataDir + "DBLP-citation-1000000.txt"        
+        #self.dataFilename = self.dataDir + "DBLP-citation-100000.txt"        
         self.outputDir = PathDefaults.getOutputDir() + "reputation/"
         self.dataDir = PathDefaults.getDataDir() + "reputation/"
         
@@ -58,22 +58,21 @@ class ArnetMinerDataset(object):
         
         self.stepSize = 1000000    
         self.numLines = 15192085
-        self.matchCutoff = 0.90   
+        self.matchCutoff = 0.95   
         
         #Params for finding relevant authors
-        self.gamma = 0.4
+        self.gamma = 1.3
         self.maxRelevantAuthors = 500
         self.printPossibleMatches = False
         self.gammas = numpy.arange(1.0, 2, 0.1)
 
         #Params for vectoriser 
-        #self.numFeatures = psutil.virtual_memory()[1]/(8*500*3)
         self.numFeatures = 500000
         self.binary = True 
         self.sublinearTf = False
         self.minDf = 0.001 
         self.ngram = 2
-        self.minDfs = [0.1, 0.01, 0.001, 0.0001]
+        self.minDfs = [0.01, 0.001, 0.0001]
         
         logging.debug("Limiting BOW/TFIDF features to " + str(self.numFeatures))
         
@@ -258,10 +257,11 @@ class ArnetMinerDataset(object):
             citationNo = re.findall("#citation(.*)", line)
             
             if emptyLine:
-                document = lastTitle + " " + lastVenue + " " + lastAbstract 
-                documentList.append(document) 
-                authorList.append(lastAuthors)
-                citationList.append(lastCitationNo)
+                if len(lastAbstract)!=0: 
+                    document = lastTitle + " " + lastVenue + " " + lastAbstract 
+                    documentList.append(document) 
+                    authorList.append(lastAuthors)
+                    citationList.append(lastCitationNo)
 
                 lastAbstract = ""
                 lastTitle = ""
@@ -286,7 +286,7 @@ class ArnetMinerDataset(object):
                 lastAuthors = currentAuthors                     
 
         inFile.close() 
-        logging.debug("Finished reading file")  
+        logging.debug("Finished reading " + str(len(documentList)) + " articles")  
 
         return authorList, documentList, citationList
 
