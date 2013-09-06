@@ -70,9 +70,9 @@ class GraphRanker(object):
         outputLists.append(self.restrictRankedList(rank, relevantItems))
         
         #Now add MC2 aggregated rankings 
-        logging.debug("Computing MC2 rank aggregation")
-        rank = RankAggregator.MC2(outputLists, relevantItems)[0]
-        outputLists.append(rank)
+        #logging.debug("Computing MC2 rank aggregation")
+        #rank = RankAggregator.MC2(outputLists, relevantItems)[0]
+        #outputLists.append(rank)
         
         return outputLists 
 
