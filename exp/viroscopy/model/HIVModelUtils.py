@@ -23,13 +23,13 @@ class HIVModelUtils(object):
         """
         This is taken from simulated runs using the real data 
         """
-        theta = numpy.array([ 500,  0.5, 0.5, 0.5, 0.2, 0.2, 500, 0.5, 0.5, 0.1, 0.1, 0.1])
+        theta = numpy.array([100, 0.5, 1.0, 0.5, 1.0/800, 0.01, 200, 0.1, 50.0/1000])
         sigmaTheta = theta*2
         return theta, sigmaTheta 
     
     @staticmethod
     def toyTheta(): 
-        theta = numpy.array([100, 0.5, 1.0, 0.5, 1.0/800, 0.01, 200, 0.1, 0.2, 38.0/1000, 30.0/1000, 170.0/1000])
+        theta = numpy.array([100, 0.5, 1.0, 0.5, 1.0/800, 0.01, 200, 0.1, 50.0/1000])
         #theta = numpy.array([ 500,  0.5, 0.5, 0.5, 0.2, 0.2, 500, 0.5, 0.5, 0.1, 0.1, 0.1])
         sigmaTheta = theta*2
         return theta, sigmaTheta 

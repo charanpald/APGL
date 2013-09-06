@@ -81,36 +81,15 @@ class HIVABCParameters(object):
         sigma = sigmaTheta[ind]
         priorDist, priorDensity = self.createGammaParam(sigma, mu)
         perturbationKernel, perturbationKernelDensity = self.__createNormalPurt(sigma, purtScale)
-        self.__addParameter(("rates", "setHeteroContactRate"), priorDist, priorDensity, perturbationKernel, perturbationKernelDensity)
-
-        ind += 1
-        mu = meanTheta[ind]
-        sigma = sigmaTheta[ind]
-        priorDist, priorDensity = self.createGammaParam(sigma, mu)
-        perturbationKernel, perturbationKernelDensity = self.__createNormalPurt(sigma, purtScale)
-        self.__addParameter(("rates", "setBiContactRate"), priorDist, priorDensity, perturbationKernel, perturbationKernelDensity)
+        self.__addParameter(("rates", "setContactRate"), priorDist, priorDensity, perturbationKernel, perturbationKernelDensity)
 
         ind += 1
         mu = meanTheta[ind]
         sigma = sigmaTheta[ind]
         priorDist, priorDensity = self.createTruncNormParam(sigma, mu)
         perturbationKernel, perturbationKernelDensity = self.__createNormalPurt(sigma, purtScale)
-        self.__addParameter(("rates", "setWomanManInfectProb"), priorDist, priorDensity, perturbationKernel, perturbationKernelDensity)
+        self.__addParameter(("rates", "setInfectProb"), priorDist, priorDensity, perturbationKernel, perturbationKernelDensity)
 
-        ind += 1
-        mu = meanTheta[ind]
-        sigma = sigmaTheta[ind]
-        priorDist, priorDensity = self.createTruncNormParam(sigma, mu)
-        perturbationKernel, perturbationKernelDensity = self.__createNormalPurt(sigma, purtScale)
-        self.__addParameter(("rates", "setManWomanInfectProb"), priorDist, priorDensity, perturbationKernel, perturbationKernelDensity)
-
-        ind += 1
-        mu = meanTheta[ind]
-        sigma = sigmaTheta[ind]
-        priorDist, priorDensity = self.createTruncNormParam(sigma, mu)
-        perturbationKernel, perturbationKernelDensity = self.__createNormalPurt(sigma, purtScale)
-        self.__addParameter(("rates", "setManBiInfectProb"), priorDist, priorDensity, perturbationKernel, perturbationKernelDensity)
-     
 
     def createDiscTruncNormParam(self, sigma, mode, upper, lower=0):
         """

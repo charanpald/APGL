@@ -68,14 +68,11 @@ class HIVRates():
         #Parameters for sexual contact
         self.alpha = 2.0
         self.newContactChance = 5.0
-        self.heteroContactRate = 0.1
-        self.biContactRate = 0.5
+        
+        self.contactRate = 0.1
 
         #Infection probabilities are from wikipedia
-        self.womanManInfectProb = 38.0/10000
-        self.manWomanInfectProb = 30.0/10000
-        #Taken from "Per-contact probability of HIV transmission in homosexual men in Sydney in the era of HAART" 
-        self.manBiInfectProb = 100.0/10000
+        self.infectProf = 50.0/10000
 
         #Random detection
         self.randDetectRate = 1/720.0
@@ -115,13 +112,9 @@ class HIVRates():
         
         self.newContactChance = newContactChance
 
-    def setHeteroContactRate(self, heteroContactRate):
-        Parameter.checkFloat(heteroContactRate, 0.0, float('inf'))
-        self.heteroContactRate = heteroContactRate
-
-    def setBiContactRate(self, biContactRate):
-        Parameter.checkFloat(biContactRate, 0.0, float('inf'))
-        self.biContactRate = biContactRate
+    def setContactRate(self, contactRate):
+        Parameter.checkFloat(contactRate, 0.0, float('inf'))
+        self.contactRate = contactRate
 
     def setRandDetectRate(self, randDetectRate):
         Parameter.checkFloat(randDetectRate, 0.0, float('inf'))
@@ -131,17 +124,9 @@ class HIVRates():
         Parameter.checkFloat(ctRatePerPerson, 0.0, float('inf'))
         self.ctRatePerPerson = ctRatePerPerson
 
-    def setWomanManInfectProb(self, womanManInfectProb):
-        Parameter.checkFloat(womanManInfectProb, 0.0, 1.0)
-        self.womanManInfectProb = womanManInfectProb
-
-    def setManWomanInfectProb(self, manWomanInfectProb):
-        Parameter.checkFloat(manWomanInfectProb, 0.0, 1.0)
-        self.manWomanInfectProb = manWomanInfectProb
-
-    def setManBiInfectProb(self, manBiInfectProb):
-        Parameter.checkFloat(manBiInfectProb, 0.0, 1.0)
-        self.manBiInfectProb = manBiInfectProb
+    def setInfectProb(self, infectProf):
+        Parameter.checkFloat(infectProf, 0.0, 1.0)
+        self.infectProf = infectProf
         
     def setMaxDetects(self, maxDetects): 
         Parameter.checkInt(maxDetects, 1, float("inf"))
@@ -228,8 +213,8 @@ class HIVRates():
 
         #Note a heterosexual can only have a heterosexual rate but bisexual can have either 
         contactRates = numpy.zeros(len(infectedList))
-        contactRates += (self.graph.vlist.V[infectedList, HIVVertices.orientationIndex]==HIVVertices.bi)*max(self.biContactRate, self.heteroContactRate) 
-        contactRates += (self.graph.vlist.V[infectedList, HIVVertices.orientationIndex]==HIVVertices.hetero)*self.heteroContactRate
+        contactRates += (self.graph.vlist.V[infectedList, HIVVertices.orientationIndex])*self.contactRate
+
 
         return numpy.sum(contactRates)
         
@@ -335,13 +320,13 @@ class HIVRates():
         equalGender = infectedV[:, HIVVertices.genderIndex]==contactsV[:, HIVVertices.genderIndex]
         hInds = numpy.nonzero(numpy.logical_not(equalGender))[0]
         contactRateInds[hInds] = contacts[hInds]
-        contactRates[hInds] = self.heteroContactRate
+        contactRates[hInds] = self.contactRate
         
         #We only simulate contact between male homosexuals (woman-women contact is not interesting)
         bothMale = numpy.logical_and(equalGender, infectedV[:, HIVVertices.genderIndex]==HIVVertices.male)
         bInds = numpy.nonzero(numpy.logical_and(numpy.logical_and(bothMale, contactsV[:, HIVVertices.orientationIndex]==HIVVertices.bi), biInfectInds))[0]
         contactRateInds[bInds] = contacts[bInds]
-        contactRates[bInds] = self.biContactRate
+        contactRates[bInds] = self.contactRate
 
         return contactRateInds, contactRates
 
@@ -360,11 +345,11 @@ class HIVRates():
             return 0.0
 
         if vertex1[HIVVertices.genderIndex] == HIVVertices.female and vertex2[HIVVertices.genderIndex] == HIVVertices.male:
-            return self.womanManInfectProb
+            return self.infectProf
         elif vertex1[HIVVertices.genderIndex] == HIVVertices.male and vertex2[HIVVertices.genderIndex] == HIVVertices.female:
-            return self.manWomanInfectProb
+            return self.infectProf
         elif vertex1[HIVVertices.genderIndex] == HIVVertices.male and vertex1[HIVVertices.orientationIndex]==HIVVertices.bi and vertex2[HIVVertices.genderIndex] == HIVVertices.male and vertex2[HIVVertices.orientationIndex]==HIVVertices.bi:
-            return self.manBiInfectProb
+            return self.infectProf
         else:
             #Corresponds to 2 bisexual women 
             return 0.0 
