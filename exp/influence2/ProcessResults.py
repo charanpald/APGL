@@ -4,6 +4,7 @@ import matplotlib
 matplotlib.use("GTK3Agg")
 import matplotlib.pyplot as plt 
 from exp.influence2.ArnetMinerDataset import ArnetMinerDataset
+from exp.influence2.GraphRanker import GraphRanker
 from apgl.util.Latex import Latex 
 from apgl.util.Util import Util 
 from apgl.util.Evaluator import Evaluator 
@@ -13,10 +14,14 @@ numpy.set_printoptions(suppress=True, precision=3, linewidth=100)
 dataset = ArnetMinerDataset(runLSI=ranLSI)
 
 ns = numpy.arange(5, 55, 5)
-averagePrecisionN = 20 
-bestPrecisions = numpy.zeros((len(ns), len(dataset.fields)))
 bestAveragePrecisions = numpy.zeros(len(dataset.fields))
-bestF1Scores = numpy.zeros(len(dataset.fields))
+
+computeInfluence = True
+graphRanker = GraphRanker(k=100, numRuns=100, computeInfluence=computeInfluence, p=0.05, trainExpertsIdList=[])
+methodNames = graphRanker.getNames()
+
+numMethods = 8
+averagePrecisions = numpy.zeros((len(dataset.fields), len(ns), numMethods))
 
 coverages = numpy.load(dataset.coverageFilename)
 print("==== Coverages ====")
@@ -34,36 +39,23 @@ for s, field in enumerate(dataset.fields):
         
         numMethods = len(outputLists)
         precisions = numpy.zeros((len(ns), numMethods))
-        averagePrecisions = numpy.zeros(numMethods)
+        
         f1Scores = numpy.zeros(numMethods)
         
         for i, n in enumerate(ns):     
             for j in range(len(outputLists)): 
                 precisions[i, j] = Evaluator.precisionFromIndLists(expertMatchesInds, outputLists[j][0:n]) 
-            
-        for j in range(len(outputLists)):                 
-            averagePrecisions[j] = Evaluator.averagePrecisionFromLists(expertMatchesInds, outputLists[j][0:averagePrecisionN], averagePrecisionN) 
-            f1Scores[j] = Evaluator.f1FromIndLists(expertMatchesInds, outputLists[j][0:averagePrecisionN]) 
-        
+                averagePrecisions[s, i, j] = Evaluator.averagePrecisionFromLists(expertMatchesInds, outputLists[j][0:n], n) 
+
         print(field)
         print(precisions)
-        print(averagePrecisions)
-        print(f1Scores)
-        
-        bestInd = numpy.argmax(averagePrecisions)
-        plt.plot(ns, precisions[:, bestInd], label=field)
-        bestPrecisions[:, s] = precisions[:, bestInd]
-        bestAveragePrecisions[s] = averagePrecisions[bestInd]
-        bestF1Scores[s] = f1Scores[bestInd]
+        print(averagePrecisions[s, :, :] )
     except IOError as e: 
         print(e)
 
-bestPrecisions2 = numpy.c_[numpy.array(ns), bestPrecisions]
-print(Latex.array2DToRows(bestPrecisions2))
-print(Latex.array1DToRow(bestAveragePrecisions))
-print(Latex.array1DToRow(bestF1Scores))
+meanAveragePrecisions = numpy.mean(averagePrecisions, 0)
+meanAveragePrecisions = numpy.c_[numpy.array(ns), meanAveragePrecisions]
+print("==== Summary ====")
+print(methodNames)
+print(Latex.array2DToRows(meanAveragePrecisions))
 
-print(dataset.fields)
-
-plt.legend()
-plt.show()
