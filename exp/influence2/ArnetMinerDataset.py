@@ -58,7 +58,7 @@ class ArnetMinerDataset(object):
         
         self.stepSize = 1000000    
         self.numLines = 15192085
-        self.matchCutoff = 0.95   
+        self.matchCutoff = 1.0   
         
         #Params for finding relevant authors
         self.gamma = 1.3
@@ -257,11 +257,10 @@ class ArnetMinerDataset(object):
             citationNo = re.findall("#citation(.*)", line)
             
             if emptyLine:
-                if len(lastAbstract)!=0: 
-                    document = lastTitle + " " + lastVenue + " " + lastAbstract 
-                    documentList.append(document) 
-                    authorList.append(lastAuthors)
-                    citationList.append(lastCitationNo)
+                document = lastTitle + " " + lastVenue + " " + lastAbstract 
+                documentList.append(document) 
+                authorList.append(lastAuthors)
+                citationList.append(lastCitationNo)
 
                 lastAbstract = ""
                 lastTitle = ""
