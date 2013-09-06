@@ -9,7 +9,7 @@ from apgl.util.Latex import Latex
 from apgl.util.Util import Util 
 from apgl.util.Evaluator import Evaluator 
 
-ranLSI = True
+ranLSI = False
 numpy.set_printoptions(suppress=True, precision=3, linewidth=100)
 dataset = ArnetMinerDataset(runLSI=ranLSI)
 
@@ -56,6 +56,6 @@ for s, field in enumerate(dataset.fields):
 meanAveragePrecisions = numpy.mean(averagePrecisions, 0)
 meanAveragePrecisions = numpy.c_[numpy.array(ns), meanAveragePrecisions]
 print("==== Summary ====")
-print(methodNames)
+print(Latex.listToRow(methodNames))
 print(Latex.array2DToRows(meanAveragePrecisions))
 
