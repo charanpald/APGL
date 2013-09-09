@@ -34,7 +34,7 @@ for s, field in enumerate(dataset.fields):
         outputFilename = dataset.getOutputFieldDir(field) + "outputListsLDA.npz"
         
     try: 
-        outputLists, expertMatchesInds = Util.loadPickle(outputFilename)
+        outputLists, trainExpertMatchesInds, testExpertMatchesInds = Util.loadPickle(outputFilename)
         graph, authorIndexer = Util.loadPickle(dataset.getCoauthorsFilename(field))
         
         numMethods = len(outputLists)
@@ -44,11 +44,12 @@ for s, field in enumerate(dataset.fields):
         
         for i, n in enumerate(ns):     
             for j in range(len(outputLists)): 
-                precisions[i, j] = Evaluator.precisionFromIndLists(expertMatchesInds, outputLists[j][0:n]) 
-                averagePrecisions[s, i, j] = Evaluator.averagePrecisionFromLists(expertMatchesInds, outputLists[j][0:n], n) 
+                precisions[i, j] = Evaluator.precisionFromIndLists(testExpertMatchesInds, outputLists[j][0:n]) 
+                averagePrecisions[s, i, j] = Evaluator.averagePrecisionFromLists(testExpertMatchesInds, outputLists[j][0:n], n) 
         
         print(field)      
         print(authorIndexer.reverseTranslate(outputLists[-1][0:10]))
+        print(authorIndexer.reverseTranslate(testExpertMatchesInds))
         print(precisions)
         print(averagePrecisions[s, :, :] )
     except IOError as e: 
