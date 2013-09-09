@@ -71,7 +71,7 @@ for field in dataset.fields:
         else: 
             outputFilename = dataset.getOutputFieldDir(field) + "outputListsLDA.npz"
             
-        Util.savePickle([outputLists, trainExpertMatchesInds, testExpertMatchesInds], outputFilename)
+        Util.savePickle([outputLists, trainExpertMatchesInds, testExpertMatchesInds], outputFilename, debug=True)
         
         numMethods = len(outputLists)
         precisions = numpy.zeros((len(ns), numMethods))
