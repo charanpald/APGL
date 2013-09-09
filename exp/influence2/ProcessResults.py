@@ -12,12 +12,13 @@ from apgl.util.Evaluator import Evaluator
 ranLSI = True
 numpy.set_printoptions(suppress=True, precision=3, linewidth=100)
 dataset = ArnetMinerDataset(runLSI=ranLSI)
+#dataset.fields = ["Intelligent Agents"]
 
 ns = numpy.arange(5, 55, 5)
 bestAveragePrecisions = numpy.zeros(len(dataset.fields))
 
 computeInfluence = True
-graphRanker = GraphRanker(k=100, numRuns=100, computeInfluence=computeInfluence, p=0.05)
+graphRanker = GraphRanker(k=100, numRuns=100, computeInfluence=computeInfluence, p=0.05, inputRanking=[])
 methodNames = graphRanker.getNames()
 
 numMethods = 7
@@ -34,6 +35,7 @@ for s, field in enumerate(dataset.fields):
         outputFilename = dataset.getOutputFieldDir(field) + "outputListsLDA.npz"
         
     try: 
+        print(field)  
         outputLists, trainExpertMatchesInds, testExpertMatchesInds = Util.loadPickle(outputFilename)
         graph, authorIndexer = Util.loadPickle(dataset.getCoauthorsFilename(field))
         
@@ -52,9 +54,11 @@ for s, field in enumerate(dataset.fields):
                 precisions[i, j] = Evaluator.precisionFromIndLists(testExpertMatchesInds, newOutputList) 
                 averagePrecisions[s, i, j] = Evaluator.averagePrecisionFromLists(testExpertMatchesInds, newOutputList, n) 
         
-        print(field)      
-        print(authorIndexer.reverseTranslate(outputLists[-1][0:10]))
+        
+        print(authorIndexer.reverseTranslate(trainExpertMatchesInds))
         print(authorIndexer.reverseTranslate(testExpertMatchesInds))
+        print(authorIndexer.reverseTranslate(outputLists[0][0:10]))
+        
         print(precisions)
         print(averagePrecisions[s, :, :] )
     except IOError as e: 
