@@ -27,25 +27,26 @@ ns = numpy.arange(5, 55, 5)
 runLSI = not args.runLDA
 
 dataset = ArnetMinerDataset(runLSI=runLSI) 
-#dataset.dataFilename = dataset.dataDir + "DBLP-citation-100000.txt"
+#dataset.dataFilename = dataset.dataDir + "DBLP-citation-1000000.txt"
 #dataset.dataFilename = dataset.dataDir + "DBLP-citation-1000000.txt"
 #dataset.dataFilename = dataset.dataDir + "DBLP-citation-5000000.txt"
 #dataset.dataFilename = dataset.dataDir + "DBLP-citation-7000000.txt"
 dataset.dataFilename = dataset.dataDir + "DBLP-citation-Feb21.txt" 
+dataset.minDf = 10**-2
 dataset.ks = [100, 200, 300, 400, 500, 600]
-dataset.minDfs = [10**-4, 10**-5]
+dataset.minDfs = [10**-4]
 dataset.overwriteGraph = True
 dataset.overwriteModel = True
 dataset.overwriteVectoriser = True 
 
 #dataset.modelSelection()
 
-#dataset.overwriteVectoriser = False
-#dataset.overwriteModel = False
-
 for field in dataset.fields: 
     logging.debug("Field = " + field)
     dataset.learnModel() 
+    dataset.overwriteVectoriser = False
+    dataset.overwriteModel = False    
+    
     relevantAuthors = dataset.findSimilarDocuments(field)
     
     graph, authorIndexer = dataset.coauthorsGraph(field, relevantAuthors)
