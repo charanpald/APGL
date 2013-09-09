@@ -34,6 +34,19 @@ class IdIndexer(object):
             return itemList 
         except TypeError: 
             return self.idDict[id]
+            
+    def reverseTranslate(self, ind): 
+        """
+        Take an index and convert back into the ID
+        """
+        try: 
+            iter(ind)
+            itemList = []
+            for item in ind: 
+                itemList.append(self.idDict.keys()[self.idDict.values()[item]]) 
+            return itemList 
+        except TypeError: 
+            return self.idDict.keys()[self.idDict.values()[ind]]    
         
     def getArray(self): 
         return numpy.array(self.inds)
