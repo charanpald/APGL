@@ -83,9 +83,9 @@ class ArnetMinerDataset(object):
         self.ks = [100, 200, 300, 400, 500, 600]
         self.sampleDocs = 1000000
         
-        self.overwriteGraph = False
-        self.overwriteVectoriser = False
-        self.overwriteModel = False
+        self.overwriteGraph = True
+        self.overwriteVectoriser = True
+        self.overwriteModel = True
         
         self.chunksize = 2000
         self.tfidf = runLSI 
