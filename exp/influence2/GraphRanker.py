@@ -4,15 +4,18 @@ from exp.influence2.MaxInfluence import MaxInfluence
 from exp.influence2.RankAggregator import RankAggregator
 
 class GraphRanker(object): 
-    def __init__(self, k=100, p=0.5, numRuns=1000, computeInfluence=False, trainExpertsIdList=None): 
+    def __init__(self, k=100, p=0.5, numRuns=1000, computeInfluence=False, inputRanking=None): 
         self.k = k 
         self.p = p 
         self.numRuns = numRuns
         self.computeInfluence = computeInfluence 
-        self.trainExpertsIdList = trainExpertsIdList
+        self.inputRanking = inputRanking
         
     def getNames(self): 
-        names = ["Betweenness", "Closeness", "PageRank", "Degree"]
+        if self.inputRanking == None: 
+            names = ["Betweenness", "Closeness", "PageRank", "Degree"]
+        else: 
+            names = ["InputRanking", "Betweenness", "Closeness", "PageRank", "Degree"]
         
         if self.computeInfluence: 
             names.append("Influence")
@@ -21,13 +24,15 @@ class GraphRanker(object):
         
         return names 
  
-    def vertexRankings(self, graph, relevantItems, outputLists=None): 
+    def vertexRankings(self, graph, relevantItems): 
         """
         Return a list of ranked lists. The list is: betweenness, pagerank, 
         degree and influence. 
         """
-        if outputLists == None: 
+        if self.inputRanking == None: 
             outputLists = []
+        else: 
+            outputLists = [self.inputRanking]
         
         logging.debug("Computing betweenness")
         scores = graph.betweenness(weights="invWeight")
@@ -53,16 +58,6 @@ class GraphRanker(object):
             logging.debug("Computing influence")
             rank = MaxInfluence.greedyMethod2(graph, self.k, p=self.p, numRuns=self.numRuns)
             outputLists.append(numpy.array(self.restrictRankedList(rank, relevantItems)))
-        
-        """
-        logging.debug("Computing shortest path lengths")
-        lengths = graph.shortest_paths(trainExpertsIdList, weights="invWeight")
-        lengths = numpy.array(lengths)
-        lengths[numpy.logical_not(numpy.isfinite(lengths))] = 0
-        lengths = numpy.mean(lengths, 0)
-        rank = numpy.argsort(lengths)
-        outputLists.append(self.restrictRankedList(rank, relevantItems))
-        """
         
         logging.debug("Computing hub score")
         scores = graph.hub_score(weights="weight") 
