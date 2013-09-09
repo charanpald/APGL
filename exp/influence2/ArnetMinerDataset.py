@@ -27,7 +27,7 @@ class ArnetMinerDataset(object):
     abstract similarity. The output is two graphs - collaboration and 
     abstract similarity. 
     """    
-    def __init__(self, k=300, additionalFields=[], runLSI=True):
+    def __init__(self, k=500, additionalFields=[], runLSI=True):
         numpy.random.seed(21)
         self.runLSI = runLSI 
         self.dataDir = PathDefaults.getDataDir() + "reputation/" 
@@ -65,12 +65,13 @@ class ArnetMinerDataset(object):
         self.maxRelevantAuthors = 500
         self.printPossibleMatches = False
         self.gammas = numpy.arange(1.0, 2, 0.1)
+        self.minExpertArticles = 3
 
         #Params for vectoriser 
         self.numFeatures = 500000
         self.binary = True 
         self.sublinearTf = False
-        self.minDf = 0.001 
+        self.minDf = 10**-5 
         self.ngram = 2
         self.minDfs = [0.01, 0.001, 0.0001]
         
@@ -218,19 +219,28 @@ class ArnetMinerDataset(object):
         
         #Now find all authors corresponding to the documents 
         expertDict = {} 
+        expertDict2 = {} 
         expertsSet = set([])
         for docInd in relevantDocs: 
             for author in self.authorList[docInd]: 
                 if author not in expertsSet: 
                     expertsSet.add(author)
                     expertDict[author] = similarities2[docInd]
+                    expertDict2[author] = 1
                 else: 
                     expertDict[author] += similarities2[docInd] 
+                    expertDict2[author] += 1
         
         expertDict = OrderedDict(sorted(expertDict.items(), key=lambda t: t[1], reverse=True))
         experts = expertDict.keys()[0:self.maxRelevantAuthors]
         
-        return experts 
+        #Remove experts who have written fewer than x articles on the query subject 
+        newExperts = []
+        for expert in experts: 
+            if expertDict2[expert] >= self.minExpertArticles: 
+                newExperts.append(expert)
+        
+        return newExperts 
 
     def readAuthorsAndDocuments(self): 
         logging.debug("About to read file " + self.dataFilename)
@@ -286,7 +296,7 @@ class ArnetMinerDataset(object):
 
         inFile.close() 
         logging.debug("Finished reading " + str(len(documentList)) + " articles")  
-
+        
         return authorList, documentList, citationList
 
     def vectoriseDocuments(self):
