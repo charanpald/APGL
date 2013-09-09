@@ -71,7 +71,7 @@ class ArnetMinerDataset(object):
         self.numFeatures = 500000
         self.binary = True 
         self.sublinearTf = False
-        self.minDf = 10**-5 
+        self.minDf = 10**-4 
         self.ngram = 2
         self.minDfs = [0.01, 0.001, 0.0001]
         
@@ -455,16 +455,7 @@ class ArnetMinerDataset(object):
         logging.debug("Chosen gamma=" + str(self.gamma))  
         
         logging.debug("Coverage = " + str(numpy.max(meanCoverges)))
-        
-        self.vectoriseDocuments()
-        self.loadVectoriser()
-        
-        corpus = gensim.corpora.mmcorpus.MmCorpus(self.docTermMatrixFilename + ".mtx")
-        id2WordDict = dict(zip(range(len(self.vectoriser.get_feature_names())), self.vectoriser.get_feature_names()))
-        lda = LdaModel(corpus, num_topics=self.k, id2word=id2WordDict, chunksize=self.chunksize, distributed=False)                
-        index = gensim.similarities.docsim.Similarity(self.indexFilename, lda[corpus], num_features=self.k)
-        Util.savePickle([lda, index], self.modelFilename, debug=True)
-        
+                
         return meanCoverges
 
     def computeLSI(self):
@@ -480,7 +471,7 @@ class ArnetMinerDataset(object):
             corpus = gensim.corpora.mmcorpus.MmCorpus(self.docTermMatrixFilename + ".mtx")
             id2WordDict = dict(zip(range(len(self.vectoriser.get_feature_names())), self.vectoriser.get_feature_names()))   
             
-            logging.getLogger('gensim').setLevel(logging.ERROR)
+            logging.getLogger('gensim').setLevel(logging.INFO)
             lsi = LsiModel(corpus, num_topics=self.k, id2word=id2WordDict, chunksize=self.chunksize, distributed=False) 
             index = gensim.similarities.docsim.Similarity(self.indexFilename, lsi[corpus], num_features=self.k)          
             
@@ -566,15 +557,6 @@ class ArnetMinerDataset(object):
         logging.debug("Chosen gamma=" + str(self.gamma))   
         
         logging.debug("Coverage = " + str(numpy.max(meanCoverges)))
-        
-        self.vectoriseDocuments()
-        self.loadVectoriser()
-        
-        corpus = gensim.corpora.mmcorpus.MmCorpus(self.docTermMatrixFilename + ".mtx")
-        id2WordDict = dict(zip(range(len(self.vectoriser.get_feature_names())), self.vectoriser.get_feature_names()))
-        lsi = LsiModel(corpus, num_topics=self.k, id2word=id2WordDict, chunksize=self.chunksize, distributed=False, onepass=False)                
-        index = gensim.similarities.docsim.Similarity(self.indexFilename, lsi[corpus], num_features=self.k)
-        Util.savePickle([lsi, index], self.modelFilename, debug=True)
         
         return meanCoverges
         
