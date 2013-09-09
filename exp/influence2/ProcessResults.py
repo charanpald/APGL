@@ -17,7 +17,7 @@ ns = numpy.arange(5, 55, 5)
 bestAveragePrecisions = numpy.zeros(len(dataset.fields))
 
 computeInfluence = True
-graphRanker = GraphRanker(k=100, numRuns=100, computeInfluence=computeInfluence, p=0.05, trainExpertsIdList=[])
+graphRanker = GraphRanker(k=100, numRuns=100, computeInfluence=computeInfluence, p=0.05)
 methodNames = graphRanker.getNames()
 
 numMethods = 7
@@ -44,8 +44,13 @@ for s, field in enumerate(dataset.fields):
         
         for i, n in enumerate(ns):     
             for j in range(len(outputLists)): 
-                precisions[i, j] = Evaluator.precisionFromIndLists(testExpertMatchesInds, outputLists[j][0:n]) 
-                averagePrecisions[s, i, j] = Evaluator.averagePrecisionFromLists(testExpertMatchesInds, outputLists[j][0:n], n) 
+                newOutputList = []
+                for item in outputLists[j][0:n]: 
+                    if item not in trainExpertMatchesInds: 
+                        newOutputList.append(item)
+                
+                precisions[i, j] = Evaluator.precisionFromIndLists(testExpertMatchesInds, newOutputList) 
+                averagePrecisions[s, i, j] = Evaluator.averagePrecisionFromLists(testExpertMatchesInds, newOutputList, n) 
         
         print(field)      
         print(authorIndexer.reverseTranslate(outputLists[-1][0:10]))
