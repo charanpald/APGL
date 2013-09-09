@@ -23,7 +23,6 @@ parser.add_argument("-r", "--runLDA", action="store_true", help="Run Latent Dirc
 args = parser.parse_args()
 
 averagePrecisionN = 20 
-similarityCutoff = 0.30
 ns = numpy.arange(5, 55, 5)
 runLSI = not args.runLDA
 
@@ -34,33 +33,35 @@ dataset = ArnetMinerDataset(runLSI=runLSI)
 #dataset.dataFilename = dataset.dataDir + "DBLP-citation-7000000.txt"
 dataset.dataFilename = dataset.dataDir + "DBLP-citation-Feb21.txt" 
 dataset.ks = [100, 200, 300, 400, 500, 600]
-dataset.minDfs = [10**-4, 10**-5, 10**-6]
+dataset.minDfs = [10**-4, 10**-5]
 dataset.overwriteGraph = True
 dataset.overwriteModel = True
 dataset.overwriteVectoriser = True 
 
-dataset.modelSelection()
+#dataset.modelSelection()
 
-dataset.overwriteVectoriser = False
-dataset.overwriteModel = False
+#dataset.overwriteVectoriser = False
+#dataset.overwriteModel = False
 
 for field in dataset.fields: 
     logging.debug("Field = " + field)
     dataset.learnModel() 
-    relevantExperts = dataset.findSimilarDocuments(field)
+    relevantAuthors = dataset.findSimilarDocuments(field)
     
-    graph, authorIndexer = dataset.coauthorsGraph(field, relevantExperts)
-    expertMatches = dataset.matchExperts(relevantExperts, dataset.testExpertDict[field])     
+    graph, authorIndexer = dataset.coauthorsGraph(field, relevantAuthors)
+    trainExpertMatches = dataset.matchExperts(relevantAuthors, dataset.trainExpertDict[field])   
+    testExpertMatches = dataset.matchExperts(relevantAuthors, dataset.testExpertDict[field])     
     
-    expertMatchesInds = authorIndexer.translate(expertMatches) 
-    relevantAuthorInds = authorIndexer.translate(relevantExperts) 
+    trainExpertMatchesInds = authorIndexer.translate(trainExpertMatches)
+    testExpertMatchesInds = authorIndexer.translate(testExpertMatches) 
+    relevantAuthorInds = authorIndexer.translate(relevantAuthors) 
     assert (numpy.array(relevantAuthorInds) < len(relevantAuthorInds)).all()
     
-    if len(expertMatches) != 0: 
+    if len(testExpertMatches) != 0: 
         #First compute graph properties 
         computeInfluence = True
-        graphRanker = GraphRanker(k=100, numRuns=100, computeInfluence=computeInfluence, p=0.05, trainExpertsIdList=expertMatchesInds)
-        outputLists = graphRanker.vertexRankings(graph, relevantAuthorInds, [relevantAuthorInds])
+        graphRanker = GraphRanker(k=100, numRuns=100, computeInfluence=computeInfluence, p=0.05, inputRanking=relevantAuthorInds)
+        outputLists = graphRanker.vertexRankings(graph, relevantAuthorInds)
         itemList = RankAggregator.generateItemList(outputLists)
         #methodNames = graphRanker.getNames()
         
@@ -68,7 +69,8 @@ for field in dataset.fields:
             outputFilename = dataset.getOutputFieldDir(field) + "outputListsLSI.npz"
         else: 
             outputFilename = dataset.getOutputFieldDir(field) + "outputListsLDA.npz"
-        Util.savePickle([outputLists, expertMatchesInds], outputFilename)
+            
+        Util.savePickle([outputLists, trainExpertMatchesInds, testExpertMatchesInds], outputFilename)
         
         numMethods = len(outputLists)
         precisions = numpy.zeros((len(ns), numMethods))
@@ -76,10 +78,10 @@ for field in dataset.fields:
         
         for i, n in enumerate(ns):     
             for j in range(len(outputLists)): 
-                precisions[i, j] = Evaluator.precisionFromIndLists(expertMatchesInds, outputLists[j][0:n]) 
+                precisions[i, j] = Evaluator.precisionFromIndLists(testExpertMatchesInds, outputLists[j][0:n]) 
             
         for j in range(len(outputLists)):                 
-            averagePrecisions[j] = Evaluator.averagePrecisionFromLists(expertMatchesInds, outputLists[j][0:averagePrecisionN], averagePrecisionN) 
+            averagePrecisions[j] = Evaluator.averagePrecisionFromLists(testExpertMatchesInds, outputLists[j][0:averagePrecisionN], averagePrecisionN) 
         
         precisions2 = numpy.c_[numpy.array(ns), precisions]
         
