@@ -32,3 +32,16 @@ for field in dataset.fields:
 print(expertMatchesDict)
 print(numpy.mean(expertMatchesDict.values())) 
 
+#Look at distribution of experts in data - how many articles each has 
+field = "Boosting"
+expertArticlesDict = {} 
+
+for expert in dataset.expertsDict[field]: 
+    expertArticlesDict[expert] = 0 
+
+for authors in authorList: 
+    for author in authors: 
+        if author in dataset.expertsDict[field]: 
+            expertArticlesDict[author] += 1
+
+print(expertArticlesDict)
