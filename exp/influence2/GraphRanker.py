@@ -15,7 +15,8 @@ class GraphRanker(object):
         if self.inputRanking == None: 
             names = ["Betweenness", "Closeness", "PageRank", "Degree"]
         else: 
-            names = ["InputRanking", "Betweenness", "Closeness", "PageRank", "Degree"]
+            names = ["InputRanking" + str(i) for i in range(len(self.inputRanking))] 
+            names.extend(["Betweenness", "Closeness", "PageRank", "Degree"])
         
         if self.computeInfluence: 
             names.append("Influence")
@@ -32,7 +33,7 @@ class GraphRanker(object):
         if self.inputRanking == None: 
             outputLists = []
         else: 
-            outputLists = [self.inputRanking]
+            outputLists = self.inputRanking[:]
         
         logging.debug("Computing betweenness")
         scores = graph.betweenness(weights="invWeight")
