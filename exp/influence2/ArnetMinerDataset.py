@@ -147,7 +147,7 @@ class ArnetMinerDataset(object):
                     logging.debug("Possible matches for " + author + " : " + str(possibleMatches))
                           
         expertMatches = sorted(list(expertMatches))
-        logging.debug("Total number of matches " + str(len(expertMatches)) + " of " + str(len(expertsSet)))        
+        logging.debug("Total number of matches " + str(len(expertMatches)) + " of " + str(len(expertsSet)))
         
         return expertMatches 
 
@@ -242,16 +242,22 @@ class ArnetMinerDataset(object):
         expertCitations = OrderedDict(sorted(expertCitations.items(), key=lambda t: t[1], reverse=True))
         expertsByCitations = expertCitations.keys()[0:self.maxRelevantAuthors]        
         
+        logging.debug("Found " + str(len(expertsByDocSimilarity)) + " relevant authors")        
+        
         #Remove experts who have written fewer than x articles on the query subject 
         newExpertsByDocSimilarity = []
         for expert in expertsByDocSimilarity: 
             if expertDict2[expert] >= self.minExpertArticles: 
                 newExpertsByDocSimilarity.append(expert)
                 
+                
         newExpertsByCitations = []
         for expert in expertsByCitations: 
             if expertDict2[expert] >= self.minExpertArticles: 
                 newExpertsByCitations.append(expert)
+        
+        logging.debug("Found " + str(len(newExpertsByDocSimilarity)) + " relevant authors by similarity after culling")
+        logging.debug("Found " + str(len(newExpertsByCitations)) + " relevant authors by citation after culling")
         
         return newExpertsByDocSimilarity, newExpertsByCitations 
 
