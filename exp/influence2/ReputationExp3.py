@@ -27,7 +27,7 @@ ns = numpy.arange(5, 55, 5)
 runLSI = not args.runLDA
 
 dataset = ArnetMinerDataset(runLSI=runLSI) 
-#dataset.dataFilename = dataset.dataDir + "DBLP-citation-1000000.txt"
+#dataset.dataFilename = dataset.dataDir + "DBLP-citation-100000.txt"
 #dataset.dataFilename = dataset.dataDir + "DBLP-citation-1000000.txt"
 #dataset.dataFilename = dataset.dataDir + "DBLP-citation-5000000.txt"
 #dataset.dataFilename = dataset.dataDir + "DBLP-citation-7000000.txt"
@@ -47,24 +47,26 @@ for field in dataset.fields:
     dataset.overwriteVectoriser = False
     dataset.overwriteModel = False    
     
-    relevantAuthors = dataset.findSimilarDocuments(field)
+    relAuthorsDocSimilarity, relAuthorsDocCitations = dataset.findSimilarDocuments(field)
     
-    graph, authorIndexer = dataset.coauthorsGraph(field, relevantAuthors)
-    trainExpertMatches = dataset.matchExperts(relevantAuthors, dataset.trainExpertDict[field])   
-    testExpertMatches = dataset.matchExperts(relevantAuthors, dataset.testExpertDict[field])     
+    graph, authorIndexer = dataset.coauthorsGraph(field, relAuthorsDocSimilarity)
+    trainExpertMatches = dataset.matchExperts(relAuthorsDocSimilarity, dataset.trainExpertDict[field])   
+    testExpertMatches = dataset.matchExperts(relAuthorsDocSimilarity, dataset.testExpertDict[field])     
     
     trainExpertMatchesInds = authorIndexer.translate(trainExpertMatches)
     testExpertMatchesInds = authorIndexer.translate(testExpertMatches) 
-    relevantAuthorInds = authorIndexer.translate(relevantAuthors) 
-    assert (numpy.array(relevantAuthorInds) < len(relevantAuthorInds)).all()
+    relevantAuthorInds1 = authorIndexer.translate(relAuthorsDocSimilarity) 
+    relevantAuthorInds2 = authorIndexer.translate(relAuthorsDocCitations) 
+    
+    assert (numpy.array(relevantAuthorInds1) < len(relevantAuthorInds1)).all()
     
     if len(testExpertMatches) != 0: 
         #First compute graph properties 
         computeInfluence = True
-        graphRanker = GraphRanker(k=100, numRuns=100, computeInfluence=computeInfluence, p=0.05, inputRanking=relevantAuthorInds)
-        outputLists = graphRanker.vertexRankings(graph, relevantAuthorInds)
+        graphRanker = GraphRanker(k=100, numRuns=100, computeInfluence=computeInfluence, p=0.05, inputRanking=[relevantAuthorInds1, relevantAuthorInds2])
+        outputLists = graphRanker.vertexRankings(graph, relevantAuthorInds1)
         itemList = RankAggregator.generateItemList(outputLists)
-        #methodNames = graphRanker.getNames()
+        methodNames = graphRanker.getNames()
         
         if runLSI: 
             outputFilename = dataset.getOutputFieldDir(field) + "outputListsLSI.npz"
@@ -86,6 +88,7 @@ for field in dataset.fields:
         
         precisions2 = numpy.c_[numpy.array(ns), precisions]
         
+        logging.debug(Latex.listToRow(methodNames))
         logging.debug(Latex.array2DToRows(precisions2))
         logging.debug(Latex.array1DToRow(averagePrecisions))
 
