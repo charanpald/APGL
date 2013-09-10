@@ -50,6 +50,7 @@ class ArnetMinerDataset(object):
             methodName = "LDA"
             
         self.authorListFilename = self.outputDir + "authorList" + methodName +".pkl"
+        self.citationListFilename = self.outputDir + "citationList" + methodName +".pkl"
         self.vectoriserFilename = self.outputDir + "vectoriser" + methodName +".pkl"   
         self.modelFilename = self.outputDir + "model" + methodName + ".pkl"
         self.docTermMatrixFilename = self.outputDir + "termDocMatrix" + methodName
@@ -62,7 +63,7 @@ class ArnetMinerDataset(object):
         
         #Params for finding relevant authors
         self.gamma = 1.3
-        self.maxRelevantAuthors = 500
+        self.maxRelevantAuthors = 1000
         self.printPossibleMatches = False
         self.gammas = numpy.arange(1.0, 2, 0.1)
         self.minExpertArticles = 3
@@ -220,27 +221,39 @@ class ArnetMinerDataset(object):
         #Now find all authors corresponding to the documents 
         expertDict = {} 
         expertDict2 = {} 
+        expertCitations = {}
         expertsSet = set([])
+        
         for docInd in relevantDocs: 
             for author in self.authorList[docInd]: 
                 if author not in expertsSet: 
                     expertsSet.add(author)
                     expertDict[author] = similarities2[docInd]
                     expertDict2[author] = 1
+                    expertCitations[author] = self.citationList[docInd]
                 else: 
                     expertDict[author] += similarities2[docInd] 
                     expertDict2[author] += 1
+                    expertCitations[author] += self.citationList[docInd]
         
         expertDict = OrderedDict(sorted(expertDict.items(), key=lambda t: t[1], reverse=True))
-        experts = expertDict.keys()[0:self.maxRelevantAuthors]
+        expertsByDocSimilarity = expertDict.keys()[0:self.maxRelevantAuthors]
+        
+        expertCitations = OrderedDict(sorted(expertCitations.items(), key=lambda t: t[1], reverse=True))
+        expertsByCitations = expertCitations.keys()[0:self.maxRelevantAuthors]        
         
         #Remove experts who have written fewer than x articles on the query subject 
-        newExperts = []
-        for expert in experts: 
+        newExpertsByDocSimilarity = []
+        for expert in expertsByDocSimilarity: 
             if expertDict2[expert] >= self.minExpertArticles: 
-                newExperts.append(expert)
+                newExpertsByDocSimilarity.append(expert)
+                
+        newExpertsByCitations = []
+        for expert in expertsByCitations: 
+            if expertDict2[expert] >= self.minExpertArticles: 
+                newExpertsByCitations.append(expert)
         
-        return newExperts 
+        return newExpertsByDocSimilarity, newExpertsByCitations 
 
     def readAuthorsAndDocuments(self): 
         logging.debug("About to read file " + self.dataFilename)
@@ -267,7 +280,7 @@ class ArnetMinerDataset(object):
             citationNo = re.findall("#citation(.*)", line)
             
             if emptyLine:
-                document = lastTitle + " " + lastVenue + " " + lastAbstract 
+                document = lastTitle + " " + lastAbstract 
                 documentList.append(document) 
                 authorList.append(lastAuthors)
                 citationList.append(lastCitationNo)
@@ -292,6 +305,7 @@ class ArnetMinerDataset(object):
             if len(currentAuthors) != 0: 
                 currentAuthors = currentAuthors[0].split(",")  
                 currentAuthors = set([x.strip() for x in currentAuthors])
+                currentAuthors = currentAuthors.difference(set([""]))
                 lastAuthors = currentAuthors                     
 
         inFile.close() 
@@ -309,6 +323,7 @@ class ArnetMinerDataset(object):
             
             authorList, documentList, citationList = self.readAuthorsAndDocuments()
             Util.savePickle(authorList, self.authorListFilename, debug=True)
+            Util.savePickle(citationList, self.citationListFilename, debug=True)
             
             #vectoriser = text.HashingVectorizer(ngram_range=(1,2), binary=self.binary, norm="l2", stop_words="english", tokenizer=PorterTokeniser(), dtype=numpy.float)
             
@@ -337,7 +352,8 @@ class ArnetMinerDataset(object):
         self.vectoriser = Util.loadPickle(self.vectoriserFilename)
         self.vectoriser.tokenizer = PorterTokeniser() 
         self.authorList = Util.loadPickle(self.authorListFilename)     
-        logging.debug("Loaded vectoriser and author list")
+        self.citationList = Util.loadPickle(self.citationListFilename)  
+        logging.debug("Loaded vectoriser, citation and author list")
   
     def modelSelection(self): 
         if self.runLSI: 
@@ -392,10 +408,10 @@ class ArnetMinerDataset(object):
         
         #Cosine similarity 
         similarities = index[result]
-        relevantExperts = self.expertsFromDocSimilarities(similarities)
+        expertsByDocSimilarity, expertsByCitations = self.expertsFromDocSimilarities(similarities)
         
-        logging.debug("Number of relevant authors : " + str(len(relevantExperts)))
-        return relevantExperts
+        logging.debug("Number of relevant authors : " + str(len(expertsByDocSimilarity)))
+        return expertsByDocSimilarity, expertsByCitations
 
     def modelSelectionLDA(self): 
         """
@@ -432,9 +448,9 @@ class ArnetMinerDataset(object):
                     
                     for u, gamma in enumerate(self.gammas): 
                         self.gamma = gamma 
-                        relevantExperts = self.expertsFromDocSimilarities(similarities)
+                        expertsByDocSimilarity, expertsByCitations = self.expertsFromDocSimilarities(similarities)
                         
-                        expertMatches = self.matchExperts(relevantExperts, set(self.trainExpertDict[field]))
+                        expertMatches = self.matchExperts(expertsByDocSimilarity, set(self.trainExpertDict[field]))
                         coverages[i, t, u, j] = float(len(expertMatches))/len(self.trainExpertDict[field])
                 
                 for u, gamma in enumerate(self.gammas):
@@ -492,9 +508,9 @@ class ArnetMinerDataset(object):
         newX = [(i, newX[0, i])for i in newX.nonzero()[1]]
         result = lsi[newX]             
         similarities = index[result]
-        relevantExperts = self.expertsFromDocSimilarities(similarities)
+        expertsByDocSimilarity, expertsByCitations = self.expertsFromDocSimilarities(similarities)
         
-        return relevantExperts
+        return expertsByDocSimilarity, expertsByCitations
 
     def modelSelectionLSI(self): 
         """
@@ -534,9 +550,9 @@ class ArnetMinerDataset(object):
                     
                     for u, gamma in enumerate(self.gammas): 
                         self.gamma = gamma 
-                        relevantExperts = self.expertsFromDocSimilarities(similarities)
+                        expertsByDocSimilarity, expertsByCitations = self.expertsFromDocSimilarities(similarities)
                         
-                        expertMatches = self.matchExperts(relevantExperts, set(self.trainExpertDict[field]))
+                        expertMatches = self.matchExperts(expertsByDocSimilarity, set(self.trainExpertDict[field]))
                         coverages[i, t, u, j] = float(len(expertMatches))/len(self.trainExpertDict[field])
                 
                 for u, gamma in enumerate(self.gammas):
