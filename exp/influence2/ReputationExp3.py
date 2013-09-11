@@ -60,15 +60,17 @@ for field in dataset.fields:
     testExpertMatchesInds = authorIndexer.translate(testExpertMatches) 
     relevantAuthorInds1 = authorIndexer.translate(relAuthorsDocSimilarity) 
     relevantAuthorInds2 = authorIndexer.translate(relAuthorsDocCitations) 
+    relevantAuthorsInds = authorIndexer.translate(relevantAuthors)  
     
-    assert (numpy.array(relevantAuthorInds1) < len(relevantAuthors)).all()
-    assert (numpy.array(relevantAuthorInds2) < len(relevantAuthors)).all()
+    assert (numpy.array(relevantAuthorInds1) < len(relevantAuthorsInds)).all()
+    assert (numpy.array(relevantAuthorInds2) < len(relevantAuthorsInds)).all()
     
     if len(testExpertMatches) != 0: 
         #First compute graph properties 
         computeInfluence = True
         graphRanker = GraphRanker(k=100, numRuns=100, computeInfluence=computeInfluence, p=0.05, inputRanking=[relevantAuthorInds1, relevantAuthorInds2])
-        outputLists = graphRanker.vertexRankings(graph, relevantAuthors)
+        outputLists = graphRanker.vertexRankings(graph, relevantAuthorsInds)
+             
         itemList = RankAggregator.generateItemList(outputLists)
         methodNames = graphRanker.getNames()
         
