@@ -63,10 +63,10 @@ class ArnetMinerDataset(object):
         
         #Params for finding relevant authors
         self.gamma = 1.3
-        self.maxRelevantAuthors = 1000
+        self.maxRelevantAuthors = 500
         self.printPossibleMatches = False
         self.gammas = numpy.arange(1.0, 2, 0.1)
-        self.minExpertArticles = 3
+        self.minExpertArticles = 2
 
         #Params for vectoriser 
         self.numFeatures = 500000
