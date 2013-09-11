@@ -50,6 +50,7 @@ for field in dataset.fields:
     relAuthorsDocSimilarity, relAuthorsDocCitations = dataset.findSimilarDocuments(field)
     
     relevantAuthors = set(relAuthorsDocSimilarity).union(set(relAuthorsDocCitations))
+    logging.debug("Total number of relevant authors : " + str(len(relevantAuthors)))
     
     graph, authorIndexer = dataset.coauthorsGraph(field, relevantAuthors)
     trainExpertMatches = dataset.matchExperts(relevantAuthors, dataset.trainExpertDict[field])   
