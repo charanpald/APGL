@@ -212,13 +212,15 @@ class ArnetMinerDataset(object):
         graph, authorIndexer = Util.loadPickle(self.getCoauthorsFilename(field))
         return graph, authorIndexer 
 
-    def expertsFromDocSimilarities(self, similarities): 
+    def expertsFromDocSimilarities(self, similarities, numTrainExperts): 
         """
         Given a set of similarities work out which documents are relevent 
         and then return a list of ranked authors using these scores. 
         """
         similarities2 = similarities + 1 
         relevantDocs = numpy.arange(similarities2.shape[0])[similarities2 >= self.gamma]
+        
+        maxRelevantAuthors = numTrainExperts * 5     
         
         #Now find all authors corresponding to the documents 
         expertDict = {} 
@@ -239,10 +241,10 @@ class ArnetMinerDataset(object):
                     expertCitations[author] += self.citationList[docInd]
         
         expertDict = OrderedDict(sorted(expertDict.items(), key=lambda t: t[1], reverse=True))
-        expertsByDocSimilarity = expertDict.keys()[0:self.maxRelevantAuthors]
+        expertsByDocSimilarity = expertDict.keys()[0:maxRelevantAuthors]
         
         expertCitations = OrderedDict(sorted(expertCitations.items(), key=lambda t: t[1], reverse=True))
-        expertsByCitations = expertCitations.keys()[0:self.maxRelevantAuthors]        
+        expertsByCitations = expertCitations.keys()[0:maxRelevantAuthors]        
         
         logging.debug("Found " + str(len(expertsByDocSimilarity)) + " relevant authors")        
         
@@ -416,7 +418,7 @@ class ArnetMinerDataset(object):
         
         #Cosine similarity 
         similarities = index[result]
-        expertsByDocSimilarity, expertsByCitations = self.expertsFromDocSimilarities(similarities)
+        expertsByDocSimilarity, expertsByCitations = self.expertsFromDocSimilarities(similarities, len(self.trainExpertDict[field]))
         
         logging.debug("Number of relevant authors : " + str(len(expertsByDocSimilarity)))
         return expertsByDocSimilarity, expertsByCitations
@@ -456,7 +458,7 @@ class ArnetMinerDataset(object):
                     
                     for u, gamma in enumerate(self.gammas): 
                         self.gamma = gamma 
-                        expertsByDocSimilarity, expertsByCitations = self.expertsFromDocSimilarities(similarities)
+                        expertsByDocSimilarity, expertsByCitations = self.expertsFromDocSimilarities(similarities, len(self.trainExpertDict[field]))
                         
                         expertMatches = self.matchExperts(expertsByDocSimilarity, set(self.trainExpertDict[field]))
                         coverages[i, t, u, j] = float(len(expertMatches))/len(self.trainExpertDict[field])
@@ -516,7 +518,7 @@ class ArnetMinerDataset(object):
         newX = [(i, newX[0, i])for i in newX.nonzero()[1]]
         result = lsi[newX]             
         similarities = index[result]
-        expertsByDocSimilarity, expertsByCitations = self.expertsFromDocSimilarities(similarities)
+        expertsByDocSimilarity, expertsByCitations = self.expertsFromDocSimilarities(similarities, len(self.trainExpertDict[field]))
         
         return expertsByDocSimilarity, expertsByCitations
 
@@ -558,7 +560,7 @@ class ArnetMinerDataset(object):
                     
                     for u, gamma in enumerate(self.gammas): 
                         self.gamma = gamma 
-                        expertsByDocSimilarity, expertsByCitations = self.expertsFromDocSimilarities(similarities)
+                        expertsByDocSimilarity, expertsByCitations = self.expertsFromDocSimilarities(similarities, len(self.trainExpertDict[field]))
                         
                         expertMatches = self.matchExperts(expertsByDocSimilarity, set(self.trainExpertDict[field]))
                         coverages[i, t, u, j] = float(len(expertMatches))/len(self.trainExpertDict[field])
