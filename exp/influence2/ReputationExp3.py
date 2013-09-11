@@ -36,10 +36,10 @@ dataset.minDf = 10**-4
 dataset.ks = [100, 200, 300, 400, 500, 600]
 dataset.minDfs = [10**-3, 10**-4]
 dataset.overwriteGraph = True
-dataset.overwriteModel = True
-dataset.overwriteVectoriser = True 
+dataset.overwriteModel = False
+dataset.overwriteVectoriser = False 
 
-dataset.modelSelection()
+#dataset.modelSelection()
 
 for field in dataset.fields: 
     logging.debug("Field = " + field)
