@@ -174,9 +174,10 @@ class ArnetMinerDataset(object):
                     iterator = itertools.combinations(authors, 2)
                 
                     for author1, author2 in iterator: 
+                        #if author1 in relevantExperts and author2 in relevantExperts: 
                         author1Ind = authorIndexer.append(author1) 
                         author2Ind = authorIndexer.append(author2)
-                        
+                            
                         author1Inds.append(author1Ind)
                         author2Inds.append(author2Ind)
         
