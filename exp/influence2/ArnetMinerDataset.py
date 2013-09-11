@@ -64,6 +64,7 @@ class ArnetMinerDataset(object):
         #Params for finding relevant authors
         self.gamma = 1.3
         self.maxRelevantAuthors = 500
+        self.maxRelevantAuthorsMult = 10
         self.printPossibleMatches = False
         self.gammas = numpy.arange(1.0, 2, 0.1)
         self.minExpertArticles = 2
@@ -220,7 +221,7 @@ class ArnetMinerDataset(object):
         similarities2 = similarities + 1 
         relevantDocs = numpy.arange(similarities2.shape[0])[similarities2 >= self.gamma]
         
-        maxRelevantAuthors = numTrainExperts * 5     
+        maxRelevantAuthors = numTrainExperts * self.maxRelevantAuthorsMult  
         
         #Now find all authors corresponding to the documents 
         expertDict = {} 
