@@ -230,6 +230,9 @@ class Evaluator(object):
         |relevant items \cup retrieved items| / |retrieved items|. The items of the 
         lists are indices. 
         """
+        if len(testList) == 0 or len(predList) == 0: 
+            return 0 
+        
         import sklearn.metrics 
         n  = max(numpy.max(testList), numpy.max(predList))+1
         
