@@ -1,8 +1,5 @@
 
 import numpy 
-import matplotlib 
-matplotlib.use("GTK3Agg")
-import matplotlib.pyplot as plt 
 from exp.influence2.ArnetMinerDataset import ArnetMinerDataset
 from exp.influence2.GraphRanker import GraphRanker
 from exp.influence2.RankAggregator import RankAggregator
@@ -54,7 +51,6 @@ for s, field in enumerate(dataset.fields):
                     newOutputList.append(item)
             testOutputLists.append(newOutputList)
         
-                
         for i, n in enumerate(ns):     
             for j, outputList in enumerate(outputLists): 
                 testOutputList = testOutputLists[j]                
@@ -71,10 +67,10 @@ for s, field in enumerate(dataset.fields):
         relevantItems = list(relevantItems)
 
         newOutputList = []
-        #newOutputList.append(testOutputLists[0])
+        newOutputList.append(testOutputLists[0])
         newOutputList.append(testOutputLists[1])
         newOutputList.append(testOutputLists[2])
-        newOutputList.append(testOutputLists[3])
+        #newOutputList.append(testOutputLists[3])
         #newOutputList.append(testOutputLists[4])
         #newOutputList.append(testOutputLists[5])
         #newOutputList.append(testOutputLists[6])
