@@ -433,7 +433,7 @@ class ArnetMinerDataset(object):
         coverages = numpy.zeros((len(self.ks), len(self.minDfs), len(self.gammas), len(self.fields)))
         logging.getLogger('gensim').setLevel(logging.INFO) 
         
-        logging.debug("Starting model selection for LSI")       
+        logging.debug("Starting model selection for LDA")       
        
         for t, minDf in enumerate(self.minDfs): 
             logging.debug("Using minDf=" + str(minDf))
