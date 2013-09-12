@@ -313,3 +313,14 @@ class RankAggregator(object):
             return outputList, scores, PList
         else: 
             return outputList, scores        
+            
+    def greedyMC2(lists, itemList, n): 
+        """
+        A method to greedily select a subset of the outputLists such that 
+        the average precision is maximised
+        """
+        newLists = []
+        currentAP = 0 
+        
+        
+        
