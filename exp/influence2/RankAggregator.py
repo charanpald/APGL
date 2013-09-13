@@ -6,6 +6,7 @@ import cvxopt
 import cvxopt.solvers
 import array 
 from apgl.util.Util import Util 
+from apgl.util.Evaluator import Evaluator
 
 class RankAggregator(object): 
     def __init__(self): 
@@ -220,7 +221,7 @@ class RankAggregator(object):
         Q = cvxopt.spmatrix([], [], [], (n*n, len(lists)))
 
         for i, P in enumerate(PList): 
-            print(P.todense())
+            #print(P.todense())
             Q[:, i] = cvxopt.matrix(numpy.array(P.todense()).ravel()) 
             
         QQ = Q.T * Q
@@ -250,7 +251,6 @@ class RankAggregator(object):
 
         P /= ell 
         
-        print(alpha)
         outputList, scores = RankAggregator.computeOutputList(P, itemList)
         
         if verbose: 
@@ -306,21 +306,47 @@ class RankAggregator(object):
 
         P /= ell 
         
-        print(alpha)
         outputList, scores = RankAggregator.computeOutputList(P, itemList)
         
         if verbose: 
             return outputList, scores, PList
         else: 
             return outputList, scores        
-            
-    def greedyMC2(lists, itemList, n): 
+          
+    @staticmethod 
+    def greedyMC2(lists, itemList, trainList, n): 
         """
         A method to greedily select a subset of the outputLists such that 
         the average precision is maximised
         """
-        newLists = []
-        currentAP = 0 
+        currentListsInds = range(len(lists))
+        newListsInds = []
+        currentAvPrecision = 0 
+        lastAvPrecision = -0.1
         
+        while currentAvPrecision - lastAvPrecision > 0: 
+            lastAvPrecision = currentAvPrecision 
+            averagePrecisions = numpy.zeros(len(currentListsInds))      
+            
+            for i, j in enumerate(currentListsInds):
+                newListsInds.append(j)
+
+                newLists = []                
+                for k in newListsInds: 
+                    newLists.append(lists[k])
+                
+                rankAggregate, scores = RankAggregator.MC2(newLists, itemList)
+                averagePrecisions[i] = Evaluator.averagePrecisionFromLists(trainList, rankAggregate[0:n], n)
+                newListsInds.remove(j)
+
+            j = numpy.argmax(averagePrecisions)
+            currentAvPrecision = averagePrecisions[j]
+            
+            if currentAvPrecision > lastAvPrecision: 
+                newListsInds.append(currentListsInds.pop(j))
+            
+        return newListsInds 
+            
+                
         
         

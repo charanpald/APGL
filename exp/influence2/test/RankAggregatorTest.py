@@ -85,8 +85,36 @@ class  RankAggregatorTest(unittest.TestCase):
         
         outputList, scores = RankAggregator.supervisedMC22(lists, itemList, topQList)
         
-        print(outputList) 
-        print(scores)
+        
+    def testGreedyMC2(self): 
+        list1 = [2, 1, 3, 4, 5, 0]
+        list2 = [3, 2, 5, 0, 4, 1]
+        list3 = [3, 4, 2, 5, 1, 0]
+        list4 = [3, 4, 5, 0, 1, 2]
+        lists = [list1, list2, list3, list4]
+        
+        itemList = [0, 1, 2, 3, 4, 5]
+        topQList = [3, 4, 5] 
+        
+        n = 3
+        outputInds = RankAggregator.greedyMC2(lists, itemList, topQList, n)
+        
+        self.assertEquals(outputInds, [3])        
+        
+        list1 = [2, 1, 3, 4, 5, 0]
+        list2 = [3, 2, 5, 4, 0, 1]
+        list3 = [4, 3, 2, 5, 1, 0]
+        list4 = [3, 4, 0, 5, 1, 2]
+        lists = [list1, list2, list3, list4]
+
+        outputInds = RankAggregator.greedyMC2(lists, itemList, topQList, n)
+        
+        newLists = []
+        for ind in outputInds: 
+            newLists.append(lists[ind])
+            
+        outputList, scores = RankAggregator.MC2(newLists, itemList)
+        self.assertEquals(outputList[0:3], [3, 4, 5])
         
 
 if __name__ == '__main__':
