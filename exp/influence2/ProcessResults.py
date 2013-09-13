@@ -43,40 +43,59 @@ for s, field in enumerate(dataset.fields):
         testPrecisions = numpy.zeros((len(ns), numMethods))
         
         #Remove training experts from the output lists 
+        trainOutputLists = []
         testOutputLists = [] 
         for outputList in outputLists:
-            newOutputList = []
+            newTrainOutputList = []
+            newTestOutputList = []
             for item in outputList: 
+                if item not in testExpertMatchesInds: 
+                    newTrainOutputList.append(item)
                 if item not in trainExpertMatchesInds: 
-                    newOutputList.append(item)
-            testOutputLists.append(newOutputList)
+                    newTestOutputList.append(item)
+              
+            trainOutputLists.append(newTrainOutputList)
+            testOutputLists.append(newTestOutputList)
         
         for i, n in enumerate(ns):     
-            for j, outputList in enumerate(outputLists): 
+            for j, trainOutputList in enumerate(trainOutputLists): 
                 testOutputList = testOutputLists[j]                
                 
-                trainPrecisions[i, j] = Evaluator.precisionFromIndLists(trainExpertMatchesInds, outputList[0:n]) 
+                trainPrecisions[i, j] = Evaluator.precisionFromIndLists(trainExpertMatchesInds, trainOutputList[0:n]) 
                 testPrecisions[i, j] = Evaluator.precisionFromIndLists(testExpertMatchesInds, testOutputList[0:n]) 
-                averageTrainPrecisions[s, i, j] = Evaluator.averagePrecisionFromLists(trainExpertMatchesInds, outputList[0:n], n)
+                averageTrainPrecisions[s, i, j] = Evaluator.averagePrecisionFromLists(trainExpertMatchesInds, trainOutputList[0:n], n)
                 averageTestPrecisions[s, i, j] = Evaluator.averagePrecisionFromLists(testExpertMatchesInds, testOutputList[0:n], n) 
 
         #Now look at rank aggregations
         relevantItems = set([])
-        for outputList in testOutputLists: 
-            relevantItems = relevantItems.union(outputList)
+        for trainOutputList in trainOutputLists: 
+            relevantItems = relevantItems.union(trainOutputList)
         relevantItems = list(relevantItems)
-
+        
+        listInds = RankAggregator.greedyMC2(trainOutputLists, relevantItems, trainExpertMatchesInds, 20) 
+        
+        newOutputList = []
+        for listInd in listInds: 
+            newOutputList.append(testOutputLists[listInd])
+        
+        """
         newOutputList = []
         newOutputList.append(testOutputLists[0])
         newOutputList.append(testOutputLists[1])
         newOutputList.append(testOutputLists[2])
-        #newOutputList.append(testOutputLists[3])
+        newOutputList.append(testOutputLists[3])
         #newOutputList.append(testOutputLists[4])
-        #newOutputList.append(testOutputLists[5])
+        newOutputList.append(testOutputLists[5])
         #newOutputList.append(testOutputLists[6])
+        """
+        relevantItems = set([])
+        for testOutputList in testOutputLists: 
+            relevantItems = relevantItems.union(testOutputList)
+        relevantItems = list(relevantItems)
 
         rankAggregate = RankAggregator.MC2(newOutputList, relevantItems)[0]
         j = len(outputLists)
+        
         
         for i, n in enumerate(ns):
             testPrecisions[i, j] = Evaluator.precisionFromIndLists(testExpertMatchesInds, rankAggregate) 
