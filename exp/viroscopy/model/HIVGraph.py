@@ -2,7 +2,7 @@ import numpy
 import os
 import zipfile
 import logging
-from apgl.graph.PySparseGraph import PySparseGraph
+from exp.sandbox.graph.CsArrayGraph import CsArrayGraph
 from exp.viroscopy.model.HIVVertices import HIVVertices
 from apgl.graph.VertexList import VertexList
 from apgl.util.Parameter import Parameter
@@ -13,7 +13,7 @@ A HIVGraph is a Graph except that its vertices are HIVIndividuals and
 there are some useful method to find the S, I and R individuals. 
 """
 
-class HIVGraph(PySparseGraph):
+class HIVGraph(CsArrayGraph):
     def __init__(self, numVertices, undirected=True):
         """
         Create a graph with the specified number of vertices, and choose whether
