@@ -86,7 +86,10 @@ class CsArrayGraph(AbstractMatrixGraph):
         complement of the set of edges. Edges that do not exist have weight 1.
         """
         newGraph = CsArrayGraph(self.vList, self.undirected)
-        newGraph.W = (self.W == 0).astype(self.W.dtype)
+        newGraph.W = sppy.ones((newGraph.W.shape)) 
+        newGraph.W[self.W.nonzero()] = 0
+        newGraph.W.prune()
+        newGraph.W.compress()
         return newGraph
 
     def outDegreeSequence(self):
@@ -169,7 +172,7 @@ class CsArrayGraph(AbstractMatrixGraph):
             raise ValueError("Can only add edges from graph with same number of vertices")
 
         newGraph = CsArrayGraph(self.vList, self.undirected)
-        newGraph.W = self.W * graph.W
+        newGraph.W = self.W.hadamard(graph.W)
         return newGraph
 
     def intersect(self, graph):
@@ -183,7 +186,7 @@ class CsArrayGraph(AbstractMatrixGraph):
         :returns: A new graph with the intersection of edges of the current plus graph
         """
         newGraph = self.multiply(graph)
-        newGraph.W = (newGraph.W != 0).astype(newGraph.W.dtype)
+        newGraph.W[newGraph.W.nonzero()] = 1
         return newGraph 
 
     def union(self, graph):
@@ -197,7 +200,7 @@ class CsArrayGraph(AbstractMatrixGraph):
         :returns: A new graph with the union of edges of the current one. 
         """
         newGraph = self.add(graph)
-        newGraph.W = (newGraph.W != 0).astype(newGraph.W.dtype)
+        newGraph.W[newGraph.W.nonzero()] = 1
 
         return newGraph
 
@@ -229,7 +232,7 @@ class CsArrayGraph(AbstractMatrixGraph):
         A1 = (A1 + numpy.abs(A1**2))/2
         
         newGraph = CsArrayGraph(self.vList, self.undirected)
-        newGraph.W = A1
+        newGraph.W = sppy.csarray(A1)
         return newGraph
 
     def getAllDirEdges(self):
@@ -248,11 +251,16 @@ class CsArrayGraph(AbstractMatrixGraph):
     @staticmethod
     def loadMatrix(filename):
         M = scipy.io.mmread(filename)
-        if scipy.sparse.issparse(M):
-            M = M.todense()
-        return M 
+        if type(M) == numpy.ndarray:
+            M2 = sppy.csarray(M)
+        elif scipy.sparse.issparse(M):
+            M2 = sppy.csarray(M.shape, dtype=M.dtype)
+            M2[M.nonzero()] = M.data 
+                
+        return M2 
 
     def saveMatrix(self, W, filename):
+        W = W.toScipyCsc()
         scipy.io.mmwrite(filename, W)
 
     def setWeightMatrix(self, W):
