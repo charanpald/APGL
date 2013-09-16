@@ -265,8 +265,6 @@ class Util(object):
         vector is [0, 1, 1, 1, 2, 2, 3, 3, 3, 3]. 
         """
         Parameter.checkClass(v, numpy.ndarray)
-        if v.dtype != numpy.int:
-            raise ValueError("Can only expand arrays of integers")
         Parameter.checkList(v, Parameter.checkInt, [0, float('inf')])
         
         w = numpy.zeros(numpy.sum(v), numpy.int)
