@@ -20,7 +20,7 @@ class HIVGraph(CsArrayGraph):
         edges are directed. 
         """
         vList = HIVVertices(numVertices)
-        super(HIVGraph, self).__init__(vList, undirected, sizeHint=10000)
+        super(HIVGraph, self).__init__(vList, undirected)
         
         self.endEventTime = None 
 
@@ -39,32 +39,18 @@ class HIVGraph(CsArrayGraph):
         removedSet = numpy.nonzero(V[:, HIVVertices.stateIndex] == HIVVertices.removed)[0]
         return set(removedSet.tolist())
 
-    def setRandomInfected(self, numInitialInfected, proportionHetero, t=0.0):
+    def setRandomInfected(self, numInitialInfected, t=0.0):
         """
         Pick a number of people randomly to be infected at time t. Of that set 
         proportionHetero are selected to be heterosexual and min((1-proportionHetero), totalBi)
         are bisexual. 
         """
         Parameter.checkInt(numInitialInfected, 0, self.size)
-        Parameter.checkFloat(proportionHetero, 0.0, 1.0)
-        
-        heteroInds = numpy.arange(self.size)[self.vlist.V[:, HIVVertices.orientationIndex] == HIVVertices.hetero]
-        biInds = numpy.arange(self.size)[self.vlist.V[:, HIVVertices.orientationIndex] == HIVVertices.bi]
-        
-        numHetero = int(numInitialInfected*proportionHetero) 
-        numBi = numInitialInfected-numHetero
+        infectInds = numpy.random.permutation(self.size)[0:numInitialInfected]
 
-        heteroInfectInds = numpy.random.permutation(heteroInds.shape[0])[0:numHetero]
-        biInfectInds = numpy.random.permutation(biInds.shape[0])[0:numBi]
-
-        for i in heteroInfectInds:
-            j = heteroInds[i]
-            self.vlist.setInfected(j, t)
+        for i in infectInds:
+            self.vlist.setInfected(i, t)
             
-        for i in biInfectInds:
-            j = biInds[i]
-            self.vlist.setInfected(j, t)
-
     def detectedNeighbours(self, vertexInd):
         """
         Return an array of the detected neighbours.
