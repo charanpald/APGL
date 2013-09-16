@@ -292,6 +292,16 @@ class CsArrayGraph(AbstractMatrixGraph):
         """
         self.W.setZero()
 
+    def setWeightMatrixSparse(self, W):
+        """
+        Set the weight matrix of this graph. Requires as input a scipy sparse matrix with the
+        same dimensions as the current weight matrix. Edges are represented by
+        non-zero edges.
+
+        :param W:  The weight matrix to use. 
+        """      
+        self.W[W.nonzero()] = W.data
+
     undirected = None
     vList = None
     W = None
