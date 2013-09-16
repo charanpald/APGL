@@ -212,8 +212,8 @@ class HIVRates():
         """
 
         #Note a heterosexual can only have a heterosexual rate but bisexual can have either 
-        contactRates = numpy.zeros(len(infectedList))
-        contactRates += (self.graph.vlist.V[infectedList, HIVVertices.orientationIndex])*self.contactRate
+        contactRates = numpy.ones(len(infectedList))*self.contactRate
+        #contactRates += (self.graph.vlist.V[infectedList, HIVVertices.orientationIndex])*self.contactRate
 
 
         return numpy.sum(contactRates)
