@@ -487,13 +487,10 @@ class MatrixGraphTest():
         graph.addEdge(2, 1, 2)
 
         edges = graph.getAllEdges()
-
+        edgeSet = set([(x,y) for x,y in edges])
+        edgeSet2 = set([(0, 1), (1, 2), (2,1), (2,2), (2,3)])
         self.assertEquals(edges.shape[0], 5)
-        self.assertTrue((edges[0, :]== numpy.array([0,1])).all())
-        self.assertTrue((edges[1, :]== numpy.array([1,2])).all())
-        self.assertTrue((edges[2, :]== numpy.array([2,1])).all())
-        self.assertTrue((edges[3, :]== numpy.array([2,2])).all())
-        self.assertTrue((edges[4, :]== numpy.array([2,3])).all())
+        self.assertEquals(edgeSet, edgeSet2)
 
         #Test graph with no edges
         graph = self.GraphType(vList)
@@ -1180,6 +1177,7 @@ class MatrixGraphTest():
         graph.addEdge(3, 3, 1.1)
 
         graph2 = graph.complement()
+    
 
         self.assertTrue(graph2.isUndirected())
         self.assertEquals(graph2.getEdge(0, 1), None)
