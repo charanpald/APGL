@@ -8,7 +8,7 @@ import numpy.testing as nptst
 from exp.viroscopy.model.HIVGraph import HIVGraph
 from exp.viroscopy.model.HIVVertices import HIVVertices
 
-@apgl.skipIf(not apgl.checkImport('pysparse'), 'No module pysparse')
+@apgl.skipIf(not apgl.checkImport('sppy'), 'No module pysparse')
 class  HIVGraphTest(unittest.TestCase):
     def setup(self):
         pass
@@ -135,36 +135,21 @@ class  HIVGraphTest(unittest.TestCase):
     def testSetRandomInfected(self): 
         numVertices = 10000
         graph = HIVGraph(numVertices)  
-        graph.setRandomInfected(100, 0.8)
-        heteroInfected = numpy.logical_and(graph.vlist.V[:, HIVVertices.stateIndex]==HIVVertices.infected, graph.vlist.V[:, HIVVertices.orientationIndex]==HIVVertices.hetero)        
-        biInfected = numpy.logical_and(graph.vlist.V[:, HIVVertices.stateIndex]==HIVVertices.infected, graph.vlist.V[:, HIVVertices.orientationIndex]==HIVVertices.bi) 
-        
-        self.assertAlmostEqual(heteroInfected.sum()/float(100), 0.8) 
-        self.assertAlmostEqual(biInfected.sum()/float(100), 0.2)
+        graph.setRandomInfected(100)
+        self.assertAlmostEqual(len(graph.getInfectedSet()), 100) 
+
         
         graph = HIVGraph(numVertices)  
-        graph.setRandomInfected(100, 0.5)
-        heteroInfected = numpy.logical_and(graph.vlist.V[:, HIVVertices.stateIndex]==HIVVertices.infected, graph.vlist.V[:, HIVVertices.orientationIndex]==HIVVertices.hetero)        
-        biInfected = numpy.logical_and(graph.vlist.V[:, HIVVertices.stateIndex]==HIVVertices.infected, graph.vlist.V[:, HIVVertices.orientationIndex]==HIVVertices.bi) 
-        
-        self.assertAlmostEqual(heteroInfected.sum()/float(100), 0.5) 
-        self.assertAlmostEqual(biInfected.sum()/float(100), 0.5)
+        graph.setRandomInfected(50, 0.5)
+        self.assertAlmostEqual(len(graph.getInfectedSet()), 50)
         
         graph = HIVGraph(numVertices)  
-        graph.setRandomInfected(100, 0.0)
-        heteroInfected = numpy.logical_and(graph.vlist.V[:, HIVVertices.stateIndex]==HIVVertices.infected, graph.vlist.V[:, HIVVertices.orientationIndex]==HIVVertices.hetero)        
-        biInfected = numpy.logical_and(graph.vlist.V[:, HIVVertices.stateIndex]==HIVVertices.infected, graph.vlist.V[:, HIVVertices.orientationIndex]==HIVVertices.bi) 
-        
-        self.assertAlmostEqual(heteroInfected.sum()/float(100), 0.0) 
-        self.assertAlmostEqual(biInfected.sum()/float(100), 1.0)
-        
+        graph.setRandomInfected(20, 0.0)
+        self.assertAlmostEqual(len(graph.getInfectedSet()), 20)
+                
         graph = HIVGraph(numVertices)  
-        graph.setRandomInfected(100, 1.0)
-        heteroInfected = numpy.logical_and(graph.vlist.V[:, HIVVertices.stateIndex]==HIVVertices.infected, graph.vlist.V[:, HIVVertices.orientationIndex]==HIVVertices.hetero)        
-        biInfected = numpy.logical_and(graph.vlist.V[:, HIVVertices.stateIndex]==HIVVertices.infected, graph.vlist.V[:, HIVVertices.orientationIndex]==HIVVertices.bi) 
-        
-        self.assertAlmostEqual(heteroInfected.sum()/float(100), 1.0) 
-        self.assertAlmostEqual(biInfected.sum()/float(100), 0.0)
+        graph.setRandomInfected(10, 1.0)
+        self.assertAlmostEqual(len(graph.getInfectedSet()), 10)
                 
         
 if __name__ == '__main__':

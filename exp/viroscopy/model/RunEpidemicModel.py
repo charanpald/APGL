@@ -55,11 +55,6 @@ plt.plot(times, vertexArray[:, 0])
 plt.xlabel("Time")
 plt.ylabel("Removed")
 
-plt.figure(1)
-plt.plot(times, vertexArray[:, 4])
-plt.xlabel("Time")
-plt.ylabel("Bi Detect")
-
 plt.figure(2)
 plt.plot(times, vertexArray[:, 5])
 plt.xlabel("Time")

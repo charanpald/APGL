@@ -37,13 +37,6 @@ class HIVABCParameters(object):
         ind += 1
         mu = meanTheta[ind]
         sigma = sigmaTheta[ind]
-        priorDist, priorDensity = self.createTruncNormParam(sigma, mu)
-        perturbationKernel, perturbationKernelDensity = self.__createNormalPurt(sigma, purtScale)
-        self.__addParameter(("graph", "setRandomInfected2"), priorDist, priorDensity, perturbationKernel, perturbationKernelDensity)
-
-        ind += 1
-        mu = meanTheta[ind]
-        sigma = sigmaTheta[ind]
         priorDist, priorDensity = self.createGammaParam(sigma, mu)
         perturbationKernel, perturbationKernelDensity = self.__createNormalPurt(sigma, purtScale)
         self.__addParameter(("rates", "setAlpha"), priorDist, priorDensity, perturbationKernel, perturbationKernelDensity)
@@ -220,7 +213,7 @@ class HIVABCParameters(object):
         return odict
         
     def __setstate__(self, dict):
-        params = HIVABCParameters(dict["meanTheta"], dict["sigmaScale"], dict["purtScale"], dict["upperInfected"])
+        params = HIVABCParameters(dict["meanTheta"], dict["sigmaTheta"], dict["purtScale"], dict["upperInfected"])
         self.__dict__.update(dict)   
         self.paramFuncs = params.paramFuncs     
         self.priorDists = params.priorDists     

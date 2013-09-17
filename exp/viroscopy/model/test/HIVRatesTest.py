@@ -8,7 +8,7 @@ from exp.viroscopy.model.HIVRates import HIVRates
 from exp.viroscopy.model.HIVGraph import HIVGraph
 from exp.viroscopy.model.HIVVertices import HIVVertices
 
-@apgl.skipIf(not apgl.checkImport('pysparse'), 'No module pysparse')
+@apgl.skipIf(not apgl.checkImport('sppy'), 'No module pysparse')
 class  HIVRateFuncsTestCase(unittest.TestCase):
     def setUp(self):
         numpy.set_printoptions(suppress=True)
@@ -128,7 +128,7 @@ class  HIVRateFuncsTestCase(unittest.TestCase):
         contactRateInds, contactRates = rates.contactRates(range(numVertices), contactList, 0.4)
 
         for i in range(5):
-            self.assertTrue(contactRates[i] == rates.heteroContactRate)
+            self.assertTrue(contactRates[i] == rates.contactRate)
             self.assertTrue(contactRateInds[i] == i+5)
 
         #Now try changing C
@@ -207,7 +207,8 @@ class  HIVRateFuncsTestCase(unittest.TestCase):
         rates.removeEvent(5, HIVVertices.randomDetect, t)
         removedSet = graph.getRemovedSet()
         ctRates = rates.contactTracingRates(infectedList, removedSet, t+rates.ctStartTime)
-        self.assertTrue((ctRates == numpy.array([rates.ctRatePerPerson*2, rates.ctRatePerPerson])).all())
+
+        self.assertTrue((ctRates == numpy.array([rates.ctRatePerPerson, rates.ctRatePerPerson])).all())
         
         rates.contactEvent(3, 6, t)
         graph.getVertexList().setInfected(6, t)
@@ -215,7 +216,7 @@ class  HIVRateFuncsTestCase(unittest.TestCase):
         removedSet = graph.getRemovedSet()
  
         ctRates = rates.contactTracingRates(infectedList, removedSet, t+rates.ctStartTime)
-        self.assertTrue((ctRates == numpy.array([rates.ctRatePerPerson*2, 0, rates.ctRatePerPerson])).all())
+        self.assertTrue((ctRates == numpy.array([rates.ctRatePerPerson, 0, rates.ctRatePerPerson])).all())
 
         #Now make removedSet bigger than infectedList
         graph.getVertexList().setInfected(4, t)
@@ -231,7 +232,7 @@ class  HIVRateFuncsTestCase(unittest.TestCase):
         removedSet = graph.getRemovedSet()
 
         ctRates = rates.contactTracingRates(infectedList, removedSet, t+rates.ctStartTime)
-        ctRates2 = numpy.array([rates.ctRatePerPerson*2, 0, rates.ctRatePerPerson])
+        ctRates2 = numpy.array([rates.ctRatePerPerson, 0, rates.ctRatePerPerson])
         self.assertTrue((ctRates[sortInds] == ctRates2).all())
 
         #Test the case where InfectedList is out of order and removedSet is small
@@ -244,7 +245,7 @@ class  HIVRateFuncsTestCase(unittest.TestCase):
         removedSet = graph.getRemovedSet()
 
         ctRates = rates.contactTracingRates(infectedList, removedSet, t+rates.ctStartTime)
-        ctRates2 = numpy.array([rates.ctRatePerPerson*2, 0, 0, rates.ctRatePerPerson])
+        ctRates2 = numpy.array([rates.ctRatePerPerson, 0, 0, rates.ctRatePerPerson])
         self.assertTrue((ctRates[sortInds] == ctRates2).all())
         
 
@@ -284,11 +285,11 @@ class  HIVRateFuncsTestCase(unittest.TestCase):
                 if vertex1[HIVVertices.stateIndex]!=HIVVertices.infected or vertex2[HIVVertices.stateIndex]!=HIVVertices.susceptible:
                     self.assertEquals(rates.infectionProbability(vertexInd1, vertexInd2, t), 0.0)
                 elif vertex1[HIVVertices.genderIndex] == HIVVertices.female and vertex2[HIVVertices.genderIndex] == HIVVertices.male:
-                    self.assertEquals(rates.infectionProbability(vertexInd1, vertexInd2, t), rates.womanManInfectProb) 
+                    self.assertEquals(rates.infectionProbability(vertexInd1, vertexInd2, t), rates.infectProb) 
                 elif vertex1[HIVVertices.genderIndex] == HIVVertices.male and vertex2[HIVVertices.genderIndex] == HIVVertices.female:
-                    self.assertEquals(rates.infectionProbability(vertexInd1, vertexInd2, t), rates.manWomanInfectProb)
+                    self.assertEquals(rates.infectionProbability(vertexInd1, vertexInd2, t), rates.infectProb)
                 elif vertex1[HIVVertices.genderIndex] == HIVVertices.male and vertex2[HIVVertices.orientationIndex]==HIVVertices.bi:
-                    self.assertEquals(rates.infectionProbability(vertexInd1, vertexInd2, t), rates.manBiInfectProb)
+                    self.assertEquals(rates.infectionProbability(vertexInd1, vertexInd2, t), rates.infectProb)
                 else:
                     self.assertEquals(rates.infectionProbability(vertexInd1, vertexInd2, t), 0.0)
 

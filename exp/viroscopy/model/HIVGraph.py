@@ -41,9 +41,7 @@ class HIVGraph(CsArrayGraph):
 
     def setRandomInfected(self, numInitialInfected, t=0.0):
         """
-        Pick a number of people randomly to be infected at time t. Of that set 
-        proportionHetero are selected to be heterosexual and min((1-proportionHetero), totalBi)
-        are bisexual. 
+        Pick a number of people randomly to be infected at time t.  
         """
         Parameter.checkInt(numInitialInfected, 0, self.size)
         infectInds = numpy.random.permutation(self.size)[0:numInitialInfected]

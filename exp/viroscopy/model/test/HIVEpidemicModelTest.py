@@ -30,14 +30,13 @@ def runModel(theta, endDate=100.0, M=1000):
     rates = HIVRates(graph, hiddenDegSeq)
     model = HIVEpidemicModel(graph, rates, endDate, startDate)
     model.setRecordStep(recordStep)
-    model.setPrintStep(printStep)
     model.setParams(theta)
     
     times, infectedIndices, removedIndices, graph = model.simulate(True)            
     
     return times, infectedIndices, removedIndices, graph, model  
 
-@apgl.skipIf(not apgl.checkImport('pysparse'), 'No module pysparse')
+@apgl.skipIf(not apgl.checkImport('sppy'), 'No module pysparse')
 class  HIVEpidemicModelTest(unittest.TestCase):
     def setUp(self):
         numpy.random.seed(21)
@@ -73,7 +72,7 @@ class  HIVEpidemicModelTest(unittest.TestCase):
         M = 100
         undirected = True
         graph = HIVGraph(M, undirected)
-        graph.setRandomInfected(10, 0.95)
+        graph.setRandomInfected(10)
 
         self.graph.removeAllEdges()
 
@@ -85,6 +84,7 @@ class  HIVEpidemicModelTest(unittest.TestCase):
         model.setT(T)
 
         times, infectedIndices, removedIndices, graph = model.simulate(verboseOut=True)
+        print(times)
         self.assertTrue((times == numpy.array([0, 10, 20], numpy.int)).all())
         self.assertEquals(len(infectedIndices), 3)
         self.assertEquals(len(removedIndices), 3)
@@ -108,11 +108,9 @@ class  HIVEpidemicModelTest(unittest.TestCase):
         meanTheta[4] = 0.1        
         
         recordStep = 10 
-        printStep = 10
         rates = HIVRates(graph, hiddenDegSeq)
         model = HIVEpidemicModel(graph, rates, endDate, startDate)
         model.setRecordStep(recordStep)
-        model.setPrintStep(printStep)
         model.setParams(meanTheta)
         
         initialInfected = graph.getInfectedSet()
@@ -164,49 +162,7 @@ class  HIVEpidemicModelTest(unittest.TestCase):
         numHetero = (graph.vlist.V[list(infectedSet), HIVVertices.orientationIndex] == HIVVertices.hetero).sum()
         self.assertAlmostEqual(numHetero*endDate*heteroContactRate/100, model.getNumContacts()/100.0, 0)      
         
-    def testSimulateBis(self): 
-        #Play with bi rate 
-        biContactRate = 0.1
-        endDate = 100.0
-        meanTheta = numpy.array([200, 0.95, 1, 1, 0, 0, 0, biContactRate, 0, 0, 0], numpy.float)
-        times, infectedIndices, removedIndices, graph, model = runModel(meanTheta, endDate=endDate)
-        infectedSet = graph.getInfectedSet()
-        numBi = (graph.vlist.V[list(infectedSet), HIVVertices.orientationIndex] == HIVVertices.bi).sum()
-        susceptibleSet = graph.getSusceptibleSet()
-        self.assertTrue(abs(numBi*endDate*biContactRate- model.getNumContacts()) < 10)
-        
-        numContacts = model.getNumContacts()
-        edges = graph.getAllEdges()        
-        numMSM = 0         
-        
-        for i, j in edges:
-            self.assertTrue(graph.vlist.V[i, HIVVertices.orientationIndex]==HIVVertices.bi or graph.vlist.V[j, HIVVertices.orientationIndex]==HIVVertices.bi) 
-            
-            if graph.vlist.V[i, HIVVertices.genderIndex] == graph.vlist.V[j, HIVVertices.genderIndex] and graph.vlist.V[i, HIVVertices.genderIndex]==HIVVertices.male: 
-                numMSM += 1 
-            
-        biContactRate = 0.2
-        meanTheta = numpy.array([200, 0.95, 1, 1, 0, 0, 0, biContactRate, 0, 0, 0], numpy.float)
-        times, infectedIndices, removedIndices, graph, model = runModel(meanTheta)
-        
-        infectedSet = graph.getInfectedSet()
-        numBi = (graph.vlist.V[list(infectedSet), HIVVertices.orientationIndex] == HIVVertices.bi).sum()
-        
-        numContacts2 = model.getNumContacts()
-        self.assertTrue(abs(numContacts*2-numContacts2) < 15)
-        
-        #Try infection between men only 
-        biContactRate = 0.2
-        manBiInfectProb = 1.0 
-        meanTheta = numpy.array([300, 0.95, 1, 1, 0, 0, 0, biContactRate, 0, 0, manBiInfectProb], numpy.float)
-        
-        times, infectedIndices, removedIndices, graph, model = runModel(meanTheta)
-        #print(numpy.logical_and(graph.vlist.V[:, HIVVertices.orientationIndex] == HIVVertices.bi, graph.vlist.V[:, HIVVertices.genderIndex] == HIVVertices.male).sum())
-        
-        newInfects = numpy.setdiff1d(graph.getInfectedSet(), numpy.array(infectedIndices[0]))
-        
-        self.assertTrue((graph.vlist.V[newInfects, HIVVertices.orientationIndex] == HIVVertices.bi).all())
-        self.assertTrue((graph.vlist.V[newInfects, HIVVertices.genderIndex] == HIVVertices.male).all())
+  
 
 
     def testSimulateInfects(self): 
@@ -214,7 +170,7 @@ class  HIVEpidemicModelTest(unittest.TestCase):
         
         heteroContactRate = 0.1
         manWomanInfectProb = 1.0 
-        meanTheta = numpy.array([100, 0.95, 1, 1, 0, 0, heteroContactRate, 0, 0, manWomanInfectProb, 0], numpy.float)
+        meanTheta = numpy.array([100, 1, 1, 0, 0, heteroContactRate, manWomanInfectProb,], numpy.float)
         times, infectedIndices, removedIndices, graph, model = runModel(meanTheta)
         
         newInfects = numpy.setdiff1d(graph.getInfectedSet(), numpy.array(infectedIndices[0]))

@@ -67,12 +67,12 @@ class HIVRates():
 
         #Parameters for sexual contact
         self.alpha = 2.0
-        self.newContactChance = 5.0
+        self.newContactChance = 0.5
         
-        self.contactRate = 0.1
+        self.contactRate = 0.5
 
         #Infection probabilities are from wikipedia
-        self.infectProf = 50.0/10000
+        self.infectProb = 50.0/10000
 
         #Random detection
         self.randDetectRate = 1/720.0
@@ -345,11 +345,11 @@ class HIVRates():
             return 0.0
 
         if vertex1[HIVVertices.genderIndex] == HIVVertices.female and vertex2[HIVVertices.genderIndex] == HIVVertices.male:
-            return self.infectProf
+            return self.infectProb
         elif vertex1[HIVVertices.genderIndex] == HIVVertices.male and vertex2[HIVVertices.genderIndex] == HIVVertices.female:
-            return self.infectProf
+            return self.infectProb
         elif vertex1[HIVVertices.genderIndex] == HIVVertices.male and vertex1[HIVVertices.orientationIndex]==HIVVertices.bi and vertex2[HIVVertices.genderIndex] == HIVVertices.male and vertex2[HIVVertices.orientationIndex]==HIVVertices.bi:
-            return self.infectProf
+            return self.infectProb
         else:
             #Corresponds to 2 bisexual women 
             return 0.0 
