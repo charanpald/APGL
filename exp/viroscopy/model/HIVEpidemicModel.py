@@ -109,7 +109,7 @@ class HIVEpidemicModel():
         while t < self.T and len(infectedSet) != 0:
             contactInds, contactRates = self.rates.contactRates(infectedList, contactList, t)
             contactTracingRates = self.rates.contactTracingRates(infectedList, removedSet, t)
-            randomDetectRates = self.rates.randomDetectionRates(infectedList, t)
+            randomDetectRates = self.rates.randomDetectionRates(infectedList, len(susceptibleSet) + len(infectedSet))
 
             #assert contactRates.shape == (len(infectedList), len(contactList))
             assert (contactTracingRates == numpy.abs(contactTracingRates)).all()
@@ -123,6 +123,7 @@ class HIVEpidemicModel():
             muCTt = numpy.sum(contactTracingRates)
             #rhot = sigmat + muRSt + muCTt
             
+            
             #print(randomDetectRates)
 
             assert sigmat >= 0
@@ -130,7 +131,7 @@ class HIVEpidemicModel():
             assert muCTt >= 0 
 
             sigmaHat = self.rates.upperContactRates(infectedList)
-            muHat = self.rates.upperDetectionRates(infectedList)
+            muHat = self.rates.upperDetectionRates(infectedList, len(susceptibleSet) + len(infectedSet))
             rhoHat = sigmaHat + muHat
             
             #print(muHat)

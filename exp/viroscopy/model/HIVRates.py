@@ -207,7 +207,7 @@ class HIVRates():
 
     def upperContactRates(self, infectedList):
         """
-        This is an upper bound on the contact rates not dependent on the time. We
+        This is an upper bound on the contact rates not dependant on the time. We
         just return a vector of upper bounds for each infected
         """
 
@@ -218,12 +218,12 @@ class HIVRates():
 
         return numpy.sum(contactRates)
         
-    def upperDetectionRates(self, infectedList, seed=21):
+    def upperDetectionRates(self, infectedList, n, seed=21):
         """
-        An upper bound on the detection rates indepedent of time.This is just the
+        An upper bound on the detection rates indepedant of time. This is just the
         random detection rate plus the ctRate per person for each detected neighbour. 
         """
-        detectionRates = numpy.ones(len(infectedList))*self.randDetectRate
+        detectionRates = self.randomDetectionRates(infectedList, n, seed=21)
 
         for i, j in enumerate(infectedList):
             detectionRates[i] += self.detectedNeighboursList[j].shape[0]*self.ctRatePerPerson
@@ -355,7 +355,7 @@ class HIVRates():
             return 0.0 
 
 
-    def randomDetectionRates(self, infectedList, t, seed=21):
+    def randomDetectionRates(self, infectedList, n, seed=21):
         """
         Compute the detection rate of an infected which depends on the entire population.
         In this case it's randDetectRate/|I_t|. 
@@ -364,7 +364,7 @@ class HIVRates():
         state = numpy.random.get_state()
         numpy.random.seed(seed)
         inds = numpy.random.permutation(len(infectedList))[0:self.maxDetects]
-        detectionRates[inds] = self.randDetectRate #/len(infectedList)
+        detectionRates[inds] = self.randDetectRate  * (len(infectedList)/float(n))
         numpy.random.set_state(state)
         return detectionRates
 
