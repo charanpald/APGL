@@ -117,10 +117,10 @@ class GraphMatch(object):
         fnull = open(os.devnull, 'w')
         #This is a bit hacky 
         try: 
-            argList = ["/home/charanpal/local/bin/graphm", configFileName] 
+            argList = ["/home/charanpal/.local/bin/graphm", configFileName] 
             subprocess.call(argList, stdout = fnull, stderr = fnull)    
         except OSError: 
-            argList = ["/home/dhanjalc/local/bin/graphm", configFileName] 
+            argList = ["/home/dhanjalc/.local/bin/graphm", configFileName] 
             subprocess.call(argList, stdout = fnull, stderr = fnull)
         fnull.close()
         
