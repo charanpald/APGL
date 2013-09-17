@@ -18,7 +18,6 @@ def runModel(theta, endDate=100.0, M=1000):
     numpy.random.seed(21)
     undirected= True
     recordStep = 10 
-    printStep = 10 
     startDate = 0
     alpha = 2
     zeroVal = 0.9
@@ -83,14 +82,77 @@ class  HIVEpidemicModelTest(unittest.TestCase):
         model.setRecordStep(10)
         model.setT(T)
 
+        #Test detection rates
+        print("Starting test")
+
+        T = 1000.0
+        graph = HIVGraph(M, undirected)
+        graph.setRandomInfected(10)
+        rates = HIVRates(graph, hiddenDegSeq)
+        rates.contactRate = 0
+        rates.randDetectRate = 0.1
+        model = HIVEpidemicModel(graph, rates)
+        model.setT(T)
         times, infectedIndices, removedIndices, graph = model.simulate(verboseOut=True)
         print(times)
-        self.assertTrue((times == numpy.array([0, 10, 20], numpy.int)).all())
-        self.assertEquals(len(infectedIndices), 3)
-        self.assertEquals(len(removedIndices), 3)
-
-        #TODO: Much better testing
+        self.assertEquals(len(infectedIndices[0]), 10)
+        self.assertEquals(len(removedIndices[0]), 0)
         
+        T = 10.0
+        graph.removeAllEdges()
+        graph = HIVGraph(M, undirected)
+        graph.setRandomInfected(10)
+        rates = HIVRates(graph, hiddenDegSeq)  
+        rates.randDetectRate = 0.0
+        model = HIVEpidemicModel(graph, rates)
+        model.setT(T)
+        times, infectedIndices, removedIndices, graph = model.simulate(verboseOut=True)
+        self.assertEquals(len(removedIndices[-1]), 0)
+        
+        T = 100.0
+        graph.removeAllEdges()
+        graph = HIVGraph(M, undirected)
+        graph.setRandomInfected(10)
+        rates = HIVRates(graph, hiddenDegSeq)  
+        rates.randDetectRate = 10.0
+        model = HIVEpidemicModel(graph, rates)
+        model.setT(T)
+        times, infectedIndices, removedIndices, graph = model.simulate(verboseOut=True)
+        self.assertEquals(len(removedIndices[-1]), 10)
+        
+        #Test contact tracing 
+        T = 1000.0
+        graph = HIVGraph(M, undirected)
+        graph.setRandomInfected(10)
+        rates = HIVRates(graph, hiddenDegSeq)  
+        rates.randDetectRate = 0.01
+        rates.ctRatePerPerson = 0.5 
+        model = HIVEpidemicModel(graph, rates)
+        model.setT(T)
+        times, infectedIndices, removedIndices, graph = model.simulate(verboseOut=True)
+        self.assertTrue((graph.vlist.V[:, HIVVertices.detectionTypeIndex] == HIVVertices.contactTrace).sum() > 0) 
+        
+        #Test contact rate 
+        print("Testing contact rate")
+        contactRates = [0.5, 1, 2, 4]     
+        numContacts = numpy.zeros(len(contactRates))
+        
+        for i, contactRate in enumerate(contactRates): 
+            T = 100.0
+            graph = HIVGraph(M, undirected)
+            graph.setRandomInfected(1)
+            rates = HIVRates(graph, hiddenDegSeq)  
+            rates.contactRate = contactRate 
+            rates.infectProb = 0.0
+            model = HIVEpidemicModel(graph, rates)
+            model.setT(T)
+            times, infectedIndices, removedIndices, graph = model.simulate(verboseOut=True)
+            numContacts[i] = model.numContacts
+    
+        #Why is one value 0? 
+        print(numContacts)
+        
+    @unittest.skip("")
     def testSimulate2(self):    
         startDate = 0.0 
         endDate = 100.0 
@@ -124,7 +186,6 @@ class  HIVEpidemicModelTest(unittest.TestCase):
             if graph.vlist.V[i, HIVVertices.genderIndex] == graph.vlist.V[j, HIVVertices.genderIndex] and (graph.vlist.V[i, HIVVertices.orientationIndex] != HIVVertices.bi or graph.vlist.V[j, HIVVertices.orientationIndex] != HIVVertices.bi): 
                 self.fail()
                       
-        finalInfected = graph.getInfectedSet()
         finalRemoved = graph.getRemovedSet()
         
         self.assertEquals(numpy.intersect1d(initialInfected, finalRemoved).shape[0], len(initialInfected))
@@ -164,13 +225,13 @@ class  HIVEpidemicModelTest(unittest.TestCase):
         
   
 
-
+    @unittest.skip("")
     def testSimulateInfects(self): 
         #Test varying infection probabilities 
         
         heteroContactRate = 0.1
         manWomanInfectProb = 1.0 
-        meanTheta = numpy.array([100, 1, 1, 0, 0, heteroContactRate, manWomanInfectProb,], numpy.float)
+        meanTheta = numpy.array([100, 1, 1, 0, 0, heteroContactRate, manWomanInfectProb], numpy.float)
         times, infectedIndices, removedIndices, graph, model = runModel(meanTheta)
         
         newInfects = numpy.setdiff1d(graph.getInfectedSet(), numpy.array(infectedIndices[0]))
@@ -204,7 +265,7 @@ class  HIVEpidemicModelTest(unittest.TestCase):
         self.assertTrue((graph.vlist.V[newInfects2, HIVVertices.genderIndex] == HIVVertices.male).all())
         self.assertTrue(newInfects.shape[0] > newInfects2.shape[0])
   
-
+    @unittest.skip("")
     def testSimulateDetects(self): 
         heteroContactRate = 0.05
         endDate = 100
