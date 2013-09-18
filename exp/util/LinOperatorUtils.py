@@ -2,7 +2,7 @@ import numpy
 import multiprocessing 
 import itertools
 import scipy.sparse.linalg
-from exp.util.GeneralLinearOperator import GeneralLinearOperator
+from sppy.linalg.GeneralLinearOperator import GeneralLinearOperator
 
 XrData = 0 
 XrIndices = 0 
