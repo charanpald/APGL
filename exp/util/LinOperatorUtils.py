@@ -99,7 +99,23 @@ class LinOperatorUtils(object):
                 return X.T.pdot(W) + (V*s).dot(U.T.dot(W))
         
         return GeneralLinearOperator(X.shape, matvec, rmatvec, matmat, rmatmat, dtype=X.dtype) 
-    
+  
+    @staticmethod 
+    def lowRankOp(U, s, V): 
+        def matvec(w): 
+            return (U*s).dot(V.T.dot(w)) 
+        
+        def rmatvec(w): 
+            return (V*s).dot(U.T.dot(w))
+            
+        def matmat(W): 
+            return (U*s).dot(V.T.dot(W))  
+            
+        def rmatmat(W): 
+            return (V*s).dot(U.T.dot(W))
+
+        return GeneralLinearOperator(X.shape, matvec, rmatvec, matmat, rmatmat, dtype=X.dtype) 
+  
     @staticmethod 
     def parallelSparseLowRankOp(X, U, s, V): 
         numProcesses = multiprocessing.cpu_count()
