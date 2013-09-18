@@ -211,11 +211,14 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                         else: 
                             newU, newS, newV = RandomisedSVD.svd(L, self.iterativeSoftImpute.k, p=self.iterativeSoftImpute.p, q=self.iterativeSoftImpute.qu, omega=self.oldV)
                     elif self.iterativeSoftImpute.svdAlg=="rsvdUpdate2":
-                        L = LinOperatorUtils.sparseLowRankOp(Y, self.oldU, self.oldS, self.oldV, parallel=True)
+                        
                         if self.j == 0: 
+                            L = LinOperatorUtils.sparseLowRankOp(Y, self.oldU, self.oldS, self.oldV, parallel=True)
                             newU, newS, newV = RandomisedSVD.svd(L, self.iterativeSoftImpute.k, p=self.iterativeSoftImpute.p, q=self.iterativeSoftImpute.q)
                         else: 
-                            newU, newS, newV = RandomisedSVD.updateSvd(Y, self.U, self.oldS, self.V, E, self.iterativeSoftImpute.k, p=self.iterativeSoftImpute.p)
+                            #Need linear operator which is U s V 
+                            L = LinOperatorUtils.lowRankOp(self.oldU, self.oldS, self.oldV)
+                            newU, newS, newV = RandomisedSVD.updateSvd(L, self.U, self.oldS, self.V, Y, self.iterativeSoftImpute.k, p=self.iterativeSoftImpute.p)
                     else:
                         raise ValueError("Unknown SVD algorithm: " + self.iterativeSoftImpute.svdAlg)
                         
