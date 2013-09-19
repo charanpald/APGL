@@ -27,7 +27,7 @@ class RecommendExpHelper(object):
     defaultAlgoArgs.folds = 4
     defaultAlgoArgs.ks = numpy.array(2**numpy.arange(3, 7, 0.5), numpy.int)
     defaultAlgoArgs.kmax = None 
-    defaultAlgoArgs.svdAlgs = ["rsvd", "rsvdUpdate", "propack"]
+    defaultAlgoArgs.svdAlgs = ["rsvd", "rsvdUpdate", "rsvdUpdate2", "propack"]
     defaultAlgoArgs.modelSelect = False
     defaultAlgoArgs.postProcess = False 
     defaultAlgoArgs.trainError = False 
@@ -203,7 +203,7 @@ class RecommendExpHelper(object):
             logging.debug("Running soft impute")
             
             for svdAlg in self.algoArgs.svdAlgs: 
-                if svdAlg == "rsvd" or svdAlg == "rsvdUpdate": 
+                if svdAlg == "rsvd" or svdAlg == "rsvdUpdate" or svdAlg == "rsvdUpdate2": 
                     resultsFileName = self.resultsDir + "ResultsSoftImpute_alg=" + svdAlg + "_p=" + str(self.algoArgs.p)+ "_q=" + str(self.algoArgs.q) + ".npz"
                 else: 
                     resultsFileName = self.resultsDir + "ResultsSoftImpute_alg=" + svdAlg + ".npz"
