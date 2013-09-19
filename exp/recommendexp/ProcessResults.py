@@ -17,16 +17,16 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 #For now just print some results for a particular dataset 
 #dataset = "MovieLensDataset"
 #dataset = "NetflixDataset"
-dataset = "FlixsterDataset"
-#dataset = "SyntheticDataset1"
+#dataset = "FlixsterDataset"
+dataset = "SyntheticDataset1"
 #dataset = "EpinionsDataset"
 outputDir = PathDefaults.getOutputDir() + "recommend/" + dataset + "/"
 
 plotStyles = ['k-', 'k--', 'k-.', 'r--', 'r-', 'g-', 'b-', 'b--', 'b-.', 'g--', 'g--', 'g-.', 'r-', 'r--', 'r-.']
-methods = ["propack", "arpack", "rsvd", "rsvdUpdate"]
+methods = ["propack", "arpack", "rsvd", "rsvdUpdate2"]
 
-#pq = [(10, 2), (50, 2), (100, 2)]
-pq = [(50, 2), (50, 3), (50, 4)]
+pq = [(10, 2), (50, 2), (10, 5)]
+#pq = [(50, 2), (50, 3), (50, 4)]
 #fileNames = [outputDir + "ResultsSgdMf.npz"]
 #labels = ["SgdMf"]
 fileNames = []
@@ -97,18 +97,26 @@ for j, fileName in enumerate(fileNames):
         plt.ylabel("Rank")
         
         plt.figure(4)
+        plt.plot(numpy.arange(metadata.shape[0]), numpy.cumsum(metadata[:, 2]), plotStyles[i], label=labels[j])
+        plt.legend(loc="upper left") 
+        plt.xlabel("Matrix no.")
+        plt.ylabel("time (s)")
+        print("time="+str(numpy.cumsum(metadata[:, 2])))
+        plt.savefig(outputDir + dataset + "Times.eps")        
+        
+        plt.figure(5)
         plt.plot(numpy.arange(metadata.shape[0]), numpy.log10(numpy.cumsum(metadata[:, 2])), plotStyles[i], label=labels[j])
         plt.legend(loc="lower right") 
         plt.xlabel("Matrix no.")
         plt.ylabel("log(time) (s)")
         print("time="+str(numpy.cumsum(metadata[:, 2])))
-        plt.savefig(outputDir + dataset + "Times.eps")
+        plt.savefig(outputDir + dataset + "LogTimes.eps")
         
         i += 1        
         
         try: 
             if labels[j] == "PROPACK" and "meanVectorMetadata" in locals():
-                plt.figure(5)
+                plt.figure(6)
                 plt.plot(numpy.arange(meanVectorMetadata.shape[0]), numpy.log10(meanVectorMetadata[:, 0]), plotStyles[0], label=r"$\gamma$")
                 plt.plot(numpy.arange(meanVectorMetadata.shape[0]), numpy.log10(meanVectorMetadata[:, 1]), plotStyles[1], label=r"$\theta_P$")
                 plt.plot(numpy.arange(meanVectorMetadata.shape[0]), numpy.log10(meanVectorMetadata[:, 2]), plotStyles[2], label=r"$\theta_Q$")
@@ -126,7 +134,7 @@ for j, fileName in enumerate(fileNames):
         stds = data["arr_1"]            
         
         """
-        plt.figure(6+i)
+        plt.figure(7+i)
         ks = numpy.array(2**numpy.arange(3.5, 7.5, 0.5), numpy.int) 
         rhos = numpy.linspace(0.5, 0.0, 6) 
         plt.contourf(ks, rhos, means, antialiased=True)
