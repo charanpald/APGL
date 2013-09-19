@@ -70,6 +70,32 @@ class  RandomisedSVDTest(unittest.TestCase):
             
             self.assertTrue(error1 >= error2)
 
+    def testUpdateSvd(self): 
+        """
+        Let's see if the update to the SVD works. 
+        """
+        numRuns = 10        
+        
+        for i in range(numRuns): 
+            m, n = numpy.random.randint(10, 100), numpy.random.randint(10, 100) 
+            k = 3
+            
+            X = numpy.random.rand(m, n)
+            
+            U, s, V = RandomisedSVD.svd(X, k)
+            
+            E = numpy.random.randn(m, n) * 0.2 
+            
+            U2, s2, V2 = RandomisedSVD.svd(X + E, k)
+            U3, s3, V3 = RandomisedSVD.updateSvd(X, U, s, V, E, k)
+            
+            error1 = numpy.linalg.norm(X+E - (U*s).dot(V.T))
+            error2 = numpy.linalg.norm(X+E - (U2*s2).dot(V2.T))
+            error3 = numpy.linalg.norm(X+E - (U3*s3).dot(V3.T))
+    
+            self.assertTrue(error1 >= error3)
+            #print(error1, error2, error3)
+        
 
 if __name__ == '__main__':
     unittest.main()
