@@ -102,6 +102,10 @@ class LinOperatorUtils(object):
   
     @staticmethod 
     def lowRankOp(U, s, V): 
+        """
+        Not that U, s, V are typically numpy arrays so we get parallelism for free. We assume the 
+        given matrix is U s V.T and operator on this. 
+        """
         def matvec(w): 
             return (U*s).dot(V.T.dot(w)) 
         
@@ -114,7 +118,7 @@ class LinOperatorUtils(object):
         def rmatmat(W): 
             return (V*s).dot(U.T.dot(W))
 
-        return GeneralLinearOperator(X.shape, matvec, rmatvec, matmat, rmatmat, dtype=X.dtype) 
+        return GeneralLinearOperator((U.shape[0], V.shape[0]), matvec, rmatvec, matmat, rmatmat, dtype=U.dtype) 
   
     @staticmethod 
     def parallelSparseLowRankOp(X, U, s, V): 
