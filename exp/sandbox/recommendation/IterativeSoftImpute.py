@@ -1,6 +1,7 @@
 import gc 
 import numpy
 import logging
+import os 
 import itertools
 import scipy.sparse.linalg
 import exp.util.SparseUtils as ExpSU
@@ -15,6 +16,7 @@ from exp.util.SparseUtilsCython import SparseUtilsCython
 from exp.sandbox.SVDUpdate import SVDUpdate
 from exp.util.LinOperatorUtils import LinOperatorUtils
 from exp.util.SparseUtils import SparseUtils
+from sppy.linalg.GeneralLinearOperator import GeneralLinearOperator
 
 def learnPredict(args): 
     """
@@ -192,8 +194,11 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                     #del ZOmega
                     Y = csarray.fromScipySparse(Y, storagetype="row")
                     gc.collect()
+                    
+                    #os.system('taskset -p 0xffffffff %d' % os.getpid())
 
                     if self.iterativeSoftImpute.svdAlg=="propack":
+                        print("Running propack")
                         L = LinOperatorUtils.sparseLowRankOp(Y, self.oldU, self.oldS, self.oldV, parallel=False)                        
                         newU, newS, newV = SparseUtils.svdPropack(L, k=self.iterativeSoftImpute.k, kmax=self.iterativeSoftImpute.kmax)
                     elif self.iterativeSoftImpute.svdAlg=="arpack":
@@ -218,7 +223,8 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                         else: 
                             #Need linear operator which is U s V 
                             L = LinOperatorUtils.lowRankOp(self.oldU, self.oldS, self.oldV)
-                            newU, newS, newV = RandomisedSVD.updateSvd(L, self.U, self.oldS, self.V, Y, self.iterativeSoftImpute.k, p=self.iterativeSoftImpute.p)
+                            Y = GeneralLinearOperator.asLinearOperator(Y, parallel=True)
+                            newU, newS, newV = RandomisedSVD.updateSvd(L, self.oldU, self.oldS, self.oldV, Y, self.iterativeSoftImpute.k, p=self.iterativeSoftImpute.p)
                     else:
                         raise ValueError("Unknown SVD algorithm: " + self.iterativeSoftImpute.svdAlg)
                         
