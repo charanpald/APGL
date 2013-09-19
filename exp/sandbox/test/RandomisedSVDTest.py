@@ -88,9 +88,6 @@ class  RandomisedSVDTest(unittest.TestCase):
             E = numpy.random.randn(m, n) * 0.2 
             
             U2, s2, V2 = RandomisedSVD.svd(X + E, k)
-            
-                       
-            
             U3, s3, V3 = RandomisedSVD.updateSvd(X, U, s, V, E, k)
             
             XE = X + E
