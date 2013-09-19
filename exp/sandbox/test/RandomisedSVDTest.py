@@ -6,6 +6,7 @@ import scipy.sparse
 from exp.sandbox.RandomisedSVD import RandomisedSVD
 from apgl.util.Util import Util
 import numpy.testing as nptst 
+from sppy.linalg.GeneralLinearOperator import GeneralLinearOperator
 
 
 class  RandomisedSVDTest(unittest.TestCase):
@@ -87,14 +88,26 @@ class  RandomisedSVDTest(unittest.TestCase):
             E = numpy.random.randn(m, n) * 0.2 
             
             U2, s2, V2 = RandomisedSVD.svd(X + E, k)
+            
+                       
+            
             U3, s3, V3 = RandomisedSVD.updateSvd(X, U, s, V, E, k)
             
-            error1 = numpy.linalg.norm(X+E - (U*s).dot(V.T))
-            error2 = numpy.linalg.norm(X+E - (U2*s2).dot(V2.T))
-            error3 = numpy.linalg.norm(X+E - (U3*s3).dot(V3.T))
+            XE = X + E
+            error1 = numpy.linalg.norm(XE - (U*s).dot(V.T))
+            error2 = numpy.linalg.norm(XE - (U2*s2).dot(V2.T))
+            error3 = numpy.linalg.norm(XE - (U3*s3).dot(V3.T))
     
             self.assertTrue(error1 >= error3)
             #print(error1, error2, error3)
+            
+            #Test use of linear opertors 
+            X = GeneralLinearOperator.asLinearOperator(X)
+            E = GeneralLinearOperator.asLinearOperator(E) 
+            
+            U3, s3, V3 = RandomisedSVD.updateSvd(X, U, s, V, E, k)
+            error4 = numpy.linalg.norm(XE - (U2*s2).dot(V2.T))
+            self.assertEquals(error4, error2)
         
 
 if __name__ == '__main__':
