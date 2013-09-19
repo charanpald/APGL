@@ -35,7 +35,7 @@ class RandomisedSVD(object):
         return sppy.linalg.rsvd(A, k, p, q, omega)
       
     @staticmethod 
-    def updateSvd(A, U, s, V, E, k, p): 
+    def updateSvd(A, U, s, V, E, k, p=10): 
         """
         Given a matrix A whose approximate SVD is U s V.T, compute the SVD 
         of the new matrix A + E, using previous info. A and E are sparse 
@@ -44,13 +44,18 @@ class RandomisedSVD(object):
         """
         Parameter.checkInt(k, 1, float("inf"))
         Parameter.checkInt(p, 0, float("inf"))     
-                    
+                   
+        if isinstance(A, GeneralLinearOperator): 
+            L = A 
+        else: 
+            L = GeneralLinearOperator.asLinearOperator(A)                    
+                   
         if isinstance(E, GeneralLinearOperator): 
             M = E 
         else: 
             M = GeneralLinearOperator.asLinearOperator(E) 
             
-        N = GeneralLinearOperator.asLinearOperator(A + E)
+        N = GeneralLinearOperator.asLinearOperatorSum(L, M)
         
         n = A.shape[1]
         omega = numpy.random.randn(n, p)
