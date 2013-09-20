@@ -66,8 +66,7 @@ class HIVRates():
         self.degSequence = graph.outDegreeSequence() 
 
         #Parameters for sexual contact
-        self.alpha = 2.0
-        self.newContactChance = 0.5
+        self.alpha = 0.5
         
         self.contactRate = 0.5
 
@@ -86,9 +85,9 @@ class HIVRates():
         self.ctStartTime = 180
         self.ctEndTime = 1825
 
-        #contactTimesArr is an array of the index of the last sexual contact and contact time
-        #Given time starts at zero we set last contact to -inf 
-        self.contactTimesArr = numpy.ones((graph.getNumVertices(), 2))*-float('inf')
+        #contactTimesArr is an array of the index of the last sexual contact or -1 
+        #if no previous contact 
+        self.contactTimesArr = numpy.ones(graph.getNumVertices())*-1
         self.neighboursList = []
         self.detectedNeighboursList = [] 
 
@@ -97,20 +96,14 @@ class HIVRates():
             self.detectedNeighboursList.append(numpy.array([], numpy.int))
 
     def setAlpha(self, alpha):
-        Parameter.checkFloat(alpha, 0.0, float('inf'))
+        Parameter.checkFloat(alpha, 0.0, 1.0)
         
         if alpha == 0: 
             raise ValueError("Alpha must be greater than zero")
         
         self.alpha = alpha
 
-    def setNewContactChance(self, newContactChance):
-        Parameter.checkFloat(newContactChance, 0.0, float('inf'))
-    
-        if newContactChance == 0: 
-            raise ValueError("newContactChance must be greater than zero")        
-        
-        self.newContactChance = newContactChance
+
 
     def setContactRate(self, contactRate):
         Parameter.checkFloat(contactRate, 0.0, float('inf'))
@@ -169,8 +162,8 @@ class HIVRates():
         self.graph.addEdge(vertexInd1, vertexInd2, t)
         self.neighboursList[vertexInd1] = self.graph.neighbours(vertexInd1)
         self.neighboursList[vertexInd2] = self.graph.neighbours(vertexInd2)
-        self.contactTimesArr[vertexInd1, :] = numpy.array([vertexInd2, t])
-        self.contactTimesArr[vertexInd2, :] = numpy.array([vertexInd1, t])
+        self.contactTimesArr[vertexInd1] = vertexInd2
+        self.contactTimesArr[vertexInd2] = vertexInd1
 
         assert (self.degSequence == self.graph.outDegreeSequence()).all()
 
@@ -267,7 +260,7 @@ class HIVRates():
         possibleContacts = numpy.zeros((len(infectedList), numPossibleContacts), numpy.int)
         possibleContactWeights = numpy.zeros((len(infectedList), numPossibleContacts))
         
-        possibleContacts[:, 0] = self.contactTimesArr[infectedList, 0]
+        possibleContacts[:, 0] = self.contactTimesArr[infectedList]
 
         totalDegSequence = numpy.array(self.hiddenDegSeq*self.p + self.degSequence*(self.q-self.p), numpy.float)
         #assert (self.expandedDegSeqFemales.shape[0] + self.expandedDegSeqMales.shape[0]) == totalDegSequence.sum(), \
@@ -277,24 +270,21 @@ class HIVRates():
         edsInds = numpy.random.randint(0, self.expandedDegSeqFemales.shape[0], maleHeteroInfectInds.sum())
         contactInds = self.expandedDegSeqFemales[edsInds]
         possibleContacts[maleHeteroInfectInds, 1] = contactInds
-        possibleContactWeights[maleHeteroInfectInds, 1] = totalDegSequence[contactInds]/self.expandedDegSeqFemales.shape[0]
 
         edsInds = numpy.random.randint(0, self.expandedDegSeqMales.shape[0], femaleInfectInds.sum())
         contactInds = self.expandedDegSeqMales[edsInds]
         possibleContacts[femaleInfectInds, 1] = contactInds
-        possibleContactWeights[femaleInfectInds, 1] = totalDegSequence[contactInds]/self.expandedDegSeqMales.shape[0]
 
         if self.expandedDegSeqBiMales.shape[0] != 0:
             edsInds = numpy.random.randint(0, self.expandedDegSeqBiMales.shape[0], maleBiInfectInds.sum())
             contactInds = self.expandedDegSeqBiMales[edsInds]
             possibleContacts[maleBiInfectInds, 1] = contactInds
-            possibleContactWeights[maleBiInfectInds, 1] = totalDegSequence[contactInds]/self.expandedDegSeqBiMales.shape[0]
 
         if self.expandedDegSeqBiFemales.shape[0] != 0:
             edsInds = numpy.random.randint(0, self.expandedDegSeqBiFemales.shape[0], femaleBiInfectInds.sum())
             contactInds = self.expandedDegSeqBiFemales[edsInds]
             possibleContacts[femaleBiInfectInds, 1] = contactInds
-            possibleContactWeights[femaleBiInfectInds, 1] = totalDegSequence[contactInds]/self.expandedDegSeqBiFemales.shape[0]
+
 
         #Now compute weights for all
         
@@ -302,12 +292,12 @@ class HIVRates():
         #Could exclude zero probability events from randomChoice if that speed things up
         epsilon = 0.0001
 
-        #If last contact time is infinity then weight should be zero
-        possibleContactWeights[:, 0] = (epsilon + t - self.contactTimesArr[infectedList, 1])**-self.alpha
-        possibleContactWeights[:, 1] *= self.newContactChance**-self.alpha
+        #Choose randomly between the last contact (if any) and current one
+        hadLastContact = numpy.array(self.contactTimesArr[infectedList]!=-1, numpy.int)
+        possibleContactWeights[:, 0] = self.alpha*hadLastContact
+        possibleContactWeights[:, 1] = 1-self.alpha + self.alpha*(1-hadLastContact)
 
         assert (possibleContactWeights >= numpy.zeros((len(infectedList), numPossibleContacts))).all()
-
         contactInds = Util.random2Choice(possibleContactWeights).ravel()
         contacts = possibleContacts[(numpy.arange(possibleContacts.shape[0]), contactInds)]
         contactsV = self.graph.vlist.V[contacts, :]
