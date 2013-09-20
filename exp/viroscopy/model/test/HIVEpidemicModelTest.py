@@ -141,6 +141,7 @@ class  HIVEpidemicModelTest(unittest.TestCase):
             T = 100.0
             graph = HIVGraph(M, undirected)
             graph.setRandomInfected(1)
+            print(i, graph.vlist.V[graph.getInfectedSet().pop(), :]) 
             rates = HIVRates(graph, hiddenDegSeq)  
             rates.contactRate = contactRate 
             rates.infectProb = 0.0
@@ -148,10 +149,56 @@ class  HIVEpidemicModelTest(unittest.TestCase):
             model.setT(T)
             times, infectedIndices, removedIndices, graph = model.simulate(verboseOut=True)
             numContacts[i] = model.numContacts
+
     
-        #Why is one value 0? 
-        print(numContacts)
+        lastN = -1
         
+        for i, n in enumerate(numContacts):
+            #This is an odd case in which we have a bisexual woman, there are no contacts 
+            #since they are not modelled 
+            if n != 0: 
+                self.assertTrue(n > lastN)    
+                
+                
+        #Test infection rate 
+        print("Testing infection probability")
+        infectProbs = [0.01, 0.1, 0.2, 0.5]     
+        numInfects = numpy.zeros(len(contactRates))
+        
+        for i, infectProb in enumerate(infectProbs): 
+            T = 100.0
+            graph = HIVGraph(M, undirected)
+            graph.setRandomInfected(10)
+            rates = HIVRates(graph, hiddenDegSeq)  
+            rates.contactRate = 0.5
+            rates.infectProb = infectProb 
+            model = HIVEpidemicModel(graph, rates)
+            model.setT(T)
+            times, infectedIndices, removedIndices, graph = model.simulate(verboseOut=True)
+            numInfects[i] = len(graph.getInfectedSet())
+        
+        for n in numInfects:
+            self.assertTrue(n > lastN)   
+        
+        
+        print("Testing contact paramters")
+        alphas = [0.01, 0.1, 0.2, 0.5, 1.0]     
+        edges = numpy.zeros(len(alphas))
+        
+        for i, alpha in enumerate(alphas): 
+            T = 100.0
+            graph = HIVGraph(M, undirected)
+            graph.setRandomInfected(1)
+            rates = HIVRates(graph, hiddenDegSeq)  
+            rates.setAlpha(alpha)
+            rates.infectProb = 0 
+            model = HIVEpidemicModel(graph, rates)
+            model.setT(T)
+            times, infectedIndices, removedIndices, graph = model.simulate(verboseOut=True)
+            edges[i] = graph.getNumEdges()
+            
+        print(edges)
+
     @unittest.skip("")
     def testSimulate2(self):    
         startDate = 0.0 
