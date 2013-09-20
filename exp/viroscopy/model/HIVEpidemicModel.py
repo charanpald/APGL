@@ -134,8 +134,6 @@ class HIVEpidemicModel():
             muHat = self.rates.upperDetectionRates(infectedList, len(susceptibleSet) + len(infectedSet))
             rhoHat = sigmaHat + muHat
             
-            #print(muHat)
-
             assert rhoHat >= 0
 
             #Now generate random variable which is the advancement in time
@@ -210,6 +208,10 @@ class HIVEpidemicModel():
                         break 
 
         logging.debug("Finished simulation at time " + str(t) + " for a total time of " + str(t-self.T0))
+        
+        infectedIndices.append(infectedList)
+        removedIndices.append(removedList)
+        times.append(t)
         
         self.numContacts = numContacts 
             
