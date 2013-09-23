@@ -342,6 +342,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
         
             for m, k in enumerate(ks): 
                 learner = self.copy()
+                learner.updateAlg="initial" 
                 learner.setK(k)
                 paramList.append((learner, trainX, testX, rhos)) 
                 
