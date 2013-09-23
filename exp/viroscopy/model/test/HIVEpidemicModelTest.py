@@ -198,6 +198,7 @@ class  HIVEpidemicModelTest(unittest.TestCase):
             edges[i] = graph.getNumEdges()
             
         print(edges)
+        self.assertEquals(edges[-1], 1)
 
     @unittest.skip("")
     def testSimulate2(self):    
