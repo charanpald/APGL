@@ -204,9 +204,9 @@ class RecommendExpHelper(object):
             
             for svdAlg in self.algoArgs.svdAlgs: 
                 if svdAlg == "rsvd" or svdAlg == "rsvdUpdate" or svdAlg == "rsvdUpdate2": 
-                    resultsFileName = self.resultsDir + "ResultsSoftImpute_alg=" + svdAlg + "_p=" + str(self.algoArgs.p)+ "_q=" + str(self.algoArgs.q) + ".npz"
+                    resultsFileName = self.resultsDir + "ResultsSoftImpute_alg=" + svdAlg + "_p=" + str(self.algoArgs.p)+ "_q=" + str(self.algoArgs.q) + "_updateAlg=" + self.algoArgs.updateAlg + ".npz"
                 else: 
-                    resultsFileName = self.resultsDir + "ResultsSoftImpute_alg=" + svdAlg + ".npz"
+                    resultsFileName = self.resultsDir + "ResultsSoftImpute_alg=" + svdAlg  + "_updateAlg=" + self.algoArgs.updateAlg + ".npz"
                     
                 fileLock = FileLock(resultsFileName)  
                 
