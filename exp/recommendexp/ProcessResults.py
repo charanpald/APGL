@@ -15,18 +15,19 @@ from apgl.util.PathDefaults import PathDefaults
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 #For now just print some results for a particular dataset 
-#dataset = "MovieLensDataset"
+dataset = "MovieLensDataset"
 #dataset = "NetflixDataset"
 #dataset = "FlixsterDataset"
-dataset = "SyntheticDataset1"
+#dataset = "SyntheticDataset1"
 #dataset = "EpinionsDataset"
 outputDir = PathDefaults.getOutputDir() + "recommend/" + dataset + "/"
 
 plotStyles = ['k-', 'k--', 'k-.', 'r--', 'r-', 'g-', 'b-', 'b--', 'b-.', 'g--', 'g--', 'g-.', 'r-', 'r--', 'r-.']
 methods = ["propack", "arpack", "rsvd", "rsvdUpdate2"]
+updateAlgs = ["initial", "zero"]
 
-pq = [(10, 2), (50, 2), (10, 5)]
-#pq = [(50, 2), (50, 3), (50, 4)]
+#pq = [(10, 2), (50, 2), (10, 5)]
+pq = [(50, 2), (50, 3)]
 #fileNames = [outputDir + "ResultsSgdMf.npz"]
 #labels = ["SgdMf"]
 fileNames = []
@@ -34,18 +35,24 @@ labels = []
 
 
 for method in methods:
-    if method == "propack" or method=="arpack": 
-        fileName = outputDir + "ResultsSoftImpute_alg=" + method + ".npz"
-        labels.append(method.upper())
-        fileNames.append(fileName)
-    else: 
-        for p, q in pq: 
-            fileName = outputDir + "ResultsSoftImpute_alg=" + method + "_p=" + str(p)+ "_q=" + str(q) + ".npz"
-            if method == "rsvd": 
-                labels.append("RSVD p=" + str(p)+ " q=" + str(q))
-            else: 
-                labels.append("RSVD+ p=" + str(p)+ " q=" + str(q))
+    for updateAlg in updateAlgs: 
+        if updateAlg == "initial": 
+            updateStr = "WR"
+        else: 
+            updateStr = "CR"
+        
+        if method == "propack" or method=="arpack": 
+            fileName = outputDir + "ResultsSoftImpute_alg=" + method + "_updateAlg=" + updateAlg + ".npz"
+            labels.append(method.upper())
             fileNames.append(fileName)
+        else: 
+            for p, q in pq: 
+                fileName = outputDir + "ResultsSoftImpute_alg=" + method + "_p=" + str(p)+ "_q=" + str(q) + "_updateAlg=" + updateAlg + ".npz"
+                if method == "rsvd": 
+                    labels.append("RSVD " + updateStr + " p=" + str(p)+ " q=" + str(q))
+                elif method == "rsvdUpdate2": 
+                    labels.append("RSVD+ " + updateStr + " p=" + str(p)+ " q=" + str(q))
+                fileNames.append(fileName)
        
 i = 0       
        
@@ -133,17 +140,18 @@ for j, fileName in enumerate(fileNames):
         means = data["arr_0"]
         stds = data["arr_1"]            
         
-        """
+        
         plt.figure(7+i)
         ks = numpy.array(2**numpy.arange(3.5, 7.5, 0.5), numpy.int) 
         rhos = numpy.linspace(0.5, 0.0, 6) 
+        plt.title(labels[j])
         plt.contourf(ks, rhos, means, antialiased=True)
         plt.xlabel("k")
         plt.ylabel(r"$\rho$")
         plt.colorbar()
         print(means)
         plt.savefig((outputDir + dataset + "MS_" + str(labels[j]) + ".eps").replace(" ", "_"))
-        """
+        
         
         
         
