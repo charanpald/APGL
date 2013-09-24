@@ -53,7 +53,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
     """
     Given a set of matrices X_1, ..., X_T find the completed matrices.
     """
-    def __init__(self, rho=0.1, eps=0.01, k=None, svdAlg="propack", updateAlg="initial", logStep=10, kmax=None, postProcess=False, p=50, q=2, weighted=False, verbose=False, qu=1):
+    def __init__(self, rho=0.1, eps=0.001, k=None, svdAlg="propack", updateAlg="initial", logStep=10, kmax=None, postProcess=False, p=50, q=2, weighted=False, verbose=False, qu=1):
         """
         Initialise imputing algorithm with given parameters. The rho is a value
         for use with the soft thresholded SVD. Eps is the convergence threshold and
@@ -167,8 +167,6 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                             self.oldV = Util.extendArray(self.oldV, (m, self.oldV.shape[1]))
                         elif m < oldN:
                             self.oldV = self.oldV[0:m, :]
-                    elif self.iterativeSoftImpute.updateAlg == "svdUpdate":
-                        pass
                     elif self.iterativeSoftImpute.updateAlg == "zero":
                         self.oldU = numpy.zeros((n, 1))
                         self.oldS = numpy.zeros(1)
@@ -198,7 +196,6 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                     #os.system('taskset -p 0xffffffff %d' % os.getpid())
 
                     if self.iterativeSoftImpute.svdAlg=="propack":
-                        print("Running propack")
                         L = LinOperatorUtils.sparseLowRankOp(Y, self.oldU, self.oldS, self.oldV, parallel=False)                        
                         newU, newS, newV = SparseUtils.svdPropack(L, k=self.iterativeSoftImpute.k, kmax=self.iterativeSoftImpute.kmax)
                     elif self.iterativeSoftImpute.svdAlg=="arpack":
@@ -227,8 +224,6 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
                             newU, newS, newV = RandomisedSVD.updateSvd(L, self.oldU, self.oldS, self.oldV, Y, self.iterativeSoftImpute.k, p=self.iterativeSoftImpute.p)
                     else:
                         raise ValueError("Unknown SVD algorithm: " + self.iterativeSoftImpute.svdAlg)
-                        
-                    print(newS)
 
                     if self.iterativeSoftImpute.weighted and i==0: 
                         delta = numpy.diag((u*newU.T).dot(newU))
