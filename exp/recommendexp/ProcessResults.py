@@ -15,10 +15,10 @@ from apgl.util.PathDefaults import PathDefaults
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 #For now just print some results for a particular dataset 
-dataset = "MovieLensDataset"
+#dataset = "MovieLensDataset"
 #dataset = "NetflixDataset"
 #dataset = "FlixsterDataset"
-#dataset = "SyntheticDataset1"
+dataset = "SyntheticDataset1"
 #dataset = "EpinionsDataset"
 outputDir = PathDefaults.getOutputDir() + "recommend/" + dataset + "/"
 
@@ -26,8 +26,8 @@ plotStyles = ['k-', 'k--', 'k-.', 'r--', 'r-', 'g-', 'b-', 'b--', 'b-.', 'g--', 
 methods = ["propack", "arpack", "rsvd", "rsvdUpdate2"]
 updateAlgs = ["initial", "zero"]
 
-#pq = [(10, 2), (50, 2), (10, 5)]
-pq = [(50, 2), (50, 3)]
+pq = [(10, 2), (50, 2), (10, 5)]
+#pq = [(50, 2), (50, 3)]
 #fileNames = [outputDir + "ResultsSgdMf.npz"]
 #labels = ["SgdMf"]
 fileNames = []
@@ -136,7 +136,7 @@ for j, fileName in enumerate(fileNames):
             raise
             
         data = numpy.load(fileName.replace("Results", "ModelSelect"))
-        logging.debug("Loaded " + str(fileName))
+        logging.debug("Loaded " + str(fileName.replace("Results", "ModelSelect")))
         means = data["arr_0"]
         stds = data["arr_1"]            
         
