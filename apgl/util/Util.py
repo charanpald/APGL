@@ -626,8 +626,7 @@ class Util(object):
         and this will be broadcast into the new array. 
         """
         
-        tempA = numpy.zeros(newShape)
-        tempA[:, :] = val
+        tempA = numpy.ones(newShape)*val
         tempA[0:A.shape[0], 0:A.shape[1]] = A 
         return tempA 
         
