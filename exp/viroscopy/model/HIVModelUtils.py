@@ -23,14 +23,22 @@ class HIVModelUtils(object):
         """
         This is taken from simulated runs using the real data 
         """
-        theta = numpy.array([100, 1.0, 0.5, 1.0/800, 0.01, 200, 0.1, 50.0/1000])
+        theta = numpy.array([100, 0.9, 0.5, 0.001,  200, 0.1, 0.005])
         sigmaTheta = theta*2
         return theta, sigmaTheta 
-    
+
+    @staticmethod
+    def estimatedToyTheta():
+        theta = numpy.array([100, 0.9, 0.5, 0.001,  200, 0.1, 0.005])
+        sigmaTheta = theta*2
+        sigmaTheta[1] = 1
+        return theta, sigmaTheta   
+  
     @staticmethod
     def toyTheta(): 
-        theta = numpy.array([100, 0.5, 0.5, 1.0/800, 0.01, 200, 0.1, 50.0/1000])
+        theta = numpy.array([100, 0.9, 0.05, 0.001,  200, 0.1, 0.005])
         sigmaTheta = theta*2
+        sigmaTheta[1] = 1
         return theta, sigmaTheta 
         
     @staticmethod 
@@ -42,7 +50,7 @@ class HIVModelUtils(object):
             targetGraph = HIVGraph.load(graphFile)        
         
         startDate = 0.0        
-        endDate = 500.0
+        endDate = 1000.0
         recordStep = 50
         M = 5000
         

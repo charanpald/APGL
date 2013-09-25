@@ -25,7 +25,7 @@ numpy.set_printoptions(suppress=True, precision=4, linewidth=100)
 startDate, endDate, recordStep, M, targetGraph = HIVModelUtils.realSimulationParams()
 endDate = startDate + 10000
 meanTheta, sigmaTheta = HIVModelUtils.estimatedRealTheta()
-meanTheta = numpy.array([ 50,   0.3242,    0.1,    0.001,    0.001,  325,        0.34,      0.001])
+meanTheta = numpy.array([ 50,   0.9,    0.1,    0.01,    325,        0.34,      0.001])
 outputDir = PathDefaults.getOutputDir() + "viroscopy/"
 
 undirected = True
