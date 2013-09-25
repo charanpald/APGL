@@ -48,7 +48,7 @@ class HIVGraphMetrics2(object):
             permutation, distance, time = self.matcher.match(subgraph, subRealGraph)
             lastDist, lastGraphDist, lastLabelDist = self.matcher.distance(subgraph, subRealGraph, permutation, True, False, True) 
             
-            logging.debug("Distance at time " + str(t) + " is " + str(lastDist) + " with simulated size " + str(subgraph.size) + " and real size " + str(subRealGraph.size))        
+            #logging.debug("Time " + str(t) + "  " + str(lastDist) + " with simulated size " + str(subgraph.size) + " and real size " + str(subRealGraph.size))        
             
             self.dists.append(lastDist)
             self.graphDists.append(lastGraphDist)
@@ -101,5 +101,6 @@ class HIVGraphMetrics2(object):
         if len(self.dists) < self.breakIgnore: 
             return False 
         else:
+            logging.debug("Checking break distance: " + str(self.meanDistance()) + " and break distance: " + str(self.breakDist))
             return self.meanDistance() > self.breakDist 
         

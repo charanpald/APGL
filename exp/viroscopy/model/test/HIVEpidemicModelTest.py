@@ -182,7 +182,7 @@ class  HIVEpidemicModelTest(unittest.TestCase):
         
         
         print("Testing contact paramters")
-        alphas = [0.01, 0.1, 0.2, 0.5, 1.0]     
+        alphas = 1-numpy.array([0.01, 0.1, 0.2, 0.5, 0.99])     
         edges = numpy.zeros(len(alphas))
         
         for i, alpha in enumerate(alphas): 
@@ -197,8 +197,10 @@ class  HIVEpidemicModelTest(unittest.TestCase):
             times, infectedIndices, removedIndices, graph = model.simulate(verboseOut=True)
             edges[i] = graph.getNumEdges()
             
-        print(edges)
-        self.assertEquals(edges[-1], 1)
+
+        self.assertEquals(edges[0], 1)        
+        self.assertTrue((numpy.diff(edges) > 0).all())
+        
 
     @unittest.skip("")
     def testSimulate2(self):    
