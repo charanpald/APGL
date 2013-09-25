@@ -19,6 +19,8 @@ class GraphMatch(object):
         which is a trade of between matching adjacency matrices and vertex labels, 
         and featureInds which is an option array of indices to use for label 
         matching. 
+        
+        :param alpha: A value in [0, 1] which is smaller to match graph structure, larger to match the labels more  
         """
         Parameter.checkFloat(alpha, 0.0, 1.0)
         Parameter.checkClass(algorithm, str)
@@ -291,7 +293,7 @@ class GraphMatch(object):
             if normC != 0: 
                 dist = dist + self.alpha*n/normC 
         else: 
-            logging.debug("Graph distance: " + str(dist1) + " label distance: " + str(dist2) + " graph sizes: " + str((graph1.size, graph2.size)))   
+            logging.debug("Graph distance: " + str(dist1) + " label distance: " + str(dist2) + " weighted distance: " + str(dist) + " graph sizes: " + str((graph1.size, graph2.size)))   
         
         if verbose: 
             return dist, dist1, dist2
