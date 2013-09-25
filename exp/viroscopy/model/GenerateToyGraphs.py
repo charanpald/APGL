@@ -23,11 +23,10 @@ numpy.set_printoptions(suppress=True, precision=4, linewidth=100)
 startDate, endDate, recordStep, M = HIVModelUtils.toySimulationParams(False)
 endDate += HIVModelUtils.toyTestPeriod
 
-numRepetitions = 1
+numRepetitions = 10
 undirected = True
 outputDir = PathDefaults.getOutputDir() + "viroscopy/toy/"
 theta, sigmaTheta = HIVModelUtils.toyTheta() 
-
 
 graphList = []
 
