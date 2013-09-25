@@ -31,8 +31,8 @@ dataArgs.iterStartTimeStamp = None
 
 # Arguments related to the algorithm
 defaultAlgoArgs = argparse.Namespace()
-defaultAlgoArgs.ks = numpy.array(2**numpy.arange(2.5, 5.5, 0.5), numpy.int) 
-defaultAlgoArgs.rhos = numpy.linspace(0.3, 0.1, 3) 
+defaultAlgoArgs.ks = numpy.array(2**numpy.arange(3, 7.5, 0.5), numpy.int) 
+defaultAlgoArgs.rhos = numpy.linspace(0.5, 0.1, 5) 
 defaultAlgoArgs.folds = 4
 
 
