@@ -31,7 +31,7 @@ epsilonArray = numpy.ones(10)*0.4
 logging.debug("Total time of simulation is " + str(endDate-startDate))
 
 posteriorSampleSize = 30
-breakDist = 0.5
+breakDist = 0.3
 logging.debug("Posterior sample size " + str(posteriorSampleSize))
 
 def createModel(t):
@@ -52,9 +52,9 @@ def createModel(t):
     featureInds[HIVVertices.hiddenDegreeIndex] = False 
     featureInds[HIVVertices.stateIndex] = False
     featureInds = numpy.arange(featureInds.shape[0])[featureInds]
-    matcher = GraphMatch("PATH", alpha=0.5, featureInds=featureInds, useWeightM=False)
+    matcher = GraphMatch("PATH", alpha=0.2, featureInds=featureInds, useWeightM=False)
     graphMetrics = HIVGraphMetrics2(targetGraph, breakDist, matcher, endDate)
-    graphMetrics.breakDist = 0.0 
+    #graphMetrics.breakDist = 0.0 
 
     rates = HIVRates(graph, hiddenDegSeq)
     model = HIVEpidemicModel(graph, rates, T=float(endDate), T0=float(startDate), metrics=graphMetrics)
@@ -69,7 +69,7 @@ else:
 
 
 purtScale = 0.02 
-meanTheta, sigmaTheta = HIVModelUtils.estimatedRealTheta()
+meanTheta, sigmaTheta = HIVModelUtils.estimatedToyTheta()
 abcParams = HIVABCParameters(meanTheta, sigmaTheta, purtScale)
 thetaDir = resultsDir + "theta/"
 
