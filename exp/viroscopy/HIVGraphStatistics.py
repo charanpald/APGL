@@ -9,7 +9,7 @@ from apgl.util.Util import Util
 from apgl.util.Parameter import Parameter
 from apgl.graph.GraphUtils import GraphUtils
 from apgl.graph.AbstractMatrixGraph import AbstractMatrixGraph
-from apgl.viroscopy.HIVGraphReader import CsvConverters
+from exp.viroscopy.HIVGraphReader import CsvConverters
 
 class HIVGraphStatistics(object):
     def __init__(self, fInds):
