@@ -30,15 +30,13 @@ class HIVModelUtils(object):
     @staticmethod
     def estimatedToyTheta():
         theta = numpy.array([100, 0.9, 0.5, 0.001,  200, 0.1, 0.005])
-        sigmaTheta = theta*2
-        sigmaTheta[1] = 1
+        sigmaTheta = theta/10.0
         return theta, sigmaTheta   
   
     @staticmethod
     def toyTheta(): 
         theta = numpy.array([100, 0.9, 0.05, 0.001,  200, 0.1, 0.005])
-        sigmaTheta = theta*2
-        sigmaTheta[1] = 1
+        sigmaTheta = theta/10.0
         return theta, sigmaTheta 
         
     @staticmethod 
@@ -95,16 +93,14 @@ class HIVModelUtils(object):
         return model.simulate(True)
         
     @staticmethod 
-    def generateStatistics(graph, startDate, endDate, recordStep): 
+    def generateStatistics(graph, times): 
         """
         For a given theta, simulate the epidemic, and then return a number of 
         relevant statistics. 
         """
-        times = [] 
         removedIndices = []
         
-        for t in numpy.arange(startDate, endDate+1, recordStep): 
-            times.append(t)
+        for t in times: 
             removedIndices.append(graph.removedIndsAt(t))
 
         V = graph.getVertexList().getVertices()
@@ -122,7 +118,7 @@ class HIVModelUtils(object):
         graphStats = GraphStatistics()
         removedGraphStats = graphStats.sequenceScalarStats(graph, removedIndices, slowStats=False)
         
-        return times, vertexArray, removedGraphStats
+        return vertexArray, removedGraphStats
     
     toyTestPeriod = 250 
     realTestPeriods = [365, 365, 365, 730]
