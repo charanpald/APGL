@@ -224,7 +224,7 @@ class HIVRates():
         state = numpy.random.get_state()
         numpy.random.seed(seed)
         inds = numpy.random.permutation(len(infectedList))[self.maxDetects:]
-        detectionRates[inds] = 0 
+        detectionRates[inds] += self.randDetectRate  * (len(inds)/float(n)) 
         numpy.random.set_state(state)
         
         assert (detectionRates!=0).sum() <= self.maxDetects 
@@ -354,7 +354,7 @@ class HIVRates():
         state = numpy.random.get_state()
         numpy.random.seed(seed)
         inds = numpy.random.permutation(len(infectedList))[0:self.maxDetects]
-        detectionRates[inds] = self.randDetectRate  * (len(infectedList)/float(n))
+        detectionRates[inds] = self.randDetectRate  * (len(inds)/float(n))
         numpy.random.set_state(state)
         return detectionRates
 
