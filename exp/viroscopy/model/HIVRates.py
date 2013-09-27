@@ -117,9 +117,9 @@ class HIVRates():
         Parameter.checkFloat(ctRatePerPerson, 0.0, float('inf'))
         self.ctRatePerPerson = ctRatePerPerson
 
-    def setInfectProb(self, infectProf):
-        Parameter.checkFloat(infectProf, 0.0, 1.0)
-        self.infectProf = infectProf
+    def setInfectProb(self, infectProb):
+        Parameter.checkFloat(infectProb, 0.0, 1.0)
+        self.infectProb = infectProb
         
     def setMaxDetects(self, maxDetects): 
         Parameter.checkInt(maxDetects, 1, float("inf"))
@@ -208,7 +208,6 @@ class HIVRates():
         contactRates = numpy.ones(len(infectedList))*self.contactRate
         #contactRates += (self.graph.vlist.V[infectedList, HIVVertices.orientationIndex])*self.contactRate
 
-
         return numpy.sum(contactRates)
         
     def upperDetectionRates(self, infectedList, n, seed=21):
@@ -220,14 +219,6 @@ class HIVRates():
 
         for i, j in enumerate(infectedList):
             detectionRates[i] += self.detectedNeighboursList[j].shape[0]*self.ctRatePerPerson
-            
-        state = numpy.random.get_state()
-        numpy.random.seed(seed)
-        inds = numpy.random.permutation(len(infectedList))[self.maxDetects:]
-        detectionRates[inds] += self.randDetectRate  * (len(inds)/float(n)) 
-        numpy.random.set_state(state)
-        
-        assert (detectionRates!=0).sum() <= self.maxDetects 
 
         return numpy.sum(detectionRates)
 
@@ -353,8 +344,7 @@ class HIVRates():
         detectionRates = numpy.zeros(len(infectedList))
         state = numpy.random.get_state()
         numpy.random.seed(seed)
-        inds = numpy.random.permutation(len(infectedList))[0:self.maxDetects]
-        detectionRates[inds] = self.randDetectRate  * (len(inds)/float(n))
+        detectionRates[:] = self.randDetectRate  * (len(infectedList)/float(n))
         numpy.random.set_state(state)
         return detectionRates
 
@@ -400,14 +390,5 @@ class HIVRates():
                             ctRates[infectedArrInds[i]] = self.ctRatePerPerson
 
         assert (ctRates >= numpy.zeros(len(infectedList))).all()
-
-        #Only maxDetects can be tested at once 
-        """
-        state = numpy.random.get_state()
-        numpy.random.seed(seed)
-        inds = numpy.random.permutation(len(infectedList))[self.maxDetects:]
-        ctRates[inds] = 0
-        numpy.random.set_state(state)
-        """
 
         return ctRates
