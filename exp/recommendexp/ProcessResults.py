@@ -17,8 +17,8 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 #For now just print some results for a particular dataset 
 #dataset = "MovieLensDataset"
 #dataset = "NetflixDataset"
-dataset = "FlixsterDataset"
-#dataset = "SyntheticDataset1"
+#dataset = "FlixsterDataset"
+dataset = "SyntheticDataset1"
 #dataset = "EpinionsDataset"
 outputDir = PathDefaults.getOutputDir() + "recommend/" + dataset + "/"
 
@@ -26,8 +26,8 @@ plotStyles = ['k-', 'k--', 'k-.', 'r--', 'r-', 'g-', 'b-', 'b--', 'b-.', 'g--', 
 methods = ["propack", "arpack", "rsvd", "rsvdUpdate2"]
 updateAlgs = ["initial", "zero"]
 
-#pq = [(10, 2), (50, 2), (10, 5)]
-pq = [(10, 3), (50, 2), (50, 3)]
+pq = [(10, 2), (50, 2), (10, 5)]
+#pq = [(10, 3), (50, 2), (50, 3)]
 #fileNames = [outputDir + "ResultsSgdMf.npz"]
 #labels = ["SgdMf"]
 fileNames = []
@@ -43,7 +43,7 @@ for method in methods:
         
         if method == "propack" or method=="arpack": 
             fileName = outputDir + "ResultsSoftImpute_alg=" + method + "_updateAlg=" + updateAlg + ".npz"
-            labels.append(method.upper())
+            labels.append(method.upper() + " " + updateStr)
             fileNames.append(fileName)
         else: 
             for p, q in pq: 
