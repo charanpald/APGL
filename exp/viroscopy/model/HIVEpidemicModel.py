@@ -27,7 +27,6 @@ class HIVEpidemicModel():
         self.rates = rates
         self.setT(T)
         self.breakFunc = None
-        self.standardiseResults = True
         self.T0 = T0
         self.setRecordStep((self.T-self.T0)/10.0)
         self.metrics = metrics 
