@@ -99,9 +99,11 @@ class HIVModelUtils(object):
         relevant statistics. 
         """
         removedIndices = []
+        infectedIndices = []
         
         for t in times: 
             removedIndices.append(graph.removedIndsAt(t))
+            infectedIndices.append(graph.infectedIndsAt(t))
 
         V = graph.getVertexList().getVertices()
         
