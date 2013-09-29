@@ -98,9 +98,7 @@ class GraphStatistics(object):
         statsArray[self.densityIndex] = graph.density()
 
         if graph.isUndirected():
-            logging.debug("Finding connected components")
             subComponents = graph.findConnectedComponents()
-            logging.debug("Done")
             statsArray[self.numComponentsIndex] = len(subComponents)
             
             nonSingletonSubComponents = [c for c in subComponents if len(c) > 1]
@@ -109,7 +107,7 @@ class GraphStatistics(object):
             triOrMoreSubComponents = [c for c in subComponents if len(c) > 2]
             statsArray[self.numTriOrMoreComponentsIndex] = len(triOrMoreSubComponents)
             
-            logging.debug("Studying max component")
+            #logging.debug("Studying max component")
             if len(subComponents) != 0:
                 maxCompGraph = graph.subgraph(list(subComponents[0]))
                 statsArray[self.maxComponentSizeIndex] = len(subComponents[0])
@@ -240,7 +238,7 @@ class GraphStatistics(object):
 
         for i in range(numGraphs):
             Util.printIteration(i, self.printStep, numGraphs)
-            logging.debug("Subgraph size: " + str(len(subgraphIndices[i])))
+            #logging.debug("Subgraph size: " + str(len(subgraphIndices[i])))
             subgraph = graph.subgraph(subgraphIndices[i])
             statsMatrix[i, :] = self.scalarStatistics(subgraph, slowStats, treeStats)
 
