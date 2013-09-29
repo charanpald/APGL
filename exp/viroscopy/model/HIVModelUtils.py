@@ -98,29 +98,34 @@ class HIVModelUtils(object):
         For a given theta, simulate the epidemic, and then return a number of 
         relevant statistics. 
         """
+        contactIndices = []
         removedIndices = []
         infectedIndices = []
         
         for t in times: 
             removedIndices.append(graph.removedIndsAt(t))
             infectedIndices.append(graph.infectedIndsAt(t))
+            contactIndices.append(graph.contactIndsAt(t))
 
         V = graph.getVertexList().getVertices()
+        graphStatsList = []
         
-        removedArray  = numpy.array([len(x) for x in removedIndices])
-        maleArray  = numpy.array([numpy.sum(V[x, HIVVertices.genderIndex]==HIVVertices.male) for x in removedIndices])
-        femaleArray = numpy.array([numpy.sum(V[x, HIVVertices.genderIndex]==HIVVertices.female) for x in removedIndices])
-        heteroArray = numpy.array([numpy.sum(V[x, HIVVertices.orientationIndex]==HIVVertices.hetero) for x in removedIndices])
-        biArray = numpy.array([numpy.sum(V[x, HIVVertices.orientationIndex]==HIVVertices.bi) for x in removedIndices])
-        randDetectArray = numpy.array([numpy.sum(V[x, HIVVertices.detectionTypeIndex]==HIVVertices.randomDetect) for x in removedIndices])
-        conDetectArray = numpy.array([numpy.sum(V[x, HIVVertices.detectionTypeIndex]==HIVVertices.contactTrace) for x in removedIndices])
+        for inds in [contactIndices, removedIndices]: 
+            numVerticesArray  = numpy.array([len(x) for x in inds])
+            maleArray  = numpy.array([numpy.sum(V[x, HIVVertices.genderIndex]==HIVVertices.male) for x in inds])
+            femaleArray = numpy.array([numpy.sum(V[x, HIVVertices.genderIndex]==HIVVertices.female) for x in inds])
+            heteroArray = numpy.array([numpy.sum(V[x, HIVVertices.orientationIndex]==HIVVertices.hetero) for x in inds])
+            biArray = numpy.array([numpy.sum(V[x, HIVVertices.orientationIndex]==HIVVertices.bi) for x in inds])
+            randDetectArray = numpy.array([numpy.sum(V[x, HIVVertices.detectionTypeIndex]==HIVVertices.randomDetect) for x in inds])
+            conDetectArray = numpy.array([numpy.sum(V[x, HIVVertices.detectionTypeIndex]==HIVVertices.contactTrace) for x in inds])
+            
+            vertexArray = numpy.c_[numVerticesArray, maleArray, femaleArray, heteroArray, biArray, randDetectArray, conDetectArray]
         
-        vertexArray = numpy.c_[removedArray, maleArray, femaleArray, heteroArray, biArray, randDetectArray, conDetectArray]
+            graphStats = GraphStatistics()
+            graphStats = graphStats.sequenceScalarStats(graph, inds, slowStats=False)
+            graphStatsList.append(graphStats)
         
-        graphStats = GraphStatistics()
-        removedGraphStats = graphStats.sequenceScalarStats(graph, removedIndices, slowStats=False)
-        
-        return vertexArray, removedGraphStats
+        return vertexArray, graphStatsList[0], graphStatsList[1]
     
     toyTestPeriod = 250 
     realTestPeriods = [365, 365, 365, 730]
