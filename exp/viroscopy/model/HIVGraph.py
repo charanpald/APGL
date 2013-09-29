@@ -137,6 +137,23 @@ class HIVGraph(CsArrayGraph):
         
         return inds
 
+    def contactIndsAt(self, t): 
+        """
+        Compute the indices of this graph consisting only of all vertices 
+        that have had at least 1 sexual contact before time t
+        
+        :param t: The time point to consider. 
+        :type t: `float`
+        """
+        edges = self.getAllEdges()
+        edgeValues = self.getEdgeValues(edges)
+
+        inds = numpy.logical_and(edgeValues >= 0, edgeValues <=t)
+        edges = edges[inds].flatten()        
+        
+        return numpy.unique(edges)
+        
+
     def endTime(self): 
         """
         Return the time of the last infection or detection event. 
