@@ -9,6 +9,8 @@ from exp.viroscopy.model.HIVEpidemicModel import HIVEpidemicModel
 from exp.viroscopy.model.HIVRates import HIVRates
 from exp.viroscopy.model.HIVModelUtils import HIVModelUtils
 from apgl.graph.GraphStatistics import GraphStatistics
+import matplotlib 
+matplotlib.use("GTK3Agg")
 import matplotlib.pyplot as plt 
 
 """
@@ -25,6 +27,7 @@ numpy.set_printoptions(suppress=True, precision=4, linewidth=100)
 
 def runModel(meanTheta): 
     startDate, endDate, recordStep, M, targetGraph = HIVModelUtils.toySimulationParams()
+    endDate = 2000.0
     recordStep = 50 
     undirected = True
 
@@ -32,13 +35,14 @@ def runModel(meanTheta):
     numReps = 10
     numInfectedIndices = [] 
     numRemovedIndices = []
-    numEdges = []
+    numRemovedEdges = []
+    numContactEdges = []
     
     statistics = GraphStatistics()
     
     for i in range(numReps): 
         graph = HIVGraph(M, undirected)
-        logging.info("Created graph: " + str(graph))
+        logging.info("Created graph at index " + str(i) + ": " + str(graph))
         
         alpha = 2
         zeroVal = 0.9
@@ -53,11 +57,15 @@ def runModel(meanTheta):
         model.setParams(meanTheta)
         times, infectedIndices, removedIndices, graph = model.simulate(True)
         
-        vertexArray, removedGraphStats = HIVModelUtils.generateStatistics(graph, times)
+        vertexArray, contactGraphStats, removedGraphStats = HIVModelUtils.generateStatistics(graph, times)
     
         numInfectedIndices.append([len(x) for x in infectedIndices]) 
         numRemovedIndices.append([len(x) for x in removedIndices])
-        numEdges.append(removedGraphStats[:, statistics.numEdgesIndex])
+        
+        numContactEdges.append(contactGraphStats[:, statistics.numVerticesIndex])
+        numRemovedEdges.append(removedGraphStats[:, statistics.numVerticesIndex])
+        
+        
         
     numInfectedIndices = numpy.array(numInfectedIndices)
     numInfectedIndices = numpy.mean(numInfectedIndices, 0)
@@ -65,14 +73,18 @@ def runModel(meanTheta):
     numRemovedIndices = numpy.array(numRemovedIndices)
     numRemovedIndices = numpy.mean(numRemovedIndices, 0)
     
-    numEdges = numpy.array(numEdges)
-    numEdges = numpy.mean(numEdges, 0)
+    numContactEdges = numpy.array(numContactEdges)
+    numContactEdges = numpy.mean(numContactEdges, 0)
     
-    return times, numInfectedIndices, numRemovedIndices, numEdges, vertexArray[:, 6]
+    numRemovedEdges = numpy.array(numRemovedEdges)
+    numRemovedEdges = numpy.mean(numRemovedEdges, 0)
+    
+    return times, numInfectedIndices, numRemovedIndices, numContactEdges, numRemovedEdges, vertexArray[:, 6]
 
 def plotResults(meanThetas, labels, k): 
     for i in range(meanThetas.shape[0]): 
-        times, numInfectedIndices, numRemovedIndices, numEdges, contactTraced = runModel(meanThetas[i, :])
+        times, numInfectedIndices, numRemovedIndices, numContactEdges, numRemovedEdges, contactTraced = runModel(meanThetas[i, :])
+        print("About to plot")
 
         plt.figure(k+0)
         plt.plot(times, numInfectedIndices, label=labels[i])
@@ -91,22 +103,28 @@ def plotResults(meanThetas, labels, k):
         plt.xlabel("Time")
         plt.ylabel("Contact Traced")
         plt.legend()
-        
+   
         plt.figure(k+3)
-        plt.plot(times, numEdges, label=labels[i])
+        plt.plot(times, numContactEdges, label=labels[i])
         plt.xlabel("Time")
-        plt.ylabel("Edges")
+        plt.ylabel("Contact graph size")
+        plt.legend()
+     
+        plt.figure(k+4)
+        plt.plot(times, numRemovedEdges, label=labels[i])
+        plt.xlabel("Time")
+        plt.ylabel("Removed graph size")
         plt.legend()
 
-numPlots = 3
+numPlots = 5
 i = 0
 
 plotInitialInfects = False 
 plotAlpha = False 
 plotGamma = False 
-plotBeta = False 
+plotBeta = True 
 plotLambda = False 
-plotSigma = True
+plotSigma = False
  
 #Number of initial infects 
 if plotInitialInfects: 
@@ -169,13 +187,14 @@ if plotLambda:
 
 #sigma - infection rate 
 if plotSigma: 
-    meanThetas = [[ 50,   0.7,    0.0,    0.0,    100,        0.1,      0.0]]
-    meanThetas.append([ 50,   0.7,    0.0,    0.0,    100,        0.1,      0.004])
-    meanThetas.append([ 50,   0.7,    0.0,    0.0,    100,        0.1,      0.016])
-    meanThetas.append([ 50,   0.7,    0.0,    0.0,    100,        0.1,      0.064])
-    meanThetas.append([ 50,   0.7,    0.0,    0.0,    100,        0.1,      0.256])
+    meanThetas = [[ 10,   0.9,    0.0,    0.0,    100,        0.1,      0.0]]
+    meanThetas.append([ 10,   0.9,    0.0,    0.0,    100,        0.1,      0.001])
+    meanThetas.append([ 10,   0.9,    0.0,    0.0,    100,        0.1,      0.002])
+    meanThetas.append([ 10,   0.9,    0.0,    0.0,    100,        0.1,      0.004])
+    meanThetas.append([ 10,   0.9,    0.0,    0.0,    100,        0.1,      0.008])
     meanThetas = numpy.array(meanThetas)
-    labels = ["sigma=0.0", "sigma=0.004", "sigma=0.016", "sigma=0.064", "sigma=0.256"]
+    labels = ["sigma=0.0", "sigma=0.001", "sigma=0.002", "sigma=0.004", "sigma=0.008"]
+    #labels = ["sigma=0.0", "sigma=0.004"]
     plotResults(meanThetas, labels, i)
     i += numPlots
 
