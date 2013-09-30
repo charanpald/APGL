@@ -119,7 +119,10 @@ class HIVGraph(CsArrayGraph):
         """
         
         vertexArray = self.getVertexList().getVertices()
-        inds = numpy.arange(self.getNumVertices())[numpy.logical_and(vertexArray[:, HIVVertices.infectionTimeIndex] <= t, vertexArray[:, HIVVertices.infectionTimeIndex] >= 0)]
+        boolInds = numpy.logical_and(vertexArray[:, HIVVertices.infectionTimeIndex] < t, vertexArray[:, HIVVertices.infectionTimeIndex] >= 0)
+        boolInds2 = numpy.logical_not(numpy.logical_and(vertexArray[:, HIVVertices.detectionTimeIndex] <= t, vertexArray[:, HIVVertices.detectionTimeIndex] >= 0))
+        boolInds = numpy.logical_and(boolInds, boolInds2)
+        inds = numpy.arange(self.getNumVertices())[boolInds]
         
         return inds
         
