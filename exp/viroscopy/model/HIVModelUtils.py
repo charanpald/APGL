@@ -125,7 +125,7 @@ class HIVModelUtils(object):
             graphStats = graphStats.sequenceScalarStats(graph, inds, slowStats=False)
             graphStatsList.append(graphStats)
         
-        return vertexArray, graphStatsList[0], graphStatsList[1]
+        return vertexArray, infectedIndices, removedIndices, graphStatsList[0], graphStatsList[1]
     
     toyTestPeriod = 250 
     realTestPeriods = [365, 365, 365, 730]
