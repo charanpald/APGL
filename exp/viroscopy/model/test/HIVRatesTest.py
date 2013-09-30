@@ -3,7 +3,7 @@ import numpy
 import unittest
 import scipy.stats 
 import logging
-
+import numpy.testing as nptst 
 from exp.viroscopy.model.HIVRates import HIVRates
 from exp.viroscopy.model.HIVGraph import HIVGraph
 from exp.viroscopy.model.HIVVertices import HIVVertices
@@ -40,7 +40,7 @@ class  HIVRateFuncsTestCase(unittest.TestCase):
         self.assertEquals(rates.expandedDegSeqBiMales.shape[0], hiddenDegSeq[biMaleInds].sum()*rates.p)
 
         for i in range(numVertices):
-            self.assertTrue((rates.contactTimesArr[i, :] == numpy.array([-float('inf'), -float('inf')])).all())
+            self.assertEquals(rates.contactTimesArr[i], -1)
 
         rates.contactEvent(0, 9, 0.1)
         rates.contactEvent(0, 3, 0.2)
@@ -48,9 +48,9 @@ class  HIVRateFuncsTestCase(unittest.TestCase):
         self.assertEquals(graph.getEdge(0, 3), 0.2)
         self.assertEquals(graph.getEdge(0, 9), 0.1)
 
-        self.assertTrue((rates.contactTimesArr[0, :] == numpy.array([3, 0.2])).all())
-        self.assertTrue((rates.contactTimesArr[9, :] == numpy.array([0, 0.1])).all())
-        self.assertTrue((rates.contactTimesArr[3, :] == numpy.array([0, 0.2])).all())
+        self.assertTrue((rates.contactTimesArr[0] == numpy.array([3])).all())
+        self.assertTrue((rates.contactTimesArr[9] == numpy.array([0])).all())
+        self.assertTrue((rates.contactTimesArr[3] == numpy.array([0])).all())
 
         for i in range(numVertices):
             self.assertTrue((rates.neighboursList[i] == graph.neighbours(i)).all())
@@ -124,16 +124,18 @@ class  HIVRateFuncsTestCase(unittest.TestCase):
         for i in range(5):
             rates.contactEvent(i, i+5, t)
 
-        logging.debug("Rates with default C=" + str(rates.newContactChance))
+        rates.alpha = 1.0
+        logging.debug("Rates with default alpha=" + str(rates.alpha))
         contactRateInds, contactRates = rates.contactRates(range(numVertices), contactList, 0.4)
+
 
         for i in range(5):
             self.assertTrue(contactRates[i] == rates.contactRate)
             self.assertTrue(contactRateInds[i] == i+5)
 
-        #Now try changing C
-        logging.debug("Rates with C=0.1")
-        rates.setNewContactChance(0.1)
+        #Now try changing alpha
+        logging.debug("Rates with alpha=0.5")
+        rates.setAlpha(0.5)
         contactRateInds, contactRates = rates.contactRates(range(numVertices), contactList, 0.4)
         #Observed probabilities change as expected
 
@@ -261,9 +263,9 @@ class  HIVRateFuncsTestCase(unittest.TestCase):
         rates = HIVRates(graph, hiddenDegSeq)
         infectedList = [0, 2, 9]
 
-        rdRates = rates.randomDetectionRates(infectedList, t)
+        rdRates = rates.randomDetectionRates(infectedList, float(graph.size - len(graph.getRemovedSet())))
 
-        self.assertTrue((rdRates == numpy.ones(len(infectedList))*rates.randDetectRate).all())
+        nptst.assert_array_almost_equal(rdRates, numpy.ones(len(infectedList))*rates.randDetectRate*len(infectedList)/float(graph.size - len(graph.getRemovedSet())))
 
     def testInfectionProbability(self):
         undirected = True
@@ -325,6 +327,46 @@ class  HIVRateFuncsTestCase(unittest.TestCase):
         self.assertEquals(rates.expandedDegSeqMales.shape[0], hiddenDegSeq[maleInds].sum()*rates.p)
         self.assertEquals(rates.expandedDegSeqBiMales.shape[0], hiddenDegSeq[biMaleInds].sum()*rates.p)
 
+
+    def testUpperDetectionRates(self): 
+        """
+        See if the upper bound on detection rates is correct 
+        """
+        undirected = True
+        numVertices = 10
+        graph = HIVGraph(numVertices, undirected)
+        hiddenDegSeq = self.gen.rvs(size=graph.getNumVertices())
+        rates = HIVRates(graph, hiddenDegSeq)
+        t = 0.1
+        
+        graph.getVertexList().setInfected(0, t)
+        graph.getVertexList().setInfected(1, t)
+        graph.getVertexList().setInfected(8, t)
+        
+        t = 0.2
+        rates.removeEvent(8, HIVVertices.randomDetect, t)
+        rates.infectionProbability = 1.0
+        
+        infectedList = graph.infectedIndsAt(t)
+        removedList = graph.removedIndsAt(t)
+        n = graph.size-removedList
+        self.assertEquals(rates.upperDetectionRates(infectedList, n), rates.randomDetectionRates(infectedList, n, seed=21).sum()) 
+        
+        t = 0.3
+        rates.contactEvent(0, 2, t)
+        graph.vlist.setInfected(2, t)
+        
+        t = 0.4
+        rates.removeEvent(0, HIVVertices.randomDetect, t)
+        
+        infectedList = graph.infectedIndsAt(t)
+        removedSet = graph.removedIndsAt(t)
+        removedSet = set(removedSet.tolist())
+        print(infectedList, removedSet)
+        nptst.assert_array_almost_equal(rates.contactTracingRates(infectedList, removedSet, t + rates.ctStartTime + 1), numpy.array([0, rates.ctRatePerPerson]))
+        
+        upperDetectionRates = rates.ctRatePerPerson + rates.randomDetectionRates(infectedList, n, seed=21).sum()
+        self.assertEquals(rates.upperDetectionRates(infectedList, n), upperDetectionRates) 
 
 if __name__ == '__main__':
     unittest.main()
