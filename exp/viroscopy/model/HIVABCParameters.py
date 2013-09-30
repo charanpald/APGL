@@ -58,13 +58,6 @@ class HIVABCParameters(object):
         ind += 1
         mu = meanTheta[ind]
         sigma = sigmaTheta[ind]
-        priorDist, priorDensity = self.createDiscTruncNormParam(float(sigma), float(mu), self.upperMaxDetects, 1)
-        perturbationKernel, perturbationKernelDensity = self.__createNormalDiscPurt(sigma, purtScale)
-        self.__addParameter(("rates", "setMaxDetects"), priorDist, priorDensity, perturbationKernel, perturbationKernelDensity)
-
-        ind += 1
-        mu = meanTheta[ind]
-        sigma = sigmaTheta[ind]
         priorDist, priorDensity = self.createGammaParam(sigma, mu)
         perturbationKernel, perturbationKernelDensity = self.__createNormalPurt(sigma, purtScale)
         self.__addParameter(("rates", "setContactRate"), priorDist, priorDensity, perturbationKernel, perturbationKernelDensity)
