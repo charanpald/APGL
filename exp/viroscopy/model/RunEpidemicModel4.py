@@ -24,10 +24,9 @@ numpy.seterr(all='raise')
 numpy.random.seed(24)
 numpy.set_printoptions(suppress=True, precision=4, linewidth=100)
 
-
 def runModel(meanTheta): 
     startDate, endDate, recordStep, M, targetGraph = HIVModelUtils.toySimulationParams()
-    endDate = 2000.0
+    endDate = 1000.0
     recordStep = 50 
     undirected = True
 
@@ -39,6 +38,7 @@ def runModel(meanTheta):
     numContactEdges = []
     
     statistics = GraphStatistics()
+    statsTimes  = numpy.arange(0, endDate, recordStep)
     
     for i in range(numReps): 
         graph = HIVGraph(M, undirected)
@@ -57,15 +57,14 @@ def runModel(meanTheta):
         model.setParams(meanTheta)
         times, infectedIndices, removedIndices, graph = model.simulate(True)
         
-        vertexArray, contactGraphStats, removedGraphStats = HIVModelUtils.generateStatistics(graph, times)
+        
+        vertexArray, infectedIndices, removedIndices, contactGraphStats, removedGraphStats = HIVModelUtils.generateStatistics(graph, statsTimes)
     
         numInfectedIndices.append([len(x) for x in infectedIndices]) 
         numRemovedIndices.append([len(x) for x in removedIndices])
         
         numContactEdges.append(contactGraphStats[:, statistics.numVerticesIndex])
         numRemovedEdges.append(removedGraphStats[:, statistics.numVerticesIndex])
-        
-        
         
     numInfectedIndices = numpy.array(numInfectedIndices)
     numInfectedIndices = numpy.mean(numInfectedIndices, 0)
@@ -79,7 +78,7 @@ def runModel(meanTheta):
     numRemovedEdges = numpy.array(numRemovedEdges)
     numRemovedEdges = numpy.mean(numRemovedEdges, 0)
     
-    return times, numInfectedIndices, numRemovedIndices, numContactEdges, numRemovedEdges, vertexArray[:, 6]
+    return statsTimes, numInfectedIndices, numRemovedIndices, numContactEdges, numRemovedEdges, vertexArray[:, 6]
 
 def plotResults(meanThetas, labels, k): 
     for i in range(meanThetas.shape[0]): 
@@ -122,15 +121,15 @@ i = 0
 plotInitialInfects = False 
 plotAlpha = False 
 plotGamma = False 
-plotBeta = True 
+plotBeta = False 
 plotLambda = False 
-plotSigma = False
+plotSigma = True
  
 #Number of initial infects 
 if plotInitialInfects: 
-    meanThetas = [[ 40,   0.9,    0.1,    0.00,    100,        0.1,      0.001]]
-    meanThetas.append([ 50,   0.9,    0.1,    0.0,    100,        0.1,      0.001])
-    meanThetas.append([ 60,   0.9,    0.1,    0.0,    100,        0.1,      0.001])
+    meanThetas = [[ 40,   0.9,    0.1,    0.00,        0.1,      0.001]]
+    meanThetas.append([ 50,   0.9,    0.1,    0.0,            0.1,      0.001])
+    meanThetas.append([ 60,   0.9,    0.1,    0.0,            0.1,      0.001])
     meanThetas = numpy.array(meanThetas)
     labels = ["I_0=40", "I_0=50", "I_0=60"]
     plotResults(meanThetas, labels, i)
@@ -139,11 +138,11 @@ if plotInitialInfects:
 
 #alpha
 if plotAlpha: 
-    meanThetas = [[ 50,   0.6,    0.1,    0.0,    100,        0.1,      0.001]]
-    meanThetas.append([ 50,   0.7,    0.1,    0.0,    100,        0.1,      0.001])
-    meanThetas.append([ 50,   0.8,    0.1,    0.0,    100,        0.1,      0.001])
-    meanThetas.append([ 50,   0.9,    0.1,    0.0,    100,        0.1,      0.001])
-    meanThetas.append([ 50,   1.0,    0.1,    0.0,    100,        0.1,      0.001])
+    meanThetas = [[ 50,   0.6,    0.1,    0.0,            0.1,      0.001]]
+    meanThetas.append([ 50,   0.7,    0.1,    0.0,            0.1,      0.001])
+    meanThetas.append([ 50,   0.8,    0.1,    0.0,            0.1,      0.001])
+    meanThetas.append([ 50,   0.9,    0.1,    0.0,            0.1,      0.001])
+    meanThetas.append([ 50,   1.0,    0.1,    0.0,            0.1,      0.001])
     meanThetas = numpy.array(meanThetas)
     labels = ["alpha=0.6", "alpha=0.7", "alpha=0.8", "alpha=0.9", "alpha=1.0"]
     plotResults(meanThetas, labels, i)
@@ -152,10 +151,10 @@ if plotAlpha:
 
 #gamma - random detection rate 
 if plotGamma: 
-    meanThetas = [[ 50,   0.9,    0.00,    0.01,    100,        0.1,      0.001]]
-    meanThetas.append([ 50,   0.9,    0.05,    0.01,    100,        0.1,      0.001])
-    meanThetas.append([ 50,   0.9,    0.10,    0.01,    100,        0.1,      0.001])
-    meanThetas.append([ 50,   0.9,    0.20,    0.01,    100,        0.1,      0.001])
+    meanThetas = [[ 50,   0.9,    0.00,    0.01,            0.1,      0.001]]
+    meanThetas.append([ 50,   0.9,    0.05,    0.01,            0.1,      0.001])
+    meanThetas.append([ 50,   0.9,    0.10,    0.01,            0.1,      0.001])
+    meanThetas.append([ 50,   0.9,    0.20,    0.01,            0.1,      0.001])
     meanThetas = numpy.array(meanThetas)
     labels = ["gamma=0.00", "gamma=0.05", "gamma=0.10", "gamma=0.2"]
     plotResults(meanThetas, labels, i)
@@ -163,23 +162,23 @@ if plotGamma:
 
 #beta - contact detection rate 
 if plotBeta: 
-    meanThetas = [[ 50,   0.9,    0.01,    0.01,    1000,        0.1,      0.001]]
-    meanThetas.append([ 50,   0.9,    0.01,    0.02,    1000,        0.1,      0.001])
-    meanThetas.append([ 50,   0.9,    0.01,    0.04,    1000,        0.1,      0.001])
-    meanThetas.append([ 50,   0.9,    0.01,    0.08,    1000,        0.1,      0.001])
-    meanThetas.append([ 50,   0.9,    0.01,    0.16,    1000,        0.1,      0.001])
-    meanThetas.append([ 50,   0.9,    0.01,    0.32,    1000,        0.1,      0.001])
+    meanThetas = [[ 50,   0.9,    0.01,    0.005,            0.1,      0.01]]
+    meanThetas.append([ 50,   0.9,    0.01,    0.01,            0.1,      0.01])
+    meanThetas.append([ 50,   0.9,    0.01,    0.02,            0.1,      0.01])
+    meanThetas.append([ 50,   0.9,    0.01,    0.04,            0.1,      0.01])
+    meanThetas.append([ 50,   0.9,    0.01,    0.08,            0.1,      0.01])
+    meanThetas.append([ 50,   0.9,    0.01,    0.16,            0.1,      0.01])
     meanThetas = numpy.array(meanThetas)
-    labels = ["beta=0.01", "beta=0.02", "beta=0.04", "beta=0.08", "beta=0.16", "beta=0.32"]
+    labels = ["beta=0.05", "beta=0.01", "beta=0.02", "beta=0.04", "beta=0.08", "beta=0.16"]
     plotResults(meanThetas, labels, i)
     i += numPlots
 
 #lambda - contact rate 
 if plotLambda: 
-    meanThetas = [[ 50,   0.9,    0.1,    0.01,    100,        0.05,      0.001]]
-    meanThetas.append([ 50,   0.9,    0.1,    0.01,    100,        0.1,      0.001])
-    meanThetas.append([ 50,   0.9,    0.1,    0.01,    100,        0.15,      0.001])
-    meanThetas.append([ 50,   0.9,    0.1,    0.01,    100,        0.2,      0.001])
+    meanThetas = [[ 50,   0.9,    0.1,    0.01,            0.05,      0.001]]
+    meanThetas.append([ 50,   0.9,    0.1,    0.01,            0.1,      0.001])
+    meanThetas.append([ 50,   0.9,    0.1,    0.01,            0.15,      0.001])
+    meanThetas.append([ 50,   0.9,    0.1,    0.01,            0.2,      0.001])
     meanThetas = numpy.array(meanThetas)
     labels = ["lambda=0.05", "lambda=0.1", "lambda=0.15", "lambda=0.2"]
     plotResults(meanThetas, labels, i)
@@ -187,13 +186,11 @@ if plotLambda:
 
 #sigma - infection rate 
 if plotSigma: 
-    meanThetas = [[ 10,   0.9,    0.0,    0.0,    100,        0.1,      0.0]]
-    meanThetas.append([ 10,   0.9,    0.0,    0.0,    100,        0.1,      0.001])
-    meanThetas.append([ 10,   0.9,    0.0,    0.0,    100,        0.1,      0.002])
-    meanThetas.append([ 10,   0.9,    0.0,    0.0,    100,        0.1,      0.004])
-    meanThetas.append([ 10,   0.9,    0.0,    0.0,    100,        0.1,      0.008])
+    meanThetas = [[ 10,   0.9,    0.0,    0.0,            0.1,      0.01]]
+    meanThetas.append([ 10,   0.9,    0.0,    0.0,            0.1,      0.1])
+    meanThetas.append([ 10,   0.9,    0.0,    0.0,            0.1,      0.5])
     meanThetas = numpy.array(meanThetas)
-    labels = ["sigma=0.0", "sigma=0.001", "sigma=0.002", "sigma=0.004", "sigma=0.008"]
+    labels = ["sigma=0.01", "sigma=0.1", "sigma=0.5"]
     #labels = ["sigma=0.0", "sigma=0.004"]
     plotResults(meanThetas, labels, i)
     i += numPlots
