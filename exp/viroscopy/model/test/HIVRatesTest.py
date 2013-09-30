@@ -170,6 +170,27 @@ class  HIVRateFuncsTestCase(unittest.TestCase):
         self.assertTrue(numpy.intersect1d(contactRateInds, numpy.array(removedList)).shape[0]==0)        
             
 
+    def testContactRates3(self): 
+        #Figure out why infection does not explode when we set infection probability 
+        #to a high value and do not detect 
+        
+        undirected = True
+        numVertices = 20
+        graph = HIVGraph(numVertices, undirected)
+        hiddenDegSeq = self.gen.rvs(size=graph.getNumVertices())
+        rates = HIVRates(graph, hiddenDegSeq)
+        t = 0.1
+        
+        for i in range(10): 
+            graph.getVertexList().setInfected(i, t)
+        
+        t = 0.2
+        infectedList = graph.infectedIndsAt(t)
+        contactList = range(0, numVertices)
+        contactRateInds, contactRates = rates.contactRates(infectedList, contactList, t)
+        
+        print(contactRateInds, contactRates)
+
     def testContactTracingRate(self):
         undirected = True
         numVertices = 10
@@ -362,7 +383,7 @@ class  HIVRateFuncsTestCase(unittest.TestCase):
         infectedList = graph.infectedIndsAt(t)
         removedSet = graph.removedIndsAt(t)
         removedSet = set(removedSet.tolist())
-        print(infectedList, removedSet)
+
         nptst.assert_array_almost_equal(rates.contactTracingRates(infectedList, removedSet, t + rates.ctStartTime + 1), numpy.array([0, rates.ctRatePerPerson]))
         
         upperDetectionRates = rates.ctRatePerPerson + rates.randomDetectionRates(infectedList, n, seed=21).sum()
