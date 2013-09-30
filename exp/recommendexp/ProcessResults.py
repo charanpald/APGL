@@ -15,10 +15,10 @@ from apgl.util.PathDefaults import PathDefaults
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 #For now just print some results for a particular dataset 
-#dataset = "MovieLensDataset"
+dataset = "MovieLensDataset"
 #dataset = "NetflixDataset"
 #dataset = "FlixsterDataset"
-dataset = "SyntheticDataset1"
+#dataset = "SyntheticDataset1"
 #dataset = "EpinionsDataset"
 outputDir = PathDefaults.getOutputDir() + "recommend/" + dataset + "/"
 
@@ -26,20 +26,24 @@ plotStyles = ['k-', 'k--', 'k-.', 'r--', 'r-', 'g-', 'b-', 'b--', 'b-.', 'g--', 
 methods = ["propack", "arpack", "rsvd", "rsvdUpdate2"]
 updateAlgs = ["initial", "zero"]
 
-pq = [(10, 2), (50, 2), (10, 5)]
-#pq = [(10, 3), (50, 2), (50, 3)]
+#pq = [(10, 2), (50, 2), (10, 5)]
+pq = [(10, 3), (50, 2), (50, 3)]
 #fileNames = [outputDir + "ResultsSgdMf.npz"]
 #labels = ["SgdMf"]
 fileNames = []
 labels = []
 
+consise = True
 
 for method in methods:
     for updateAlg in updateAlgs: 
         if updateAlg == "initial": 
-            updateStr = "WR"
+            updateStr = "WR "
         else: 
-            updateStr = "CR"
+            updateStr = "CR "
+        
+        if consise: 
+            updateStr = ""
         
         if method == "propack" or method=="arpack": 
             fileName = outputDir + "ResultsSoftImpute_alg=" + method + "_updateAlg=" + updateAlg + ".npz"
@@ -49,9 +53,9 @@ for method in methods:
             for p, q in pq: 
                 fileName = outputDir + "ResultsSoftImpute_alg=" + method + "_p=" + str(p)+ "_q=" + str(q) + "_updateAlg=" + updateAlg + ".npz"
                 if method == "rsvd": 
-                    labels.append("RSVD " + updateStr + " p=" + str(p)+ " q=" + str(q))
+                    labels.append("RSVD " + updateStr + "p=" + str(p)+ " q=" + str(q))
                 elif method == "rsvdUpdate2": 
-                    labels.append("RSVD+ " + updateStr + " p=" + str(p)+ " q=" + str(q))
+                    labels.append("RSVD+ " + updateStr + "p=" + str(p)+ " q=" + str(q))
                 fileNames.append(fileName)
        
 i = 0       
@@ -80,7 +84,7 @@ for j, fileName in enumerate(fileNames):
         plt.plot(numpy.arange(measures.shape[0]), measures[:, 0], plotStyles[i], label=labels[j])
         plt.xlabel("Matrix no.")        
         plt.ylabel("RMSE Test")
-        plt.legend(loc="upper right") 
+        plt.legend(loc="center right") 
         plt.savefig(outputDir + dataset + "RMSETest.eps")
         
         plt.figure(1)
