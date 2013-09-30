@@ -339,12 +339,12 @@ class HIVRates():
     def randomDetectionRates(self, infectedList, n, seed=21):
         """
         Compute the detection rate of an infected which depends on the entire population.
-        In this case it's randDetectRate/|I_t|. 
+        In this case it's randDetectRate * |I_t| / n since more infectives means the detection
+        rate is higher. The value of n is | I \cup S |.  
         """
-        detectionRates = numpy.zeros(len(infectedList))
         state = numpy.random.get_state()
         numpy.random.seed(seed)
-        detectionRates[:] = self.randDetectRate  * (len(infectedList)/float(n))
+        detectionRates = numpy.ones(len(infectedList)) * self.randDetectRate*len(infectedList)/float(n)
         numpy.random.set_state(state)
         return detectionRates
 
