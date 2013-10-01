@@ -12,7 +12,7 @@ from exp.viroscopy.model.HIVGraphMetrics2 import HIVGraphMetrics2
 from exp.viroscopy.model.HIVVertices import HIVVertices
 from exp.sandbox.GraphMatch import GraphMatch
 from apgl.predictors.ABCSMC import ABCSMC
-
+import os
 import logging
 import sys
 import numpy
@@ -27,12 +27,13 @@ numpy.seterr(invalid='raise')
 
 resultsDir = PathDefaults.getOutputDir() + "viroscopy/toy/" 
 startDate, endDate, recordStep, M, targetGraph = HIVModelUtils.toySimulationParams()
-epsilonArray = numpy.linspace(0.4, 0, 4)
+epsilonArray = numpy.linspace(0.6, 0, 5)
 logging.debug("Total time of simulation is " + str(endDate-startDate))
 
 posteriorSampleSize = 30
-breakDist = 0.5
+breakDist = 0.7
 logging.debug("Posterior sample size " + str(posteriorSampleSize))
+print(epsilonArray)
 
 def createModel(t):
     """
@@ -58,6 +59,7 @@ def createModel(t):
 
     rates = HIVRates(graph, hiddenDegSeq)
     model = HIVEpidemicModel(graph, rates, T=float(endDate), T0=float(startDate), metrics=graphMetrics)
+    #model = HIVEpidemicModel(graph, rates, T=float(endDate), T0=float(startDate), metrics=None)
     model.setRecordStep(recordStep)
 
     return model
@@ -68,15 +70,21 @@ else:
     numProcesses = multiprocessing.cpu_count()
 
 
+
 purtScale = 0.02 
-meanTheta, sigmaTheta = HIVModelUtils.estimatedToyTheta()
+meanTheta, sigmaTheta = HIVModelUtils.toyTheta()
 abcParams = HIVABCParameters(meanTheta, sigmaTheta, purtScale)
 thetaDir = resultsDir + "theta/"
+logging.debug(meanTheta, sigmaTheta)
 
 abcSMC = ABCSMC(epsilonArray, createModel, abcParams, thetaDir, True)
 abcSMC.setPosteriorSampleSize(posteriorSampleSize)
 abcSMC.batchSize = 50
 abcSMC.maxRuns = 2000
+abcSMC.setNumProcesses(numProcesses)
+
+os.system('taskset -p 0xffffffff %d' % os.getpid())
+
 thetasArray = abcSMC.run()
 
 meanTheta = numpy.mean(thetasArray, 0)
