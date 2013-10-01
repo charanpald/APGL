@@ -113,7 +113,6 @@ class HIVEpidemicModel():
             assert (randomDetectRates == numpy.abs(randomDetectRates)).all()
             
             assert (contactTracingRates!=0).sum() <= self.rates.maxDetects 
-            assert (randomDetectRates!=0).sum() <= self.rates.maxDetects 
 
             sigmat = contactRates.sum()
             muRSt = numpy.sum(randomDetectRates)
