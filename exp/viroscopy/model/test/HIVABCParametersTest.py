@@ -30,9 +30,9 @@ class  HIVABCParametersTest(unittest.TestCase):
         hiddenDegSeq = Util.randomChoice(p, graph.getNumVertices())
         rates = HIVRates(graph, hiddenDegSeq)
 
-        self.numParams = 8
+        self.numParams = 6
         self.graph = graph
-        self.meanTheta = numpy.array([50, 1.0, 0.5, 1.0/800, 0.01, 10, 0.01, 38.0/1000])
+        self.meanTheta = numpy.array([100, 0.9, 0.05, 0.001, 0.1, 0.005])
         self.hivAbcParams = HIVABCParameters(self.meanTheta, self.meanTheta/2)
         
 
@@ -40,15 +40,15 @@ class  HIVABCParametersTest(unittest.TestCase):
         self.hivAbcParams.getParamFuncs()
 
     def testSampleParams(self):
-        repetitions = 1000
-        thetas = numpy.zeros((repetitions, 8))
+        repetitions = 2000
+        thetas = numpy.zeros((repetitions, self.numParams))
 
         for i in range(repetitions): 
             thetas[i, :] = self.hivAbcParams.sampleParams()            
-        
+                
         #The deviation is half the mean       
-        self.assertTrue(numpy.linalg.norm(numpy.mean(thetas, 0) - self.meanTheta) < 2)
-        self.assertTrue(numpy.linalg.norm(numpy.std(thetas, 0) - self.meanTheta/2) < 2)
+        self.assertTrue(numpy.linalg.norm(numpy.mean(thetas, 0)/self.meanTheta - numpy.ones(self.numParams)) < 2)
+        self.assertTrue(numpy.linalg.norm(numpy.std(thetas, 0)/self.meanTheta) < 2)
 
         self.hivAbcParams = HIVABCParameters(self.meanTheta, self.meanTheta/10, 0.1)
 
@@ -56,8 +56,8 @@ class  HIVABCParametersTest(unittest.TestCase):
             thetas[i, :] = self.hivAbcParams.sampleParams()            
         
         #The deviation is half the mean         
-        self.assertTrue(numpy.linalg.norm(numpy.mean(thetas, 0) - self.meanTheta) < 2)
-        self.assertTrue(numpy.linalg.norm(numpy.std(thetas, 0) - self.meanTheta/10) < 0.7)
+        self.assertTrue(numpy.linalg.norm(numpy.mean(thetas, 0)/self.meanTheta - numpy.ones(self.numParams)) < 2)
+        self.assertTrue(numpy.linalg.norm(numpy.std(thetas, 0)/self.meanTheta) < 2)
 
     def testPriorDensity(self):
         repetitions = 1000
@@ -152,6 +152,30 @@ class  HIVABCParametersTest(unittest.TestCase):
         meanTheta = thetas.mean(0)
         self.assertTrue(numpy.linalg.norm(meanTheta - self.hivAbcParams.meanTheta) < 1)
          
+    def testCreateGammaParam(self): 
+        sigma = 0.1
+        mu = 0.2
+        numSamples = 2000
+        sampleArray = numpy.zeros(numSamples)
+
+        for i in range(numSamples):
+            priorDist, priorDensity = self.hivAbcParams.createGammaParam(sigma, mu)
+            sampleArray[i] = priorDist()
+        
+        self.assertTrue(numpy.linalg.norm(mu - numpy.mean(sampleArray)) < 0.5)
+        
+        
+        sigma = 0.0001
+        mu = 0.2
+        numSamples = 2000
+        sampleArray = numpy.zeros(numSamples)
+
+        for i in range(numSamples):
+            priorDist, priorDensity = self.hivAbcParams.createGammaParam(sigma, mu)
+            sampleArray[i] = priorDist()
+            
+        print(numpy.mean(sampleArray))
+
 
 if __name__ == '__main__':
     unittest.main()
