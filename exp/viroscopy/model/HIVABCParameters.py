@@ -24,7 +24,7 @@ class HIVABCParameters(object):
         self.sigmaTheta = sigmaTheta 
         self.purtScale = purtScale 
         self.upperInfected = upperInfected
-        self.upperMaxDetects = 1000
+        self.maxK = 10**5
 
         #Now set up all the parameters
         ind = 0 
@@ -104,7 +104,9 @@ class HIVABCParameters(object):
         theta = sigma**2/mu
         k = mu/theta
 
-        k = min(k, 1000)
+        if k > self.maxK: 
+            k == self.maxK 
+            logging.warn("k for gamma distribution > " + str(self.maxK) + ", clipping")
 
         priorDist = lambda: stats.gamma.rvs(k, scale=theta)
         priorDensity = lambda x: stats.gamma.pdf(x, k, scale=theta)
