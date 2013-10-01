@@ -15,8 +15,8 @@ from apgl.util.PathDefaults import PathDefaults
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 #For now just print some results for a particular dataset 
-dataset = "MovieLensDataset"
-#dataset = "NetflixDataset"
+#dataset = "MovieLensDataset"
+dataset = "NetflixDataset"
 #dataset = "FlixsterDataset"
 #dataset = "SyntheticDataset1"
 #dataset = "EpinionsDataset"
@@ -144,11 +144,11 @@ for j, fileName in enumerate(fileNames):
         means = data["arr_0"]
         stds = data["arr_1"]            
         
-        """
+        
         print(means)
         plt.figure(7+i)
-        ks = numpy.array(2**numpy.arange(3.5, 7.5, 0.5), numpy.int) 
-        rhos = numpy.linspace(0.5, 0.0, 6) 
+        ks = numpy.array(2**numpy.arange(4, 8, 1), numpy.int)
+        rhos = numpy.linspace(0.5, 0.0, 10) 
         plt.title(labels[j])
         plt.contourf(ks, rhos, means, antialiased=True)
         plt.xlabel("k")
@@ -156,7 +156,7 @@ for j, fileName in enumerate(fileNames):
         plt.colorbar()
         print(means)
         plt.savefig((outputDir + dataset + "MS_" + str(labels[j]) + ".eps").replace(" ", "_"))
-        """
+        
         
         
         

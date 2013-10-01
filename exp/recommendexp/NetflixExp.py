@@ -30,9 +30,9 @@ dataArgs.iterStartTimeStamp = time.mktime(datetime(2003,12,31).timetuple())
 
 # Arguments related to the algorithm
 defaultAlgoArgs = argparse.Namespace()
-defaultAlgoArgs.ks = numpy.array(2**numpy.arange(4, 8, 1), numpy.int)
-defaultAlgoArgs.rhos = numpy.linspace(0.5, 0.0, 10)  
-defaultAlgoArgs.folds = 4
+defaultAlgoArgs.ks = numpy.array(2**numpy.arange(3, 7.5), numpy.int) 
+defaultAlgoArgs.rhos = numpy.flipud(numpy.arange(0.05, 0.45, 0.05))
+defaultAlgoArgs.folds = 5
 
 # init (reading/writting command line arguments)
 # data args parser #
