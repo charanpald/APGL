@@ -30,7 +30,7 @@ class HIVModelUtils(object):
     @staticmethod
     def toyTheta(): 
         theta = numpy.array([100, 0.9, 0.05, 0.001, 0.1, 0.005])
-        sigmaTheta = theta/100.0
+        sigmaTheta = theta/10.0
         return theta, sigmaTheta 
         
     @staticmethod 
