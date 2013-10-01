@@ -1,5 +1,5 @@
 """
-A script to estimate the HIV epidemic model parameters using ABC.
+A script to estimate the HIV epidemic model parameters using ABC for the toy data.
 """
 
 from apgl.util import *
@@ -20,6 +20,11 @@ import multiprocessing
 
 assert False, "Must run with -O flag"
 
+if len(sys.argv) > 1:
+    numProcesses = int(sys.argv[1])
+else: 
+    numProcesses = multiprocessing.cpu_count()
+
 FORMAT = "%(levelname)s:root:%(process)d:%(message)s"
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format=FORMAT)
 numpy.set_printoptions(suppress=True, precision=4, linewidth=150)
@@ -33,6 +38,9 @@ logging.debug("Total time of simulation is " + str(endDate-startDate))
 posteriorSampleSize = 30
 breakDist = 0.7
 logging.debug("Posterior sample size " + str(posteriorSampleSize))
+alpha = 2
+zeroVal = 0.9
+matchAlpha = 0.2
 print(epsilonArray)
 
 def createModel(t):
@@ -41,9 +49,6 @@ def createModel(t):
     """
     undirected = True
     graph = HIVGraph(M, undirected)
-    
-    alpha = 2
-    zeroVal = 0.9
     p = Util.powerLawProbs(alpha, zeroVal)
     hiddenDegSeq = Util.randomChoice(p, graph.getNumVertices())
     
@@ -53,25 +58,16 @@ def createModel(t):
     featureInds[HIVVertices.hiddenDegreeIndex] = False 
     featureInds[HIVVertices.stateIndex] = False
     featureInds = numpy.arange(featureInds.shape[0])[featureInds]
-    matcher = GraphMatch("PATH", alpha=0.2, featureInds=featureInds, useWeightM=False)
+    matcher = GraphMatch("PATH", alpha=matchAlpha, featureInds=featureInds, useWeightM=False)
     graphMetrics = HIVGraphMetrics2(targetGraph, breakDist, matcher, endDate)
-    #graphMetrics.breakDist = 0.0 
 
     rates = HIVRates(graph, hiddenDegSeq)
     model = HIVEpidemicModel(graph, rates, T=float(endDate), T0=float(startDate), metrics=graphMetrics)
-    #model = HIVEpidemicModel(graph, rates, T=float(endDate), T0=float(startDate), metrics=None)
     model.setRecordStep(recordStep)
 
     return model
 
-if len(sys.argv) > 1:
-    numProcesses = int(sys.argv[1])
-else: 
-    numProcesses = multiprocessing.cpu_count()
-
-
-
-purtScale = 0.02 
+purtScale = 0.05 
 meanTheta, sigmaTheta = HIVModelUtils.toyTheta()
 abcParams = HIVABCParameters(meanTheta, sigmaTheta, purtScale)
 thetaDir = resultsDir + "theta/"
