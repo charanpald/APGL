@@ -79,6 +79,8 @@ for i, endDate in enumerate(endDates):
     if not os.path.exists(thetaDir): 
         os.mkdir(thetaDir)
     
+    epsilonArray = numpy.ones(10)    
+    
     abcSMC = ABCSMC(epsilonArray, createModel, abcParams, thetaDir, True)
     abcSMC.setPosteriorSampleSize(posteriorSampleSize)
     abcSMC.setNumProcesses(numProcesses)
