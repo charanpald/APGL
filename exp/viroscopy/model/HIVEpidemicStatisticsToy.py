@@ -3,6 +3,7 @@ import logging
 import sys 
 import multiprocessing 
 import matplotlib.pyplot as plt 
+import os
 from apgl.graph.GraphStatistics import GraphStatistics 
 from apgl.util.PathDefaults import PathDefaults
 from apgl.util.Util import Util 
@@ -22,13 +23,19 @@ plotStyles = ['k-', 'kx-', 'k+-', 'k.-', 'k*-']
 
 resultsDir = PathDefaults.getOutputDir() + "viroscopy/toy/theta/"
 outputDir = resultsDir + "stats/"
+
+try: 
+    os.mkdir(outputDir)
+except: 
+    pass 
+
 startDate, endDate, recordStep, M, targetGraph = HIVModelUtils.toySimulationParams()
 endDate += HIVModelUtils.toyTestPeriod
 
 saveResults = False 
 graphStats = GraphStatistics()
 
-N = 16 
+N = 20 
 t = 0
 maxT = 10
 
@@ -56,10 +63,11 @@ def saveStats(args):
     featureInds[HIVVertices.stateIndex] = False 
     featureInds = numpy.arange(featureInds.shape[0])[featureInds]        
     
-    matcher = GraphMatch("PATH", alpha=0.5, featureInds=featureInds, useWeightM=False)
+    matcher = GraphMatch("PATH", alpha=0.2, featureInds=featureInds, useWeightM=False)
     graphMetrics = HIVGraphMetrics2(targetGraph, 1.0, matcher, float(endDate))        
     times, infectedIndices, removedIndices, graph = HIVModelUtils.simulate(thetaArray[i], startDate, endDate, recordStep, M, graphMetrics)
-    times, vertexArray, removedGraphStats = HIVModelUtils.generateStatistics(graph, startDate, endDate, recordStep)
+    times = numpy.arange(startDate, endDate+1, recordStep)
+    vertexArray, infectedIndices, removedIndices, contactGraphStats, removedGraphStats = HIVModelUtils.generateStatistics(graph, times)
     stats = times, vertexArray, removedGraphStats, graphMetrics.dists, graphMetrics.graphDists, graphMetrics.labelDists
     resultsFileName = outputDir + "SimStats" + str(i) + ".pkl"
     Util.savePickle(stats, resultsFileName)
@@ -79,7 +87,9 @@ if saveResults:
     pool.terminate()
 
     #Now save the statistics on the target graph 
-    stats = HIVModelUtils.generateStatistics(targetGraph, startDate, endDate, recordStep)
+    times = numpy.arange(startDate, endDate+1, recordStep)
+    vertexArray, infectedIndices, removedIndices, contactGraphStats, removedGraphStats = HIVModelUtils.generateStatistics(targetGraph, times)
+    stats = vertexArray, infectedIndices, removedIndices, contactGraphStats, removedGraphStats
     resultsFileName = outputDir + "IdealStats.pkl"
     Util.savePickle(stats, resultsFileName)
 else:
@@ -95,18 +105,15 @@ else:
     meanTable = numpy.c_[realTheta, thetaArray.mean(0)]
     stdTable = numpy.c_[sigmaTheta, thetaArray.std(0)]
     table = Latex.array2DToRows(meanTable, stdTable, precision=4)
-    rowNames = ["$\\|\\mathcal{I}_0 \\|$", "$\\rho_B$", "$\\alpha$", "$C$", "$\\gamma$", "$\\beta$", "$\\kappa_{max}$", "$\\lambda_H$", "$\\lambda_B$", "$\\sigma_{WM}$",  "$\\sigma_{MW}$","$\\sigma_{MB}$"]
+    rowNames = ["$\\|\\mathcal{I}_0 \\|$", "$\\alpha$", "$\\gamma$", "$\\beta$", "$\\lambda$",  "$\\sigma$"]
     table = Latex.addRowNames(rowNames, table)
     print(table)
 
     resultsFileName = outputDir + "IdealStats.pkl"
     stats = Util.loadPickle(resultsFileName)  
-    timesIdeal, vertexArrayIdeal, removedGraphStats = stats 
-    
-    recordStep = 100
-    endDate = 1500
-    times2 = numpy.arange(startDate, endDate+1, recordStep)  
-    times2 = times2[1:]
+    vertexArrayIdeal, infectedIndices, removedIndices, contactGraphStats, removedGraphStats = stats 
+    times = numpy.arange(startDate, endDate+1, recordStep)  
+    print(times)    
     
     graphStats = GraphStatistics()
     
@@ -114,49 +121,49 @@ else:
     plotInd = 0 
     
     plt.figure(plotInd)
-    plt.plot(timesIdeal, vertexArrayIdeal[:, 0], "r")
+    plt.plot(times, vertexArrayIdeal[:, 0], "r")
     plt.xlabel("Time (days)")
     plt.ylabel("Removed")
     plotInd += 1
     
     plt.figure(plotInd)
-    plt.plot(timesIdeal, vertexArrayIdeal[:, 1], "r")
+    plt.plot(times, vertexArrayIdeal[:, 1], "r")
     plt.xlabel("Time (days)")
     plt.ylabel("Males")
     plotInd += 1
     
     plt.figure(plotInd)
-    plt.plot(timesIdeal, vertexArrayIdeal[:, 2], "r")
+    plt.plot(times, vertexArrayIdeal[:, 2], "r")
     plt.xlabel("Time (days)")
     plt.ylabel("Females")
     plotInd += 1
     
     plt.figure(plotInd)
-    plt.plot(timesIdeal, vertexArrayIdeal[:, 3], "r")
+    plt.plot(times, vertexArrayIdeal[:, 3], "r")
     plt.xlabel("Time (days)")
     plt.ylabel("Hetero")
     plotInd += 1
     
     plt.figure(plotInd)
-    plt.plot(timesIdeal, vertexArrayIdeal[:, 4], "r")
+    plt.plot(times, vertexArrayIdeal[:, 4], "r")
     plt.xlabel("Time (days)")
     plt.ylabel("Bi")
     plotInd += 1
     
     plt.figure(plotInd)
-    plt.plot(timesIdeal, vertexArrayIdeal[:, 5], "r")
+    plt.plot(times, vertexArrayIdeal[:, 5], "r")
     plt.xlabel("Time (days)")
     plt.ylabel("Random detection")
     plotInd += 1
     
     plt.figure(plotInd)
-    plt.plot(timesIdeal, vertexArrayIdeal[:, 6], "r")
+    plt.plot(times, vertexArrayIdeal[:, 6], "r")
     plt.xlabel("Time (days)")
     plt.ylabel("Contact Tracing")
     plotInd += 1
     
     plt.figure(plotInd)
-    plt.plot(timesIdeal, removedGraphStats[:, graphStats.numComponentsIndex], "r")
+    plt.plot(times, removedGraphStats[:, graphStats.numComponentsIndex], "r")
     plt.xlabel("Time (days)")
     plt.ylabel("Number of components")
     plotInd += 1
@@ -218,33 +225,36 @@ else:
         plt.figure(plotInd)
         plt.plot(times, removedGraphStats[:, graphStats.numComponentsIndex], plotStyles[0])
         plotInd += 1
+        
 
         plt.figure(plotInd)
         distPlotInd = plotInd
-        plt.plot(times2, dists, plotStyles[0], label="Distance")
+        plt.plot(times[1:], dists, plotStyles[0], label="Distance")
         plotInd += 1
         distsArr.append(dists)
-        print(numpy.array(distsArr).mean())
+
         
         plt.figure(plotInd)
-        plt.plot(times2, graphDists, plotStyles[0])
+        plt.plot(times[1:], graphDists, plotStyles[0])
         plotInd += 1
         
         plt.figure(plotInd)
-        plt.plot(times2, labelDists, plotStyles[0])
+        plt.plot(times[1:], labelDists, plotStyles[0])
         plotInd += 1
 
     meanDetects = numpy.array(detectsArr).mean(0)
     stdDetects = numpy.array(detectsArr).std(0)
     plt.figure(plotInd)
     plt.errorbar(times, meanDetects, yerr=stdDetects)  
-    plt.plot(timesIdeal, vertexArrayIdeal[:, 0], "r")
+    plt.plot(times, vertexArrayIdeal[:, 0], "r")
     plotInd += 1
+    
     
     meanDists = numpy.array(distsArr).mean(0)
     stdDists = numpy.array(distsArr).std(0)
+    print(len(times), len(meanDists))
     plt.figure(plotInd)
-    plt.errorbar(times2, meanDists, yerr=stdDists) 
+    plt.errorbar(times[1:], meanDists, yerr=stdDists) 
     plotInd += 1
     
     plt.show()
