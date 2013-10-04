@@ -24,7 +24,7 @@ class HIVModelUtils(object):
         This is taken from simulated runs using the real data 
         """
         theta = numpy.array([100, 0.9, 0.5, 0.001, 0.1, 0.005])
-        sigmaTheta = theta/2
+        sigmaTheta = numpy.array([50, 0.3, 0.5, 0.1, 0.1, 0.1])
         return theta, sigmaTheta 
   
     @staticmethod

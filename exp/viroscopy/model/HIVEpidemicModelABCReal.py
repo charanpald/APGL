@@ -33,14 +33,17 @@ numpy.seterr(invalid='raise')
 resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/" 
 startDate, endDates, numRecordSteps, M, targetGraph = HIVModelUtils.realSimulationParams()
 
-epsilonArray = numpy.linspace(0.4, -0.1, 6)
-posteriorSampleSize = 20
+posteriorSampleSize = 50
+pertScale = 0.05
+abcMaxRuns = 1500
+numEpsilons = 10
+
 breakDist = 0.7
 alpha = 2
 zeroVal = 0.9
 matchAlpha = 0.2
+
 logging.debug("Posterior sample size " + str(posteriorSampleSize))
-logging.debug("epsilon = " + str(epsilonArray))
 
 for i, endDate in enumerate(endDates): 
     logging.debug("="*10 + "Starting new simulation batch" + "="*10) 
@@ -71,7 +74,6 @@ for i, endDate in enumerate(endDates):
     
         return model
 
-    pertScale = 0.05
     meanTheta, sigmaTheta = HIVModelUtils.estimatedRealTheta()
     abcParams = HIVABCParameters(meanTheta, sigmaTheta, pertScale)
     thetaDir = resultsDir + "theta" + str(i) + "/"
@@ -79,13 +81,13 @@ for i, endDate in enumerate(endDates):
     if not os.path.exists(thetaDir): 
         os.mkdir(thetaDir)
     
-    epsilonArray = numpy.ones(10)    
+    epsilonArray = numpy.ones(numEpsilons)    
     
     abcSMC = ABCSMC(epsilonArray, createModel, abcParams, thetaDir, True)
     abcSMC.setPosteriorSampleSize(posteriorSampleSize)
     abcSMC.setNumProcesses(numProcesses)
     abcSMC.batchSize = 50
-    abcSMC.maxRuns = 1500
+    abcSMC.maxRuns = abcMaxRuns
     thetasArray = abcSMC.run()
     
     meanTheta = numpy.mean(thetasArray, 0)

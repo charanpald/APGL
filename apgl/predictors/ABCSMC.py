@@ -54,7 +54,7 @@ def runModel(args):
     return 0, 0 
             
 class ABCSMC(object):
-    def __init__(self, epsilonArray, createModel, paramsObj, thetaDir, autoEpsilon=False):
+    def __init__(self, epsilonArray, createModel, paramsObj, thetaDir, autoEpsilon=False, eps=0.02):
         """
         Create a multiprocessing SMCABC object with the given arguments. The aim
         is to estimate a posterior pi(theta| x) propto f(x|theta) pi(theta) without
@@ -90,7 +90,7 @@ class ABCSMC(object):
         self.numRuns = numpy.zeros(self.T) 
         self.numAccepts = numpy.zeros(self.T)
         self.maxRuns = 1000
-        self.epsThreshold = 0.02 
+        self.epsThreshold = eps 
 
     def setPosteriorSampleSize(self, posteriorSampleSize):
         """
