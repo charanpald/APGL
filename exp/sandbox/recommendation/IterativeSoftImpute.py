@@ -325,7 +325,7 @@ class IterativeSoftImpute(AbstractMatrixCompleter):
 
         for i, (trainInds, testInds) in enumerate(cvInds):
             Util.printIteration(i, 1, len(cvInds), "Fold: ")
-
+            print(type(X))
             trainX = SparseUtils.submatrix(X, trainInds)
             testX = SparseUtils.submatrix(X, testInds)
 

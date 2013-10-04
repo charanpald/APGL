@@ -14,8 +14,8 @@ from exp.recommendexp.Static2IdValDataset import Static2IdValDataset
 from apgl.util.PathDefaults import PathDefaults
 
 #Uncomment this for the final run 
-if __debug__: 
-    raise RuntimeError("Must run python with -O flag")
+#if __debug__: 
+#    raise RuntimeError("Must run python with -O flag")
 
 numpy.random.seed(21)
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
