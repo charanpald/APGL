@@ -16,8 +16,8 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 #For now just print some results for a particular dataset 
 #dataset = "MovieLensDataset"
-dataset = "NetflixDataset"
-#dataset = "FlixsterDataset"
+#dataset = "NetflixDataset"
+dataset = "FlixsterDataset"
 #dataset = "SyntheticDataset1"
 #dataset = "EpinionsDataset"
 outputDir = PathDefaults.getOutputDir() + "recommend/" + dataset + "/"
@@ -82,35 +82,35 @@ for j, fileName in enumerate(fileNames):
         print(i)
         plt.figure(0)
         plt.plot(numpy.arange(measures.shape[0]), measures[:, 0], plotStyles[i], label=labels[j])
-        plt.xlabel("Matrix no.")        
-        plt.ylabel("RMSE Test")
+        plt.xlabel("matrix no.")        
+        plt.ylabel("RMSE test")
         plt.legend(loc="center right") 
         plt.savefig(outputDir + dataset + "RMSETest.eps")
         
         plt.figure(1)
         plt.plot(numpy.arange(measures.shape[0]), measures[:, 1], plotStyles[i], label=labels[j])
-        plt.xlabel("Matrix no.")        
-        plt.ylabel("MAE Test")
+        plt.xlabel("matrix no.")        
+        plt.ylabel("MAE test")
         plt.legend(loc="lower left") 
         
         if measures.shape[1] == 3:
             plt.figure(2)
             plt.plot(numpy.arange(measures.shape[0]), measures[:, 2], plotStyles[i], label=labels[j])
             plt.legend(loc="upper left") 
-            plt.xlabel("Matrix no.")
-            plt.ylabel("RMSE Train")
+            plt.xlabel("matrix no.")
+            plt.ylabel("RMSE train")
             plt.savefig(outputDir + dataset + "RMSETrain.eps")
         
         plt.figure(3)
         plt.plot(numpy.arange(metadata.shape[0]), metadata[:, 0], plotStyles[i], label=labels[j])
         plt.legend() 
-        plt.xlabel("Matrix no.")
-        plt.ylabel("Rank")
+        plt.xlabel("matrix no.")
+        plt.ylabel("rank")
         
         plt.figure(4)
         plt.plot(numpy.arange(metadata.shape[0]), numpy.cumsum(metadata[:, 2]), plotStyles[i], label=labels[j])
         plt.legend(loc="upper left") 
-        plt.xlabel("Matrix no.")
+        plt.xlabel("matrix no.")
         plt.ylabel("time (s)")
         print("time="+str(numpy.cumsum(metadata[:, 2])))
         plt.savefig(outputDir + dataset + "Times.eps")        
@@ -118,7 +118,7 @@ for j, fileName in enumerate(fileNames):
         plt.figure(5)
         plt.plot(numpy.arange(metadata.shape[0]), numpy.log10(numpy.cumsum(metadata[:, 2])), plotStyles[i], label=labels[j])
         plt.legend(loc="lower right") 
-        plt.xlabel("Matrix no.")
+        plt.xlabel("matrix no.")
         plt.ylabel("log(time) (s)")
         print("time="+str(numpy.cumsum(metadata[:, 2])))
         plt.savefig(outputDir + dataset + "LogTimes.eps")
@@ -147,8 +147,8 @@ for j, fileName in enumerate(fileNames):
         
         print(means)
         plt.figure(7+i)
-        ks = numpy.array(2**numpy.arange(4, 8, 1), numpy.int)
-        rhos = numpy.linspace(0.5, 0.0, 10) 
+        ks = numpy.array(2**numpy.arange(3, 7.5), numpy.int) 
+        rhos = numpy.flipud(numpy.arange(0.05, 0.45, 0.05)) 
         plt.title(labels[j])
         plt.contourf(ks, rhos, means, antialiased=True)
         plt.xlabel("k")
