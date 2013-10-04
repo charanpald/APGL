@@ -19,29 +19,39 @@ assert False, "Must run with -O flag"
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 numpy.set_printoptions(suppress=True, precision=4, linewidth=150)
 
-plotStyles = ['k-', 'kx-', 'k+-', 'k.-', 'k*-']
+processReal = True
+saveResults = False 
 
-resultsDir = PathDefaults.getOutputDir() + "viroscopy/toy/theta/"
-outputDir = resultsDir + "stats/"
+if processReal: 
+    ind = 0 
+    resultsDir = PathDefaults.getOutputDir() + "viroscopy/real/theta" + str(ind) + "/"
+    outputDir = resultsDir + "stats/"
+    startDate, endDates, numRecordSteps, M, targetGraph = HIVModelUtils.realSimulationParams()
+    endDate = endDates[ind]
+    recordStep = (endDate-startDate)/float(numRecordSteps)
+    #endDate += HIVModelUtils.toyTestPeriod
+    realTheta, sigmaTheta = HIVModelUtils.estimatedRealTheta()
+else: 
+    resultsDir = PathDefaults.getOutputDir() + "viroscopy/toy/theta/"
+    outputDir = resultsDir + "stats/"
+    startDate, endDate, recordStep, M, targetGraph = HIVModelUtils.toySimulationParams()
+    endDate += HIVModelUtils.toyTestPeriod
+    realTheta, sigmaTheta = HIVModelUtils.toyTheta()
 
 try: 
     os.mkdir(outputDir)
 except: 
     pass 
 
-startDate, endDate, recordStep, M, targetGraph = HIVModelUtils.toySimulationParams()
-endDate += HIVModelUtils.toyTestPeriod
-
-saveResults = False 
 graphStats = GraphStatistics()
-
 N = 20 
 t = 0
 maxT = 10
-
-realTheta, sigmaTheta = HIVModelUtils.toyTheta()
-
 minVal = 10 
+matchAlpha = 0.2 
+breakDist = 1.0
+
+plotStyles = ['k-', 'kx-', 'k+-', 'k.-', 'k*-']
 
 for i in range(maxT): 
     thetaArray, distArray = loadThetaArray(N, resultsDir, i)
@@ -63,8 +73,8 @@ def saveStats(args):
     featureInds[HIVVertices.stateIndex] = False 
     featureInds = numpy.arange(featureInds.shape[0])[featureInds]        
     
-    matcher = GraphMatch("PATH", alpha=0.2, featureInds=featureInds, useWeightM=False)
-    graphMetrics = HIVGraphMetrics2(targetGraph, 1.0, matcher, float(endDate))        
+    matcher = GraphMatch("PATH", alpha=matchAlpha, featureInds=featureInds, useWeightM=False)
+    graphMetrics = HIVGraphMetrics2(targetGraph, breakDist, matcher, float(endDate))        
     times, infectedIndices, removedIndices, graph = HIVModelUtils.simulate(thetaArray[i], startDate, endDate, recordStep, M, graphMetrics)
     times = numpy.arange(startDate, endDate+1, recordStep)
     vertexArray, infectedIndices, removedIndices, contactGraphStats, removedGraphStats = HIVModelUtils.generateStatistics(graph, times)
@@ -93,9 +103,6 @@ if saveResults:
     resultsFileName = outputDir + "IdealStats.pkl"
     Util.savePickle(stats, resultsFileName)
 else:
-    #for i in range(t): 
-    #    thetaArray = loadThetaArray(N, resultsDir, i)[0]
-
     realTheta, sigmaTheta = HIVModelUtils.toyTheta()
     thetaArray, distArray = loadThetaArray(N, resultsDir, t)
     print(realTheta)
@@ -252,7 +259,6 @@ else:
     
     meanDists = numpy.array(distsArr).mean(0)
     stdDists = numpy.array(distsArr).std(0)
-    print(len(times), len(meanDists))
     plt.figure(plotInd)
     plt.errorbar(times[1:], meanDists, yerr=stdDists) 
     plotInd += 1
