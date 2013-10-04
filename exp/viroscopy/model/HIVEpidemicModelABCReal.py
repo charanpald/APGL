@@ -25,6 +25,8 @@ if len(sys.argv) > 1:
 else: 
     numProcesses = multiprocessing.cpu_count()
 
+logging.debug("Number of processes: " + str(numProcesses))
+
 FORMAT = "%(levelname)s:root:%(process)d:%(message)s"
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format=FORMAT)
 numpy.set_printoptions(suppress=True, precision=4, linewidth=150)
@@ -86,7 +88,7 @@ for i, endDate in enumerate(endDates):
     abcSMC = ABCSMC(epsilonArray, createModel, abcParams, thetaDir, True)
     abcSMC.setPosteriorSampleSize(posteriorSampleSize)
     abcSMC.setNumProcesses(numProcesses)
-    abcSMC.batchSize = 50
+    abcSMC.batchSize = 20
     abcSMC.maxRuns = abcMaxRuns
     thetasArray = abcSMC.run()
     
