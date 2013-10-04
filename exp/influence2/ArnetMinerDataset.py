@@ -36,13 +36,17 @@ class ArnetMinerDataset(object):
         self.fields.extend(["Information Extraction", "Intelligent Agents", "Machine Learning"])
         self.fields.extend(["Natural Language Processing", "Neural Networks", "Ontology Alignment"])
         self.fields.extend(["Planning", "Semantic Web", "Support Vector Machine"])    
-        self.fields.extend(additionalFields)        
+        self.fields.extend(additionalFields)      
         
         self.dataFilename = self.dataDir + "DBLP-citation-Feb21.txt" 
         #self.dataFilename = self.dataDir + "DBLP-citation-7000000.txt" 
         #self.dataFilename = self.dataDir + "DBLP-citation-100000.txt"        
         self.outputDir = PathDefaults.getOutputDir() + "reputation/"
         self.dataDir = PathDefaults.getDataDir() + "reputation/"
+        
+        for field in self.fields: 
+            if not os.path.exists(self.getOutputFieldDir(field)): 
+                os.mkdir(self.getOutputFieldDir(field))
         
         if runLSI:
             self.methodName = "LSI"
