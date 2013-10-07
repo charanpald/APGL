@@ -16,8 +16,8 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 #For now just print some results for a particular dataset 
 #dataset = "MovieLensDataset"
-#dataset = "NetflixDataset"
-dataset = "FlixsterDataset"
+dataset = "NetflixDataset"
+#dataset = "FlixsterDataset"
 #dataset = "SyntheticDataset1"
 #dataset = "EpinionsDataset"
 outputDir = PathDefaults.getOutputDir() + "recommend/" + dataset + "/"
@@ -84,7 +84,7 @@ for j, fileName in enumerate(fileNames):
         plt.plot(numpy.arange(measures.shape[0]), measures[:, 0], plotStyles[i], label=labels[j])
         plt.xlabel("matrix no.")        
         plt.ylabel("RMSE test")
-        plt.legend(loc="center right") 
+        plt.legend(loc="upper right") 
         plt.savefig(outputDir + dataset + "RMSETest.eps")
         
         plt.figure(1)
@@ -117,10 +117,9 @@ for j, fileName in enumerate(fileNames):
         
         plt.figure(5)
         plt.plot(numpy.arange(metadata.shape[0]), numpy.log10(numpy.cumsum(metadata[:, 2])), plotStyles[i], label=labels[j])
-        plt.legend(loc="lower right") 
+        plt.legend(loc="upper left") 
         plt.xlabel("matrix no.")
         plt.ylabel("log(time) (s)")
-        print("time="+str(numpy.cumsum(metadata[:, 2])))
         plt.savefig(outputDir + dataset + "LogTimes.eps")
         
         i += 1        
