@@ -210,8 +210,6 @@ class ArnetMinerDataset(object):
             logging.debug("Finding coauthors of relevant experts")
             graph, authorIndexer = self.coauthorsGraphFromAuthors(set(relevantExperts))
             logging.debug(graph.summary())
-            if not os.path.exists(self.getCoauthorsFilename(field)):
-                os.makedirs(os.path.dirname(self.getCoauthorsFilename(field)))
             Util.savePickle([graph, authorIndexer], self.getCoauthorsFilename(field), debug=True)
         else: 
             logging.debug("Files already generated: " + self.getCoauthorsFilename(field))  
