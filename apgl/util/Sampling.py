@@ -142,9 +142,9 @@ class Sampling(object):
             Parameter.checkFloat(trainProportion, 0.0, 1.0)
 
         if trainProportion == None:
-            trainSize = (repetitions-1)*numExamples/repetitions
+            trainSize = int((repetitions-1)*numExamples/repetitions)
         else:
-            trainSize = trainProportion*numExamples
+            trainSize = int(trainProportion*numExamples)
 
         idx = [] 
         for i in range(repetitions):

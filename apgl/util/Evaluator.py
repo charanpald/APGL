@@ -210,7 +210,7 @@ class Evaluator(object):
         Parameter.checkFloat(u, 0.0, 1.0)
         fpr, tpr = Evaluator.roc(testY, predY)
 
-        minExampleIndex = numpy.floor((predY.shape[0]-1)*u)
+        minExampleIndex = int(numpy.floor((predY.shape[0]-1)*u))
         minExampleScore = numpy.flipud(numpy.sort(predY))[minExampleIndex]
         intersectInd = numpy.searchsorted(numpy.sort(numpy.unique(predY)), minExampleScore)
         intersectInd = numpy.unique(predY).shape[0] - intersectInd
