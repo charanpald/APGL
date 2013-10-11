@@ -1,5 +1,5 @@
-
-from sandbox.graph.CsArrayGraph import CsArrayGraph
+import apgl
+from apgl.graph.CsArrayGraph import CsArrayGraph
 from apgl.graph.VertexList import VertexList
 from apgl.util import *
 from apgl.graph.test.MatrixGraphTest import MatrixGraphTest
