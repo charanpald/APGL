@@ -73,12 +73,8 @@ def test():
 
         
         overallTestSuite = unittest.TestSuite()
-        overallTestSuite.addTest(unittest.defaultTestLoader.discover(os.path.join(sourceDir, "data"), pattern='*Test.py', top_level_dir=sourceDir))
-        overallTestSuite.addTest(unittest.defaultTestLoader.discover(os.path.join(sourceDir, "features"), pattern='*Test.py', top_level_dir=sourceDir))
         overallTestSuite.addTest(unittest.defaultTestLoader.discover(os.path.join(sourceDir, "generator"), pattern='*Test.py', top_level_dir=sourceDir))
         overallTestSuite.addTest(unittest.defaultTestLoader.discover(os.path.join(sourceDir, "graph"), pattern='*Test.py', top_level_dir=sourceDir))
-        overallTestSuite.addTest(unittest.defaultTestLoader.discover(os.path.join(sourceDir, "kernel"), pattern='*Test.py', top_level_dir=sourceDir))
-        overallTestSuite.addTest(unittest.defaultTestLoader.discover(os.path.join(sourceDir, "predictors"), pattern='*Test.py', top_level_dir=sourceDir))
         overallTestSuite.addTest(unittest.defaultTestLoader.discover(os.path.join(sourceDir, "util"), pattern='*Test.py', top_level_dir=sourceDir))
 
         unittest.TextTestRunner(verbosity=1).run(overallTestSuite)

@@ -17,7 +17,7 @@ descriptionFile.close()
 setup (
   name = 'apgl',
   version = __version__,
-  packages = ['apgl', 'apgl.generator', 'apgl.generator.test', 'apgl.predictors', 'apgl.predictors.test', 'apgl.data', 'apgl.features', 'apgl.features.test', 'apgl.graph', 'apgl.graph.test', 'apgl.io', 'apgl.util', 'apgl.util.test', 'apgl.kernel', 'apgl.kernel.test'],
+  packages = ['apgl', 'apgl.generator', 'apgl.generator.test', 'apgl.graph', 'apgl.graph.test', 'apgl.io', 'apgl.util', 'apgl.util.test'],
   install_requires=['numpy>=1.5.0', 'scipy>=0.7.1'],
   author = 'Charanpal Dhanjal',
   author_email = 'charanpal@gmail.com',
