@@ -343,7 +343,7 @@ class DictGraph(AbstractSingleGraph):
         the corresponding vertices in a list.
         """
         vertexList = [] 
-        degSeq = numpy.zeros(self.getNumVertices())
+        degSeq = numpy.zeros(self.getNumVertices(), numpy.int)
 
         vertexIds = self.getAllVertexIds()
         for i in range(len(vertexIds)):
@@ -359,7 +359,7 @@ class DictGraph(AbstractSingleGraph):
         the corresponding vertices in a list.
         """
         vertexList = []
-        degSeq = numpy.zeros(self.getNumVertices())
+        degSeq = numpy.zeros(self.getNumVertices(), numpy.int)
 
         vertexIds = self.getAllVertexIds()
         for i in range(len(vertexIds)):
