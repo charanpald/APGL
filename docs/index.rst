@@ -8,19 +8,21 @@ Welcome to APGL's documentation!
 
 Another Python Graph Library is a simple, fast and easy to use graph library. The main characteristics are as follows: 
 
-* Directed, undirected and multi-graphs using numpy and scipy matrices for fast linear algebra computations. The PySparseGraph and SparseGraph classes can scale up to 1,000,000s of vertices and edges on a standard PC. 
+* Directed, undirected and multi-graphs using numpy and scipy matrices for fast linear algebra computations. The PySparseGraph, CsArray and SparseGraph classes can scale up to 1,000,000s of vertices and edges on a standard PC. 
 * Set operations including finding subgraphs, complements, unions, and intersections of graphs.
 * Graph properties such as diameter, geodesic distance, degree distributions, eigenvector betweenness, and eigenvalues.  
 * Other algorithms: search, Floyd-Warshall, Dijkstra's algorithm. 
 * Configuration Model, Erdos-Renyi, Small-World, Albert-Barabasi and Kronecker graph generation 
 * Write to Pajek and simple CSV files 
-* Machine learning features - data preprocessing, kernels, PCA, KCCA, ABC, TreeRank.
 * Unit tested using the Python unittest framework
 
 News
 ----
-* 29/12/12 - Version 0.7.3 released. This is the final release I will personally make as I no longer have sufficient time to work on this project, and there are very good alternatives. If anyone is interested in developing the code (available at https://github.com/charanpald/APGL), please contact me. 
-* 17/11/12 - Version 0.7.2 released, see https://github.com/charanpald/APGL for the changelog. 
+* 17/10/13 - Version 0.8 released. 
+* 29/12/12 - Version 0.7.3 released.  
+* 17/11/12 - Version 0.7.2 released. 
+
+See https://github.com/charanpald/APGL for the changelog. 
 
 Downloading
 -----------

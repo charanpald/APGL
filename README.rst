@@ -5,6 +5,12 @@ This project develops a simple, fast and easy to use Python graph library using 
 
 Changelog 
 ---------
+Changes in version 0.8: 
+
+* Added CsArrayGraph which is based on sppy 
+* General tidy up: removed feature extraction and prediction code which is now at https://github.com/charanpald/sandbox 
+* Several bug fixes and optimisations
+
 Changes in version 0.7.3: 
 
 * DictGraph - toSparseGraph, added depth and breadth first search, degree sequence, num directed edges, dijkstra's algorithm, adjacency list, and find all distances.
