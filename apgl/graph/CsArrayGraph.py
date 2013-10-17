@@ -61,8 +61,7 @@ class CsArrayGraph(AbstractMatrixGraph):
         :type vertexIndex: :class:`int`
         """
         Parameter.checkIndex(vertexIndex, 0, self.vList.getNumVertices())
-        nonZeroIndices =  self.W[vertexIndex, :].nonzero()
-        neighbourIndices = nonZeroIndices[0]
+        neighbourIndices = self.W.rowInds(vertexIndex)
         
         return neighbourIndices
 
