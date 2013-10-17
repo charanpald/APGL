@@ -680,7 +680,13 @@ class DictGraphTest(unittest.TestCase):
         graph["d", "e"] = 1
         graph["e", "e"] = 1
                 
-        nptst.assert_array_equal(graph.degreeSequence(), [0, 1, 2, 3, 2])
+        degreeDict = {}
+        degreeDict2 = {"a": 0, "b": 2, "c": 1, "d": 2, "e": 3}
+        
+        for i, id in enumerate(graph.getAllVertexIds()): 
+            degreeDict[id] = graph.degreeSequence()[i]
+            
+        self.assertEquals(degreeDict, degreeDict2)
 
     def testGetNumDirEdges(self):
         graph = DictGraph()

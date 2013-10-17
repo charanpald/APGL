@@ -151,7 +151,7 @@ class  EvaluatorTestCase(unittest.TestCase):
         error = numpy.abs(testY - predY).mean()
         self.assertEquals(error, Evaluator.meanAbsError(testY, predY))
     
-
+    @apgl.skipIf(not apgl.checkImport('sklearn'), 'No module scikits.learn')
     def testPrecisionFromIndLists(self): 
         predList  = [4, 2, 10]
         testList = [4, 2]

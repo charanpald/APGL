@@ -286,7 +286,7 @@ class DictGraphTest(unittest.TestCase):
         self.assertEquals(subtree.getAllVertexIds(), ["c"])    
         
         subtree = newTree.subtreeAt("a")
-        self.assertEquals(subtree.getAllVertexIds(), ["a", "c", "b"])
+        self.assertEquals(set(subtree.getAllVertexIds()), set(["a", "c", "b"]))
         
    
      
