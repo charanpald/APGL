@@ -8,6 +8,7 @@ In the case that one wishes to label vertices and edges with anything and effici
 .. toctree::
    :maxdepth: 1
    
+   CsArrayGraph
    DenseGraph
    DictGraph
    DictTree 

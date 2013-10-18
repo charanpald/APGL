@@ -14,3 +14,7 @@ try:
 except ImportError as error:
     pass
 
+try:
+    from apgl.graph.CsArrayGraph import CsArrayGraph
+except ImportError as error:
+    pass
