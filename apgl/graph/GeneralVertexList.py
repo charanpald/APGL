@@ -161,5 +161,13 @@ class GeneralVertexList(AbstractVertexList):
     def __len__(self): 
         return len(self.V)
 
+    def addVertices(self, n): 
+        """
+        Adds n vertices to this object. 
+        """
+        oldN = len(self.V)
+        for i in range(oldN, oldN+n):
+            self.V[i] = None
+
     V = None
     ext = '.gvl'

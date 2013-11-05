@@ -221,6 +221,12 @@ class VertexList(AbstractVertexList):
     def __len__(self): 
         return len(self.V)
 
+    def addVertices(self, n): 
+        """
+        Adds n vertices to this object. 
+        """
+        self.V = Util.extendArray(self.V, (self.V.shape[0] + n, self.V.shape[1]))
+
     V = None
     ext = ".nvl"
     

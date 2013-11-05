@@ -297,9 +297,21 @@ class CsArrayGraph(AbstractMatrixGraph):
         same dimensions as the current weight matrix. Edges are represented by
         non-zero edges.
 
-        :param W:  The weight matrix to use. 
+        :param W:  The scipy sparse weight matrix to use. 
         """      
         self.W[W.nonzero()] = W.data
+
+    def addVertices(self, n): 
+        """
+        Adds n vertices to the current graph. This is not an efficient operation
+        as we create a new weight matrix and copy the old one. The old vertices 
+        are the first m at the start of the new graph.  
+        """        
+        W2 = sppy.csarray((self.W.shape[0]+n, self.W.shape[0]+n), self.W.dtype)
+        W2[self.W.nonzero()] = self.W.values()
+        self.W = W2
+        
+        self.vList.addVertices(n)
 
     undirected = None
     vList = None

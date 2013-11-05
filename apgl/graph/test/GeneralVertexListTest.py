@@ -36,8 +36,17 @@ class GeneralVertexListTest(unittest.TestCase, AbstractVertexListTest):
             logging.warn(e)
             pass 
 
-
-
+    def testAddVertices(self): 
+        vList = GeneralVertexList(10)
+        vList.setVertex(1, 2)
+        self.assertEquals(vList.getNumVertices(), 10)
+        self.assertEquals(vList[1], 2)
+        
+        vList.addVertices(5)
+        self.assertEquals(vList.getNumVertices(), 15)
+        vList.setVertex(11, 2)
+        self.assertEquals(vList[1], 2)
+        self.assertEquals(vList[1], 2)
+            
 if __name__ == '__main__':
-    suite = unittest.TestLoader().loadTestsFromTestCase(VertexListTest)
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    unittest.main()

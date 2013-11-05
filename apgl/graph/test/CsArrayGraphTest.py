@@ -27,6 +27,25 @@ class CsArrayGraphTest(unittest.TestCase, MatrixGraphTest):
         graph = CsArrayGraph(numVertices)
         self.assertEquals(graph.size, numVertices)
         
+    def testAddVertices(self): 
+        graph = CsArrayGraph(10)
+        graph[3, 4] = 1
+        
+        graph.addVertices(5)
+        
+        self.assertEquals(graph[3,4], 1)
+        self.assertEquals(graph.getNumEdges(), 1)
+        self.assertEquals(graph.size, 15)
+        
+        graph[10, 11] = 0.1
+        graph.addVertices(5)
+        
+        self.assertEquals(graph[3,4], 1)
+        self.assertEquals(graph[10,11], 0.1)
+        self.assertEquals(graph.getNumEdges(), 2)
+        self.assertEquals(graph.size, 20)
+        
+        
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

@@ -51,6 +51,19 @@ class VertexListTest(unittest.TestCase, AbstractVertexListTest):
             self.vList[i, :] = V[i, :]
             nptst.assert_array_equal(self.vList[i, :], V[i, :])
 
+    def testAddVertices(self): 
+        numFeatures = 5
+        vList = VertexList(10, numFeatures)
+        vList.setVertex(1, numpy.ones(numFeatures)*0.1)
+        self.assertEquals(vList.getNumVertices(), 10)
+        nptst.assert_array_equal(vList[1], numpy.ones(numFeatures)*0.1)
+        
+        vList.addVertices(5)
+        self.assertEquals(vList.getNumVertices(), 15)
+        vList.setVertex(11, numpy.ones(numFeatures)*2)
+        nptst.assert_array_equal(vList[1], numpy.ones(numFeatures)*0.1)
+        nptst.assert_array_equal(vList[11], numpy.ones(numFeatures)*2)
+
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(VertexListTest)
     unittest.TextTestRunner(verbosity=2).run(suite)
