@@ -1,36 +1,34 @@
 import os
-import tempfile
+import tempfile 
+from ConfigParser import SafeConfigParser
+from os.path import expanduser
 
-#TODO: Read from a configuration file
 class PathDefaults(object):
     """
     This class stores some useful global default paths. 
     """
-    def __init__(self):
-        pass
+    @staticmethod 
+    def readField(field):
+        configFileName = expanduser("~") + os.sep + ".apglrc"
 
-    @staticmethod
-    def getProjectDir():
-        import apgl
-        dir =  apgl.__path__[0].split("/")
-
-        try:
-            ind = dir.index('APGL')+1
-
-            projectDir = ""
-            for i in range(0, ind):
-                projectDir +=  dir[i] + "/"
-        except ValueError:
-            projectDir = os.path.abspath( __file__ )
-            projectDir, head = os.path.split(projectDir)
-            projectDir, head = os.path.split(projectDir)
-            projectDir, head = os.path.split(projectDir)
-            projectDir, head = os.path.split(projectDir)
-            projectDir += "/"
-        return projectDir 
+        if not os.path.exists(configFileName): 
+            print("Creating missing config file: " + configFileName)
+            defaultConfig = "[paths]\n" 
+            defaultConfig += "data = " + expanduser("~") + os.sep + "data" + os.sep + "\n"
+            defaultConfig += "output = " + expanduser("~") + os.sep + "output" + os.sep + "\n"
+            configFile = open(configFileName, "w")
+            configFile.write(defaultConfig)
+            configFile.close()
+            
+        parser = SafeConfigParser()
+        parser.read(configFileName)
+        return parser.get('paths', field)
 
     @staticmethod
     def getSourceDir():
+        """
+        Root directory of source code for APGL. 
+        """
         dir = os.path.abspath( __file__ )
         dir, head = os.path.split(dir)
         dir, head = os.path.split(dir)
@@ -38,12 +36,18 @@ class PathDefaults(object):
         
     @staticmethod
     def getDataDir():
-        return os.path.join(PathDefaults.getProjectDir(), "data") + os.sep
-
-    @staticmethod
-    def getTempDir():
-        return tempfile.gettempdir() + os.sep
+        """
+        Location of data files. 
+        """
+        return PathDefaults.readField("data")
 
     @staticmethod
     def getOutputDir():
-        return os.path.join(PathDefaults.getProjectDir(), "output") + os.sep
+        """
+        Location of output files. 
+        """
+        return PathDefaults.readField("output")
+        
+    @staticmethod
+    def getTempDir():
+        return tempfile.gettempdir() + os.sep
