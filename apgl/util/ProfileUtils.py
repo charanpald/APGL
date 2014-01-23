@@ -26,9 +26,8 @@ class ProfileUtils(object):
         except ImportError:
             raise ImportError("profile() requires pstats and cProfile")
 
-        outputDirectory = PathDefaults.getOutputDir()
-        directory = outputDirectory + "test/"
-        profileFileName = directory + "profile.cprof"
+        tempDirectory = PathDefaults.getTempDir()
+        profileFileName = tempDirectory + "profile.cprof"
 
         logging.info("Starting to profile ...")
         cProfile.runctx(command, globalVars, localVars, profileFileName)
