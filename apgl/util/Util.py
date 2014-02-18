@@ -531,7 +531,7 @@ class Util(object):
                 if badAnswerFromUtilSvd:
                     logging.warn(" SVD decomposition obtained from EVD decomposition contains 'NaN', 'inf' or real values")
 
-        from apgl.util.ProfileUtils import ProfileUtils
+        from sandbox.util.ProfileUtils import ProfileUtils
         if ProfileUtils.memory() > 10**9:
             ProfileUtils.memDisplay(locals())
 
@@ -719,3 +719,18 @@ class Util(object):
             
         return v.T.dot(A).dot(v), v  
         
+    @staticmethod 
+    def argmaxN(a, N): 
+        """
+        Return the top N elements of numpy array a 
+        """
+        b = numpy.zeros(N, numpy.int)
+        tempA = a.copy()  
+        minA = numpy.min(a)
+        
+        for i in range(N):
+            idx = numpy.argmax(tempA)
+            b[i] = idx 
+            tempA[idx] = minA
+            
+        return b 
