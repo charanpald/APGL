@@ -1,10 +1,14 @@
 import apgl
-from apgl.graph.CsArrayGraph import CsArrayGraph
 from apgl.graph.VertexList import VertexList
 from apgl.util import *
 from apgl.graph.test.MatrixGraphTest import MatrixGraphTest
 import unittest
 import numpy
+
+try: 
+    from apgl.graph.CsArrayGraph import CsArrayGraph
+except ImportError:
+    pass 
 
 @apgl.skipIf(not apgl.checkImport('sppy'), 'No module sppy')
 class CsArrayGraphTest(unittest.TestCase, MatrixGraphTest):
