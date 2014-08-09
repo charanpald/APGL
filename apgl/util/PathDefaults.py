@@ -1,6 +1,9 @@
 import os
 import tempfile 
-from ConfigParser import SafeConfigParser
+try: 
+    from ConfigParser import SafeConfigParser
+except ImportError: 
+    from configparser import SafeConfigParser  
 from os.path import expanduser
 
 class PathDefaults(object):
