@@ -5,6 +5,13 @@ This project develops a simple, fast and easy to use Python graph library using 
 
 Changelog 
 ---------
+
+Changes in version 0.8.1: 
+
+* addVertices method. 
+* Documentation for CsArrayGraph 
+* Read properties from config file 
+
 Changes in version 0.8: 
 
 * Added CsArrayGraph which is based on sppy 
