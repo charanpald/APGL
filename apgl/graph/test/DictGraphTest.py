@@ -3,6 +3,7 @@ from apgl.util.Util import Util
 import unittest
 import numpy 
 import logging
+import numbers
 import numpy.testing as nptst
 
 class DictGraphTest(unittest.TestCase):
@@ -324,32 +325,38 @@ class DictGraphTest(unittest.TestCase):
         graph = DictGraph()
         graph.addEdge("a", "b")
         graph.addEdge("a", "c")
-        graph.addEdge("a", "d")
-        graph.addEdge("d", "e")
+        graph.addEdge("a", "d", "blah")
+        graph.addEdge("d", "e", -1.1)
+        graph.addEdge("c", "b", 2)
 
         W = graph.getSparseWeightMatrix()
         keys = graph.getAllVertexIds()
-
+        
         for i in range(len(keys)):
             for j in range(len(keys)):
-                if W[i, j] == 1:
-                    self.assertEquals(graph.getEdge(keys[i], keys[j]), 1)
+                if graph.edgeExists(keys[i], keys[j]) and not isinstance(graph.getEdge(keys[i], keys[j]), numbers.Number): 
+                    self.assertEquals(1, W[i, j])
+                elif W[i, j] != 0:
+                    self.assertEquals(graph.getEdge(keys[i], keys[j]), W[i, j])
                 else:
                     self.assertEquals(graph.getEdge(keys[i], keys[j]), None)
 
         #Try a directed graph
         graph = DictGraph(False)
         graph.addEdge("a", "b")
-        graph.addEdge("a", "c")
+        graph.addEdge("a", "c", "test")
         graph.addEdge("a", "d")
         graph.addEdge("d", "e")
+        graph.addEdge("c", "a", 0.1)
 
         W = graph.getSparseWeightMatrix()
 
         for i in range(len(keys)):
             for j in range(len(keys)):
-                if W[i, j] == 1:
-                    self.assertEquals(graph.getEdge(keys[i], keys[j]), 1)
+                if graph.edgeExists(keys[i], keys[j]) and not isinstance(graph.getEdge(keys[i], keys[j]), numbers.Number): 
+                    self.assertEquals(1, W[i, j])
+                elif W[i, j] != 0:
+                    self.assertEquals(graph.getEdge(keys[i], keys[j]), W[i, j])
                 else:
                     self.assertEquals(graph.getEdge(keys[i], keys[j]), None)
 
