@@ -201,7 +201,8 @@ class DictGraph(AbstractSingleGraph):
     def getWeightMatrix(self):
         """
         Returns a weight matrix representation of the graph as a numpy array. The
-        indices in the matrix correspond to the keys returned by getAllVertexIds.
+        indices in the matrix correspond to the keys returned by getAllVertexIds, 
+        and edge labels are assigned to 1 for edges with non-numeric values.  
         """
         W = numpy.zeros((self.getNumVertices(), self.getNumVertices()))
         return self.__populateWeightMatrix(W)
@@ -211,7 +212,8 @@ class DictGraph(AbstractSingleGraph):
         """
         Returns a weight matrix representation of the graph as a scipy sparse 
         lil_matrix by default. The indices in the matrix correspond to the keys 
-        returned by getAllVertexIds. Available formats are: lil for scipy.sparse.lil_matrix, 
+        returned by getAllVertexIds. Edge labels are assigned to 1 for edges with 
+        non-numeric values. Available formats are: lil for scipy.sparse.lil_matrix, 
         csr for scipy.sparse.csr_matrix, csc for scipy.sparse.csc_matrix, and 
         pysparse for pysparse's ll_mat. 
         
@@ -252,10 +254,18 @@ class DictGraph(AbstractSingleGraph):
         for vertex1 in keys:
             for vertex2 in self.neighbours(vertex1):
                 if self.undirected == True:
-                    W[keyInds[vertex1], keyInds[vertex2]] = 1
-                    W[keyInds[vertex2], keyInds[vertex1]] = 1
+                    try: 
+                        edgeVal = self.adjacencies[vertex1][vertex2]
+                        W[keyInds[vertex1], keyInds[vertex2]] = edgeVal
+                        W[keyInds[vertex2], keyInds[vertex1]] = edgeVal
+                    except: 
+                        W[keyInds[vertex1], keyInds[vertex2]] = 1
+                        W[keyInds[vertex2], keyInds[vertex1]] = 1
                 elif self.undirected == False:
-                    W[keyInds[vertex1], keyInds[vertex2]] = 1
+                    try: 
+                        W[keyInds[vertex1], keyInds[vertex2]] = self.adjacencies[vertex1][vertex2]
+                    except: 
+                        W[keyInds[vertex1], keyInds[vertex2]] = 1
 
         return W
 
