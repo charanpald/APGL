@@ -3,6 +3,8 @@ Another Python Graph Library
 
 This project develops a simple, fast and easy to use Python graph library using NumPy, Scipy and PySparse. For information on installing, and usage, see http://packages.python.org/apgl/index.html. 
 
+UPDATE: This project is no longer maintained. I recommend networkx (https://networkx.github.io/) or igraph (http://igraph.org/python/) instead.
+
 Changelog 
 ---------
 
