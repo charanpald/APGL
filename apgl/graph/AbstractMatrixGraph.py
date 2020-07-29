@@ -960,6 +960,7 @@ class AbstractMatrixGraph(AbstractSingleGraph):
             minVertexIndex = INVALID
             while minVertexIndex == INVALID:
                 (minVertexDistance, minVertexIndex) = heapq.heappop(distance)
+                minVertexIndex = int(minVertexIndex)
 
             distanceArray[minVertexIndex] = minVertexDistance
             del(distanceDict[minVertexIndex])
